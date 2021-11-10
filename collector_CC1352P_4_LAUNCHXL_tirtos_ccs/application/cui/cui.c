@@ -136,6 +136,8 @@
 #define CLI_CRS_EV_OPEN "evopen"
 #define CLI_CRS_EV_CLOSE "evclose"
 #define CLI_CRS_EV_GET_EV "evnext"
+#define CLI_CRS_CMD_READ "r"
+#define CLI_CRS_CMD_WRITE "w"
 
 
 
@@ -682,16 +684,6 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
 
     CUI_menuItem_t* pItemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
-    uint8_t bla = gUartTxBufferIdx;
-
-    if (bla != gUartTxBufferIdx)
-    {
-        return CUI_FAILURE;
-    }
-    else
-    {
-
-    }
     uint8_t input = gUartTxBuffer[gUartTxBufferIdx-1];
 
 
@@ -700,7 +692,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
     if (input != '\r')
     {
         //memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
-        if (input == '\b')
+        if (input == '\b') //backspace
         {
                    if (gUartTxBufferIdx-1)
                    {
@@ -726,9 +718,9 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 //                   {
 //                       input = CUI_INPUT_UP;
 //                   }
-        CUI_writeString(&input, 1);
+        CUI_writeString(&input, 1);//uart echo back to the cli
 
-        UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+        UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));//reactivate the read callback
         return CUI_SUCCESS;
 
     }
@@ -909,11 +901,6 @@ CUI_retVal_t CUI_processMenuUpdate(void)
         CUI_writeString(badInputMsg, sizeof(badInputMsg));
 
     }
-
-
-
-
-    gUartTxBufferIdx--;
    // CUI_cliPrintf(0,"avi fraind %s %d %08x", "is the best", 10, 0x34);
     memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS -1);
     gUartTxBufferIdx = 0;
