@@ -136,8 +136,6 @@
 #define CLI_CRS_EV_OPEN "evopen"
 #define CLI_CRS_EV_CLOSE "evclose"
 #define CLI_CRS_EV_GET_EV "evnext"
-#define CLI_CRS_CMD_READ "r"
-#define CLI_CRS_CMD_WRITE "w"
 
 
 
@@ -683,47 +681,47 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
 
 
-    CUI_menuItem_t* pItemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
-    uint8_t input = gUartTxBuffer[gUartTxBufferIdx-1];
+
+    //uint8_t input = gUartTxBuffer[gUartTxBufferIdx-1];
 
 
     bool inputBad = true;
 
-    if (input != '\r')
-    {
-        //memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
-        if (input == '\b') //backspace
-        {
-                   if (gUartTxBufferIdx-1)
-                   {
-                       //need to conncatinate all of the strings to one.
-                       gUartTxBufferIdx--;
-                       gUartTxBuffer[gUartTxBufferIdx] = '\0';
-
-                       gUartTxBuffer[gUartTxBufferIdx-1] = input;
-                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
-                       CUI_writeString(" ", 1);
-                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
-                       gUartTxBuffer[gUartTxBufferIdx-1] = '\0';
-
-                   }
-
-                   gUartTxBufferIdx--;
-
-                   UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-                   return CUI_SUCCESS;
-        }
-
-//        if (memcmp(gUartTxBuffer, CUI_ESC_UP, sizeof(CUI_ESC_UP)) == 0)
+//    if (input != '\r')
+//    {
+//        //memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
+//        if (input == '\b')
+//        {
+//                   if (gUartTxBufferIdx-1)
 //                   {
-//                       input = CUI_INPUT_UP;
+//                       //need to conncatinate all of the strings to one.
+//                       gUartTxBufferIdx--;
+//                       gUartTxBuffer[gUartTxBufferIdx] = '\0';
+//
+//                       gUartTxBuffer[gUartTxBufferIdx-1] = input;
+//                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
+//                       CUI_writeString(" ", 1);
+//                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
+//                       gUartTxBuffer[gUartTxBufferIdx-1] = '\0';
+//
 //                   }
-        CUI_writeString(&input, 1);//uart echo back to the cli
-
-        UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));//reactivate the read callback
-        return CUI_SUCCESS;
-
-    }
+//
+//                   gUartTxBufferIdx--;
+//
+//                   UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+//                   return CUI_SUCCESS;
+//        }
+//
+////        if (memcmp(gUartTxBuffer, CUI_ESC_UP, sizeof(CUI_ESC_UP)) == 0)
+////                   {
+////                       input = CUI_INPUT_UP;
+////                   }
+//        CUI_writeString(&input, 1);
+//
+//        UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+//        return CUI_SUCCESS;
+//
+//    }
 
     bool is_async_command = false;
     uint32_t mysize = sizeof(CLI_CRS_EV_OPEN);
@@ -901,6 +899,11 @@ CUI_retVal_t CUI_processMenuUpdate(void)
         CUI_writeString(badInputMsg, sizeof(badInputMsg));
 
     }
+
+
+
+
+    gUartTxBufferIdx--;
    // CUI_cliPrintf(0,"avi fraind %s %d %08x", "is the best", 10, 0x34);
     memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS -1);
     gUartTxBufferIdx = 0;
@@ -1872,27 +1875,72 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
 #ifndef CUI_MIN_FOOTPRINT
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
+
+
+       //CUI_writeString(cliPrompt, sizeof(cliPrompt));
+
+
+
+
+
     // Make sure we received all expected bytes
 
-    //CUI_writeString(_buf, size);
-    gUartTxBuffer[gUartTxBufferIdx] = ((uint8_t*)_buf)[0];
-    gUartTxBufferIdx++;
-    memset(_buf, '\0', _size);
-    CUI_callMenuUartUpdateFn();
 
     if (_size)
     {
-        // If cleared, then read it
-//        if(gUartTxBuffer[0] == 0)
-//        {
-//            // Copy bytes from RX buffer to TX buffer
-//            for(size_t i = 0; i < _size; i++)
-//            {
-//                gUartTxBuffer[i] = ((uint8_t*)_buf)[i];
-//            }
-//        }
-//        memset(_buf, '\0', _size);
-//        CUI_callMenuUartUpdateFn();
+
+        //CUI_writeString(_buf, size);
+          gUartTxBuffer[gUartTxBufferIdx] = ((uint8_t*)_buf)[0];
+          gUartTxBufferIdx++;
+          memset(_buf, '\0', _size);
+
+
+        uint8_t input = gUartTxBuffer[gUartTxBufferIdx-1];
+
+
+
+              if (input != '\r')
+              {
+                  //memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
+                  if (input == '\b')
+                  {
+                             if (gUartTxBufferIdx-1)
+                             {
+                                 //need to conncatinate all of the strings to one.
+                                 gUartTxBufferIdx--;
+                                 gUartTxBuffer[gUartTxBufferIdx] = '\0';
+
+                                 gUartTxBuffer[gUartTxBufferIdx-1] = input;
+                                 CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
+                                 CUI_writeString(" ", 1);
+                                 CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
+                                 gUartTxBuffer[gUartTxBufferIdx-1] = '\0';
+
+                             }
+
+                             gUartTxBufferIdx--;
+
+                             UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+                             return CUI_SUCCESS;
+                  }
+
+          //        if (memcmp(gUartTxBuffer, CUI_ESC_UP, sizeof(CUI_ESC_UP)) == 0)
+          //                   {
+          //                       input = CUI_INPUT_UP;
+          //                   }
+                  CUI_writeString(&input, 1);
+
+                  UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+                  return;
+
+              }
+              else
+              {
+                  CUI_callMenuUartUpdateFn();
+
+              }
+
+
     }
     else
     {
