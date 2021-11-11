@@ -236,9 +236,21 @@ static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
 static uint8_t gRingBuff[512];
-static size_t gRingBuffHeadIdx = 0;
-static size_t gRingBuffTailIdx = 0;
-static size_t gRingBuffPendLen = 0;
+static uint32_t gRingBuffHeadIdx = 0;
+static uint32_t gRingBuffTailIdx = 0;
+static uint32_t gRingBuffPendLen = 0;
+
+
+static uint8_t gWriteNowBuff[200];
+static uint8_t gWriteWaitingBuff[200];
+
+static uint32_t gWriteNowBuffIdx = 0;
+static uint32_t gWriteNowBuffSize = 0;
+static uint32_t gWriteWaitingBuffIdx = 0;
+
+static volatile bool gIsDoneWriting = true;
+static volatile bool gIsDoneFilling = false;
+
 
 #ifndef CUI_MIN_FOOTPRINT
 /*
@@ -378,14 +390,14 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams)
 #endif
 
                    // char clearScreenStr[] = CUI_ESC_CLR;// CUI_ESC_TRM_MODE;// CUI_ESC_CUR_HIDE;
-                    char clearScreenStr[] = CUI_ESC_CLR CUI_ESC_CUR_HIDE;
-
-
-                    if (CUI_SUCCESS != CUI_writeString(clearScreenStr, strlen(clearScreenStr)))
-                    {
-                        UART_close(gUartHandle);
-                        return CUI_FAILURE;
-                    }
+//                    char clearScreenStr[] = CUI_ESC_CLR CUI_ESC_CUR_HIDE;
+//
+//
+//                    if (CUI_SUCCESS != CUI_writeString(clearScreenStr, strlen(clearScreenStr)))
+//                    {
+//                        UART_close(gUartHandle);
+//                        return CUI_FAILURE;
+//                    }
                 }
             }
 
@@ -913,6 +925,8 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
     }
     CUI_writeString(cliPrompt, sizeof(cliPrompt));
+    memset(gUartTxBuffer, gUartRxBuffer, 1);
+
     UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
     return CUI_SUCCESS;
     //gUartTxBufferIdx
@@ -1609,7 +1623,12 @@ CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandl
 CUI_retVal_t CUI_cliPrintf(const CUI_clientHandle_t _clientHandle, const char *_format, ...)
 {
     char printBuff[200] = {0}; // plus 32 for cursor movement/clearing
+    if (_format == NULL)
+    {
+        CUI_writeString(NULL, 0);
+        return CUI_SUCCESS;
 
+    }
     va_list args;
 
     va_start(args, _format);
@@ -1849,27 +1868,34 @@ static CUI_retVal_t CUI_updateRemLen(size_t* _currRemLen, char* _buff, size_t _b
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
 
-    gRingBuffPendLen -= _size;
-    gRingBuffTailIdx = (gRingBuffTailIdx + _size) % sizeof(gRingBuff);
-    static size_t maxPending = 0;
+if (_size != gWriteNowBuffSize)
+{
+    gWriteNowBuffIdx = gWriteNowBuffIdx + _size;
+    gWriteNowBuffSize = gWriteNowBuffSize - _size;
+    UART_write(gUartHandle, &gWriteNowBuff[gWriteNowBuffIdx], gWriteNowBuffSize);
 
-    if (gRingBuffPendLen > maxPending)
-    {
-        maxPending = gRingBuffPendLen;
-    }
+    return;
+}
+gIsDoneWriting = true;
+
+if(gIsDoneFilling)
+{
+
+    memset(gWriteNowBuff, 0, 200);
+            memcpy(gWriteNowBuff, gWriteWaitingBuff, 200);
+            gWriteNowBuffSize = gWriteWaitingBuffIdx;
+            memset(gWriteWaitingBuff, 0, 200);
+            gWriteWaitingBuffIdx = 0;
+            gWriteNowBuffIdx = 0;
+            gIsDoneWriting = false;
+            gIsDoneFilling = false;
+            UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+
+            return CUI_SUCCESS;
+}
 
 
-    if (gRingBuffPendLen)
-    {
-        if ((sizeof(gRingBuff) - gRingBuffTailIdx) < gRingBuffPendLen)
-        {
-            UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], sizeof(gRingBuff) - gRingBuffTailIdx);
-        }
-        else
-        {
-            UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
-        }
-    }
+//    }
 }
 
 #ifndef CUI_MIN_FOOTPRINT
@@ -1915,6 +1941,8 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
                                  CUI_writeString(" ", 1);
                                  CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
                                  gUartTxBuffer[gUartTxBufferIdx-1] = '\0';
+                                 gIsDoneFilling = true;
+
 
                              }
 
@@ -1961,80 +1989,122 @@ static CUI_retVal_t CUI_writeString(void * _buffer, size_t _size)
      *  will be skipped as it would have been before.
      */
 
+    const char cliPrompt[] = "\r\nAP> ";
     //Error if no buffer
-    if((gUartHandle == NULL) || (_buffer == NULL) )
+    if((gUartHandle == NULL) )
     {
         return CUI_UART_FAILURE;
     }
-    SemaphoreP_pend(gUartSem, SemaphoreP_WAIT_FOREVER);
 
-    UART_writeCancel(gUartHandle);
 
-    if ((sizeof(gRingBuff) - gRingBuffPendLen) < _size)
+    if (_buffer == NULL)
     {
-        uint8_t i;
-        for (i = 0; i < 10; i++)
+        return CUI_SUCCESS;
+
+    }
+
+    if (gIsDoneWriting == true)
+    {
+        memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+        memset(gWriteNowBuff, 0, 200);
+        memcpy(gWriteNowBuff, gWriteWaitingBuff, 200);
+        gWriteNowBuffSize = gWriteWaitingBuffIdx + _size;
+        memset(gWriteWaitingBuff, 0, 200);
+        gWriteWaitingBuffIdx = 0;
+        gWriteNowBuffIdx = 0;
+        gIsDoneWriting = false;
+        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+
+        return CUI_SUCCESS;
+
+    }
+    else
+    {
+        memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+        gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
+        if(memcmp(cliPrompt, _buffer, _size) == 0)
         {
-            if ((sizeof(gRingBuff) - gRingBuffTailIdx) < gRingBuffPendLen)
-            {
-               UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], sizeof(gRingBuff) - gRingBuffTailIdx);
-            }
-            else
-            {
-               UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
-            }
-
-#ifndef CUI_POSIX
-            Task_sleep(100);
-#else
-            usleep(1000);
-#endif
-            UART_writeCancel(gUartHandle);
-            if ((sizeof(gRingBuff) - gRingBuffPendLen) >= _size)
-            {
-                i = 0;
-                break;
-            }
+            gIsDoneFilling = true;
         }
+        return CUI_SUCCESS;
 
-        if (i) {
-            //error
-            while(1){}
 
-        }
     }
 
-
-    // update ring buff pending length
-    gRingBuffPendLen += _size;
-
-    // handle writing around the end of the ring buffer
-    if ((sizeof(gRingBuff) - gRingBuffHeadIdx) < _size)
-    {
-        memcpy(&gRingBuff[gRingBuffHeadIdx], _buffer, sizeof(gRingBuff) - gRingBuffHeadIdx);
-        memcpy(gRingBuff, &((uint8_t *)_buffer)[sizeof(gRingBuff) - gRingBuffHeadIdx], _size - (sizeof(gRingBuff) - gRingBuffHeadIdx));
-    }
-    else
-    {
-        memcpy(&gRingBuff[gRingBuffHeadIdx], _buffer, _size);
-    }
-
-    // update ring buff idx w/ wrap around logic
-    gRingBuffHeadIdx = (gRingBuffHeadIdx + _size) % sizeof(gRingBuff);
-
-
-    if ((sizeof(gRingBuff) - gRingBuffTailIdx) < gRingBuffPendLen)
-    {
-        UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], sizeof(gRingBuff) - gRingBuffTailIdx);
-    }
-    else
-    {
-        UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
-    }
-
-    SemaphoreP_post(gUartSem);
 
     return CUI_SUCCESS;
+
+//    SemaphoreP_pend(gUartSem, SemaphoreP_WAIT_FOREVER);
+//
+//    UART_writeCancel(gUartHandle);
+//
+//    if ((sizeof(gRingBuff) - gRingBuffPendLen) < _size)
+//    {
+//        uint8_t i;
+//        for (i = 0; i < 10; i++)
+//        {
+//            if ((sizeof(gRingBuff) - gRingBuffTailIdx) < gRingBuffPendLen)
+//            {
+//               UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], sizeof(gRingBuff) - gRingBuffTailIdx);
+//            }
+//            else
+//            {
+//               UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
+//            }
+//
+//#ifndef CUI_POSIX
+//            Task_sleep(100);
+//#else
+//            usleep(1000);
+//#endif
+//            UART_writeCancel(gUartHandle);
+//            if ((sizeof(gRingBuff) - gRingBuffPendLen) >= _size)
+//            {
+//                i = 0;
+//                break;
+//            }
+//        }
+//
+//        if (i) {
+//            //error
+//            while(1){}
+//
+//        }
+//    }
+//
+//
+//    // update ring buff pending length
+//    gRingBuffPendLen += _size;
+//
+//    // handle writing around the end of the ring buffer
+//    if ((sizeof(gRingBuff) - gRingBuffHeadIdx) < _size)
+//    {
+//        memcpy(&gRingBuff[gRingBuffHeadIdx], _buffer, sizeof(gRingBuff) - gRingBuffHeadIdx);
+//        memcpy(gRingBuff, &((uint8_t *)_buffer)[sizeof(gRingBuff) - gRingBuffHeadIdx], _size - (sizeof(gRingBuff) - gRingBuffHeadIdx));
+//    }
+//    else
+//    {
+//        memcpy(&gRingBuff[gRingBuffHeadIdx], _buffer, _size);
+//    }
+//
+//    // update ring buff idx w/ wrap around logic
+//    gRingBuffHeadIdx = (gRingBuffHeadIdx + _size) % sizeof(gRingBuff);
+//
+//
+//    if ((500 - gRingBuffTailIdx) < gRingBuffPendLen)
+//    {
+//        //UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
+//
+//        UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], sizeof(gRingBuff) - gRingBuffTailIdx);
+//    }
+//    else
+//    {
+//        UART_write(gUartHandle, (const void*)&gRingBuff[gRingBuffTailIdx], gRingBuffPendLen);
+//    }
+//
+//    SemaphoreP_post(gUartSem);
+//
+//    return CUI_SUCCESS;
 }
 
 static CUI_retVal_t CUI_publicAPIChecks(const CUI_clientHandle_t _clientHandle)

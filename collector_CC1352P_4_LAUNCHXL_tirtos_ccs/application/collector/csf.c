@@ -652,6 +652,8 @@ void Csf_init(void *sem)
  */
 void Csf_processEvents(void)
 {
+    CUI_cliPrintf(0,NULL);
+
     /* Did a key press occur? LaunchPad only supports CONFIG_BTN_LEFT and CONFIG_BTN_RIGHT */
     if(Csf_events & CSF_KEY_EVENT)
     {

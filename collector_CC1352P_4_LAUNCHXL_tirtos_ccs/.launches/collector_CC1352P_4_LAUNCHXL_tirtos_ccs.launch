@@ -16,7 +16,7 @@
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROGRAM.CC1352P1F3.ccxml.Texas Instruments XDS110 USB Debug Probe/Cortex_M4_0" value="${build_artifact:collector_CC1352P_4_LAUNCHXL_tirtos_ccs}"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.CC1352P1F3.ccxml.Texas Instruments XDS110 USB Debug Probe/Cortex_M4_0" value="collector_CC1352P_4_LAUNCHXL_tirtos_ccs"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:collector_CC1352P_4_LAUNCHXL_tirtos_ccs}"/>
-<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.CC1352P1F3.ccxml.Texas Instruments XDS110 USB Debug Probe/Cortex_M4_0" value="/home/epc_4/workspace_v10/collector_CC1352P_4_LAUNCHXL_tirtos_ccs/Release/collector_CC1352P_4_LAUNCHXL_tirtos_ccs.out"/>
+<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.CC1352P1F3.ccxml.Texas Instruments XDS110 USB Debug Probe/Cortex_M4_0" value="/home/epc_4/workspace/ticode/dev/collector_CC1352P_4_LAUNCHXL_tirtos_ccs/Release/collector_CC1352P_4_LAUNCHXL_tirtos_ccs.out"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
 <listEntry value="/collector_CC1352P_4_LAUNCHXL_tirtos_ccs"/>
 </listAttribute>
