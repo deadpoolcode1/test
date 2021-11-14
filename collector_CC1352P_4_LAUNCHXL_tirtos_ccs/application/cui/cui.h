@@ -753,6 +753,7 @@ typedef struct {
 typedef struct {
     uint32_t arg0;
     uint32_t arg1;
+    char*    arg3;
 } CUI_cliArgs_t;
 
 typedef void (*CUI_pFnClientMenuUpdate_t)(void);
@@ -842,6 +843,12 @@ CUI_retVal_t CUI_addEventOpenfn(CUI_pFnCli_t pFevo);
 CUI_retVal_t CUI_addEventClosefn(CUI_pFnCli_t pFevc);
 
 CUI_retVal_t CUI_addGetEventfn(CUI_pFnCli_t pFevn);
+
+CUI_retVal_t CUI_addFpgaOpenfn(CUI_pFnCli_t pFevn);
+
+CUI_retVal_t CUI_addFpgaWritefn(CUI_pFnCli_t pFevn);
+
+CUI_retVal_t CUI_addFpgaClosefn(CUI_pFnCli_t pFevn);
 
 CUI_retVal_t CUI_startREAD();
 

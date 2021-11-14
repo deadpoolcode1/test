@@ -19,7 +19,7 @@ typedef struct {
 } CRS_params_t;
 
 typedef struct {
-    char clientName[MAX_CLIENT_NAME_LEN];
+    char clientName[20];
     uint8_t maxStatusLines;
 } CRS_clientParams_t;
 

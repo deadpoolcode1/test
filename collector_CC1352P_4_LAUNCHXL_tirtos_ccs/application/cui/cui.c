@@ -129,13 +129,21 @@
 #define CLI_FORM_NWK "form nwk"
 #define CLI_OPEN_NWK "open nwk"
 #define CLI_CLOSE_NWK "close nwk"
+
 #define CLI_SEND_PING "send ping"
 #define CLI_LIST_SENSORS "list sensors"
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
+
 #define CLI_CRS_EV_OPEN "evopen"
 #define CLI_CRS_EV_CLOSE "evclose"
 #define CLI_CRS_EV_GET_EV "evnext"
+
+#define CLI_CRS_FPGA_OPEN "fpga open"
+#define CLI_CRS_FPGA_CLOSE "fpga close"
+#define CLI_CRS_FPGA_WRITE "fpga write"
+
+
 
 
 
@@ -172,6 +180,9 @@ typedef enum
     CLI_CRS_EV_OPEN_IDX,
     CLI_CRS_EV_GET_EV_IDX,
     CLI_CRS_EV_CLIENT_CLOSE_IDX,
+    CLI_CRS_FPGA_OPEN_IDX,
+    CLI_CRS_FPGA_CLOSE_IDX,
+    CLI_CRS_FPGA_WRITE_IDX,
 } CUI_cliArrayIndx_t;
 
 typedef enum
@@ -678,6 +689,26 @@ CUI_retVal_t CUI_addGetEventfn(CUI_pFnCli_t pFevn)
         return CUI_SUCCESS;
 }
 
+CUI_retVal_t CUI_addFpgaOpenfn(CUI_pFnCli_t pFevn)
+{
+    gCliFnArray[CLI_CRS_FPGA_OPEN_IDX] = pFevn;
+        return CUI_SUCCESS;
+}
+
+CUI_retVal_t CUI_addFpgaWritefn(CUI_pFnCli_t pFevn)
+{
+    gCliFnArray[CLI_CRS_FPGA_WRITE_IDX] = pFevn;
+        return CUI_SUCCESS;
+}
+CUI_retVal_t CUI_addFpgaClosefn(CUI_pFnCli_t pFevn)
+{
+    gCliFnArray[CLI_CRS_FPGA_CLOSE_IDX] = pFevn;
+        return CUI_SUCCESS;
+}
+//CLI_CRS_FPGA_OPEN_IDX,
+//    CLI_CRS_FPGA_CLOSE_IDX,
+//    CLI_CRS_FPGA_WRITE_IDX,
+
 
 
 CUI_retVal_t CUI_processMenuUpdate(void)
@@ -699,41 +730,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
     bool inputBad = true;
 
-//    if (input != '\r')
-//    {
-//        //memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
-//        if (input == '\b')
-//        {
-//                   if (gUartTxBufferIdx-1)
-//                   {
-//                       //need to conncatinate all of the strings to one.
-//                       gUartTxBufferIdx--;
-//                       gUartTxBuffer[gUartTxBufferIdx] = '\0';
-//
-//                       gUartTxBuffer[gUartTxBufferIdx-1] = input;
-//                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
-//                       CUI_writeString(" ", 1);
-//                       CUI_writeString(&gUartTxBuffer[gUartTxBufferIdx-1], 1);
-//                       gUartTxBuffer[gUartTxBufferIdx-1] = '\0';
-//
-//                   }
-//
-//                   gUartTxBufferIdx--;
-//
-//                   UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-//                   return CUI_SUCCESS;
-//        }
-//
-////        if (memcmp(gUartTxBuffer, CUI_ESC_UP, sizeof(CUI_ESC_UP)) == 0)
-////                   {
-////                       input = CUI_INPUT_UP;
-////                   }
-//        CUI_writeString(&input, 1);
-//
-//        UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-//        return CUI_SUCCESS;
-//
-//    }
+
 
     bool is_async_command = false;
     uint32_t mysize = sizeof(CLI_CRS_EV_OPEN);
@@ -869,7 +866,48 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
                   }
 
+      if (memcmp(CLI_CRS_FPGA_OPEN, gUartTxBuffer, sizeof(CLI_CRS_FPGA_OPEN) - 1) == 0)
+      {
+          //uint32_t shortAddr = CUI_convertStrUint(char *st)
+                              uint32_t shortAddr = CUI_convertStrUint(&(gUartTxBuffer[sizeof(CLI_CRS_FPGA_OPEN) + 2]));
 
+                              CUI_cliArgs_t cliArgs;
+                              cliArgs.arg0 = shortAddr;
+
+                              (gCliFnArray[CLI_CRS_FPGA_OPEN_IDX])(cliArgs);
+                              inputBad = false;
+      }
+
+      if (memcmp(CLI_CRS_FPGA_WRITE, gUartTxBuffer, sizeof(CLI_CRS_FPGA_WRITE) - 1) == 0)
+            {
+                                         const char s[2] = " ";
+                                         char *token;
+                                         char tmpBuff[CUI_NUM_UART_CHARS] = {0};
+
+                                         CUI_cliArgs_t cliArgs;
+                                         memcpy(tmpBuff, gUartTxBuffer, CUI_NUM_UART_CHARS);
+                                         /* get the first token */
+                                         token = strtok(&(tmpBuff[sizeof(CLI_CRS_FPGA_WRITE)]), s);
+                                         //token = strtok(NULL, s);
+
+                                         cliArgs.arg0  = CUI_convertStrUint(&(token[2]));
+
+                                         //token = strtok(NULL, s);
+
+                          cliArgs.arg3= CUI_convertStrUint(&(gUartTxBuffer[sizeof(CLI_CRS_FPGA_WRITE) + 1 + strlen(token) + 1]));
+
+                                         (gCliFnArray[CLI_CRS_EV_CLIENT_CLOSE_IDX])(cliArgs);
+                                         inputBad = false;
+            }
+
+      if (memcmp(CLI_CRS_FPGA_CLOSE, gUartTxBuffer, sizeof(CLI_CRS_FPGA_CLOSE) - 1) == 0)
+            {
+
+            }
+
+#define CLI_CRS_FPGA_OPEN "fpga open"
+#define CLI_CRS_FPGA_CLOSE "fpga close"
+#define CLI_CRS_FPGA_WRITE "fpga write"
 //    if (strcmp("set pan id", gUartTxBuffer) == 0)
 //        {
 //            (gCliFnArray[CLI_SETPANID_IDX])(0);
@@ -938,7 +976,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
     }
     CUI_writeString(cliPrompt, sizeof(cliPrompt));
-    memset(gUartTxBuffer, gUartRxBuffer, 1);
+    //memset(gUartTxBuffer, gUartRxBuffer, 1);
 
     UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
     return CUI_SUCCESS;
