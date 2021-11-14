@@ -11,8 +11,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+CRS_retVal_t  Fpga_init();
+CRS_retVal_t Fpga_wrCommand(void * _buffer, size_t _size);
+CRS_retVal_t Fpga_rdCommand(void * _buffer, size_t _size);
 
-//CUI_retVal_t Fpga_writeString(void * _buffer, size_t _size);
 
 
 
