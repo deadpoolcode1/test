@@ -13,6 +13,7 @@
 #include "crs_events.h"
 
 CRS_retVal_t  Fpga_init();
+CRS_retVal_t  Fpga_close();
 CRS_retVal_t Fpga_wrCommand(void * _buffer, size_t _size, char* res);
 CRS_retVal_t Fpga_rdCommand(void * _buffer, size_t _size, char* res);
 

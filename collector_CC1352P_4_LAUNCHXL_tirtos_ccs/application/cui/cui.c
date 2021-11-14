@@ -894,9 +894,9 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
                                          //token = strtok(NULL, s);
 
-                          cliArgs.arg3= CUI_convertStrUint(&(gUartTxBuffer[sizeof(CLI_CRS_FPGA_WRITE) + 1 + strlen(token) + 1]));
+                          cliArgs.arg3= &(gUartTxBuffer[sizeof(CLI_CRS_FPGA_WRITE) + 7]);
 
-                                         (gCliFnArray[CLI_CRS_EV_CLIENT_CLOSE_IDX])(cliArgs);
+                                         (gCliFnArray[CLI_CRS_FPGA_WRITE_IDX])(cliArgs);
                                          inputBad = false;
             }
 
@@ -905,9 +905,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
             }
 
-#define CLI_CRS_FPGA_OPEN "fpga open"
-#define CLI_CRS_FPGA_CLOSE "fpga close"
-#define CLI_CRS_FPGA_WRITE "fpga write"
+
 //    if (strcmp("set pan id", gUartTxBuffer) == 0)
 //        {
 //            (gCliFnArray[CLI_SETPANID_IDX])(0);

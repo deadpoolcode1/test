@@ -84,6 +84,7 @@
 #include "csf.h"
 #include "ti_154stack_config.h"
 #include "crs_events.h"
+#include "crs_fpga.h"
 
 
 #if defined(MT_CSF)
@@ -355,6 +356,10 @@ static void openCrsClientAction(const CUI_cliArgs_t _cliArgs);
 static void closeCrsClientAction(const CUI_cliArgs_t _cliArgs);
 static void getCrsEventAction(const CUI_cliArgs_t _cliArgs);
 
+static void openFpgaAction(const CUI_cliArgs_t _cliArgs);
+static void writeFpgaAction(const CUI_cliArgs_t _cliArgs);
+static void closeFpgaAction(const CUI_cliArgs_t _cliArgs);
+
 static void getDeviceListAction(const CUI_cliArgs_t _cliArgs);
 
 static void sensorSelectAction(const char _input, char* _pLines[3], CUI_cursorInfo_t* _pCurInfo);
@@ -589,6 +594,10 @@ void Csf_init(void *sem)
     CUI_addEventOpenfn(openCrsClientAction);
     CUI_addEventClosefn(closeCrsClientAction);
     CUI_addGetEventfn(getCrsEventAction);
+
+    CUI_addFpgaOpenfn(openFpgaAction);
+    CUI_addFpgaWritefn(writeFpgaAction);
+    CUI_addFpgaClosefn(closeFpgaAction);
 
     CUI_statusLineResourceRequest(csfCuiHndl, "Status", false, &collectorStatusLine);
 #ifdef IEEE_COEX_METRICS
@@ -3888,6 +3897,15 @@ static void openCrsClientAction(const CUI_cliArgs_t _cliArgs)
 }
 static void closeCrsClientAction(const CUI_cliArgs_t _cliArgs)
 {
+
+        uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != _cliArgs.arg0)
+            {
+                CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+
+                return;
+            }
     CRS_retVal_t retStatus = Crs_clientClose(_cliArgs.arg1);
     if (retStatus != CRS_SUCCESS)
                  {
@@ -3930,6 +3948,114 @@ static void getCrsEventAction(const CUI_cliArgs_t _cliArgs)
 
     Csf_free(retData);
     return;
+
+}
+
+static void closeFpgaAction(const CUI_cliArgs_t _cliArgs)
+{
+
+        uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != _cliArgs.arg0)
+            {
+                CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+
+                return;
+            }
+    CRS_retVal_t retStatus = Fpga_close();
+    if (retStatus != CRS_SUCCESS)
+                 {
+
+                     CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+                     return;
+                 }
+    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+
+}
+
+static void openFpgaAction(const CUI_cliArgs_t _cliArgs)
+{
+
+        uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != _cliArgs.arg0)
+            {
+                CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+
+                return;
+            }
+    CRS_retVal_t retStatus = Fpga_init();
+    if (retStatus != CRS_SUCCESS)
+                 {
+
+                     CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+                     return;
+                 }
+    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+
+}
+
+
+static void writeFpgaAction(const CUI_cliArgs_t _cliArgs)
+{
+        uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != _cliArgs.arg0)
+            {
+                CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+
+                return;
+            }
+
+    CRS_retVal_t retStatus = CRS_FAILURE;
+
+    int counter = 0;
+    char retStr[20];
+    char *st = _cliArgs.arg3;
+    while (*st)
+    {
+        counter++;
+        if (counter > 50)
+        {
+            return CRS_FAILURE;
+        }
+        st++;
+    }
+
+    if (_cliArgs.arg3[0] == 'r' && _cliArgs.arg3[1] == 'd')
+    {
+        retStatus = Fpga_rdCommand(_cliArgs.arg3, counter, retStr);
+        if (retStatus != CRS_SUCCESS)
+        {
+
+            CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+            return;
+         }
+
+        CUI_cliPrintf(0, "\r\n0x%x", retStr);
+        return;
+
+
+    }
+
+    if (_cliArgs.arg3[0] == 'w' && _cliArgs.arg3[1] == 'r')
+        {
+            retStatus = Fpga_wrCommand(_cliArgs.arg3, counter, retStr);
+            if (retStatus != CRS_SUCCESS)
+            {
+
+                CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+                return;
+             }
+
+        }
+
+    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+
+    return;
+
+
+
 
 }
 

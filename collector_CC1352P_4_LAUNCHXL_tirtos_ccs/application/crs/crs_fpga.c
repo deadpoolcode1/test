@@ -64,7 +64,22 @@ CRS_retVal_t  Fpga_init()
 
 
       }
+    return CRS_SUCCESS;
+
 }
+
+CRS_retVal_t  Fpga_close()
+{
+    if (gUartHandle == NULL)
+        {
+            return CRS_SUCCESS;
+        }
+
+    UART_close(gUartHandle);
+    return CRS_SUCCESS;
+
+}
+
 
 CRS_retVal_t Fpga_wrCommand(void * _buffer, size_t _size, char* res)
 {
@@ -79,11 +94,22 @@ CRS_retVal_t Fpga_wrCommand(void * _buffer, size_t _size, char* res)
 
     }
     gIsDoneReading = false;
+    return CRS_SUCCESS;
+
 
 
 }
 
-CRS_retVal_t Fpga_rdCommand(void * _buffer, size_t _size, char* res);
+CRS_retVal_t Fpga_rdCommand(void * _buffer, size_t _size, char* res)
+{
+    if (_buffer == NULL || _size == 0 || gUartHandle == NULL)
+        {
+            return CRS_FAILURE;
+        }
+    return CRS_SUCCESS;
+
+
+}
 
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
@@ -98,14 +124,11 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
           if (gUartTxBufferIdx <= 7)
           {
               UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-              return CRS_SUCCESS;
           }
-
-          if (memcmp(gUartTxBuffer[gUartTxBufferIdx- 1 - 7], "AP>", sizeof("AP>")) == 0)
+          else if (memcmp(&gUartTxBuffer[gUartTxBufferIdx- sizeof("AP>")], "AP>", sizeof("AP>")) == 0)
           {
               gIsDoneReading = true;
               UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-              return CRS_SUCCESS;
           }
 
     }
