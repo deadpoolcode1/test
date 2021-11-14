@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 
+//CUI_retVal_t Fpga_writeString(void * _buffer, size_t _size);
 
 
 

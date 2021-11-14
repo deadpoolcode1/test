@@ -3888,7 +3888,7 @@ static void openCrsClientAction(const CUI_cliArgs_t _cliArgs)
 }
 static void closeCrsClientAction(const CUI_cliArgs_t _cliArgs)
 {
-    CRS_retVal_t retStatus = Crs_clientClose(_cliArgs.arg0);
+    CRS_retVal_t retStatus = Crs_clientClose(_cliArgs.arg1);
     if (retStatus != CRS_SUCCESS)
                  {
 

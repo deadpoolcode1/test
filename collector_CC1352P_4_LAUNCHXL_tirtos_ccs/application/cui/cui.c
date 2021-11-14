@@ -849,11 +849,24 @@ CUI_retVal_t CUI_processMenuUpdate(void)
                   }
       if (memcmp(CLI_CRS_EV_CLOSE, gUartTxBuffer, sizeof(CLI_CRS_EV_CLOSE) - 1) == 0)
                   {
-                      uint32_t handle = CUI_convertStrUint(&(gUartTxBuffer[sizeof(CLI_CRS_EV_CLOSE) +2]));
-                      CUI_cliArgs_t cliArgs;
-                      cliArgs.arg0 = handle;
-                      (gCliFnArray[CLI_CRS_EV_CLIENT_CLOSE_IDX])(cliArgs);
-                      inputBad = false;
+
+                                const char s[2] = " ";
+                                char *token;
+                                CUI_cliArgs_t cliArgs;
+
+                                /* get the first token */
+                                token = strtok(gUartTxBuffer, s);
+                                token = strtok(NULL, s);
+
+                                cliArgs.arg0  = CUI_convertStrUint(&(token[2]));
+
+                                token = strtok(NULL, s);
+
+                                cliArgs.arg1= CUI_convertStrUint(&(token[2]));
+
+                                (gCliFnArray[CLI_CRS_EV_CLIENT_CLOSE_IDX])(cliArgs);
+                                inputBad = false;
+
                   }
 
 
