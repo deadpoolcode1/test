@@ -359,6 +359,9 @@ static void getCrsEventAction(const CUI_cliArgs_t _cliArgs);
 static void openFpgaAction(const CUI_cliArgs_t _cliArgs);
 static void writeFpgaAction(const CUI_cliArgs_t _cliArgs);
 static void closeFpgaAction(const CUI_cliArgs_t _cliArgs);
+static void fpgaCliWriteCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCliReadCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCliOpenCallback(const FPGA_cbArgs_t _cbArgs);
 
 static void getDeviceListAction(const CUI_cliArgs_t _cliArgs);
 
@@ -3984,14 +3987,14 @@ static void openFpgaAction(const CUI_cliArgs_t _cliArgs)
 
                 return;
             }
-    CRS_retVal_t retStatus = Fpga_init();
-    if (retStatus != CRS_SUCCESS)
-                 {
-
-                     CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
-                     return;
-                 }
-    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+    CRS_retVal_t retStatus = Fpga_init(fpgaCliOpenCallback);
+//    if (retStatus != CRS_SUCCESS)
+//                 {
+//
+//                     CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+//                     return;
+//                 }
+//    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
 
 }
 
@@ -4021,18 +4024,18 @@ static void writeFpgaAction(const CUI_cliArgs_t _cliArgs)
         }
         st++;
     }
-
+    _cliArgs.arg3[counter] = '\r';
     if (_cliArgs.arg3[0] == 'r' && _cliArgs.arg3[1] == 'd')
     {
-        retStatus = Fpga_rdCommand(_cliArgs.arg3, counter, retStr);
-        if (retStatus != CRS_SUCCESS)
-        {
-
-            CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
-            return;
-         }
-
-        CUI_cliPrintf(0, "\r\n0x%x", retStr);
+        retStatus = Fpga_rdCommand(_cliArgs.arg3, counter+1, fpgaCliReadCallback);
+//        if (retStatus != CRS_SUCCESS)
+//        {
+//
+//            CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+//            return;
+//         }
+//
+//        CUI_cliPrintf(0, "\r\n0x%x", retStr);
         return;
 
 
@@ -4040,17 +4043,20 @@ static void writeFpgaAction(const CUI_cliArgs_t _cliArgs)
 
     if (_cliArgs.arg3[0] == 'w' && _cliArgs.arg3[1] == 'r')
         {
-            retStatus = Fpga_wrCommand(_cliArgs.arg3, counter, retStr);
-            if (retStatus != CRS_SUCCESS)
-            {
-
-                CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
-                return;
-             }
+            retStatus = Fpga_wrCommand(_cliArgs.arg3, counter+1, fpgaCliWriteCallback);
+//            if (retStatus != CRS_SUCCESS)
+//            {
+//
+//                CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+//                return;
+//             }
+            return;
 
         }
+                    CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_FAILURE);
 
-    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
+    CUI_startREAD();
+//    CUI_cliPrintf(0, "\r\nStatus: 0x%x", retStatus);
 
     return;
 
@@ -4058,6 +4064,67 @@ static void writeFpgaAction(const CUI_cliArgs_t _cliArgs)
 
 
 }
+
+static void fpgaCliWriteCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    char* st = _cbArgs.arg3;
+    if(_cbArgs.arg0 - _cbArgs.arg1 > 2)
+    {
+        CUI_cliPrintf(0, "\r\nStatus: 0x%x", 21);
+        CUI_startREAD();
+
+        return 0;
+    }
+
+    CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SUCCESS);
+            CUI_startREAD();
+
+                   return 0;
+
+
+
+
+
+
+}
+
+static void fpgaCliReadCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    char* st = _cbArgs.arg3;
+        if(_cbArgs.arg0 - _cbArgs.arg1 > 14)
+        {
+            CUI_cliPrintf(0, "\r\nStatus: 0x%x", 21);
+            CUI_startREAD();
+
+            return 0;
+        }
+
+        CUI_cliPrintf(0, st);
+                CUI_startREAD();
+
+                       return 0;
+}
+
+static void fpgaCliOpenCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    char* st = _cbArgs.arg3;
+    if (memcmp(&st[3], "ERROR Illegal Command", 21) == 0)
+    {
+        CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SUCCESS);
+        CUI_startREAD();
+        return 0;
+    }
+
+    if (memcmp(&st[2], "AP>", 3) == 0)
+    {
+        CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_SUCCESS);
+        CUI_startREAD();
+        return 0;
+    }
+    CUI_cliPrintf(0, "\r\nStatus: 0x%x", CRS_FAILURE);
+    CUI_startREAD();
+}
+
 
 
 #ifdef IEEE_COEX_METRICS

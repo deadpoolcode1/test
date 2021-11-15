@@ -19,7 +19,7 @@ const RTOS       = scripting.addModule("/ti/drivers/RTOS");
 const Timer      = scripting.addModule("/ti/drivers/Timer", {}, false);
 const Timer1     = Timer.addInstance();
 const UART       = scripting.addModule("/ti/drivers/UART", {}, false);
-const UART2      = UART.addInstance();
+const UART1      = UART.addInstance();
 const Button     = scripting.addModule("/ti/drivers/apps/Button");
 const Button1    = Button.addInstance();
 const Button2    = Button.addInstance();
@@ -58,11 +58,12 @@ Timer1.$name               = "CONFIG_TIMER_0";
 Timer1.timerType           = "32 Bits";
 Timer1.timerInstance.$name = "CONFIG_GPTIMER_0";
 
-UART2.$name               = "CONFIG_UART_1";
-UART2.uart.txPin.$assign  = "boosterpack.32";
-UART2.uart.rxPin.$assign  = "boosterpack.31";
-UART2.txPinInstance.$name = "CONFIG_PIN_0";
-UART2.rxPinInstance.$name = "CONFIG_PIN_1";
+UART1.$name               = "CONFIG_UART_1";
+UART1.uart.$assign        = "UART1";
+UART1.uart.txPin.$assign  = "boosterpack.32";
+UART1.uart.rxPin.$assign  = "boosterpack.31";
+UART1.txPinInstance.$name = "CONFIG_PIN_0";
+UART1.rxPinInstance.$name = "CONFIG_PIN_1";
 
 Button1.$hardware                 = system.deviceData.board.components["BTN-1"];
 Button1.$name                     = "CONFIG_BTN_LEFT";
@@ -95,14 +96,13 @@ ti154stack.ti154stackModule.$name             = "ti_ti154stack_ti154stack_config
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-Display1.uart.uart.$suggestSolution         = "UART1";
+Display1.uart.uart.$suggestSolution         = "UART0";
 Display1.uart.uart.txPin.$suggestSolution   = "boosterpack.4";
 Display1.uart.uart.rxPin.$suggestSolution   = "boosterpack.3";
 RF.rfAntennaPin0.$suggestSolution           = "41";
 RF.rfAntennaPin1.$suggestSolution           = "42";
 RF.rfAntennaPin2.$suggestSolution           = "43";
 Timer1.timerInstance.timer.$suggestSolution = "GPTM0";
-UART2.uart.$suggestSolution                 = "UART0";
 Button1.gpioPin.gpioPin.$suggestSolution    = "boosterpack.13";
 Button2.gpioPin.gpioPin.$suggestSolution    = "boosterpack.8";
 LED1.gpioPin.gpioPin.$suggestSolution       = "boosterpack.39";

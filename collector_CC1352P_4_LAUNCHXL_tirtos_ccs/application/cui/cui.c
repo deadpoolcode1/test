@@ -876,6 +876,8 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
                               (gCliFnArray[CLI_CRS_FPGA_OPEN_IDX])(cliArgs);
                               inputBad = false;
+                              is_async_command = true;
+
       }
 
       if (memcmp(CLI_CRS_FPGA_WRITE, gUartTxBuffer, sizeof(CLI_CRS_FPGA_WRITE) - 1) == 0)
@@ -897,6 +899,8 @@ CUI_retVal_t CUI_processMenuUpdate(void)
                           cliArgs.arg3= &(gUartTxBuffer[sizeof(CLI_CRS_FPGA_WRITE) + 7]);
 
                                          (gCliFnArray[CLI_CRS_FPGA_WRITE_IDX])(cliArgs);
+                                         is_async_command = true;
+
                                          inputBad = false;
             }
 
@@ -978,140 +982,16 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
     UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
     return CUI_SUCCESS;
-    //gUartTxBufferIdx
-//-----------------------------------------------------------------------------------------------------------
-//    // Decode special escape sequences
-//    if (input == CUI_INPUT_ESC)
-//    {
-//        /*
-//         * If the first character is CUI_INPUT_ESC, then look
-//         *  for the accepted sequences.
-//         */
-//        if (memcmp(gUartTxBuffer, CUI_ESC_UP, sizeof(CUI_ESC_UP)) == 0)
-//        {
-//            input = CUI_INPUT_UP;
-//        }
-//        else if (memcmp(gUartTxBuffer, CUI_ESC_DOWN, sizeof(CUI_ESC_DOWN)) == 0)
-//        {
-//            input = CUI_INPUT_DOWN;
-//        }
-//        else if (memcmp(gUartTxBuffer, CUI_ESC_RIGHT, sizeof(CUI_ESC_RIGHT)) == 0)
-//        {
-//            input = CUI_INPUT_RIGHT;
-//        }
-//        else if (memcmp(gUartTxBuffer, CUI_ESC_LEFT, sizeof(CUI_ESC_LEFT)) == 0)
-//        {
-//            input = CUI_INPUT_LEFT;
-//        }
-//        else if (memcmp(gUartTxBuffer, CUI_ESC_ESC, sizeof(gUartTxBuffer)))
-//        {
-//            // The rx buffer is full of junk. Let's ignore it just in case.
-//            inputBad = true;
-//        }
-//    }
-//
-//    if (!inputBad)
-//    {
-//        // If it is an upper case letter, convert to lowercase
-//        if (input >= 'A' && input <= 'Z')
-//        {
-//            input += 32; // converts any uppercase letter to a lowercase letter
-//        }
-//        else
-//        {
-//            /*
-//             * Assume that further input is intended to be handled by an
-//             * interceptable action
-//             */
-//        }
-//
-//        bool interceptState = pItemEntry->interceptActive;
-//        bool updateHandled = false;
-//
-//        /*
-//         *  Allow the interceptable action, if it is being shown, the chance to
-//         *  handle the uart input and display output if necessary.
-//         */
-//        if (pItemEntry->itemType == CUI_MENU_ITEM_TYPE_INTERCEPT)
-//        {
-//            updateHandled = CUI_handleMenuIntercept(pItemEntry, input);
-//        }
-//        else if (pItemEntry->itemType == CUI_MENU_ITEM_TYPE_LIST)
-//        {
-//            /*
-//             *  Allow the list action the chance to handle the uart input
-//             *  and display output if necessary.
-//             */
-//            updateHandled = CUI_handleMenuList(pItemEntry, input);
-//
-//            if (interceptState != pItemEntry->interceptActive)
-//            {
-//                /*
-//                 * If the interceptState has changed, it means the
-//                 * user has finished with the list.
-//                 */
-//                input = CUI_INPUT_ESC;
-//            }
-//        }
-//
-//        if (false == updateHandled)
-//        {
-//            switch(input)
-//            {
-//                // Up and Down have no effect on menu navigation
-//                case CUI_INPUT_UP:
-//                case CUI_INPUT_DOWN:
-//                    break;
-//                // Left and Right navigate within a menu
-//                case CUI_INPUT_RIGHT:
-//                case CUI_INPUT_LEFT:
-//                    CUI_menuActionNavigate(input);
-//                    break;
-//                case CUI_INPUT_EXECUTE:
-//                    CUI_menuActionExecute();
-//                    break;
-//                case CUI_INPUT_BACK:
-//                    // if there is a upper menu, navigate to it.
-//                    if (gpCurrMenu->pUpper)
-//                    {
-//                        gpCurrMenu = gpCurrMenu->pUpper;
-//                        gCurrMenuItemEntry = gPrevMenuItemEntry;
-//                    }
-//                    else
-//                    {
-//                        // We are already at the main menu.
-//                        // go back to the help screen
-//                        gCurrMenuItemEntry = gpCurrMenu->numItems - 1;
-//                    }
-//                    CUI_dispMenu(false);
-//                    break;
-//                case CUI_INPUT_ESC:
-//                    if (interceptState && !pItemEntry->interceptActive)
-//                    {
-//                        /*
-//                         * Nothing special to do here. Just display the
-//                         * menu item outside of intercept.
-//                         */
-//                    }
-//                    else
-//                    {
-//                        gpCurrMenu = gpMainMenu;
-//                        // Display the help screen
-//                        gCurrMenuItemEntry = gpMainMenu->numItems - 1;
-//                    }
-//                    CUI_dispMenu(false);
-//                    break;
-//                default :
-//                    break;
-//            }
-//        }
-//    }
-//
-//    //Clear the buffer
-//    memset(gUartTxBuffer, '\0', sizeof(gUartTxBuffer));
-//
-//    UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-//    return CUI_SUCCESS;
+
+}
+CUI_retVal_t CUI_startREAD()
+{
+    const char cliPrompt[] = "\r\nAP> ";
+
+    CUI_writeString(cliPrompt, sizeof(cliPrompt));
+     UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+     return CUI_SUCCESS;
+
 }
 
 #ifndef CUI_MIN_FOOTPRINT
@@ -1573,15 +1453,7 @@ CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pM
 
     return CUI_SUCCESS;
 }
-CUI_retVal_t CUI_startREAD()
-{
-    const char cliPrompt[] = "\r\nAP> ";
 
-    CUI_writeString(cliPrompt, sizeof(cliPrompt));
-     UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-     return CUI_SUCCESS;
-
-}
 /*********************************************************************
  * @fn          CUI_processMenuUpdate
  *
