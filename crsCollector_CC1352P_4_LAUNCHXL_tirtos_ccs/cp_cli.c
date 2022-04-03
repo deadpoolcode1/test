@@ -16,7 +16,7 @@
 
 
 #include "cp_cli.h"
-#include "mac\macTask.h"
+#include "mac/macTask.h"
 
 #define CUI_NUM_UART_CHARS 1024
 
@@ -235,7 +235,7 @@ void CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
-    RfEasyLink_sendPacket();
+//    RfEasyLink_sendPacket();
     CLI_startREAD();
 }
 

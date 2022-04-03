@@ -5,15 +5,27 @@
  *      Author: cellium
  */
 
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/knl/Semaphore.h>
+#include <ti/sysbios/BIOS.h>
+
 #include "macTask.h"
 #include "cp_cli.h"
 
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define MAC_TASK_STACK_SIZE    1024
 #define MAC_TASK_PRIORITY      2
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x00000001
+
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 
 Task_Struct macTask; /* not static so you can see in ROV */
 static Task_Params macTaskParams;
@@ -25,9 +37,12 @@ static Semaphore_Handle macSemHandle;
 /*! Storage for Events flags */
 uint32_t macEvents = 0;
 
-static void setEvents(uint32_t *eventVar, uint32_t *eventType);
-static void clearEvents(uint32_t *eventVar, uint32_t *eventType);
 
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
+static void setEvent(uint32_t *eventVar, uint32_t eventType);
+static void clearEvent(uint32_t *eventVar, uint32_t eventType);
 static void macFnx(UArg arg0, UArg arg1);
 
 void Mac_init()
@@ -56,7 +71,7 @@ static void macFnx(UArg arg0, UArg arg1)
         if (macEvents & MAC_TASK_CLI_UPDATE_EVT)
         {
             CLI_processCliUpdate();
-            clearEvents(&macEvents, MAC_TASK_CLI_UPDATE_EVT);
+            clearEvent(&macEvents, MAC_TASK_CLI_UPDATE_EVT);
         }
 
         Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER );
@@ -74,12 +89,12 @@ void Mac_cliUpdate()
 
 }
 
-static void setEvents(uint32_t *eventVar, uint32_t *eventType)
+static void setEvent(uint32_t *eventVar, uint32_t eventType)
 {
 
 }
 
-static void clearEvents(uint32_t *eventVar, uint32_t *eventType)
+static void clearEvent(uint32_t *eventVar, uint32_t eventType)
 {
 
 }
