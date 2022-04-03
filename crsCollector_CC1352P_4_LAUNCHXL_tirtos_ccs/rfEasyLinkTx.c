@@ -35,7 +35,6 @@
  */
  /* Standard C Libraries */
 #include <stdlib.h>
-
 /* XDCtools Header files */
 #include <xdc/std.h>
 #include <xdc/runtime/Assert.h>
@@ -59,6 +58,14 @@
 
 /* Application header files */
 #include <ti_radio_config.h>
+
+/* CRS protocol */
+#include "mac/macTask.h"
+#include "cp_cli.h"
+
+
+
+
 
 /* Undefine to not use async mode */
 #define RFEASYLINKTX_ASYNC
@@ -258,9 +265,9 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
-
-    txTask_init(pinHandle);
-
+    CLI_init();
+//    txTask_init(pinHandle);
+    Mac_init();
     /* Start BIOS */
     BIOS_start();
 
