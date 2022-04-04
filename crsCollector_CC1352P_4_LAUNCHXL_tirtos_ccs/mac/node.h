@@ -11,6 +11,7 @@
 #define MAC_SIZE 8
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef struct pendingPckts{
     uint32_t handle;
@@ -31,6 +32,7 @@ uint8_t mac[MAC_SIZE];
 //clock
 bool istimeout;
 uint32_t numRetry;
+bool isVacant;
 }Node_nodeInfo_t; //18 bytes in total
 
 
@@ -40,6 +42,8 @@ void Node_init();
 void Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
 
 void Node_updateNode(Node_nodeInfo_t* node);
+
+void Node_addNode(Node_nodeInfo_t* node);
 
 
 

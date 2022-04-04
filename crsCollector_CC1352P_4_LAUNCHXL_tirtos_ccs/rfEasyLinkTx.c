@@ -101,7 +101,7 @@ static Semaphore_Handle txDoneSem;
 #endif //RFEASYLINKTX_ASYNC
 
 #ifdef RFEASYLINKTX_ASYNC
-void txDoneCb(EasyLink_Status status)
+static void txDoneCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {

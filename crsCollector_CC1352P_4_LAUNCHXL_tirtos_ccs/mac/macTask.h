@@ -8,6 +8,17 @@
 #ifndef MAC_MACTASK_H_
 #define MAC_MACTASK_H_
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#define MAC_TASK_CLI_UPDATE_EVT 0x00000001
+#define MAC_TASK_TX_DONE_EVT 0x00000002
+#define MAC_TASK_MSG_RCV_EVT 0x00000004
+
+#define CRS_PAN_ID 0x11
+
 typedef enum
 {
   MAC_COMMAND_DATA,
@@ -24,6 +35,10 @@ typedef struct Frame
     MAC_commandId_t commandId;
     uint8_t isNeedAck;
 } MAC_crsPacket_t;
+
+
+extern uint16_t macEvents;
+
 
 void Mac_init();
 
