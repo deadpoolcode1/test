@@ -36,7 +36,7 @@
 //#define CLI_LIST_NODES "list nodes"
 
 #define CLI_ADD_COLLECTOR "add collector"
-#define CLI_LIST_COLLECTOR "list collector"
+#define CLI_LIST_COLLECTOR "show collector"
 
 
 //static void recivePacketCommand(char *line);
