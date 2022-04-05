@@ -13,12 +13,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAC_TASK_CLI_UPDATE_EVT 0x00000001
-#define MAC_TASK_TX_DONE_EVT 0x00000002
-#define MAC_TASK_MSG_RCV_EVT 0x00000004
+#include "cp_cli.h"
+
+#define MAC_TASK_CLI_UPDATE_EVT 0x0001
+#define MAC_TASK_TX_DONE_EVT 0x0002
+#define MAC_TASK_RX_DONE_EVT 0x0004
+#define MAC_TASK_NODE_TIMEOUT_EVT 0x0008
 
 #define CRS_PAN_ID 0x11
 
+#define CRS_PAYLOAD_MAX_SIZE 100
 typedef enum
 {
   MAC_COMMAND_DATA,
@@ -27,6 +31,7 @@ typedef enum
 
 typedef struct Frame
 {
+    //payload len
     uint16_t len;
     uint16_t seqSent;
     uint16_t seqRcv;
@@ -34,6 +39,7 @@ typedef struct Frame
     uint8_t dstAddr[8];
     MAC_commandId_t commandId;
     uint8_t isNeedAck;
+    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
 } MAC_crsPacket_t;
 
 

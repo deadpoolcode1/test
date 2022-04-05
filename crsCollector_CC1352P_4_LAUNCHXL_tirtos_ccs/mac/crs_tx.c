@@ -10,6 +10,7 @@
  *****************************************************************************/
 
 #include "crs_tx.h"
+#include <ti/sysbios/knl/Semaphore.h>
 
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
@@ -30,10 +31,16 @@ void* sem;
 
 static EasyLink_Status gStatus;
 
+//static EasyLink_TxDoneCb gCbTxFailed = NULL;
+//static EasyLink_TxDoneCb gCbCcaFailed = NULL;
+//static EasyLink_TxDoneCb gCbSuccess = NULL;
+
+static EasyLink_TxDoneCb gCbTx = NULL;
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-void txDoneCb(EasyLink_Status status);
+static void txDoneCb(EasyLink_Status status);
 
 
 
@@ -54,16 +61,36 @@ void TX_init(void * semaphore)
 //    uint8_t isNeedAck;
 //} MAC_crsPacket_t;
 
-void TX_sendPacket(MAC_crsPacket_t* pkt)
+//typedef struct
+//{
+//        uint8_t dstAddr[8];              //!<  Destination address
+//        uint32_t absTime;                //!< Absolute time to Tx packet (0 for immediate)
+//                                         //!< Layer will use last SeqNum used + 1
+//        uint8_t len;                     //!< Payload Length
+//        uint8_t payload[EASYLINK_MAX_DATA_LENGTH];       //!< Payload
+//} EasyLink_TxPacket;
+//void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTxFailed, EasyLink_TxDoneCb cbCcaFailed, EasyLink_TxDoneCb cbSuccess)
+
+void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 {
+//    gCbTxFailed = cbTxFailed;
+//    gCbCcaFailed = cbCcaFailed;
+//    gCbSuccess = cbSuccess;
+
+    if (cbTx != NULL)
+    {
+        gCbTx = cbTx;
+    }
+    else
+    {
+        gCbTx = txDoneCb;
+    }
     EasyLink_TxPacket txPacket = { { 0 }, 0, 0, { 0 } };
 
     uint8_t *pBuf = txPacket.payload;
     pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
-    pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
+    pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
 
-    pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
-    pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
 
     memcpy(pBuf, pkt->srcAddr, 8);
     pBuf = pBuf + 8;
@@ -75,77 +102,55 @@ void TX_sendPacket(MAC_crsPacket_t* pkt)
     pBuf++;
     *pBuf = (uint8_t) pkt->commandId;
 
-//    /* Create packet with incrementing sequence number and random payload */
-//    txPacket.payload[0] = (uint8_t) (seqNumber >> 8);
-//    txPacket.payload[1] = (uint8_t) (seqNumber++);
-//    uint8_t i;
-//    for (i = 2; i < RFEASYLINKTXPAYLOAD_LENGTH; i++)
-//    {
-//        txPacket.payload[i] = rand();
-//    }
+    pBuf++;
 
-    txPacket.len = pkt->len;
+    memcpy(pBuf, pkt->payload, pkt->len);
+
+
+    txPacket.len = (pBuf - txPacket.payload) + pkt->len;
 
     /*
      * Address filtering is enabled by default on the Rx device with the
      * an address of 0xAA. This device must set the dstAddr accordingly.
      */
-    txPacket.dstAddr[0] = CRS_PAN_ID;
+//    txPacket.dstAddr[0] = CRS_PAN_ID;
 
-    /* Add a Tx delay for > 500ms, so that the abort kicks in and brakes the burst */
-//    if (EasyLink_getAbsTime(&absTime) != EasyLink_Status_Success)
-//    {
-//        // Problem getting absolute time
-//    }
-//    if (txBurstSize++ >= RFEASYLINKTX_BURST_SIZE)
-//    {
-//        /* Set Tx absolute time to current time + 1s */
-//        txPacket.absTime = absTime + EasyLink_ms_To_RadioTime(1000);
-//        txBurstSize = 0;
-//    }
-//    /* Else set the next packet in burst to Tx in 100ms */
-//    else
-//    {
-//        /* Set Tx absolute time to current time + 100ms */
-//        txPacket.absTime = absTime + EasyLink_ms_To_RadioTime(100);
-//    }
-//
-//    EasyLink_transmitAsync(&txPacket, txDoneCb);
-//    /* Wait 300ms for Tx to complete */
-//    if (Semaphore_pend(txDoneSem, (300000 / Clock_tickPeriod)) == FALSE)
-//    {
-//        /* TX timed out, abort */
-//        if (EasyLink_abort() == EasyLink_Status_Success)
-//        {
-//            /*
-//             * Abort will cause the txDoneCb to be called and the txDoneSem
-//             * to be released, so we must consume the txDoneSem
-//             */
-//            Semaphore_pend(txDoneSem, BIOS_WAIT_FOREVER);
-//        }
-//    }
+//    txPacket.dstAddr[0] = 0xaa;
+
+
+    EasyLink_transmitAsync(&txPacket, gCbTx);
+
+
 }
 
-void txDoneCb(EasyLink_Status status)
+void TX_getPcktStatus(EasyLink_Status* status)
 {
+    *status = gStatus;
+}
+
+static void txDoneCb(EasyLink_Status status)
+{
+//    gCbTxFailed = cbTxFailed;
+//    gCbCcaFailed = cbCcaFailed;
+//    gCbSuccess = cbSuccess;
+    gStatus = status;
+
     if (status == EasyLink_Status_Success)
     {
-//        /* Toggle GLED to indicate TX */
-//        PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+//        gCbSuccess();
+
     }
     else if(status == EasyLink_Status_Aborted)
     {
-//        /* Toggle RLED to indicate command aborted */
-//        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
+//        gCbTxFailed();
+
     }
     else
     {
-//        /* Toggle GLED and RLED to indicate error */
-//        PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
-//        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
+//        gCbCcaFailed();
+
     }
 
-    gStatus = status;
     Util_setEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
     Semaphore_post(sem);
 }

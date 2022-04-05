@@ -19,6 +19,8 @@
 #include "cp_cli.h"
 #include "mac/macTask.h"
 #include "mac/node.h"
+#include "mac/crs_tx.h"
+#include "mac/crs_rx.h"
 
 #define CUI_NUM_UART_CHARS 1024
 
@@ -36,8 +38,8 @@
 
 
 
-//static void recivePacketCommand(char *line);
-//static void sendPacketCommand(char *line);
+static void recivePacketCommand(char *line);
+static void sendPacketCommand(char *line);
 //static void stopRecivePacketCommand(char *line);
 
 
@@ -148,7 +150,7 @@ static void defaultTestLog( const log_level level, const char* file, const int l
                     CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
                         break;
                 case CP_CLI_DEBUG:
-                   return;
+//                   return;
                    CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
                         break;
                 case CP_CLI_ERR:
@@ -218,23 +220,23 @@ void CLI_processCliUpdate()
 
 
 
-//    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
-//           {
-//
-//        sendPacketCommand(line);
-//
-//               inputBad = false;
-//
-//           }
-//
-//    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET)-1) == 0)
-//           {
-//
-//        recivePacketCommand(line);
-//
-//               inputBad = false;
-//
-//           }
+    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
+           {
+
+        sendPacketCommand(line);
+
+               inputBad = false;
+
+           }
+
+    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET)-1) == 0)
+           {
+
+        recivePacketCommand(line);
+
+               inputBad = false;
+
+           }
 //    if (memcmp(CLI_STOP_RECIVE_PACKET, line, sizeof(CLI_STOP_RECIVE_PACKET)-1) == 0)
 //              {
 //
@@ -314,18 +316,44 @@ static void addNodeCommand(char *line)
 
 
 
-//
-//static void sendPacketCommand(char *line)
-//{
-//    RfEasyLink_sendPacket();
-//}
-//
-//static void recivePacketCommand(char *line)
-//{
-//    RfEasyLink_recivePacket();
-//    CLI_startREAD();
-//
-//}
+
+static void sendPacketCommand(char *line)
+{
+    MAC_crsPacket_t pkt = {0};
+    pkt.commandId = MAC_COMMAND_DATA;
+
+    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00};
+    memcpy(pkt.dstAddr, tmp, 8);
+
+    uint8_t tmp2[8] = { 0xfc, 0x62, 0x4f, 0x41, 0xb4, 0x21, 0x00 };
+    memcpy(pkt.srcAddr, tmp2, 8);
+
+    pkt.seqSent = 10;
+    pkt.seqRcv = 50;
+
+    pkt.isNeedAck = 1;
+
+    int i = 0;
+
+    for (i = 0; i < 50; i++)
+    {
+        pkt.payload[i] = i;
+    }
+    pkt.len = 50;
+
+//     pkt.dstAddr
+
+    TX_sendPacket(&pkt, NULL);
+    CLI_startREAD();
+
+}
+
+static void recivePacketCommand(char *line)
+{
+//    RX_enterRx();
+    CLI_startREAD();
+
+}
 //static void stopRecivePacketCommand(char *line)
 //{
 //    RfEasyLink_stopRecivePacket();

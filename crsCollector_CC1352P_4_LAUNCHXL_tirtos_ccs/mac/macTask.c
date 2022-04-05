@@ -17,6 +17,9 @@
 #include "cp_cli.h"
 #include "mac_util.h"
 #include "node.h"
+#include "crs_tx.h"
+#include "crs_rx.h"
+
 
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
@@ -30,6 +33,26 @@
 /******************************************************************************
  Local variables
  *****************************************************************************/
+
+typedef enum
+{
+    SMAC_RX_IDLE,
+    SMAC_SEND_CONTENT,
+    SMAC_WAIT_CONTENT_ACK,
+    SMAC_WAIT_CONTENT,
+    SMAC_SEND_CONTENT_ACK,
+    SMAC_NOTIFY_FAIL,
+    SMAC_NOTIFY_SUCCESS,
+} Mac_smStateCodes_t;
+
+typedef void (*SmFunc)(void);
+
+typedef struct StateMachineAckContent
+{
+
+
+} Mac_smAckContent_t;
+
 
 Task_Struct macTask; /* not static so you can see in ROV */
 static Task_Params macTaskParams;
@@ -48,6 +71,20 @@ uint16_t macEvents = 0;
 
 static void macFnx(UArg arg0, UArg arg1);
 static void processTxDone();
+static void processRxDone();
+static void stateMachineAckContent(Mac_smStateCodes_t argStateCode);
+
+static void smacRxIdle();
+static void smacSendContent();
+static void smacWaitContentAck();
+static void smacWaitContent();
+static void smacSendContentAck();
+static void smacNotifyFail();
+static void smacNotifySuccess();
+
+SmFunc gSmFpArr[7] = { smacRxIdle, smacSendContent, smacWaitContentAck,
+                       smacWaitContent, smacSendContentAck, smacNotifyFail,
+                       smacNotifySuccess };
 
 
 void Mac_init()
@@ -62,6 +99,7 @@ void Mac_init()
     Task_construct(&macTask, macFnx, &macTaskParams, NULL);
 
 }
+
 static void macFnx(UArg arg0, UArg arg1)
 {
     Semaphore_Params semParam;
@@ -75,6 +113,8 @@ static void macFnx(UArg arg0, UArg arg1)
      EasyLink_Params easyLink_params;
      EasyLink_Params_init(&easyLink_params);
 
+     TX_init(macSemHandle);
+     RX_init(macSemHandle);
      /*
       * Initialize EasyLink with the settings found in ti_easylink_config.h
       * Modify EASYLINK_PARAM_CONFIG in ti_easylink_config.h to change the default
@@ -85,7 +125,8 @@ static void macFnx(UArg arg0, UArg arg1)
          System_abort("EasyLink_init failed");
      }
      CLI_startREAD();
-       Node_init();
+     Node_init(macSemHandle);
+
 
     while (1)
     {
@@ -102,10 +143,33 @@ static void macFnx(UArg arg0, UArg arg1)
             Util_clearEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
         }
 
+        if (macEvents & MAC_TASK_RX_DONE_EVT)
+        {
+            processRxDone();
+            Util_clearEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
+        }
+
+        if (macEvents & MAC_TASK_NODE_TIMEOUT_EVT)
+        {
+            CLI_cliPrintf("\r\nTimeout test");
+            Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
+        }
+
         if (macEvents == 0)
         {
             Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER );
         }
+
+    }
+}
+
+static void stateMachineAckContent(Mac_smStateCodes_t argStateCode)
+{
+    SmFunc stateFn;
+    Mac_smStateCodes_t stateCode = argStateCode;
+    while (1)
+    {
+        stateFn = gSmFpArr[stateCode];
 
     }
 }
@@ -125,5 +189,12 @@ static void processTxDone()
 {
 
 }
+
+static void processRxDone()
+{
+    MAC_crsPacket_t pkt;
+    RX_getPacket(&pkt);
+}
+
 
 
