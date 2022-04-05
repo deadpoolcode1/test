@@ -47,7 +47,7 @@ void CollectorLink_getCollector(Node_nodeInfo_t *rspNode)
 void CollectorLink_updateCollector(Node_nodeInfo_t *node)
 {
     memcpy(&gNodes[0], node, sizeof(Node_nodeInfo_t));
-
+    gNodes[0].isVacant=false;
 }
 
 void CollectorLink_printCollector()

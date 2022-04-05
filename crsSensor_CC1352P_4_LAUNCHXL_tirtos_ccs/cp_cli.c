@@ -18,6 +18,7 @@
 
 #include "cp_cli.h"
 #include "mac/macTask.h"
+#include "mac/collectorLink.h"
 //#include "mac/node.h"
 
 #define CUI_NUM_UART_CHARS 1024
@@ -31,9 +32,11 @@
 #define CLI_STOP_RECIVE_PACKET "stop"
 
 
-#define CLI_ADD_NODE "add node"
-#define CLI_LIST_NODES "list nodes"
+//#define CLI_ADD_NODE "add node"
+//#define CLI_LIST_NODES "list nodes"
 
+#define CLI_ADD_COLLECTOR "add collector"
+#define CLI_LIST_COLLECTOR "list collector"
 
 
 //static void recivePacketCommand(char *line);
@@ -197,25 +200,46 @@ void CLI_processCliUpdate()
 
        }
 
-        if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE)-1) == 0)
-               {
+//        if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE)-1) == 0)
+//               {
+//
+//            addNodeCommand(line);
+//
+//                   inputBad = false;
+//                   CLI_startREAD();
+//               }
+//
+//
+//        if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES)-1) == 0)
+//               {
+//
+////            Node_listNodes();
+////            CLI_cliPrintf("\r\nStatus:0x0");
+//                   inputBad = false;
+//                   CLI_startREAD();
+//               }
 
-            addNodeCommand(line);
-
-                   inputBad = false;
-                   CLI_startREAD();
-               }
 
 
-        if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES)-1) == 0)
-               {
 
-//            Node_listNodes();
-//            CLI_cliPrintf("\r\nStatus:0x0");
-                   inputBad = false;
-                   CLI_startREAD();
-               }
+    if (memcmp(CLI_ADD_COLLECTOR, line, sizeof(CLI_ADD_COLLECTOR)-1) == 0)
+           {
 
+        addNodeCommand(line);
+
+               inputBad = false;
+               CLI_startREAD();
+           }
+
+
+    if (memcmp(CLI_LIST_COLLECTOR, line, sizeof(CLI_LIST_COLLECTOR)-1) == 0)
+           {
+
+       CollectorLink_printCollector();
+        CLI_cliPrintf("\r\nStatus:0x0");
+               inputBad = false;
+               CLI_startREAD();
+           }
 
 
 //    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
@@ -268,44 +292,49 @@ static void debugCli(char *line)
 {
 //    RfEasyLink_sendPacket();
 
-//    Node_init();
-//    Node_nodeInfo_t rspNode;
-//    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
-//    Node_getNode(mac, &rspNode);
-//    CLI_startREAD();
+        Node_nodeInfo_t node;
+        uint8_t mac[8]={0xa,0xa,0xa,0xa,0xa,0xa,0xa,0xa};
+        memcpy(node.mac,mac,8);
+        CollectorLink_updateCollector(&node);
+        CollectorLink_printCollector();
+        CollectorLink_setTimeout((Clock_FuncPtr)funcTest,110000/Clock_tickPeriod);
+        CollectorLink_startTimer();
+            CLI_startREAD();
 }
 
 
 static void addNodeCommand(char *line)
 {
-//    Node_nodeInfo_t node={0};
-//    uint8_t mac[MAC_SIZE]={0};
-//    char tempBuff[TMP_BUFF_SZIE]={0};
-//    memcpy(tempBuff,line,strlen(line));
-//    const char s[2] = " ";
-//       char *token;
-//       /* get the first token */
-//       token = strtok(tempBuff, s);//add
-//       token = strtok(NULL, s);//node
-//       token = strtok(NULL, s);//macAddr
-//       if (strlen(token)<(MAC_SIZE+2)) {
-//           CLI_cliPrintf("\r\nStatus:0x1");
-//           return;
-//    }
-//       char tmpMacStrAddr[MAC_SIZE]={0};
-//       memcpy(tmpMacStrAddr,&token[2],MAC_SIZE);
-//       int i=0;
-//       char* ptr=tmpMacStrAddr;
-//       char tmp[2]={0};
-//       //0xaa aa aa aa
-//       for (i = 0; i <MAC_SIZE; i++) {
-//           *tmp=*ptr;
-//           node.mac[i]=(uint8_t) strtoul(tmp, NULL, 16);
-//           ptr++;
-//    }
-//
+    Node_nodeInfo_t node={0};
+    uint8_t mac[MAC_SIZE]={0};
+    char tempBuff[TMP_BUFF_SZIE]={0};
+    memcpy(tempBuff,line,strlen(line));
+    const char s[2] = " ";
+       char *token;
+       /* get the first token */
+       token = strtok(tempBuff, s);//add
+       token = strtok(NULL, s);//node
+       token = strtok(NULL, s);//macAddr
+       if (strlen(token)!=(MAC_SIZE+2)) {
+           CLI_cliPrintf("\r\nStatus:0x1");
+           return;
+    }
+       char tmpMacStrAddr[MAC_SIZE]={0};
+       memcpy(tmpMacStrAddr,&token[2],MAC_SIZE);
+       int i=0;
+       char* ptr=tmpMacStrAddr;
+       char tmp[2]={0};
+       //0xaa aa aa aa
+       for (i = 0; i <MAC_SIZE; i++) {
+           *tmp=*ptr;
+           node.mac[i]=(uint8_t) strtoul(tmp, NULL, 16);
+           ptr++;
+    }
+
 //       Node_addNode(&node);
-//       CLI_cliPrintf("\r\nStatus:0x0");
+       CollectorLink_updateCollector(&node);
+
+       CLI_cliPrintf("\r\nStatus:0x0");
 
 
 

@@ -290,7 +290,7 @@ static void addNodeCommand(char *line)
        token = strtok(tempBuff, s);//add
        token = strtok(NULL, s);//node
        token = strtok(NULL, s);//macAddr
-       if (strlen(token)<(MAC_SIZE+2)) {
+       if (strlen(token)!=(MAC_SIZE+2)) {
            CLI_cliPrintf("\r\nStatus:0x1");
            return;
     }
