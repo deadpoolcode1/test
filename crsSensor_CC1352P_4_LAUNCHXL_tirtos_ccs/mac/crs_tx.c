@@ -17,7 +17,6 @@
 #include "mac/mac_util.h"
 
 
-
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -76,8 +75,6 @@ void TX_sendPacket(MAC_crsPacket_t* pkt,uint8_t dstMac[8], EasyLink_TxDoneCb cbT
 //    gCbTxFailed = cbTxFailed;
 //    gCbCcaFailed = cbCcaFailed;
 //    gCbSuccess = cbSuccess;
-
-
 
     if (cbTx != NULL)
     {
@@ -164,4 +161,12 @@ static void txDoneCb(EasyLink_Status status)
 
     Util_setEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
     Semaphore_post(sem);
+}
+
+
+
+void txDoneCbAckListen(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
+        RX_enterRx(tmp, rxDoneCbAckReceived);
+          Semaphore_post(sem);
 }

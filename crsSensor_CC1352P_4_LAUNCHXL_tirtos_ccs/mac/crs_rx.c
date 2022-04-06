@@ -123,3 +123,51 @@ static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
     Semaphore_post(sem);
 
 }
+
+
+ void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//    if (status == EasyLink_Status_Success)
+//    {
+//    }
+//    else if(status == EasyLink_Status_Aborted)
+//    {
+////        gCbRxFailed();
+//    }
+//    else
+//    {
+////        /* Toggle GLED and RLED to indicate error */
+//    }
+    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
+        gStatus = status;
+
+        MAC_crsPacket_t pkt = {0};
+        uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
+        pkt.commandId=MAC_COMMAND_ACK;
+        TX_sendPacket(&pkt, tmp,NULL);
+        Util_setEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
+        Semaphore_post(sem);
+}
+
+
+
+
+ void rxDoneCbAckReceived(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//    if (status == EasyLink_Status_Success)
+//    {
+//    }
+//    else if(status == EasyLink_Status_Aborted)
+//    {
+////        gCbRxFailed();
+//    }
+//    else
+//    {
+////        /* Toggle GLED and RLED to indicate error */
+//    }
+    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
+        gStatus = status;
+        MAC_crsPacket_t* ptr=rxPacket->payload;
+//        if (ptr->commandId==MAC_COMMAND_ACK) {
+            Util_setEvent(&macEvents, MAC_TASK_ACK_RECEIVED);
+//        }
+        Semaphore_post(sem);
+}

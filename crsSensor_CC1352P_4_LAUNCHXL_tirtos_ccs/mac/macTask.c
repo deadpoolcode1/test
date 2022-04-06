@@ -64,7 +64,6 @@ static Semaphore_Handle macSemHandle;
 /*! Storage for Events flags */
 uint16_t macEvents = 0;
 
-
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -81,6 +80,8 @@ static void smacWaitContent();
 static void smacSendContentAck();
 static void smacNotifyFail();
 static void smacNotifySuccess();
+
+
 
 SmFunc gSmFpArr[7] = { smacRxIdle, smacSendContent, smacWaitContentAck,
                        smacWaitContent, smacSendContentAck, smacNotifyFail,
@@ -149,6 +150,12 @@ static void macFnx(UArg arg0, UArg arg1)
             processRxDone();
             Util_clearEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
         }
+        if (macEvents & MAC_TASK_ACK_RECEIVED)
+              {
+                  CLI_cliPrintf("\r\nreceived ack");
+                  processRxDone();
+                  Util_clearEvent(&macEvents, MAC_TASK_ACK_RECEIVED);
+              }
 
         if (macEvents & MAC_TASK_NODE_TIMEOUT_EVT)
         {
@@ -196,6 +203,4 @@ static void processRxDone()
     MAC_crsPacket_t pkt;
     RX_getPacket(&pkt);
 }
-
-
 

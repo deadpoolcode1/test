@@ -72,6 +72,10 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 #define TMP_BUFF_SZIE 512
 
 
+
+
+
+
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
 
@@ -96,6 +100,8 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void recivePacketCommand(char *line);
 static void sendPacketCommand(char *line);
 static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
+static void txDoneCbAckReceive(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
+static void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
 CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
 
 
@@ -680,7 +686,7 @@ static void sendPacketCommand(char *line)
 
 //     pkt.dstAddr
 
-    TX_sendPacket(&pkt, tmp,NULL);
+    TX_sendPacket(&pkt, tmp,txDoneCbAckListen);
     CLI_startREAD();
 
 }
@@ -689,29 +695,8 @@ static void sendPacketCommand(char *line)
 static void recivePacketCommand(char *line)
 {
     uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
-    RX_enterRx(tmp, NULL);
+    RX_enterRx(tmp, rxDoneCbAckSend);
     CLI_startREAD();
 
 }
 
-
-
-static void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
-//    if (status == EasyLink_Status_Success)
-//    {
-//    }
-//    else if(status == EasyLink_Status_Aborted)
-//    {
-////        gCbRxFailed();
-//    }
-//    else
-//    {
-////        /* Toggle GLED and RLED to indicate error */
-//    }
-//    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
-//        gStatus = status;
-//
-//        MAC_crsPacket_t pkt = {0};
-//
-//        Semaphore_post(sem);
-}

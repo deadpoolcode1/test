@@ -15,5 +15,6 @@ void RX_init(void * semaphore);
 void RX_enterRx(uint8_t dstMac[8],EasyLink_ReceiveCb cbRx);
 void RX_getPacket(MAC_crsPacket_t* pkt);
 void RX_getPcktStatus(EasyLink_Status* status);
-
+void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
+void rxDoneCbAckReceived(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
 #endif /* MAC_CRS_RX_H_ */
