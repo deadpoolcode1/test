@@ -145,6 +145,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
         if (macEvents & MAC_TASK_RX_DONE_EVT)
         {
+            CLI_cliPrintf("\r\nreceived packet");
             processRxDone();
             Util_clearEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
         }

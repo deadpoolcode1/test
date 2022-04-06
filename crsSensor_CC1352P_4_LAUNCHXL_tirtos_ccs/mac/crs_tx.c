@@ -71,11 +71,13 @@ void TX_init(void * semaphore)
 //} EasyLink_TxPacket;
 //void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTxFailed, EasyLink_TxDoneCb cbCcaFailed, EasyLink_TxDoneCb cbSuccess)
 
-void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
+void TX_sendPacket(MAC_crsPacket_t* pkt,uint8_t dstMac[8], EasyLink_TxDoneCb cbTx)
 {
 //    gCbTxFailed = cbTxFailed;
 //    gCbCcaFailed = cbCcaFailed;
 //    gCbSuccess = cbSuccess;
+
+
 
     if (cbTx != NULL)
     {
@@ -108,7 +110,16 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 
 
     txPacket.len = (pBuf - txPacket.payload) + pkt->len;
-
+    if (dstMac == NULL)
+    {
+//        uint8_t tmpMac[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+//        //when the addrTable is NULL it disables addrFiltering and accepts packets from everyone
+//        memcpy(txPacket.dstAddr, dstMac, 8);
+    }
+    else
+    {
+        memcpy(txPacket.dstAddr, dstMac, 8);
+    }
     /*
      * Address filtering is enabled by default on the Rx device with the
      * an address of 0xAA. This device must set the dstAddr accordingly.

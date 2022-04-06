@@ -44,8 +44,14 @@ void RX_init(void * semaphore)
     sem = semaphore;
 }
 
-void RX_enterRx(EasyLink_ReceiveCb cbRx)
+void RX_enterRx(uint8_t dstMac[8],EasyLink_ReceiveCb cbRx)
 {
+    if (dstMac==NULL) {
+        //when the addrTable is NULL it disables addrFiltering and accepts packets from everyone
+        EasyLink_enableRxAddrFilter(NULL,8,1);
+    }else{
+        EasyLink_enableRxAddrFilter(dstMac,8,1);
+    }
     if (cbRx == NULL)
     {
         gCbRx = rxDoneCb;

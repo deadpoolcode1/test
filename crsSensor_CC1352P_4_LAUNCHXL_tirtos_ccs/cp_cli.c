@@ -5,6 +5,16 @@
  *      Author: epc_4
  */
 
+/*
+ * sensor pesudo code:
+ * start with cli recv-enterRx with sepcial cb that will send ack, using txsendpckat which uses a speical cb that enterRx(this cb will simply send ack if it has the same seq number) and start timer that wait 5 seconds, in the timer cb rasie event of ready_content and in the while loop in if of ready_content abortRx and send random content, and in the cb of content_send enterRx to wait for ack from collector and this rxcb will be rxIdle
+ *
+ *
+ *
+ *
+ */
+
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -19,6 +29,9 @@
 #include "cp_cli.h"
 #include "mac/macTask.h"
 #include "mac/collectorLink.h"
+#include "mac/crs_rx.h"
+#include "mac/crs_tx.h"
+
 //#include "mac/node.h"
 
 #define CUI_NUM_UART_CHARS 1024
@@ -80,7 +93,8 @@ static bool gIsNewCommand = true;
 static void CLI_writeString(void *_buffer, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
-
+static void recivePacketCommand(char *line);
+static void sendPacketCommand(char *line);
 static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
 CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
 
@@ -242,23 +256,25 @@ void CLI_processCliUpdate()
            }
 
 
-//    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
-//           {
-//
-//        sendPacketCommand(line);
-//
-//               inputBad = false;
-//
-//           }
-//
-//    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET)-1) == 0)
-//           {
-//
-//        recivePacketCommand(line);
-//
-//               inputBad = false;
-//
-//           }
+    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
+           {
+
+        sendPacketCommand(line);
+
+               inputBad = false;
+               CLI_cliPrintf("\r\nStatus:0x0");
+
+           }
+
+    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET)-1) == 0)
+           {
+
+        recivePacketCommand(line);
+
+               inputBad = false;
+               CLI_cliPrintf("\r\nStatus:0x0");
+
+           }
 //    if (memcmp(CLI_STOP_RECIVE_PACKET, line, sizeof(CLI_STOP_RECIVE_PACKET)-1) == 0)
 //              {
 //
@@ -637,3 +653,65 @@ static void CLI_writeString(void *_buffer, size_t _size)
     return ;
 }
 
+
+static void sendPacketCommand(char *line)
+{
+    MAC_crsPacket_t pkt = {0};
+    pkt.commandId = MAC_COMMAND_DATA;
+
+    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
+    memcpy(pkt.dstAddr, tmp, 8);
+
+    uint8_t tmp2[8] = { 0xfc, 0x62, 0x4f, 0x41, 0xb4, 0x21, 0x00 };
+    memcpy(pkt.srcAddr, tmp2, 8);
+
+    pkt.seqSent = 10;
+    pkt.seqRcv = 50;
+
+    pkt.isNeedAck = 1;
+
+    int i = 0;
+
+    for (i = 0; i < 50; i++)
+    {
+        pkt.payload[i] = i;
+    }
+    pkt.len = 50;
+
+//     pkt.dstAddr
+
+    TX_sendPacket(&pkt, tmp,NULL);
+    CLI_startREAD();
+
+}
+
+
+static void recivePacketCommand(char *line)
+{
+    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
+    RX_enterRx(tmp, NULL);
+    CLI_startREAD();
+
+}
+
+
+
+static void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//    if (status == EasyLink_Status_Success)
+//    {
+//    }
+//    else if(status == EasyLink_Status_Aborted)
+//    {
+////        gCbRxFailed();
+//    }
+//    else
+//    {
+////        /* Toggle GLED and RLED to indicate error */
+//    }
+//    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
+//        gStatus = status;
+//
+//        MAC_crsPacket_t pkt = {0};
+//
+//        Semaphore_post(sem);
+}
