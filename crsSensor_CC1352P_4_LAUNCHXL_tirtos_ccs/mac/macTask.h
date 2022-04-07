@@ -54,6 +54,6 @@ void Mac_init();
 void Mac_cliUpdate();
 void Mac_cliReceivePacket();
 
-
+void printSensorStateMachine();
 
 #endif /* MAC_MACTASK_H_ */

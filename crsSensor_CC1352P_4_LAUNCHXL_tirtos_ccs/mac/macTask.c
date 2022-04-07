@@ -38,12 +38,12 @@ static Clock_Struct gclkMacTaskTimerStruct;
 typedef enum
 {
     SMAC_RX_IDLE,
-    SMAC_SEND_CONTENT,
-    SMAC_WAIT_CONTENT_ACK,
-    SMAC_WAIT_CONTENT,
-    SMAC_SEND_CONTENT_ACK,
-    SMAC_NOTIFY_FAIL,
-    SMAC_NOTIFY_SUCCESS,
+    SMAC_RECIEVE_CONTENT,
+    SMAC_SENDING_CONTENT,
+    SMAC_FINISHED_SENDING_ACK,
+    SMAC_FINISHED_SENDING_CONTENT,
+    SMAC_RECIEVED_ACK_ON_CONTENT,
+    SMAC_ERROR
 } Mac_smStateCodes_t;
 
 typedef void (*SmFunc)(void);
@@ -59,6 +59,8 @@ static uint8_t macTaskStack[MAC_TASK_STACK_SIZE];
 
 Semaphore_Struct macSem; /* not static so you can see in ROV */
 static Semaphore_Handle macSemHandle;
+static Mac_smStateCodes_t gSmacStateArray[100] = { 0 };
+static uint32_t gSmacStateArrayIdx = 0;
 
 /*! Storage for Events flags */
 uint16_t macEvents = 0;
@@ -233,8 +235,7 @@ void Mac_cliUpdate()
 
 void Mac_cliReceivePacket(uint8_t dstMac[8])
 {
-RX_enterRx(dstMac, recviedCollectorContentCb);
-
+    RX_enterRx(dstMac, recviedCollectorContentCb);
 
 }
 
@@ -253,6 +254,8 @@ static void processRxDone()
 static void recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status)
 {
+    gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVE_CONTENT;
+    gSmacStateArrayIdx++;
     if (status == EasyLink_Status_Success)
     {
 
@@ -278,6 +281,11 @@ static void recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
 //send ack with cb of 'finishedSendingAckCb'
         TX_sendPacket(&pkt, pkt.dstAddr, finishedSendingAckCb);
     }
+    else
+    {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+        gSmacStateArrayIdx++;
+    }
 }
 
 //rxdonecb of finishedSendingAckCb
@@ -286,6 +294,7 @@ static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
 {
     if (status == EasyLink_Status_Success)
     {
+
 //check seqRecived num- if it is the smaller by 1 from the seqSent in the struct of CollectorLink_collectorLinkInfo_t then:
         //send ack from  Node_pendingPckts_t strcut in the field 'content'
         CollectorLink_collectorLinkInfo_t collectorLink;
@@ -298,6 +307,11 @@ static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
 
 //else- ???(shouldnt happen)
     }
+    else
+    {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+        gSmacStateArrayIdx++;
+    }
 }
 
 //txdonecb of sending ack
@@ -305,6 +319,8 @@ static void finishedSendingAckCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_ACK;
+        gSmacStateArrayIdx++;
 //start timer that process content, with cb 'processContentTimerCb' that raises event 'MAC_TASK_CONTENT_READY'
         Clock_setFunc(gclkMacTaskTimer, processContentTimerCb, NULL);
         Clock_start(gclkMacTaskTimer);
@@ -317,6 +333,11 @@ static void finishedSendingAckCb(EasyLink_Status status)
 //enterRx with cb of 'recviedCollectorContentAgainCb'
         RX_enterRx(collectorLink.mac, recviedCollectorContentAgainCb);
     }
+    else
+    {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+        gSmacStateArrayIdx++;
+    }
 }
 
 //txdonecb of sending content event
@@ -324,7 +345,8 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT;
+        gSmacStateArrayIdx++;
 //Increment the seqSent num in the CollectorLink_collectorLinkInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -336,6 +358,11 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
         Clock_setFunc(gclkMacTaskTimer, timeoutOnContentAckCb, NULL);
         Clock_start(gclkMacTaskTimer);
     }
+    else
+    {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+        gSmacStateArrayIdx++;
+    }
 }
 
 //rxdonecb after the sensor sent content, and is waiting for on ack from the collector on the content the sensor sent and now it received an ack
@@ -344,6 +371,8 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
 {
     if (status == EasyLink_Status_Success)
     {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_ACK_ON_CONTENT;
+        gSmacStateArrayIdx++;
 //Increment the seqRecevied num in the Node_nodeInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -353,6 +382,12 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
 //disable timer that would have timeout if no ack was received
         Clock_stop(gclkMacTaskTimer);
     }
+    else
+    {
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+        gSmacStateArrayIdx++;
+    }
+
 }
 //the sensor send content but didnt recieve ack-retry
 static void timeoutOnContentAckCb(EasyLink_RxPacket *rxPacket,
@@ -374,6 +409,9 @@ static void timeoutOnContentAckCb(EasyLink_RxPacket *rxPacket,
 //txdonecb of sending content event agin in event of ack timeout
 static void finishedSendingSensorContentAgainCb(EasyLink_Status status)
 {
+
+    gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+    gSmacStateArrayIdx++;
     if (status == EasyLink_Status_Success)
     {
 //enterRx with cb of 'recievedAckOnContentCb'
@@ -391,4 +429,43 @@ static void processContentTimerCb()
 {
     Util_setEvent(&macEvents, MAC_TASK_CONTENT_READY);
     Semaphore_post(macSemHandle);
+}
+
+void printSensorStateMachine()
+{
+
+    int i = 0;
+    for (i = 0; i < gSmacStateArrayIdx; ++i)
+    {
+        switch (gSmacStateArray[i])
+        {
+        case SMAC_RX_IDLE:
+            CLI_cliPrintf("\r\nSMAC_RX_IDLE");
+            break;
+        case SMAC_RECIEVE_CONTENT:
+            CLI_cliPrintf("\r\nSMAC_RECIEVE_CONTENT");
+            break;
+        case SMAC_SENDING_CONTENT:
+            CLI_cliPrintf("\r\nSMAC_SENDING_CONTENT");
+
+            break;
+        case SMAC_FINISHED_SENDING_ACK:
+            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_ACK");
+
+            break;
+        case SMAC_FINISHED_SENDING_CONTENT:
+            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT");
+
+            break;
+        case SMAC_RECIEVED_ACK_ON_CONTENT:
+            CLI_cliPrintf("\r\nSMAC_RECIEVED_ACK_ON_CONTENT");
+
+            break;
+        case SMAC_ERROR:
+            CLI_cliPrintf("\r\nSMAC_ERROR");
+            break;
+        default:
+            break;
+        }
+    }
 }

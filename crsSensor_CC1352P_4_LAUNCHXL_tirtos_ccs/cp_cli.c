@@ -312,15 +312,7 @@ void CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
-//    RfEasyLink_sendPacket();
-
-    CollectorLink_collectorLinkInfo_t node;
-        uint8_t mac[8]={0xa,0xa,0xa,0xa,0xa,0xa,0xa,0xa};
-        memcpy(node.mac,mac,8);
-        CollectorLink_updateCollector(&node);
-        CollectorLink_printCollector();
-        CollectorLink_setTimeout((Clock_FuncPtr)funcTest,110000/Clock_tickPeriod);
-        CollectorLink_startTimer();
+    printSensorStateMachine();
             CLI_startREAD();
 }
 
