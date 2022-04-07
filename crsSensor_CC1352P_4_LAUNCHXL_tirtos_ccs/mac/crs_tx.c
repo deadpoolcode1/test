@@ -136,6 +136,27 @@ void TX_getPcktStatus(EasyLink_Status* status)
     *status = gStatus;
 }
 
+void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
+{
+    pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
+    pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
+
+    memcpy(pBuf, pkt->srcAddr, 8);
+    pBuf = pBuf + 8;
+
+    memcpy(pBuf, pkt->dstAddr, 8);
+    pBuf = pBuf + 8;
+
+    *pBuf = (uint8_t) pkt->isNeedAck;
+    pBuf++;
+    *pBuf = (uint8_t) pkt->commandId;
+
+    pBuf++;
+
+    memcpy(pBuf, pkt->payload, pkt->len);
+}
+
+
 static void txDoneCb(EasyLink_Status status)
 {
 //    gCbTxFailed = cbTxFailed;

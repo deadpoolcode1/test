@@ -694,8 +694,9 @@ static void sendPacketCommand(char *line)
 
 static void recivePacketCommand(char *line)
 {
-    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
-    RX_enterRx(tmp, rxDoneCbAckSend);
+    uint8_t tmp[8] = {0xaa, 0xaa, 0xaa, 0xaa,0xaa,0xaa,0xaa,0xaa};
+//    RX_enterRx(tmp, rxDoneCbAckSend);
+    Mac_cliReceivePacket(tmp);
     CLI_startREAD();
 
 }
