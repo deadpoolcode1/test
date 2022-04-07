@@ -49,6 +49,7 @@ UART1.rxPinInstance.$name = "CONFIG_PIN_1";
 
 easylink.rfDesign          = "LAUNCHXL-CC1352P-4";
 easylink.configInSrfStudio = true;
+easylink.addrSize          = 8;
 
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future

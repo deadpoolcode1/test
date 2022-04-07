@@ -36,7 +36,7 @@
 
 #define CUI_NUM_UART_CHARS 1024
 
-#define CLI_PROMPT "\r\nCM> "
+#define CLI_PROMPT "\r\nSensor> "
 
 #define CLI_DEBUG "debug"
 
@@ -686,7 +686,7 @@ static void sendPacketCommand(char *line)
 
 static void recivePacketCommand(char *line)
 {
-    uint8_t tmp[8] = {0xaa, 0xaa, 0xaa, 0xaa,0xaa,0xaa,0xaa,0xaa};
+    uint8_t tmp[8] = {0xbb,0xbb,0xbb,0xbb,0xbb,0xbb,0xbb,0xbb};
 //    RX_enterRx(tmp, rxDoneCbAckSend);
     Mac_cliReceivePacket(tmp);
     CLI_startREAD();

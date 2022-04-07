@@ -20,7 +20,6 @@
 #include "crs_tx.h"
 #include "crs_rx.h"
 
-
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
 /******************************************************************************
@@ -28,7 +27,6 @@
  *****************************************************************************/
 #define MAC_TASK_STACK_SIZE    1024
 #define MAC_TASK_PRIORITY      2
-
 
 /******************************************************************************
  Local variables
@@ -53,12 +51,11 @@ typedef struct StateMachineAckContent
     uint8_t nodeMac[8];
     uint8_t contentRsp[256];
 
-
 } Mac_smAckContent_t;
 
-Mac_smAckContent_t gSmAckContentInfo = {0};
+Mac_smAckContent_t gSmAckContentInfo = { 0 };
 
-uint8_t gMacSrcAddr[8] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
+uint8_t gMacSrcAddr[8] = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
 
 Task_Struct macTask; /* not static so you can see in ROV */
 static Task_Params macTaskParams;
@@ -70,7 +67,6 @@ static Semaphore_Handle macSemHandle;
 /*! Storage for Events flags */
 uint16_t macEvents = 0;
 
-
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -80,20 +76,19 @@ static void processTxDone();
 static void processRxDone();
 static void stateMachineAckContent(Mac_smStateCodes_t argStateCode);
 
-
 static void smacSendContentAck(EasyLink_Status status);
 static void smacNotifyFail();
 
-
-static void ackTimeoutCb(void* arg);
-static void smacRecivedContentCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
-static void smacReceivedContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
+static void ackTimeoutCb(void *arg);
+static void smacRecivedContentCb(EasyLink_RxPacket *rxPacket,
+                                 EasyLink_Status status);
+static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
+                                     EasyLink_Status status);
 static void smacFinishedSendingContentCb(EasyLink_Status status);
 static void sendContent(uint8_t mac[8]);
 static void smacNotifySuccessCb(EasyLink_Status status);
 
 SmFunc gSmFpArr[7] = { 0 };
-
 
 void Mac_init()
 {
@@ -118,23 +113,26 @@ static void macFnx(UArg arg0, UArg arg1)
     macSemHandle = Semaphore_handle(&macSem);
 
     // Initialize the EasyLink parameters to their default values
-     EasyLink_Params easyLink_params;
-     EasyLink_Params_init(&easyLink_params);
+    EasyLink_Params easyLink_params;
+    EasyLink_Params_init(&easyLink_params);
 
-     TX_init(macSemHandle);
-     RX_init(macSemHandle);
-     /*
-      * Initialize EasyLink with the settings found in ti_easylink_config.h
-      * Modify EASYLINK_PARAM_CONFIG in ti_easylink_config.h to change the default
-      * PHY
-      */
-     if(EasyLink_init(&easyLink_params) != EasyLink_Status_Success)
-     {
-         System_abort("EasyLink_init failed");
-     }
-     CLI_startREAD();
-     Node_init(macSemHandle);
-
+    TX_init(macSemHandle);
+    RX_init(macSemHandle);
+    /*
+     * Initialize EasyLink with the settings found in ti_easylink_config.h
+     * Modify EASYLINK_PARAM_CONFIG in ti_easylink_config.h to change the default
+     * PHY
+     */
+    if (EasyLink_init(&easyLink_params) != EasyLink_Status_Success)
+    {
+        System_abort("EasyLink_init failed");
+    }
+    CLI_startREAD();
+    Node_init(macSemHandle);
+    Node_nodeInfo_t node = { 0 };
+    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
+    memcpy(node.mac, tmp, 8);
+    Node_addNode(&node);
 
     while (1)
     {
@@ -165,7 +163,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
         if (macEvents == 0)
         {
-            Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER );
+            Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER);
         }
 
     }
@@ -182,7 +180,6 @@ static void stateMachineAckContent(Mac_smStateCodes_t argStateCode)
     }
 }
 
-
 void Mac_cliUpdate()
 {
 
@@ -195,9 +192,15 @@ void Mac_cliUpdate()
 
 void Mac_cliSendContent(uint8_t mac[8])
 {
-
-    sendContent(mac);
-
+    if (mac == NULL)
+    {
+        uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
+        sendContent(tmp);
+    }
+    else
+    {
+        sendContent(mac);
+    }
 }
 
 static void processTxDone()
@@ -210,10 +213,6 @@ static void processRxDone()
     MAC_crsPacket_t pkt;
     RX_getPacket(&pkt);
 }
-
-
-
-
 
 static void sendContent(uint8_t mac[8])
 {
@@ -243,8 +242,7 @@ static void sendContent(uint8_t mac[8])
     }
     pkt.len = 50;
 
-
-    uint8_t pBuf[256] = {0};
+    uint8_t pBuf[256] = { 0 };
     TX_buildBufFromSrct(&pkt, pBuf);
 
     Node_pendingPckts_t pendingPacket = { 0 };
@@ -259,32 +257,31 @@ static void sendContent(uint8_t mac[8])
 //  MAC_COMMAND_ACK
 //} MAC_commandId_t;
 
-
 static void smacFinishedSendingContentCb(EasyLink_Status status)
 {
     //content sent so wait for ack
     if (status == EasyLink_Status_Success)
-     {
-        Node_nodeInfo_t node = {0};
+    {
+        Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
         Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend + 1);
         //10us per tick so for 5ms we need 500 ticks
-        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100*5*4);
-        RX_enterRx(smacReceivedContentAckCb, gSmAckContentInfo.nodeMac);
-     }
-     else if(status == EasyLink_Status_Aborted)
-     {
- //        gCbTxFailed();
+        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 5 * 4);
+        RX_enterRx(smacReceivedContentAckCb,gMacSrcAddr);
+    }
+    else if (status == EasyLink_Status_Aborted)
+    {
+        //        gCbTxFailed();
 
-     }
-     else
-     {
- //        gCbCcaFailed();
+    }
+    else
+    {
+        //        gCbCcaFailed();
 
-     }
+    }
 }
 
-static void ackTimeoutCb(void* arg)
+static void ackTimeoutCb(void *arg)
 {
     //abort the rx
     //send the content again from pending with cb of
@@ -303,8 +300,8 @@ static void ackTimeoutCb(void* arg)
 //    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
 //} MAC_crsPacket_t;
 
-
-static void smacReceivedContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
+static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
+                                     EasyLink_Status status)
 {
     //we either got the ack or we lost the ack and got the content
     Node_nodeInfo_t node = { 0 };
@@ -312,6 +309,7 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Stat
     //if ack arrived.
     if (status == EasyLink_Status_Success)
     {
+
         MAC_crsPacket_t pktReceived = { 0 };
         RX_buildStructPacket(&pktReceived, rxPacket->payload);
 
@@ -320,7 +318,7 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Stat
         {
             //TODO add to seq.
             Node_setSeqRcv(gSmAckContentInfo.nodeMac, node.seqRcv + 1);
-            RX_enterRx(smacRecivedContentCb, gSmAckContentInfo.nodeMac);
+            RX_enterRx(smacRecivedContentCb,gMacSrcAddr);
         }
         //we missed the ack and got the content. so only send ack on content
         else if (pktReceived.commandId == MAC_COMMAND_DATA
@@ -363,9 +361,8 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Stat
     }
 }
 
-
-
-static void smacRecivedContentCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
+static void smacRecivedContentCb(EasyLink_RxPacket *rxPacket,
+                                 EasyLink_Status status)
 {
     Node_nodeInfo_t node = { 0 };
     Node_getNode(gSmAckContentInfo.nodeMac, &node);
@@ -401,5 +398,4 @@ static void smacNotifySuccessCb(EasyLink_Status status)
 {
 
 }
-
 

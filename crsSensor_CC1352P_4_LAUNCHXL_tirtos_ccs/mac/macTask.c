@@ -116,7 +116,7 @@ void Mac_init()
     gclkMacTaskTimerParams.period = 0;
     gclkMacTaskTimerParams.startFlag = FALSE;
     /*   Construct a one-shot Clock Instance*/
-    Clock_construct(&gclkMacTaskTimerStruct, NULL, 11000000 / Clock_tickPeriod,
+    Clock_construct(&gclkMacTaskTimerStruct, NULL, 1100000 / Clock_tickPeriod,
                     &gclkMacTaskTimerParams);
     gclkMacTaskTimer = Clock_handle(&gclkMacTaskTimerStruct);
 }
@@ -148,7 +148,7 @@ static void macFnx(UArg arg0, UArg arg1)
     CLI_startREAD();
     CollectorLink_init(macSemHandle);
     CollectorLink_collectorLinkInfo_t collector;
-    uint8_t mac[8] = { 0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00 };
+    uint8_t mac[8] = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
     memcpy(collector.mac, mac, 8);
     CollectorLink_updateCollector(&collector);
 
@@ -198,9 +198,17 @@ static void macFnx(UArg arg0, UArg arg1)
             {
                 pkt.payload[i] = rand();
             }
+            CollectorLink_collectorLinkInfo_t collectorLink;
+            CollectorLink_getCollector(&collectorLink);
             pkt.commandId = MAC_COMMAND_DATA;
-            uint8_t tmp[8] = { 0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00 };
-            TX_sendPacket(&pkt, tmp, finishedSendingSensorContentCb);
+            pkt.seqSent = collectorLink.seqSend;
+            pkt.seqRcv = collectorLink.seqRcv;
+            pkt.isNeedAck = 1;
+            memcpy(pkt.dstAddr, collectorLink.mac, 8);
+            memcpy(pkt.srcAddr, gMacSrcAddr, 8);
+            pkt.len = 50;
+            EasyLink_abort();
+            TX_sendPacket(&pkt, collectorLink.mac, finishedSendingSensorContentCb);
             Util_clearEvent(&macEvents, MAC_TASK_CONTENT_READY);
         }
 
@@ -258,7 +266,6 @@ static void recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
     gSmacStateArrayIdx++;
     if (status == EasyLink_Status_Success)
     {
-
 //check EasyLink_Status for success
 //Increment the seqRecevied num in the CollectorLink_collectorLinkInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
@@ -279,7 +286,7 @@ static void recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
         memcpy(collectorLink.pendingPacket.content, pBuf, MAX_BYTES_PAYLOAD); //check what to copy exactly
         CollectorLink_updateCollector(&collectorLink);
 //send ack with cb of 'finishedSendingAckCb'
-        TX_sendPacket(&pkt, pkt.dstAddr, finishedSendingAckCb);
+        TX_sendPacket(&pkt, collectorLink.mac, finishedSendingAckCb);
     }
     else
     {
@@ -355,8 +362,8 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
 //enterRx with cb of 'recievedAckOnContentCb'
         RX_enterRx(collectorLink.mac, recievedAckOnContentCb);
 //start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
-        Clock_setFunc(gclkMacTaskTimer, timeoutOnContentAckCb, NULL);
-        Clock_start(gclkMacTaskTimer);
+//        Clock_setFunc(gclkMacTaskTimer, timeoutOnContentAckCb, NULL);
+//        Clock_start(gclkMacTaskTimer);
     }
     else
     {

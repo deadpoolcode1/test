@@ -24,7 +24,7 @@
 
 #define CUI_NUM_UART_CHARS 1024
 
-#define CLI_PROMPT "\r\nCM> "
+#define CLI_PROMPT "\r\nCollector> "
 
 #define CLI_DEBUG "debug"
 
@@ -281,29 +281,29 @@ static void addNodeCommand(char *line)
 
 static void sendPacketCommand(char *line)
 {
-    Node_nodeInfo_t node = { 0 };
-    uint8_t mac[MAC_SIZE] = { 0 };
+//    Node_nodeInfo_t node = { 0 };
+//    uint8_t mac[MAC_SIZE] = { 0 };
+//
+//
+//    char tmpBuff[TMP_BUFF_SZIE] = { 0 };
+//    memcpy(tmpBuff, line, strlen(line));
+//    const char s[2] = " ";
+//    char *token;
+//    /* get the first token */
+//    token = strtok(&(tmpBuff[sizeof(CLI_SEND_PACKET)]), s);
+//
+//
+//    if (strlen(token) != (MAC_SIZE + 2))
+//    {
+//        CLI_cliPrintf("\r\nStatus:0x1");
+//            CLI_startREAD();
+//
+//        return;
+//    }
+//    char tmpMacStrAddr[MAC_SIZE] = { 0 };
+//    memcpy(tmpMacStrAddr, &token[2], MAC_SIZE);
 
-
-    char tmpBuff[TMP_BUFF_SZIE] = { 0 };
-    memcpy(tmpBuff, line, strlen(line));
-    const char s[2] = " ";
-    char *token;
-    /* get the first token */
-    token = strtok(&(tmpBuff[sizeof(CLI_SEND_PACKET)]), s);
-
-
-    if (strlen(token) != (MAC_SIZE + 2))
-    {
-        CLI_cliPrintf("\r\nStatus:0x1");
-            CLI_startREAD();
-
-        return;
-    }
-    char tmpMacStrAddr[MAC_SIZE] = { 0 };
-    memcpy(tmpMacStrAddr, &token[2], MAC_SIZE);
-
-    Mac_cliSendContent(tmpMacStrAddr);
+    Mac_cliSendContent(NULL);
     CLI_startREAD();
 
 
