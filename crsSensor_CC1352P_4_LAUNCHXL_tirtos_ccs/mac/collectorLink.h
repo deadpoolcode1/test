@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-
+#define MAX_BYTES_PAYLOAD 256
 typedef struct nodeClocks{
     uint8_t mac[MAC_SIZE];
     Clock_Struct clkStruct;
@@ -24,7 +24,7 @@ typedef struct nodeClocks{
 
 typedef struct pendingPckts{
     uint32_t handle;
-uint8_t *content;
+uint8_t content[MAX_BYTES_PAYLOAD];
 bool isAckRcv;
 bool isContentRcv;
 }Node_pendingPckts_t;

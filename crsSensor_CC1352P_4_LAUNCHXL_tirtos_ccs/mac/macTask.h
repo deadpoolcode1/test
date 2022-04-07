@@ -20,7 +20,7 @@
 #define MAC_TASK_RX_DONE_EVT 0x0004
 #define MAC_TASK_NODE_TIMEOUT_EVT 0x0008
 #define MAC_TASK_ACK_RECEIVED  0x0010
-//#define MAC_TASK_RX_ACK_SENT  0x0005
+#define MAC_TASK_CONTENT_READY  0x0020
 
 
 #define CRS_PAN_ID 0x11
@@ -52,7 +52,7 @@ extern uint16_t macEvents;
 void Mac_init();
 
 void Mac_cliUpdate();
-
+void Mac_cliReceivePacket();
 
 
 

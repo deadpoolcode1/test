@@ -17,4 +17,5 @@ void RX_getPacket(MAC_crsPacket_t* pkt);
 void RX_getPcktStatus(EasyLink_Status* status);
 void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
 void rxDoneCbAckReceived(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
+void contentProcessCb();
 #endif /* MAC_CRS_RX_H_ */

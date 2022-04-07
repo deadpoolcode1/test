@@ -72,7 +72,7 @@ static void macFnx(UArg arg0, UArg arg1);
 static void processTxDone();
 static void processRxDone();
 static void stateMachineAckContent(Mac_smStateCodes_t argStateCode);
-
+static void recviedContentCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
 static void smacRxIdle();
 static void smacSendContent();
 static void smacWaitContentAck();
@@ -163,6 +163,22 @@ static void macFnx(UArg arg0, UArg arg1)
             Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
         }
 
+
+        if (macEvents & MAC_TASK_CONTENT_READY)
+              {
+                  CLI_cliPrintf("\r\ncontent ready to send");
+                  MAC_crsPacket_t pkt = {0};
+                  int i;
+                  for (i = 0; i < 50; i++)
+                     {
+                         pkt.payload[i] = rand();
+                     }
+                  pkt.commandId=MAC_COMMAND_DATA;
+                  uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
+                  TX_sendPacket(&pkt, tmp,finishedSendingSensorContentCb);
+                  Util_clearEvent(&macEvents, MAC_TASK_CONTENT_READY);
+              }
+
         if (macEvents == 0)
         {
             Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER );
@@ -183,6 +199,7 @@ static void stateMachineAckContent(Mac_smStateCodes_t argStateCode)
 }
 
 
+
 void Mac_cliUpdate()
 {
 
@@ -190,6 +207,12 @@ void Mac_cliUpdate()
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(macSemHandle);
+
+}
+
+
+
+void Mac_cliReceivePacket(){
 
 }
 
@@ -204,3 +227,57 @@ static void processRxDone()
     RX_getPacket(&pkt);
 }
 
+
+//rxdonecb of waiting for content from the collector
+static void recviedCollectorContentCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//check EasyLink_Status for success
+//Increment the seqRecevied num in the Node_nodeInfo_t struct
+//Prepare an ack pkt(cmd id)
+//copy ack packet into Node_pendingPckts_t strcut in the field 'content'
+//send ack with cb of 'finishedSendingAckCb'
+
+
+}
+//rxdonecb of finishedSendingAckCb
+static void recviedCollectorContentAgainCb(EasyLink_RxPacket * rxPacket,EasyLink_Status status){
+//check seqRecived num- if it is the smaller by 1 from the seqSent in the struct of Node_nodeInfo_t then:
+//send ack from  Node_pendingPckts_t strcut in the field 'content'
+//else- ???(shouldnt happen)
+
+}
+
+
+//txdonecb of sending ack
+static void finishedSendingAckCb(EasyLink_Status status){
+//start timer that process content, with cb that raises event 'MAC_TASK_CONTENT_READY'
+//Increment the seqSent num in the collectorLink struct
+//enterRx with cb of 'recviedCollectorContentAgainCb'
+}
+
+//txdonecb of sending content event
+static void finishedSendingSensorContentCb(EasyLink_Status status){
+//Increment the seqSent num in the collectorLink struct
+//enterRx with cb of 'recievedAckOnContentCb'
+//start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
+
+}
+
+//rxdonecb after the sensor sent content, and is waiting for on ack from the collector on the content the sensor sent and now it received an ack
+static void recievedAckOnContentCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//Increment the seqRecevied num in the Node_nodeInfo_t struct
+//disable timer that would have timeout if no ack was received
+}
+//the sensor send content but didnt recieve ack-retry
+static void timeoutOnContentAckCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
+//send again from the struct Node_pendingPckts_t with txdonecb of 'finishedSendingSensorContentAgainCb'
+//start timer on waiting for ack with cb 'timeoutOnContentAckCb'
+
+}
+
+//txdonecb of sending content event agin in event of ack timeout
+static void finishedSendingSensorContentAgainCb(EasyLink_Status status){
+//enterRx with cb of 'recievedAckOnContentCb'
+//if retry<MAX_RETRY:
+//start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
+
+}
