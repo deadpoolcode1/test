@@ -24,7 +24,8 @@ typedef struct nodeClocks{
 
 typedef struct pendingPckts{
     uint32_t handle;
-uint8_t *content;
+uint8_t content[256];
+uint16_t contentLen;
 bool isAckRcv;
 bool isContentRcv;
 }Node_pendingPckts_t;
@@ -62,6 +63,8 @@ void Node_setNumRcvPackets(uint8_t mac[MAC_SIZE],uint32_t numRcvPackets);
 void Node_setNumSendPackets(uint8_t mac[MAC_SIZE],uint32_t numSendPackets);
 void Node_setSeqSend(uint8_t mac[MAC_SIZE],uint16_t seqSend);
 void Node_setSeqRcv(uint8_t mac[MAC_SIZE],uint16_t seqRcv);
+void Node_setPendingPckts(uint8_t mac[MAC_SIZE],Node_pendingPckts_t* pendingPacket);
+
 //void Node_setmac(uint8_t mac[MAC_SIZE],uint8_t mac[MAC_SIZE]);
 
 ////clock

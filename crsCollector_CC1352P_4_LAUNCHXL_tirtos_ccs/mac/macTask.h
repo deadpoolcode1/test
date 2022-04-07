@@ -15,6 +15,8 @@
 
 #include "cp_cli.h"
 
+
+
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
 #define MAC_TASK_TX_DONE_EVT 0x0002
 #define MAC_TASK_RX_DONE_EVT 0x0004
@@ -23,6 +25,7 @@
 #define CRS_PAN_ID 0x11
 
 #define CRS_PAYLOAD_MAX_SIZE 100
+
 typedef enum
 {
   MAC_COMMAND_DATA,
@@ -50,7 +53,7 @@ void Mac_init();
 
 void Mac_cliUpdate();
 
-
+void Mac_cliSendContent(uint8_t mac[8]);
 
 
 #endif /* MAC_MACTASK_H_ */

@@ -44,8 +44,17 @@ void RX_init(void * semaphore)
     sem = semaphore;
 }
 
-void RX_enterRx(EasyLink_ReceiveCb cbRx)
+void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
 {
+    if (dstAddr == NULL)
+    {
+        EasyLink_enableRxAddrFilter(NULL, 8, 1);
+    }
+    else
+    {
+        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
+
+    }
     if (cbRx == NULL)
     {
         gCbRx = rxDoneCb;
@@ -82,6 +91,30 @@ void RX_getPacket(MAC_crsPacket_t* pkt )
 
     pkt->commandId = (MAC_commandId_t)*pBuf;
 
+}
+
+void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
+{
+    uint8_t *pBuf = pcktBuff;
+    pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
+    pBuf++;
+    pBuf++;
+
+    pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
+    pBuf++;
+    pBuf++;
+
+    memcpy(pkt->srcAddr, pBuf, 8);
+    pBuf = pBuf + 8;
+
+    memcpy(pkt->dstAddr, pBuf, 8);
+    pBuf = pBuf + 8;
+
+    pkt->isNeedAck = *pBuf;
+
+    pBuf++;
+
+    pkt->commandId = (MAC_commandId_t) *pBuf;
 }
 
 void RX_getPcktStatus(EasyLink_Status* status)

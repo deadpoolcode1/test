@@ -131,45 +131,7 @@ void CLI_init()
     return;
 }
 
-static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
-{
-    if (strlen(format) >= 512)
-       {
-           return ;
-       }
-       char printBuff[512] = { 0 };
-       if (format == NULL)
-       {
-           return ;
-       }
-                va_list args;
 
-                switch( level )
-                {
-                case CP_CLI_INFO:
-                    CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_DEBUG:
-//                   return;
-                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_ERR:
-//                  return;
-
-                  CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_WARN:
-//                   return;
-
-                   CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
-                        break;
-                }
-
-                va_start(args, format);
-                SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
-                va_end(args);
-                CLI_cliPrintf(printBuff);
-}
 
 void CLI_processCliUpdate()
 {
@@ -319,38 +281,38 @@ static void addNodeCommand(char *line)
 
 static void sendPacketCommand(char *line)
 {
-    MAC_crsPacket_t pkt = {0};
-    pkt.commandId = MAC_COMMAND_DATA;
+    Node_nodeInfo_t node = { 0 };
+    uint8_t mac[MAC_SIZE] = { 0 };
 
-    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00};
-    memcpy(pkt.dstAddr, tmp, 8);
 
-    uint8_t tmp2[8] = { 0xfc, 0x62, 0x4f, 0x41, 0xb4, 0x21, 0x00 };
-    memcpy(pkt.srcAddr, tmp2, 8);
+    char tmpBuff[TMP_BUFF_SZIE] = { 0 };
+    memcpy(tmpBuff, line, strlen(line));
+    const char s[2] = " ";
+    char *token;
+    /* get the first token */
+    token = strtok(&(tmpBuff[sizeof(CLI_SEND_PACKET)]), s);
 
-    pkt.seqSent = 10;
-    pkt.seqRcv = 50;
 
-    pkt.isNeedAck = 1;
-
-    int i = 0;
-
-    for (i = 0; i < 50; i++)
+    if (strlen(token) != (MAC_SIZE + 2))
     {
-        pkt.payload[i] = i;
+        CLI_cliPrintf("\r\nStatus:0x1");
+            CLI_startREAD();
+
+        return;
     }
-    pkt.len = 50;
+    char tmpMacStrAddr[MAC_SIZE] = { 0 };
+    memcpy(tmpMacStrAddr, &token[2], MAC_SIZE);
 
-//     pkt.dstAddr
-
-    TX_sendPacket(&pkt, NULL);
+    Mac_cliSendContent(tmpMacStrAddr);
     CLI_startREAD();
+
+
 
 }
 
 static void recivePacketCommand(char *line)
 {
-//    RX_enterRx();
+    RX_enterRx(NULL, NULL);
     CLI_startREAD();
 
 }
@@ -634,5 +596,44 @@ static void CLI_writeString(void *_buffer, size_t _size)
     }
 
     return ;
+}
+static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
+{
+    if (strlen(format) >= 512)
+       {
+           return ;
+       }
+       char printBuff[512] = { 0 };
+       if (format == NULL)
+       {
+           return ;
+       }
+                va_list args;
+
+                switch( level )
+                {
+                case CP_CLI_INFO:
+                    CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_DEBUG:
+//                   return;
+                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_ERR:
+//                  return;
+
+                  CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_WARN:
+//                   return;
+
+                   CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
+                        break;
+                }
+
+                va_start(args, format);
+                SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
+                va_end(args);
+                CLI_cliPrintf(printBuff);
 }
 

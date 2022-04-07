@@ -108,7 +108,7 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 
 
     txPacket.len = (pBuf - txPacket.payload) + pkt->len;
-
+    memcpy(txPacket.dstAddr, pkt->dstAddr, 8);
     /*
      * Address filtering is enabled by default on the Rx device with the
      * an address of 0xAA. This device must set the dstAddr accordingly.
@@ -121,6 +121,61 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
     EasyLink_transmitAsync(&txPacket, gCbTx);
 
 
+}
+
+void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_TxDoneCb cbTx)
+{
+
+
+    if (cbTx != NULL)
+    {
+        gCbTx = cbTx;
+    }
+    else
+    {
+        gCbTx = txDoneCb;
+    }
+    EasyLink_TxPacket txPacket = { { 0 }, 0, 0, { 0 } };
+
+
+
+    memcpy(txPacket.payload, pBuf, len);
+
+    txPacket.len = len;
+    memcpy(txPacket.dstAddr, dstAddr, 8);
+    /*
+     * Address filtering is enabled by default on the Rx device with the
+     * an address of 0xAA. This device must set the dstAddr accordingly.
+     */
+//    txPacket.dstAddr[0] = CRS_PAN_ID;
+
+//    txPacket.dstAddr[0] = 0xaa;
+
+
+    EasyLink_transmitAsync(&txPacket, gCbTx);
+
+
+}
+
+
+void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
+{
+    pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
+    pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
+
+    memcpy(pBuf, pkt->srcAddr, 8);
+    pBuf = pBuf + 8;
+
+    memcpy(pBuf, pkt->dstAddr, 8);
+    pBuf = pBuf + 8;
+
+    *pBuf = (uint8_t) pkt->isNeedAck;
+    pBuf++;
+    *pBuf = (uint8_t) pkt->commandId;
+
+    pBuf++;
+
+    memcpy(pBuf, pkt->payload, pkt->len);
 }
 
 void TX_getPcktStatus(EasyLink_Status* status)

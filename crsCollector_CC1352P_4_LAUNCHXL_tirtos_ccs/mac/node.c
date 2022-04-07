@@ -203,6 +203,21 @@ void Node_setSeqRcv(uint8_t mac[MAC_SIZE], uint16_t seqRcv)
     }
 }
 
+void Node_setPendingPckts(uint8_t mac[MAC_SIZE],Node_pendingPckts_t* pendingPacket)
+{
+    int i = 0;
+    for (i = 0; i < NUM_NODES; ++i)
+    {
+        if (macCompare(gNodes[i].mac, mac))
+        {
+            memcpy(&(gNodes[i].pendingPacket), pendingPacket, sizeof(Node_pendingPckts_t));
+            return;
+        }
+
+    }
+}
+
+
 void funcTest()
 {
     Util_setEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
