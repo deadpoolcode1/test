@@ -146,7 +146,7 @@ static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
         pkt.commandId=MAC_COMMAND_ACK;
         TX_sendPacket(&pkt, tmp,NULL);
         Util_setEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
-        Node_nodeInfo_t collectorNode;
+        CollectorLink_collectorLinkInfo_t collectorNode;
         CollectorLink_getCollector(&collectorNode);
         CollectorLink_setTimeout((Clock_FuncPtr )contentProcessCb, 50000/ Clock_tickPeriod);
         CollectorLink_startTimer();

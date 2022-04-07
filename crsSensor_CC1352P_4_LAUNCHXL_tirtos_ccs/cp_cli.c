@@ -314,7 +314,7 @@ static void debugCli(char *line)
 {
 //    RfEasyLink_sendPacket();
 
-        Node_nodeInfo_t node;
+    CollectorLink_collectorLinkInfo_t node;
         uint8_t mac[8]={0xa,0xa,0xa,0xa,0xa,0xa,0xa,0xa};
         memcpy(node.mac,mac,8);
         CollectorLink_updateCollector(&node);
@@ -327,7 +327,7 @@ static void debugCli(char *line)
 
 static void addNodeCommand(char *line)
 {
-    Node_nodeInfo_t node={0};
+    CollectorLink_collectorLinkInfo_t node={0};
     uint8_t mac[MAC_SIZE]={0};
     char tempBuff[TMP_BUFF_SZIE]={0};
     memcpy(tempBuff,line,strlen(line));

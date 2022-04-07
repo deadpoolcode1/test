@@ -15,11 +15,11 @@
 #include <stdbool.h>
 #include <string.h>
 #define MAX_BYTES_PAYLOAD 256
-typedef struct nodeClocks{
+typedef struct collectorLinkClocks{
     uint8_t mac[MAC_SIZE];
     Clock_Struct clkStruct;
     Clock_Handle clkHandle;
-}Node_nodeClocks_t;
+}CollectorLink_CollectorLinkClocks_t;
 
 
 typedef struct pendingPckts{
@@ -27,12 +27,12 @@ typedef struct pendingPckts{
 uint8_t content[MAX_BYTES_PAYLOAD];
 bool isAckRcv;
 bool isContentRcv;
-}Node_pendingPckts_t;
+}CollectorLink_pendingPckts_t;
 
 
-typedef struct Node{
+typedef struct CollectorLink{
 
-Node_pendingPckts_t pendingPacket;
+CollectorLink_pendingPckts_t pendingPacket;
 uint32_t numRcvPackets;
 uint32_t numSendPackets;
 uint16_t seqSend;
@@ -42,15 +42,16 @@ uint8_t mac[MAC_SIZE];
 bool istimeout;
 uint32_t numRetry;
 bool isVacant;
-}Node_nodeInfo_t; //18 bytes in total
+}CollectorLink_collectorLinkInfo_t; //18 bytes in total
 
 
 
 void CollectorLink_init();
 
-void CollectorLink_getCollector(Node_nodeInfo_t *rspNode);
+void CollectorLink_getCollector(CollectorLink_collectorLinkInfo_t *rspNode);
 
-void CollectorLink_updateCollector(Node_nodeInfo_t* node);
+void CollectorLink_updateCollector(CollectorLink_collectorLinkInfo_t* node);
+
 
 void CollectorLink_printCollector();
 
