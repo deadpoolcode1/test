@@ -38,7 +38,7 @@ typedef enum
     SMAC_SENT_CONTENT,
     SMAC_RECIVED_CONTENT_ACK,
     SMAC_RECIVED_CONTENT,
-    SMAC_FINISHED_DENDING_CONTENT_ACK,
+    SMAC_FINISHED_SENDING_CONTENT_ACK,
     SMAC_NOTIFY_FAIL,
     SMAC_NOTIFY_SUCCESS,
     SMAC_ERROR
@@ -425,7 +425,7 @@ static void smacFinishedSendingContentAckCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_DENDING_CONTENT_ACK;
+        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT_ACK;
         gSmacStateArrayIdx++;
 
     }
@@ -474,8 +474,8 @@ void MAC_printSensorStateMachine()
             CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT");
 
             break;
-        case SMAC_FINISHED_DENDING_CONTENT_ACK:
-            CLI_cliPrintf("\r\nSMAC_FINISHED_DENDING_CONTENT_ACK");
+        case SMAC_FINISHED_SENDING_CONTENT_ACK:
+            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT_ACK");
 
             break;
 

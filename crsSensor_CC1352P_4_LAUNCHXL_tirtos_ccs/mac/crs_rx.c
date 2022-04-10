@@ -96,6 +96,31 @@ void RX_getPcktStatus(EasyLink_Status* status)
     *status = gStatus;
 }
 
+void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
+{
+    uint8_t *pBuf = pcktBuff;
+    pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
+    pBuf++;
+    pBuf++;
+
+    pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
+    pBuf++;
+    pBuf++;
+
+    memcpy(pkt->srcAddr, pBuf, 8);
+    pBuf = pBuf + 8;
+
+    memcpy(pkt->dstAddr, pBuf, 8);
+    pBuf = pBuf + 8;
+
+    pkt->isNeedAck = *pBuf;
+
+    pBuf++;
+
+    pkt->commandId = (MAC_commandId_t) *pBuf;
+}
+
+
 static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
 {
 //    gCbRxFailed = cbRxFailed;

@@ -306,7 +306,9 @@ static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
         //send ack from  Node_pendingPckts_t strcut in the field 'content'
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
-        if ((collectorLink.seqRcv - 1) < collectorLink.seqSend) //TODO FIX IT WITH RXPACKET
+        MAC_crsPacket_t pkt={0};
+        RX_buildStructPacket(&pkt, rxPacket->payload);
+        if ((collectorLink.seqRcv - 1) == pkt.seqSent) //TODO FIX IT WITH RXPACKET
         {
             TX_sendPacket(&collectorLink.pendingPacket.content,
                           collectorLink.mac, finishedSendingAckCb); //check which cb
