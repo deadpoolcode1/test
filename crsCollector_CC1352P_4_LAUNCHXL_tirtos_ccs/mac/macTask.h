@@ -52,6 +52,7 @@ extern uint16_t macEvents;
 void Mac_init();
 
 void Mac_cliUpdate();
+void MAC_printSensorStateMachine();
 
 void Mac_cliSendContent(uint8_t mac[8]);
 

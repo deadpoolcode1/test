@@ -147,7 +147,7 @@ static void macFnx(UArg arg0, UArg arg1)
     }
     CLI_startREAD();
     CollectorLink_init(macSemHandle);
-    CollectorLink_collectorLinkInfo_t collector;
+    CollectorLink_collectorLinkInfo_t collector = {0};
     uint8_t mac[8] = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
     memcpy(collector.mac, mac, 8);
     CollectorLink_updateCollector(&collector);
@@ -275,7 +275,7 @@ static void recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
         MAC_crsPacket_t pkt = { 0 };
         pkt.commandId = MAC_COMMAND_ACK;
         pkt.seqSent = collectorLink.seqSend;
-        pkt.seqRcv = collectorLink.seqRcv + 1;
+        pkt.seqRcv = collectorLink.seqRcv ;
         pkt.isNeedAck = 0;
         memcpy(pkt.dstAddr, collectorLink.mac, 8);
         memcpy(pkt.srcAddr, gMacSrcAddr, 8);
@@ -360,7 +360,7 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
         collectorLink.seqSend++;
         CollectorLink_updateCollector(&collectorLink);
 //enterRx with cb of 'recievedAckOnContentCb'
-        RX_enterRx(collectorLink.mac, recievedAckOnContentCb);
+        RX_enterRx(gMacSrcAddr, recievedAckOnContentCb);
 //start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
 //        Clock_setFunc(gclkMacTaskTimer, timeoutOnContentAckCb, NULL);
 //        Clock_start(gclkMacTaskTimer);
@@ -424,7 +424,7 @@ static void finishedSendingSensorContentAgainCb(EasyLink_Status status)
 //enterRx with cb of 'recievedAckOnContentCb'
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
-        RX_enterRx(collectorLink.mac, recievedAckOnContentCb);
+        RX_enterRx(gMacSrcAddr, recievedAckOnContentCb);
 //if retry<MAX_RETRY:
 //start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
         Clock_setFunc(gclkMacTaskTimer, timeoutOnContentAckCb, NULL);

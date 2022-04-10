@@ -11,7 +11,7 @@
 
 #define NUM_NODES 1
 
-static CollectorLink_collectorLinkInfo_t gNodes[NUM_NODES];
+static CollectorLink_collectorLinkInfo_t gNodes[NUM_NODES] = {0};
 static CollectorLink_CollectorLinkClocks_t gNodesClocks[NUM_NODES];
 static Clock_Params gClkParams;
 static void *sem;

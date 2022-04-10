@@ -123,6 +123,7 @@ void CLI_init()
         }
 
         gModuleInitialized = true;
+        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
 
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return;
@@ -231,11 +232,12 @@ void CLI_processCliUpdate()
 static void debugCli(char *line)
 {
 //    RfEasyLink_sendPacket();
+    MAC_printSensorStateMachine();
 
-    Node_init();
-    Node_nodeInfo_t rspNode;
-    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
-    Node_getNode(mac, &rspNode);
+//    Node_init();
+//    Node_nodeInfo_t rspNode;
+//    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
+//    Node_getNode(mac, &rspNode);
     CLI_startREAD();
 }
 

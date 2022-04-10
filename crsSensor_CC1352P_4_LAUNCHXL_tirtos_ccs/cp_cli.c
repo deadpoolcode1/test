@@ -145,7 +145,7 @@ void CLI_init()
 
         gModuleInitialized = true;
 
-//        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
+        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
         return;
     }
 

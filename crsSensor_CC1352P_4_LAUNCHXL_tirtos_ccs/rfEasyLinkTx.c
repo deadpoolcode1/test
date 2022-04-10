@@ -265,6 +265,9 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
+
+            PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+
     CLI_init();
 //    txTask_init(pinHandle);
     Mac_init();

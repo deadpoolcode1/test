@@ -23,7 +23,7 @@
 // RX Filter BW: 77.7 kHz
 // Symbol Rate: 50.00000 kBaud
 // Sync Word: 0x930b51de
-// Sync Word Length: 28 Bits
+// Sync Word Length: 32 Bits
 // TX Power: 13 dBm
 // Whitening: No whitening
 
@@ -39,7 +39,6 @@ RF_Mode RF_prop =
     .mcePatchFxn = 0,
     .rfePatchFxn = 0
 };
-
 
 // TX Power table
 // The RF_TxPowerTable_DEFAULT_PA_ENTRY and RF_TxPowerTable_HIGH_PA_ENTRY macro is defined in RF.h.
@@ -93,7 +92,7 @@ uint32_t pOverrides[] =
     // override_phy_tx_pa_ramp_genfsk_std.xml
     // Tx: Configure PA ramping, set wait time before turning off (0x1A ticks of 16/24 us = 17.3 us).
     HW_REG_OVERRIDE(0x6028,0x001A),
-    // Set TXRX pin to 0 in RX and high impedance in idle/TX. 
+    // Set TXRX pin to 0 in RX and high impedance in idle/TX.
     HW_REG_OVERRIDE(0x60A8,0x0401),
     (uint32_t)0xFFFFFFFF
 };
@@ -122,7 +121,7 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .rxBw = 0x51,
     .preamConf.nPreamBytes = 0x4,
     .preamConf.preamMode = 0x0,
-    .formatConf.nSwBits = 0x1C,
+    .formatConf.nSwBits = 0x20,
     .formatConf.bBitReversal = 0x0,
     .formatConf.bMsbFirst = 0x1,
     .formatConf.fecMode = 0x0,
@@ -137,6 +136,34 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .centerFreq = 0x013B,
     .intFreq = 0x8000,
     .loDivider = 0x0F,
+    .pRegOverrideTxStd = 0,
+    .pRegOverrideTx20 = 0
+};
+
+
+// CMD_RADIO_SETUP_PA
+// Radio Setup Command for Pre-Defined Schemes
+rfc_CMD_RADIO_SETUP_PA_t RF_cmdRadioSetup =
+{
+    .commandNo = 0x0802,
+    .status = 0x0000,
+    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .mode = 0x01,
+    .loDivider = 0x00,
+    .config.frontEndMode = 0x0,
+    .config.biasMode = 0x0,
+    .config.analogCfgMode = 0x0,
+    .config.bNoFsPowerUp = 0x0,
+    .config.bSynthNarrowBand = 0x0,
+    .txPower = 0x0000,
+    .pRegOverride = 0,
     .pRegOverrideTxStd = 0,
     .pRegOverrideTx20 = 0
 };
@@ -164,6 +191,29 @@ rfc_CMD_FS_t RF_cmdFs =
     .__dummy1 = 0x00,
     .__dummy2 = 0x00,
     .__dummy3 = 0x0000
+};
+
+
+// CMD_PROP_TX
+// Proprietary Mode Transmit Command
+rfc_CMD_PROP_TX_t RF_cmdPropTx =
+{
+    .commandNo = 0x3801,
+    .status = 0x0000,
+    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .pktConf.bFsOff = 0x0,
+    .pktConf.bUseCrc = 0x1,
+    .pktConf.bVarLen = 0x1,
+    .pktLen = 0x14,
+    .syncWord = 0x930B51DE,
+    .pPkt = 0 // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
 };
 
 
@@ -207,29 +257,6 @@ rfc_CMD_PROP_RX_t RF_cmdPropRx =
     .endTime = 0x00000000,
     .pQueue = 0, // INSERT APPLICABLE POINTER: (dataQueue_t*)&xxx
     .pOutput = 0 // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
-};
-
-
-// CMD_PROP_TX
-// Proprietary Mode Transmit Command
-rfc_CMD_PROP_TX_t RF_cmdPropTx =
-{
-    .commandNo = 0x3801,
-    .status = 0x0000,
-    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
-    .startTime = 0x00000000,
-    .startTrigger.triggerType = 0x0,
-    .startTrigger.bEnaCmd = 0x0,
-    .startTrigger.triggerNo = 0x0,
-    .startTrigger.pastTrig = 0x0,
-    .condition.rule = 0x1,
-    .condition.nSkip = 0x0,
-    .pktConf.bFsOff = 0x0,
-    .pktConf.bUseCrc = 0x1,
-    .pktConf.bVarLen = 0x1,
-    .pktLen = 0x14,
-    .syncWord = 0x930B51DE,
-    .pPkt = 0 // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
 };
 
 
@@ -281,4 +308,44 @@ rfc_CMD_PROP_RX_ADV_t RF_cmdPropRxAdv =
     .pAddr = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
     .pQueue = 0, // INSERT APPLICABLE POINTER: (dataQueue_t*)&xxx
     .pOutput = 0 // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+};
+
+
+// CMD_PROP_RADIO_SETUP_PA
+// Proprietary Mode Radio Setup Command for 2.4 GHz
+rfc_CMD_PROP_RADIO_SETUP_PA_t RF_cmdPropRadioSetup =
+{
+    .commandNo = 0x3806,
+    .status = 0x0000,
+    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .modulation.modType = 0x0,
+    .modulation.deviation = 0x0,
+    .modulation.deviationStepSz = 0x0,
+    .symbolRate.preScale = 0x0,
+    .symbolRate.rateWord = 0x0,
+    .symbolRate.decimMode = 0x0,
+    .rxBw = 0x00,
+    .preamConf.nPreamBytes = 0x0,
+    .preamConf.preamMode = 0x0,
+    .formatConf.nSwBits = 0x0,
+    .formatConf.bBitReversal = 0x0,
+    .formatConf.bMsbFirst = 0x0,
+    .formatConf.fecMode = 0x0,
+    .formatConf.whitenMode = 0x0,
+    .config.frontEndMode = 0x0,
+    .config.biasMode = 0x0,
+    .config.analogCfgMode = 0x0,
+    .config.bNoFsPowerUp = 0x0,
+    .config.bSynthNarrowBand = 0x0,
+    .txPower = 0x0000,
+    .pRegOverride = 0,
+    .pRegOverrideTxStd = 0,
+    .pRegOverrideTx20 = 0
 };
