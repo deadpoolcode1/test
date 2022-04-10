@@ -138,6 +138,23 @@ void Node_startTimer(uint8_t mac[MAC_SIZE])
     }
 }
 
+void Node_stopTimer(uint8_t mac[MAC_SIZE])
+{
+    int i = 0;
+    for (i = 0; i < NUM_NODES; ++i)
+    {
+        if (macCompare(gNodesClocks[i].mac, mac))
+        {
+            Clock_stop(gNodesClocks[i].clkHandle);
+            return;
+        }
+        else
+        {
+            //failure to find node with this mac
+        }
+    }
+}
+
 void Node_setNumRcvPackets(uint8_t mac[MAC_SIZE], uint32_t numRcvPackets)
 {
     int i = 0;

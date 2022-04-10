@@ -59,6 +59,8 @@ void Node_setTimeout(uint8_t mac[MAC_SIZE], Clock_FuncPtr clockFxn,UInt timeout)
 
 void Node_startTimer(uint8_t mac[MAC_SIZE]);
 
+void Node_stopTimer(uint8_t mac[MAC_SIZE]);
+
 void Node_setNumRcvPackets(uint8_t mac[MAC_SIZE],uint32_t numRcvPackets);
 void Node_setNumSendPackets(uint8_t mac[MAC_SIZE],uint32_t numSendPackets);
 void Node_setSeqSend(uint8_t mac[MAC_SIZE],uint16_t seqSend);
