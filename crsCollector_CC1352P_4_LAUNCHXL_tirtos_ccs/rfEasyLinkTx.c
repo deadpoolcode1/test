@@ -61,6 +61,7 @@
 
 /* CRS protocol */
 #include "mac/macTask.h"
+#include "application/collector.h"
 #include "cp_cli.h"
 
 
@@ -74,6 +75,14 @@
 
 #define RFEASYLINKTX_BURST_SIZE         10
 #define RFEASYLINKTXPAYLOAD_LENGTH      30
+
+#define APP_TASK_STACK_SIZE 1536
+
+#define APP_TASK_PRIORITY   1
+
+Task_Struct appTask;        /* not static so you can see in ROV */
+static uint8_t appTaskStack[APP_TASK_STACK_SIZE];
+
 
 Task_Struct txTask;    /* not static so you can see in ROV */
 static Task_Params txTaskParams;
@@ -235,6 +244,32 @@ static void rfEasyLinkTxFnx(UArg arg0, UArg arg1)
         }
 #endif //RFEASYLINKTX_ASYNC
     }
+}
+
+void appTaskFxn(UArg a0, UArg a1)
+{
+    Collector_init();
+
+    /* Kick off application - Forever loop */
+       while(1)
+       {
+           Collector_process();
+       }
+}
+
+void appTask_init()
+{
+//    pinHandle = inPinHandle;
+    Task_Params taskParams;
+
+    /* Configure task. */
+       Task_Params_init(&taskParams);
+       taskParams.stack = appTaskStack;
+       taskParams.stackSize = APP_TASK_STACK_SIZE;
+       taskParams.priority = APP_TASK_PRIORITY;
+       Task_construct(&appTask, appTaskFxn, &taskParams, NULL);
+
+
 }
 
 void txTask_init(PIN_Handle inPinHandle) {
