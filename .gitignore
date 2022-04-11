@@ -12,6 +12,8 @@ crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/Debug/crsSensor_CC1352P_4_LAUNCHXL_tirto
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/Debug/crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs_linkInfo.xml
 node_modules/
 dist/
+.jxbrowser.userdata/
+.metadata/
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.ccsproject
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.cproject
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.project
