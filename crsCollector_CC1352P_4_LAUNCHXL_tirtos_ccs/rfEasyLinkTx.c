@@ -63,6 +63,7 @@
 #include "mac/macTask.h"
 #include "application/collector.h"
 #include "cp_cli.h"
+#include "crs_cli.h"
 
 
 
@@ -70,7 +71,7 @@
 
 #define RFEASYLINKTX_ASYNC
 
-#define RFEASYLINKTX_TASK_STACK_SIZE    10024
+#define RFEASYLINKTX_TASK_STACK_SIZE    5
 #define RFEASYLINKTX_TASK_PRIORITY      2
 
 #define RFEASYLINKTX_BURST_SIZE         10
@@ -299,7 +300,7 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
-    CP_CLI_init();
+    CLI_init();
     appTask_init();
 //    txTask_init(pinHandle);
     Mac_init();
