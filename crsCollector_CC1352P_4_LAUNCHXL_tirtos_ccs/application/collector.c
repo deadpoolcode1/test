@@ -115,18 +115,34 @@ void Collector_init()
 
 void Collector_process(void)
 {
+
+    if (Collector_events & COLLECTOR_UI_INPUT_EVT)
+    {
+        CLI_processCliUpdate(NULL, NULL);
+
+        /* Clear the event */
+        Util_clearEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
+    }
     Config_process();
-      MultiFiles_process();
-      RF_process();
-      Snap_process();
-      Fpga_process();
-      DIG_process();
-      Tdd_process();
+    MultiFiles_process();
+    RF_process();
+    Snap_process();
+    Fpga_process();
+    DIG_process();
+    Tdd_process();
+}
+
+void Csf_processCliUpdate()
+{
+    Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
+
+        /* Wake up the application thread when it waits for clock event */
+        Semaphore_post(sem);
 }
 
 bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr)
 {
-
+return true;
 }
 
 Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
@@ -231,6 +247,7 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len, ui
 
 
     dataReq.msdu.len = len;
+
     dataReq.msdu.p = pData;
 
 
@@ -293,6 +310,16 @@ void Cllc_getFfdShortAddr(uint16_t* shortAddr)
     *shortAddr = gDeviceShortAddr;
 }
 
+bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo)
+{
+    return false;
+}
 
+static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
+{
 
+}
+static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
+{
 
+}

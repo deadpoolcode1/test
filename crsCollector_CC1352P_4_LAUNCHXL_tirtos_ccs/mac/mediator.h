@@ -17,21 +17,42 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ti/sysbios/knl/Mailbox.h>
+#include "api_mac.h"
 /* ------------------------------------------------------------------------------------------------
  *                                           Function Prototypes
  * ------------------------------------------------------------------------------------------------
  */
 
-typedef struct MsgObj
+//typedef enum
+//{
+//    MEDIATOR_DATA_IND,
+//    MEDIATOR_ASSOC_IND,
+//    MEDIATOR_DATA_CNF
+//}Mediator_msgType_t;
+
+typedef struct
 {
-    uint8_t* msg;
-} Mediator_msgObj_t;
+
+    ApiMac_mcpsDataReq_t* msg;
+} Mediator_msgObjSentToMac_t;
+
+typedef struct
+{
+
+    macCbackEvent_t* msg;
+} Mediator_msgObjSentToApp_t;
 
 void Mediator_init();
-void Mediator_sendMsgToApp(Mediator_msgObj_t* msg );
-void Mediator_sendMsgToMac(Mediator_msgObj_t* msg );
 
-void Mediator_getNextAppMsg(Mediator_msgObj_t* msg );
-void Mediator_getNextMacMsg(Mediator_msgObj_t* msg );
+void Mediator_setAppSem(void* sem);
+void Mediator_setMacSem(void* sem);
+
+
+void Mediator_sendMsgToApp(Mediator_msgObjSentToApp_t* msg );
+void Mediator_sendMsgToMac(Mediator_msgObjSentToMac_t* msg );
+//mac calls this func to get msgs from app
+void Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg );
+//app calls this func to get msgs from mac
+void Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg );
 
 #endif /* MAC_MEDIATOR_H_ */

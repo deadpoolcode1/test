@@ -19,13 +19,13 @@
 #include "node.h"
 #include "crs_tx.h"
 #include "crs_rx.h"
-
+#include "mediator.h"
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define MAC_TASK_STACK_SIZE    1024
+#define MAC_TASK_STACK_SIZE    10024
 #define MAC_TASK_PRIORITY      2
 
 /******************************************************************************
@@ -126,7 +126,7 @@ static void macFnx(UArg arg0, UArg arg1)
     semParam.mode = Semaphore_Mode_BINARY;
     Semaphore_construct(&macSem, 0, &semParam);
     macSemHandle = Semaphore_handle(&macSem);
-
+    Mediator_setMacSem(macSemHandle);
     // Initialize the EasyLink parameters to their default values
     EasyLink_Params easyLink_params;
     EasyLink_Params_init(&easyLink_params);
@@ -176,6 +176,7 @@ static void macFnx(UArg arg0, UArg arg1)
             Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
         }
 
+
         if (macEvents == 0)
         {
             Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER);
@@ -183,6 +184,57 @@ static void macFnx(UArg arg0, UArg arg1)
 
     }
 }
+
+static void processkIncomingAppMsgs()
+{
+    Mediator_msgObjSentToMac_t msg = {0};
+    Mediator_getNextAppMsg(&msg);
+    Mediator_msgObjSentToMac_t msgCmp = {0};
+    if(memcmp(&msg, &msgCmp, sizeof(Mediator_msgObjSentToMac_t)) == 0)
+    {
+
+    }
+    else
+    {
+        memset(&gSmAckContentInfo, 0, sizeof(Mac_smAckContent_t));
+        uint8_t mac[8] = {0xbb, 0xbb, 0xbb, 0xbb,0xbb,0xbb,0xbb,0xbb};
+        memcpy(gSmAckContentInfo.nodeMac, mac, 8);
+
+        Node_nodeInfo_t node = { 0 };
+        Node_getNode(gSmAckContentInfo.nodeMac, &node);
+
+        MAC_crsPacket_t pkt = { 0 };
+        pkt.commandId = MAC_COMMAND_DATA;
+
+        memcpy(pkt.dstAddr, mac, 8);
+
+        memcpy(pkt.srcAddr, gMacSrcAddr, 8);
+
+        pkt.seqSent = node.seqSend;
+        pkt.seqRcv = node.seqRcv;
+
+        pkt.isNeedAck = 1;
+
+        int i = 0;
+
+        for (i = 0; i < 50; i++)
+        {
+            pkt.payload[i] = i;
+        }
+        pkt.len = 50;
+
+        uint8_t pBuf[256] = { 0 };
+        TX_buildBufFromSrct(&pkt, pBuf);
+
+        Node_pendingPckts_t pendingPacket = { 0 };
+        memcpy(pendingPacket.content, pBuf, 100);
+        Node_setPendingPckts(gSmAckContentInfo.nodeMac, &pendingPacket);
+
+        TX_sendPacket(&pkt, smacFinishedSendingContentCb);
+    }
+
+}
+
 
 static void stateMachineAckContent(Mac_smStateCodes_t argStateCode)
 {

@@ -17,6 +17,9 @@
 
 /*! Event ID - Start the device in the network */
 #define COLLECTOR_START_EVT               0x0001
+#define COLLECTOR_UI_INPUT_EVT               0x0002
+
+//COLLECTOR_UI_INPUT_EVT
 
 #define RSSI_ARR_SIZE 10
 /*! Building block for association table */
@@ -141,6 +144,9 @@ extern Cllc_associated_devices_t Cllc_associatedDevList[4];
 extern void Collector_init();
 
 extern void Collector_process(void);
+
+void Csf_processCliUpdate();
+
 
 extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t* line);
 

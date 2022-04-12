@@ -76,7 +76,7 @@
 #define RFEASYLINKTX_BURST_SIZE         10
 #define RFEASYLINKTXPAYLOAD_LENGTH      30
 
-#define APP_TASK_STACK_SIZE 1536
+#define APP_TASK_STACK_SIZE 22000
 
 #define APP_TASK_PRIORITY   1
 
@@ -300,6 +300,7 @@ int main(void)
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
     CP_CLI_init();
+    appTask_init();
 //    txTask_init(pinHandle);
     Mac_init();
     /* Start BIOS */

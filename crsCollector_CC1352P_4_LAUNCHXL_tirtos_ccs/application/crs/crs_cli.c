@@ -3684,110 +3684,110 @@ static CRS_retVal_t CLI_getTimeParsing(char *line)
 
 static CRS_retVal_t CLI_testSensorParsing(char *line)
 {
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_TEST_AGC) + 2]), NULL,
-                                             16);
-    #ifndef CLI_SENSOR
-
-        uint16_t addr = 0;
-        Cllc_getFfdShortAddr(&addr);
-        if (addr != shortAddr)
-        {
-            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-            ApiMac_sAddr_t dstAddr;
-            dstAddr.addr.shortAddr = shortAddr;
-            dstAddr.addrMode = ApiMac_addrType_short;
-            Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
-            if (stat != Collector_status_success)
-            {
-                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                CLI_startREAD();
-            }
-
-    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-            return;
-        }
-    #endif
-
-    CRS_retVal_t retStatus;
-    if(Agc_isReady()){
-        int rx_value, tx_value;
-        retStatus = Agc_getValues(&tx_value, &rx_value);
-        if(retStatus == CRS_SUCCESS){
-            CLI_cliPrintf("\r\nTx value is: %d", tx_value);
-            CLI_cliPrintf("\r\nRx value is: %d", rx_value);
-        }
-    }
-    else{
-        if(Agc_isInitialized()){
-            CLI_cliPrintf("\r\nSC_ERROR");
-            retStatus = CRS_FAILURE;
-        }
-        else{
-            retStatus = Agc_init();
-            CLI_cliPrintf("\r\nINIT");
-        }
-    }
-
-    CLI_startREAD();
-    return retStatus;
+//    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_TEST_AGC) + 2]), NULL,
+//                                             16);
+//    #ifndef CLI_SENSOR
+//
+//        uint16_t addr = 0;
+//        Cllc_getFfdShortAddr(&addr);
+//        if (addr != shortAddr)
+//        {
+//            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//            ApiMac_sAddr_t dstAddr;
+//            dstAddr.addr.shortAddr = shortAddr;
+//            dstAddr.addrMode = ApiMac_addrType_short;
+//            Collector_status_t stat;
+//            stat = Collector_sendCrsMsg(&dstAddr, line);
+//            if (stat != Collector_status_success)
+//            {
+//                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//                CLI_startREAD();
+//            }
+//
+//    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//            return;
+//        }
+//    #endif
+//
+//    CRS_retVal_t retStatus;
+//    if(Agc_isReady()){
+//        int rx_value, tx_value;
+//        retStatus = Agc_getValues(&tx_value, &rx_value);
+//        if(retStatus == CRS_SUCCESS){
+//            CLI_cliPrintf("\r\nTx value is: %d", tx_value);
+//            CLI_cliPrintf("\r\nRx value is: %d", rx_value);
+//        }
+//    }
+//    else{
+//        if(Agc_isInitialized()){
+//            CLI_cliPrintf("\r\nSC_ERROR");
+//            retStatus = CRS_FAILURE;
+//        }
+//        else{
+//            retStatus = Agc_init();
+//            CLI_cliPrintf("\r\nINIT");
+//        }
+//    }
+//
+//    CLI_startREAD();
+//    return retStatus;
 
 }
 
 static CRS_retVal_t CLI_sensorModeParsing(char *line)
 {
-     const char s[2] = " ";
-       char *token;
-       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-
-       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-       /* get the first token */
-       //0xaabb shortAddr
-       token = strtok(&(tmpBuff[sizeof(CLI_AGC_MODE)]), s);
-       //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_AGC_MODE);
-       uint32_t addrSize = strlen(token);
-       //shortAddr in decimal
-       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-    #ifndef CLI_SENSOR
-
-        uint16_t addr = 0;
-        Cllc_getFfdShortAddr(&addr);
-        if (addr != shortAddr)
-        {
-            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-            ApiMac_sAddr_t dstAddr;
-            dstAddr.addr.shortAddr = shortAddr;
-            dstAddr.addrMode = ApiMac_addrType_short;
-            Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
-            if (stat != Collector_status_success)
-            {
-                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                CLI_startREAD();
-            }
-
-    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-            return;
-        }
-    #endif
-
-    token = strtok(NULL, s);
-    uint32_t mode = strtoul(&(token[2]), NULL, 16);
-    if ((mode>2) ||(!Agc_isInitialized())){
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-        CLI_startREAD();
-        return CRS_FAILURE;
-    }
-    CRS_retVal_t retStatus = Agc_setMode(mode);
-    if(retStatus == CRS_SUCCESS){
-        CLI_cliPrintf("\r\nSensorStatus=OK");
-    }
-    else{
-        CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-    }
-    CLI_startREAD();
-    return retStatus;
+//     const char s[2] = " ";
+//       char *token;
+//       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//       /* get the first token */
+//       //0xaabb shortAddr
+//       token = strtok(&(tmpBuff[sizeof(CLI_AGC_MODE)]), s);
+//       //token = strtok(NULL, s);
+//       uint32_t commSize = sizeof(CLI_AGC_MODE);
+//       uint32_t addrSize = strlen(token);
+//       //shortAddr in decimal
+//       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//    #ifndef CLI_SENSOR
+//
+//        uint16_t addr = 0;
+//        Cllc_getFfdShortAddr(&addr);
+//        if (addr != shortAddr)
+//        {
+//            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//            ApiMac_sAddr_t dstAddr;
+//            dstAddr.addr.shortAddr = shortAddr;
+//            dstAddr.addrMode = ApiMac_addrType_short;
+//            Collector_status_t stat;
+//            stat = Collector_sendCrsMsg(&dstAddr, line);
+//            if (stat != Collector_status_success)
+//            {
+//                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//                CLI_startREAD();
+//            }
+//
+//    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//            return;
+//        }
+//    #endif
+//
+//    token = strtok(NULL, s);
+//    uint32_t mode = strtoul(&(token[2]), NULL, 16);
+//    if ((mode>2) ||(!Agc_isInitialized())){
+//        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//        CLI_startREAD();
+//        return CRS_FAILURE;
+//    }
+//    CRS_retVal_t retStatus = Agc_setMode(mode);
+//    if(retStatus == CRS_SUCCESS){
+//        CLI_cliPrintf("\r\nSensorStatus=OK");
+//    }
+//    else{
+//        CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
+//    }
+//    CLI_startREAD();
+//    return retStatus;
 
 }
 
@@ -3830,7 +3830,7 @@ static CRS_retVal_t CLI_rssiParsing(char *line)
     uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_RSSI) + 2]), NULL,
                                             16);
 #ifndef CLI_SENSOR
-    Csf_sensorsDataPrint(shortAddr);
+//    Csf_sensorsDataPrint(shortAddr);
 #else
 
 #endif
