@@ -142,7 +142,7 @@ static void macFnx(UArg arg0, UArg arg1)
     {
         System_abort("EasyLink_init failed");
     }
-    CLI_startREAD();
+    CP_CLI_startREAD();
     Node_init(macSemHandle);
     Node_nodeInfo_t node = { 0 };
     uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
@@ -154,7 +154,7 @@ static void macFnx(UArg arg0, UArg arg1)
         //MAC_TASK_TX_DONE_EVT
         if (macEvents & MAC_TASK_CLI_UPDATE_EVT)
         {
-            CLI_processCliUpdate();
+            CP_CLI_processCliUpdate();
             Util_clearEvent(&macEvents, MAC_TASK_CLI_UPDATE_EVT);
         }
 
@@ -172,7 +172,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
         if (macEvents & MAC_TASK_NODE_TIMEOUT_EVT)
         {
-            CLI_cliPrintf("\r\nTimeout test");
+            CP_CLI_cliPrintf("\r\nTimeout test");
             Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
         }
 
@@ -581,32 +581,32 @@ void MAC_printSensorStateMachine()
         switch (gSmacStateArray[i])
         {
         case SMAC_RX_IDLE:
-            CLI_cliPrintf("\r\nSMAC_RX_IDLE");
+            CP_CLI_cliPrintf("\r\nSMAC_RX_IDLE");
             break;
         case SMAC_SENT_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_SENT_CONTENT");
+            CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT");
             break;
         case SMAC_SENT_CONTENT_AGAIN:
-                    CLI_cliPrintf("\r\nSMAC_SENT_CONTENT_AGAIN");
+                    CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT_AGAIN");
                     break;
         case SMAC_RECIVED_CONTENT_ACK:
-            CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_ACK");
+            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_ACK");
 
             break;
         case SMAC_RECIVED_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT");
+            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT");
 
             break;
         case SMAC_FINISHED_SENDING_CONTENT_ACK:
-            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT_ACK");
+            CP_CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT_ACK");
 
             break;
 
         case SMAC_RECIVED_CONTENT_AGAIN:
-            CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_AGAIN");
+            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_AGAIN");
             break;
         case SMAC_ERROR:
-                    CLI_cliPrintf("\r\nSMAC_ERROR");
+                    CP_CLI_cliPrintf("\r\nSMAC_ERROR");
                     break;
         default:
             break;

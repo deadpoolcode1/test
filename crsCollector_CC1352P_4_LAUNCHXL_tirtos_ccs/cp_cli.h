@@ -8,24 +8,24 @@
 #ifndef CP_CLI_H_
 #define CP_CLI_H_
 
-void CLI_init();
-void CLI_processCliUpdate();
-void CLI_startREAD();
-void CLI_cliPrintf( const char *_format, ...);
+void CP_CLI_init();
+void CP_CLI_processCliUpdate();
+void CP_CLI_startREAD();
+void CP_CLI_cliPrintf( const char *_format, ...);
 
 
 
 
-typedef enum { CP_CLI_INFO, CP_CLI_DEBUG, CP_CLI_WARN, CP_CLI_ERR  } log_level;
+typedef enum { CP_CLI_INFO, CP_CLI_DEBUG, CP_CLI_WARN, CP_CLI_ERR  } cp_log_level;
 
 
-typedef void CLI_log_handler_func_type( const log_level level, const char* file, const int line, const char* format, ... );
+typedef void CP_CLI_log_handler_func_type( const cp_log_level level, const char* file, const int line, const char* format, ... );
 
 
-extern CLI_log_handler_func_type* glogHandler;
+extern CP_CLI_log_handler_func_type* gCpLogHandler;
 
 #define CP_LOG( __LEVEL__, __FORMAT__, ... ) \
-    if( glogHandler ) \
-    glogHandler( __LEVEL__, __FUNCTION__ , __LINE__ , __FORMAT__, ##__VA_ARGS__ )
+    if( gCpLogHandler ) \
+    gCpLogHandler( __LEVEL__, __FUNCTION__ , __LINE__ , __FORMAT__, ##__VA_ARGS__ )
 
 #endif /* CP_CLI_H_ */

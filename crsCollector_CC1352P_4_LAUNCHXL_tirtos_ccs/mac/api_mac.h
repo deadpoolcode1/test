@@ -453,6 +453,20 @@ typedef struct _apimac_callbacks
     ApiMac_dataIndFp_t pDataIndCb;
 } ApiMac_callbacks_t;
 
+/*! Device Descriptor */
+typedef struct _apimac_devicedescriptor
+{
+    /*! The 16-bit PAN identifier of the device */
+    uint16_t panID;
+    /*! The 16-bit short address of the device */
+    uint16_t shortAddress;
+    /*!
+     The 64-bit IEEE extended address of the device. This element is also
+     used inunsecuring operations on incoming frames.
+     */
+    ApiMac_sAddrExt_t extAddress;
+} ApiMac_deviceDescriptor_t;
+
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/

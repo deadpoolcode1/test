@@ -80,8 +80,8 @@ static void CLI_writeString(void *_buffer, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 
-static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
-CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
+static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... );
+CP_CLI_log_handler_func_type*  gCpLogHandler = &defaultTestLog;
 
 
 static void debugCli(char *line);
@@ -89,7 +89,7 @@ static void addNodeCommand(char *line);
 
 
 
-void CLI_init()
+void CP_CLI_init()
 {
 
     if (!gModuleInitialized)
@@ -134,7 +134,7 @@ void CLI_init()
 
 
 
-void CLI_processCliUpdate()
+void CP_CLI_processCliUpdate()
 {
 
     if (!gModuleInitialized)
@@ -168,7 +168,7 @@ void CLI_processCliUpdate()
             addNodeCommand(line);
 
                    inputBad = false;
-                   CLI_startREAD();
+                   CP_CLI_startREAD();
                }
 
 
@@ -176,9 +176,9 @@ void CLI_processCliUpdate()
                {
 
             Node_listNodes();
-            CLI_cliPrintf("\r\nStatus:0x0");
+            CP_CLI_cliPrintf("\r\nStatus:0x0");
                    inputBad = false;
-                   CLI_startREAD();
+                   CP_CLI_startREAD();
                }
 
 
@@ -216,13 +216,13 @@ void CLI_processCliUpdate()
 
     if (inputBad && strlen(line) > 0)
     {
-        CLI_cliPrintf(badInputMsg);
-        CLI_startREAD();
+        CP_CLI_cliPrintf(badInputMsg);
+        CP_CLI_startREAD();
         return;
     }
     else if (inputBad)
     {
-        CLI_startREAD();
+        CP_CLI_startREAD();
         return;
     }
 
@@ -238,7 +238,7 @@ static void debugCli(char *line)
 //    Node_nodeInfo_t rspNode;
 //    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
 //    Node_getNode(mac, &rspNode);
-    CLI_startREAD();
+    CP_CLI_startREAD();
 }
 
 
@@ -255,7 +255,7 @@ static void addNodeCommand(char *line)
        token = strtok(NULL, s);//node
        token = strtok(NULL, s);//macAddr
        if (strlen(token)!=(MAC_SIZE+2)) {
-           CLI_cliPrintf("\r\nStatus:0x1");
+           CP_CLI_cliPrintf("\r\nStatus:0x1");
            return;
     }
        char tmpMacStrAddr[MAC_SIZE]={0};
@@ -271,7 +271,7 @@ static void addNodeCommand(char *line)
     }
 
        Node_addNode(&node);
-       CLI_cliPrintf("\r\nStatus:0x0");
+       CP_CLI_cliPrintf("\r\nStatus:0x0");
 
 
 
@@ -298,7 +298,7 @@ static void sendPacketCommand(char *line)
 //    if (strlen(token) != (MAC_SIZE + 2))
 //    {
 //        CLI_cliPrintf("\r\nStatus:0x1");
-//            CLI_startREAD();
+//            CP_CLI_startREAD();
 //
 //        return;
 //    }
@@ -306,7 +306,7 @@ static void sendPacketCommand(char *line)
 //    memcpy(tmpMacStrAddr, &token[2], MAC_SIZE);
 
     Mac_cliSendContent(NULL);
-    CLI_startREAD();
+    CP_CLI_startREAD();
 
 
 
@@ -315,7 +315,7 @@ static void sendPacketCommand(char *line)
 static void recivePacketCommand(char *line)
 {
     RX_enterRx(NULL, NULL);
-    CLI_startREAD();
+    CP_CLI_startREAD();
 
 }
 //static void stopRecivePacketCommand(char *line)
@@ -323,7 +323,7 @@ static void recivePacketCommand(char *line)
 //    RfEasyLink_stopRecivePacket();
 //}
 
-void CLI_startREAD()
+void CP_CLI_startREAD()
 {
 
 //
@@ -346,7 +346,7 @@ void CLI_startREAD()
 
 }
 
-void CLI_cliPrintf(const char *_format, ...)
+void CP_CLI_cliPrintf(const char *_format, ...)
 {
     if (strlen(_format) >= 1024)
     {
@@ -599,7 +599,7 @@ static void CLI_writeString(void *_buffer, size_t _size)
 
     return ;
 }
-static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
+static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... )
 {
     if (strlen(format) >= 512)
        {
@@ -615,27 +615,27 @@ static void defaultTestLog( const log_level level, const char* file, const int l
                 switch( level )
                 {
                 case CP_CLI_INFO:
-                    CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
+                    CP_CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
                         break;
                 case CP_CLI_DEBUG:
 //                   return;
-                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
+                   CP_CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
                         break;
                 case CP_CLI_ERR:
 //                  return;
 
-                  CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
+                  CP_CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
                         break;
                 case CP_CLI_WARN:
 //                   return;
 
-                   CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
+                   CP_CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
                         break;
                 }
 
                 va_start(args, format);
                 SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
                 va_end(args);
-                CLI_cliPrintf(printBuff);
+                CP_CLI_cliPrintf(printBuff);
 }
 

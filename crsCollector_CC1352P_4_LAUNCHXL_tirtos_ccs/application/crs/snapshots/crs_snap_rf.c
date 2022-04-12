@@ -1000,7 +1000,8 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
     gRfAddr = rfAddr;
     if (nameVals != NULL)
     {
-        for (int i = 0; i < NAME_VALUES_SZ; ++i)
+        int i;
+        for ( i = 0; i < NAME_VALUES_SZ; ++i)
         {
             memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
             gNameValues[i].value = nameVals[i].value;

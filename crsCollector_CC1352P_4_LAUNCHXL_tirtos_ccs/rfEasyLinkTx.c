@@ -299,7 +299,7 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
-    CLI_init();
+    CP_CLI_init();
 //    txTask_init(pinHandle);
     Mac_init();
     /* Start BIOS */

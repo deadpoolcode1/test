@@ -925,7 +925,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
         char temp[TEMP_SZ] = { 0 };
         uint32_t i = 0;
         uint32_t index = 0;
-        for (int i = 0; i < NAME_VALUES_SZ; ++i)
+        for (i = 0; i < NAME_VALUES_SZ; ++i)
         {
             memset(respStructFileInfo->nameValues[i].name, 0,
                    NAMEVALUE_NAME_SZ);

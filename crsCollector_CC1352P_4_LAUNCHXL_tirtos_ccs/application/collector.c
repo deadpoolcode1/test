@@ -18,13 +18,13 @@
 #include "crs/crs_cli.h"
 #include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
-#include "crs/crs_snapshot.h"
-#include "crs/config_parsing.h"
-#include "crs/crs_multi_snapshots.h"
-#include "crs/crs_snap_rf.h"
-#include "crs/crs_script_dig.h"
+#include "crs_snapshot.h"
+#include "config_parsing.h"
+#include "crs_multi_snapshots.h"
+#include "crs_snap_rf.h"
+#include "crs_script_dig.h"
 #include "crs/crs_tdd.h"
-#include "agc/agc.h"
+//#include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 
 /******************************************************************************
@@ -59,6 +59,9 @@ static uint16_t gDeviceShortAddr = 0xaabb;
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
 
+Cllc_associated_devices_t Cllc_associatedDevList[4];
+
+
 /******************************************************************************
  Local function prototypes
  *****************************************************************************/
@@ -71,50 +74,26 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
 /******************************************************************************
  Callback tables
  *****************************************************************************/
-
+//TODO: add assoc ind cb.
 /*! API MAC Callback table */
 ApiMac_callbacks_t Collector_macCallbacks = {
-/*! Associate Indicated callback */
-NULL,
-                                              /*! Associate Confirmation callback */
-                                              NULL,
-                                              /*! Disassociate Indication callback */
-                                              NULL,
-                                              /*! Disassociate Confirmation callback */
-                                              NULL,
-                                              /*! Beacon Notify Indication callback */
-                                              NULL,
-                                              /*! Orphan Indication callback */
-                                              orphanIndCb,
-                                              /*! Scan Confirmation callback */
-                                              NULL,
+
                                               /*! Start Confirmation callback */
                                               NULL,
-                                              /*! Sync Loss Indication callback */
-                                              NULL,
-                                              /*! Poll Confirm callback */
-                                              NULL,
-                                              /*! Comm Status Indication callback */
-                                              commStatusIndCB,
-                                              /*! Poll Indication Callback */
-                                              pollIndCB,
+
                                               /*! Data Confirmation callback */
                                               dataCnfCB,
                                               /*! Data Indication callback */
-                                              dataIndCB,
-                                              /*! Purge Confirm callback */
-                                              NULL,
-                                              /*! WiSUN Async Indication callback */
-                                              NULL,
-                                              /*! WiSUN Async Confirmation callback */
-                                              NULL,
-                                              /*! Unprocessed message callback */
-                                              NULL };
+                                              dataIndCB
 
-extern void Collector_init()
+                                              };
+
+void Collector_init()
 {
-    sem = ApiMac_init(macTaskId,CONFIG_FH_ENABLE);
-
+    sem = ApiMac_init();
+    /* initialize association table */
+    memset(Cllc_associatedDevList, 0xFF,
+           (sizeof(Cllc_associated_devices_t) * 4));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
 
@@ -130,11 +109,11 @@ extern void Collector_init()
        DigInit(sem);
        Tdd_initSem(sem);
        CRS_init();
-       Agc_init();
+//       Agc_init();
 
 }
 
-extern void Collector_process(void)
+void Collector_process(void)
 {
     Config_process();
       MultiFiles_process();

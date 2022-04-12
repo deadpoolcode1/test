@@ -69,7 +69,7 @@ void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
 
 void RX_getPacket(MAC_crsPacket_t* pkt )
 {
-    CP_LOG(CP_CLI_DEBUG, "RECIVED A PACKET");
+//    CP_LOG(CP_CLI_DEBUG, "RECIVED A PACKET");
     uint8_t* pBuf = gRxPacket.payload;
     pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
     pBuf++;

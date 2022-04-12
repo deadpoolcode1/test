@@ -45,7 +45,7 @@
 #include "crs_snapshot.h"
 #include "crs_nvs.h"
 #include "crs_fpga.h"
-#include "application/agc/agc.h"
+//#include "application/agc/agc.h"
 #include "config_parsing.h"
 #include "crs_snap_rf.h"
 #include "crs_script_dig.h"
@@ -2297,185 +2297,185 @@ static CRS_retVal_t CLI_fsDeleteParsing(char *line)
 
 static CRS_retVal_t CLI_sensorsParsing(char *line){
 
-    const char s[2] = " ";
-    char *token;
-    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-    /* get the first token */
-    //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_AGC)]), s);
-    uint32_t addrSize = strlen(token);
-
-    //token = strtok(NULL, s);
-
-    //shortAddr in decimal
-    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-    #ifndef CLI_SENSOR
-
-       uint16_t addr = 0;
-       Cllc_getFfdShortAddr(&addr);
-       if (addr != shortAddr)
-       {
-           // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-           ApiMac_sAddr_t dstAddr;
-           dstAddr.addr.shortAddr = shortAddr;
-           dstAddr.addrMode = ApiMac_addrType_short;
-           Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
-           if (stat != Collector_status_success)
-          {
-              CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-              CLI_startREAD();
-          }
-          // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-
-           return;
-       }
-    #endif
-
-    if(!Agc_isInitialized()){
-        CRS_retVal_t retStatus = Agc_init();
-        if(retStatus == CRS_SUCCESS){
-            CLI_cliPrintf("\r\nSensorStatus=INIT");
-        }
-        else{
-//            if(retStatus == CRS_TDD_NOT_OPEN){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
-//            }
-//            else{
-                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//            }
-        }
-//#ifndef CLI_SENSOR
-//        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMinPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
-//#else
-//        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
-//#endif
-        CLI_startREAD();
-        return retStatus;
-    }
-    CRS_retVal_t retStatus =  CRS_SUCCESS;
-    if(Agc_isReady()){
-        retStatus = Agc_sample();
-        AGC_results_t agcResults;
-        uint16_t mode = Agc_getMode(); // tdd mode
-        if(retStatus == CRS_SUCCESS){
-            agcResults = Agc_getResults();
-        }
-        else{
-            CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//            if(retStatus == CRS_TDD_NOT_OPEN){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
-//            }
-//            else if(retStatus == CRS_TDD_NOT_LOCKED){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
-//            }
-//            else{
-//                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//            }
-#ifndef CLI_SENSOR
-            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
-            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
-#else
-            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
-            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
-#endif
-            CLI_startREAD();
-            return retStatus;
-        }
-        int i;
-        CLI_cliPrintf("\r\nSensorStatus=OK");
-#ifndef CLI_SENSOR
-        for(i=0;i<4;i++){
-            if(i==0){
-                if(mode !=0){
-                    CLI_cliPrintf("\r\nULDetMaxPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
-                }
-                else{
-                    CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-                }
-            }
-//            else if (i==1){
-//                CLI_cliPrintf("\r\nULDetMinPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
-//            }
-            else if (i==2){
-                if(mode !=1){
-                    CLI_cliPrintf("\r\nDLDetMaxInPwr=%i",Agc_convert(agcResults.adcResults[i], 1));
-                }
-                else{
-                    CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-                }
-            }
-//            else{
-//                CLI_cliPrintf("\r\nDLDetMinInPwr=%i", Agc_convert(agcResults.adcResults[i], 1));
-//            }
-        }
-        #else
-        for(i=0;i<4;i++){
-            if(i==0){
-                if(mode !=0){
-                    CLI_cliPrintf("\r\nDLDetMaxOutPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
-                }
-                else{
-                    CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-                }
-            }
-//            else if (i==1){
-//                CLI_cliPrintf("\r\nDLDetMinOutPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
-//            }
-            else if (i==2){
-                if(mode !=1){
-                    CLI_cliPrintf("\r\nULDetMaxInPwr=%i",Agc_convert(agcResults.adcResults[i], 1));
-                }
-                else{
-                    CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-                }
-            }
-//            else{
-//                CLI_cliPrintf("\r\nULDetMinInPwr=%i", Agc_convert(agcResults.adcResults[i], 1));
-//            }
-        }
-        #endif
-    }
-    else{
-//        retStatus = Tdd_isOpen();
-//        if(retStatus == CRS_TDD_NOT_OPEN){
-//            CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
+//    const char s[2] = " ";
+//    char *token;
+//    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//    /* get the first token */
+//    //0xaabb shortAddr
+//    token = strtok(&(tmpBuff[sizeof(CLI_AGC)]), s);
+//    uint32_t addrSize = strlen(token);
+//
+//    //token = strtok(NULL, s);
+//
+//    //shortAddr in decimal
+//    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//    #ifndef CLI_SENSOR
+//
+//       uint16_t addr = 0;
+//       Cllc_getFfdShortAddr(&addr);
+//       if (addr != shortAddr)
+//       {
+//           // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//           ApiMac_sAddr_t dstAddr;
+//           dstAddr.addr.shortAddr = shortAddr;
+//           dstAddr.addrMode = ApiMac_addrType_short;
+//           Collector_status_t stat;
+//           stat = Collector_sendCrsMsg(&dstAddr, line);
+//           if (stat != Collector_status_success)
+//          {
+//              CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//              CLI_startREAD();
+//          }
+//          // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//           return;
+//       }
+//    #endif
+//
+//    if(!Agc_isInitialized()){
+//        CRS_retVal_t retStatus = Agc_init();
+//        if(retStatus == CRS_SUCCESS){
+//            CLI_cliPrintf("\r\nSensorStatus=INIT");
 //        }
 //        else{
-//            retStatus = Tdd_isLocked();
-//            if (retStatus == CRS_TDD_NOT_LOCKED){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
-//            }
-//            else{
-                CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//            }
+////            if(retStatus == CRS_TDD_NOT_OPEN){
+////                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
+////            }
+////            else{
+//                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
+////            }
 //        }
-#ifndef CLI_SENSOR
-            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
-            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
-#else
-            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
-            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
-#endif
-    }
-
-    CLI_startREAD();
-    return retStatus;
+////#ifndef CLI_SENSOR
+////        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
+////        CLI_cliPrintf("\r\nULDetMinPwr=N/A");
+////        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
+////        CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
+////#else
+////        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
+////        CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
+////        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
+////        CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
+////#endif
+//        CLI_startREAD();
+//        return retStatus;
+//    }
+//    CRS_retVal_t retStatus =  CRS_SUCCESS;
+//    if(Agc_isReady()){
+//        retStatus = Agc_sample();
+//        AGC_results_t agcResults;
+//        uint16_t mode = Agc_getMode(); // tdd mode
+//        if(retStatus == CRS_SUCCESS){
+//            agcResults = Agc_getResults();
+//        }
+//        else{
+//            CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
+////            if(retStatus == CRS_TDD_NOT_OPEN){
+////                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
+////            }
+////            else if(retStatus == CRS_TDD_NOT_LOCKED){
+////                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
+////            }
+////            else{
+////                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
+////            }
+//#ifndef CLI_SENSOR
+//            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
+//            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
+//            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
+//            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
+//#else
+//            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
+//            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
+//            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
+//            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
+//#endif
+//            CLI_startREAD();
+//            return retStatus;
+//        }
+//        int i;
+//        CLI_cliPrintf("\r\nSensorStatus=OK");
+//#ifndef CLI_SENSOR
+//        for(i=0;i<4;i++){
+//            if(i==0){
+//                if(mode !=0){
+//                    CLI_cliPrintf("\r\nULDetMaxPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
+//                }
+//                else{
+//                    CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
+//                }
+//            }
+////            else if (i==1){
+////                CLI_cliPrintf("\r\nULDetMinPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
+////            }
+//            else if (i==2){
+//                if(mode !=1){
+//                    CLI_cliPrintf("\r\nDLDetMaxInPwr=%i",Agc_convert(agcResults.adcResults[i], 1));
+//                }
+//                else{
+//                    CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
+//                }
+//            }
+////            else{
+////                CLI_cliPrintf("\r\nDLDetMinInPwr=%i", Agc_convert(agcResults.adcResults[i], 1));
+////            }
+//        }
+//        #else
+//        for(i=0;i<4;i++){
+//            if(i==0){
+//                if(mode !=0){
+//                    CLI_cliPrintf("\r\nDLDetMaxOutPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
+//                }
+//                else{
+//                    CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
+//                }
+//            }
+////            else if (i==1){
+////                CLI_cliPrintf("\r\nDLDetMinOutPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
+////            }
+//            else if (i==2){
+//                if(mode !=1){
+//                    CLI_cliPrintf("\r\nULDetMaxInPwr=%i",Agc_convert(agcResults.adcResults[i], 1));
+//                }
+//                else{
+//                    CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
+//                }
+//            }
+////            else{
+////                CLI_cliPrintf("\r\nULDetMinInPwr=%i", Agc_convert(agcResults.adcResults[i], 1));
+////            }
+//        }
+//        #endif
+//    }
+//    else{
+////        retStatus = Tdd_isOpen();
+////        if(retStatus == CRS_TDD_NOT_OPEN){
+////            CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
+////        }
+////        else{
+////            retStatus = Tdd_isLocked();
+////            if (retStatus == CRS_TDD_NOT_LOCKED){
+////                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
+////            }
+////            else{
+//                CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
+////            }
+////        }
+//#ifndef CLI_SENSOR
+//            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
+//            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
+//            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
+//            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
+//#else
+//            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
+//            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
+//            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
+//            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
+//#endif
+//    }
+//
+//    CLI_startREAD();
+//    return retStatus;
 }
 
 static CRS_retVal_t CLI_fsUploadParsing(char *line)
@@ -3576,18 +3576,18 @@ static CRS_retVal_t CLI_trshFormat(char *line)
 
 }
 
-static const char* getTime_str(){
-    time_t t1;
-    struct tm *ltm;
-    char *curTime;
-    t1 = time(NULL);
-    ltm = localtime(&t1);
-    curTime = asctime(ltm);
-    curTime[strcspn(curTime, "\n")] = 0;
-    return curTime;
-
-
-}
+//static const char* getTime_str(){
+//    time_t t1;
+//    struct tm *ltm;
+//    char *curTime;
+//    t1 = time(NULL);
+//    ltm = localtime(&t1);
+//    curTime = asctime(ltm);
+//    curTime[strcspn(curTime, "\n")] = 0;
+//    return curTime;
+//
+//
+//}
 
 static CRS_retVal_t CLI_setTimeParsing(char *line)
 {
@@ -4544,27 +4544,7 @@ CRS_retVal_t CLI_updateRssi(int8_t rssi)
 }
 
 
-static CRS_retVal_t sendPkt(uint32_t addr)
-{
-    Cllc_getFfdShortAddr(&addr);
-    if (addr != shortAddr)
-    {
-        //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = shortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
-        if (stat != Collector_status_success)
-        {
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-        //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
-        return;
-    }
-}
 
 //version
 //image

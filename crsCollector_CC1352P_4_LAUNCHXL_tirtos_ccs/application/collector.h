@@ -18,6 +18,49 @@
 /*! Event ID - Start the device in the network */
 #define COLLECTOR_START_EVT               0x0001
 
+#define RSSI_ARR_SIZE 10
+/*! Building block for association table */
+typedef struct
+{
+    /*! Short address of associated device */
+    uint16_t shortAddr;
+
+    /*! RSSI */
+    int8_t rssi;
+    /*! Device alive status */
+    uint16_t status;
+
+    int8_t rssiArr[RSSI_ARR_SIZE];
+
+    uint32_t rssiArrIdx;
+    /*! RSSI */
+    int8_t rssiAvgCdu;
+    /*! RSSI */
+    int8_t rssiMinCdu;
+    /*! RSSI */
+    int8_t rssiMaxCdu;
+
+    int8_t rssiLastCdu;
+
+    /*! RSSI */
+    int8_t rssiAvgCru;
+    /*! RSSI */
+    int8_t rssiMinCru;
+    /*! RSSI */
+    int8_t rssiMaxCru;
+    /*! RSSI */
+    int8_t rssiLastCru;
+
+} Cllc_associated_devices_t;
+
+/*! Network Information */
+typedef struct
+{
+    /* Address information */
+    ApiMac_deviceDescriptor_t devInfo;
+
+} Llc_netInfo_t;
+
 /*! Collector Status Values */
 typedef enum
 {
@@ -92,6 +135,8 @@ extern uint16_t Collector_events;
 extern Collector_statistics_t Collector_statistics;
 
 extern ApiMac_callbacks_t Collector_macCallbacks;
+
+extern Cllc_associated_devices_t Cllc_associatedDevList[4];
 
 extern void Collector_init();
 

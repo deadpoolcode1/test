@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "crs.h"
-#include <time.h>
+//#include <time.h>
 #include "api_mac.h"
 
 CRS_retVal_t CLI_init();

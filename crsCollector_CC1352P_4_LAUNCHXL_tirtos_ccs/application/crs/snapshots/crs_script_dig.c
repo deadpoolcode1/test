@@ -1070,7 +1070,8 @@ CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,uint32_t 
     CLI_cliPrintf("\r\n");
     if (nameVals != NULL)
     {
-        for (int i = 0; i < NAME_VALUES_SZ; ++i)
+        int i;
+        for (i = 0; i < NAME_VALUES_SZ; ++i)
         {
             memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
             gNameValues[i].value = nameVals[i].value;
@@ -1119,7 +1120,8 @@ CRS_retVal_t DIG_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     CLI_cliPrintf("\r\n");
     if (nameVals != NULL)
     {
-        for (int i = 0; i < NAME_VALUES_SZ; ++i)
+        int i;
+        for ( i = 0; i < NAME_VALUES_SZ; ++i)
         {
             memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
             gNameValues[i].value = nameVals[i].value;
