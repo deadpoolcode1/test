@@ -21,6 +21,8 @@
 /*! IEEE Address Length */
 #define APIMAC_SADDR_EXT_LEN 8
 
+#define MAC_MCPS_DATA_CNF           12    /* Data confirm */
+#define MAC_MCPS_DATA_IND           13    /* Data indication */
 /*!
  Address types - used to set addrMode field of the ApiMac_sAddr_t structure.
  */

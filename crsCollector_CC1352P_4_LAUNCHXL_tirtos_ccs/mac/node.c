@@ -41,6 +41,8 @@ void Node_init(void *semaphore)
 //    memcpy(gNodes[1].mac,mac,MAC_SIZE);
 }
 
+
+
 void Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
 {
 
@@ -67,6 +69,22 @@ void Node_updateNode(Node_nodeInfo_t *node)
         if (macCompare(gNodes[i].mac, node[i].mac))
         {
             memcpy(&gNodes[i], node, sizeof(Node_nodeInfo_t));
+        }
+    }
+}
+void Node_eraseNode(Node_nodeInfo_t* node)
+{
+    int i = 0;
+    for (i = 0; i < NUM_NODES; ++i)
+    {
+        if (macCompare(gNodes[i].mac, node[i].mac))
+        {
+            memset(&gNodes[i], 0, sizeof(Node_nodeInfo_t));
+            gNodes[i].isVacant = true;
+            memset(gNodesClocks[i].mac, 0, 8);
+
+
+            return;
         }
     }
 }
@@ -146,6 +164,23 @@ void Node_stopTimer(uint8_t mac[MAC_SIZE])
         if (macCompare(gNodesClocks[i].mac, mac))
         {
             Clock_stop(gNodesClocks[i].clkHandle);
+            return;
+        }
+        else
+        {
+            //failure to find node with this mac
+        }
+    }
+}
+
+void Node_setNumRetry(uint8_t mac[MAC_SIZE], uint32_t numRetry)
+{
+    int i = 0;
+    for (i = 0; i < NUM_NODES; ++i)
+    {
+        if (macCompare(gNodes[i].mac, mac))
+        {
+            gNodes[i].numRetry = numRetry;
             return;
         }
         else

@@ -18,7 +18,7 @@
 /*! Event ID - Start the device in the network */
 #define COLLECTOR_START_EVT               0x0001
 #define COLLECTOR_UI_INPUT_EVT               0x0002
-
+#define COLLECTOR_SEND_MSG_EVT 0x0004
 //COLLECTOR_UI_INPUT_EVT
 
 #define RSSI_ARR_SIZE 10
@@ -27,6 +27,7 @@ typedef struct
 {
     /*! Short address of associated device */
     uint16_t shortAddr;
+    ApiMac_sAddrExt_t extAddr;
 
     /*! RSSI */
     int8_t rssi;
@@ -146,6 +147,7 @@ extern void Collector_init();
 extern void Collector_process(void);
 
 void Csf_processCliUpdate();
+void Csf_processCliSendMsgUpdate();
 
 
 extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t* line);

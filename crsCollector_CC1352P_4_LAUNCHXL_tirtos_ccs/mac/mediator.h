@@ -51,8 +51,8 @@ void Mediator_setMacSem(void* sem);
 void Mediator_sendMsgToApp(Mediator_msgObjSentToApp_t* msg );
 void Mediator_sendMsgToMac(Mediator_msgObjSentToMac_t* msg );
 //mac calls this func to get msgs from app
-void Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg );
+bool Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg );
 //app calls this func to get msgs from mac
-void Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg );
+bool Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg );
 
 #endif /* MAC_MEDIATOR_H_ */

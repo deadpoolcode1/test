@@ -74,15 +74,16 @@ void Mediator_sendMsgToMac(Mediator_msgObjSentToMac_t* msg )
 }
 
 //mac calls this func to get msgs from app
-void Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg )
+bool Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg )
 {
-    Mailbox_pend(mbxHandleToMac, msg, BIOS_NO_WAIT);
+    bool rsp = Mailbox_pend(mbxHandleToMac, msg, BIOS_NO_WAIT);
+    return rsp;
 
 }
 
 //app calls this func to get msgs from mac
-void Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg )
+bool Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg )
 {
-    Mailbox_pend(mbxHandleToApp, msg, BIOS_NO_WAIT);
+    return Mailbox_pend(mbxHandleToApp, msg, BIOS_NO_WAIT);
 }
 

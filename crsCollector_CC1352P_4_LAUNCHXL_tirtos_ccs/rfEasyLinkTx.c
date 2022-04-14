@@ -64,6 +64,7 @@
 #include "application/collector.h"
 #include "cp_cli.h"
 #include "crs_cli.h"
+#include "mediator.h"
 
 
 
@@ -300,7 +301,10 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
-    CLI_init();
+//    CLI_init();
+    CP_CLI_init();
+
+    Mediator_init();
     appTask_init();
 //    txTask_init(pinHandle);
     Mac_init();

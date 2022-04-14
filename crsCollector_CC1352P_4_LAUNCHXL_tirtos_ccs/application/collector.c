@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "api_mac.h"
 #include "collector.h"
 #include "smsgs.h"
 #include "mac/api_mac.h"
@@ -123,6 +124,14 @@ void Collector_process(void)
         /* Clear the event */
         Util_clearEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
     }
+
+    if (Collector_events & COLLECTOR_SEND_MSG_EVT)
+    {
+        CLI_processCliSendMsgUpdate();
+
+        /* Clear the event */
+        Util_clearEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
+    }
     Config_process();
     MultiFiles_process();
     RF_process();
@@ -130,7 +139,20 @@ void Collector_process(void)
     Fpga_process();
     DIG_process();
     Tdd_process();
+    if (Collector_events == 0)
+    {
+        ApiMac_processIncoming();
+    }
 }
+
+void Csf_processCliSendMsgUpdate()
+{
+    Util_setEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
+
+            /* Wake up the application thread when it waits for clock event */
+            Semaphore_post(sem);
+}
+
 
 void Csf_processCliUpdate()
 {

@@ -24,8 +24,6 @@
 /*! Capability Information - Device is capable of becoming a PAN coordinator */
 #define CAPABLE_PAN_COORD       0x01
 
-#define MAC_MCPS_DATA_CNF           12    /* Data confirm */
-#define MAC_MCPS_DATA_IND           13    /* Data indication */
 
 /******************************************************************************
  Global variables
@@ -102,10 +100,9 @@ void ApiMac_processIncoming(void)
     if(Semaphore_pend(appSemHandle, BIOS_WAIT_FOREVER ))
     {
         Mediator_msgObjSentToApp_t msg = {0};
-        Mediator_getNextMacMsg(&msg);
-        Mediator_msgObjSentToApp_t msgCmp = {0};
+        bool rsp = Mediator_getNextMacMsg(&msg);
         //check if there is a msg
-        if (memcmp(&msg, &msgCmp, sizeof(Mediator_msgObjSentToApp_t)) == 0)
+        if (rsp == false)
         {
 
         }
@@ -270,15 +267,19 @@ static void deallocateIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
 extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData)
 {
     uint16_t len = pData->msdu.len;
+
     uint8_t *data = malloc(len + 100);
     memset(data, 0, len + 100);
     memcpy(data, pData->msdu.p, len);
+
     ApiMac_mcpsDataReq_t* p = malloc(sizeof(ApiMac_mcpsDataReq_t) + 50);
     memset(p, 0, sizeof(ApiMac_mcpsDataReq_t) + 50);
     memcpy(p, pData, sizeof(ApiMac_mcpsDataReq_t) );
+
     p->msdu.p = data;
     Mediator_msgObjSentToMac_t msg = {0};
     msg.msg = p;
+//    msg.msg->msdu.p = p;
     Mediator_sendMsgToMac(&msg);
 }
 

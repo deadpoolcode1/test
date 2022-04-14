@@ -53,6 +53,9 @@ void Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
 
 void Node_updateNode(Node_nodeInfo_t* node);
 
+void Node_eraseNode(Node_nodeInfo_t* node);
+
+
 void Node_addNode(Node_nodeInfo_t* node);
 
 void Node_setTimeout(uint8_t mac[MAC_SIZE], Clock_FuncPtr clockFxn,UInt timeout);
@@ -66,6 +69,7 @@ void Node_setNumSendPackets(uint8_t mac[MAC_SIZE],uint32_t numSendPackets);
 void Node_setSeqSend(uint8_t mac[MAC_SIZE],uint16_t seqSend);
 void Node_setSeqRcv(uint8_t mac[MAC_SIZE],uint16_t seqRcv);
 void Node_setPendingPckts(uint8_t mac[MAC_SIZE],Node_pendingPckts_t* pendingPacket);
+void Node_setNumRetry(uint8_t mac[MAC_SIZE], uint32_t numRetry);
 
 //void Node_setmac(uint8_t mac[MAC_SIZE],uint8_t mac[MAC_SIZE]);
 

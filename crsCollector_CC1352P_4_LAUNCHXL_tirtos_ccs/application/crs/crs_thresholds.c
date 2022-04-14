@@ -130,6 +130,7 @@ CRS_retVal_t Thresh_format(int fileIndex)
 CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
 {
     char *fileContent = CRS_malloc( 1200);
+    char *prevFileContent = fileContent;
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
@@ -144,14 +145,14 @@ CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
             memcpy(strlenStr, fileContent, STRLEN_BYTES);
             if (strlen(strlenStr) > 3)
             {
-                CRS_free(fileContent);
+                CRS_free(prevFileContent);
 
                 return CRS_FAILURE;
             }
             uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
             if (strlenPrev > 1024)
             {
-                CRS_free(fileContent);
+                CRS_free(prevFileContent);
 
                 return CRS_FAILURE;
             }
@@ -165,7 +166,7 @@ CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
             gThreshCache = CRS_malloc(strlen(fileContent) + 100);
             if (gThreshCache == NULL)
             {
-                CRS_free(fileContent);
+                CRS_free(prevFileContent);
 
                 return CRS_FAILURE;
             }
@@ -195,7 +196,7 @@ CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
         memcpy(returnedVars, fileContent ,
                strlen(fileContent ));
     }
-    CRS_free(fileContent);
+    CRS_free(prevFileContent);
 
     return CRS_SUCCESS;
 }
@@ -204,6 +205,8 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
 {
 
     char *fileContent = CRS_malloc(1200);
+    char *prevFileContent = fileContent;
+
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
@@ -216,14 +219,14 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
     memcpy(strlenStr, fileContent, STRLEN_BYTES);
     if (strlen(strlenStr) > 3)
     {
-        CRS_free(fileContent);
+        CRS_free(prevFileContent);
 
         return CRS_FAILURE;
     }
     uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
     if (strlenPrev > 1024)
     {
-        CRS_free(fileContent);
+        CRS_free(prevFileContent);
 
         return CRS_FAILURE;
     }
@@ -261,7 +264,7 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
         gThreshCache = CRS_malloc(strlen(fileContent ) + 100);
         if (gThreshCache == NULL)
         {
-            CRS_free(fileContent);
+            CRS_free(prevFileContent);
 
             return CRS_FAILURE;
         }
@@ -274,14 +277,14 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
         gThreshCache = CRS_malloc(strlen(fileContent) + 100);
         if (gThreshCache == NULL)
         {
-            CRS_free(fileContent);
+            CRS_free(prevFileContent);
 
             return CRS_FAILURE;
         }
         memset(gThreshCache, 0, strlen(fileContent) + 100);
         memcpy(gThreshCache, fileContent, strlen(fileContent));
     }
-    CRS_free(fileContent);
+    CRS_free(prevFileContent);
 
     return CRS_SUCCESS;
 }
@@ -290,6 +293,8 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
 {
 
     char *fileContent = CRS_malloc(1200);
+    char *prevFileContent = fileContent;
+
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
@@ -303,13 +308,13 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
     uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
     if (strlen(strlenStr) > 3)
     {
-        CRS_free(fileContent);
+        CRS_free(prevFileContent);
 
         return CRS_FAILURE;
     }
     if (strlenPrev > 1024)
     {
-        CRS_free(fileContent);
+        CRS_free(prevFileContent);
 
         return CRS_FAILURE;
     }
@@ -400,7 +405,7 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
         gThreshCache = CRS_malloc(strlen(fileContent) + 100);
         if (gThreshCache == NULL)
         {
-            CRS_free(fileContent);
+            CRS_free(prevFileContent);
 
             return CRS_FAILURE;
         }
@@ -413,14 +418,14 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
         gThreshCache = CRS_malloc(strlen(fileContent) + 100);
         if (gThreshCache == NULL)
         {
-            CRS_free(fileContent);
+            CRS_free(prevFileContent);
 
             return CRS_FAILURE;
         }
         memset(gThreshCache, 0, strlen(fileContent) + 100);
         memcpy(gThreshCache, fileContent, strlen(fileContent));
     }
-    CRS_free(fileContent);
+    CRS_free(prevFileContent);
 
     return CRS_SUCCESS;
 }

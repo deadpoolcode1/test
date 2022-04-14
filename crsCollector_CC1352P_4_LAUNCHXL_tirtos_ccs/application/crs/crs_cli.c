@@ -289,7 +289,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
-#define UART_WRITE_BUFF_SIZE 2000
+#define UART_WRITE_BUFF_SIZE 5
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
@@ -406,17 +406,7 @@ CRS_retVal_t CLI_init()
                 else
                 {
                     UART_read(gUartHandle, gUartRxBuffer, 1);
-                    //UART_control(gUartHandle, UARTCC26XX_CMD_RETURN_PARTIAL_ENABLE, NULL);
 
-                    // char clearScreenStr[] = CUI_ESC_CLR;// CUI_ESC_TRM_MODE;// CUI_ESC_CUR_HIDE;
-//                    char clearScreenStr[] = CUI_ESC_CLR CUI_ESC_CUR_HIDE;
-//
-//
-//                    if (CUI_SUCCESS != CUI_writeString(clearScreenStr, strlen(clearScreenStr)))
-//                    {
-//                        UART_close(gUartHandle);
-//                        return CUI_FAILURE;
-//                    }
                 }
             }
 
@@ -424,7 +414,8 @@ CRS_retVal_t CLI_init()
 
         gModuleInitialized = true;
 #ifndef CLI_SENSOR
-
+        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
+        CLI_startREAD();
 #else
         CLI_writeString("\r\nSensor\r\nFinding a nwk...", strlen("\r\nSensor\r\nFinding a nwk..."));
 #endif

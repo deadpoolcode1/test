@@ -21,6 +21,7 @@
 #include "mac/node.h"
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
+#include "sm_content_ack.h"
 
 #define CUI_NUM_UART_CHARS 1024
 
@@ -54,7 +55,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 
 
 
-#define UART_WRITE_BUFF_SIZE 5
+#define UART_WRITE_BUFF_SIZE 2000
 #define TMP_BUFF_SZIE 512
 
 
@@ -232,7 +233,7 @@ void CP_CLI_processCliUpdate()
 static void debugCli(char *line)
 {
 //    RfEasyLink_sendPacket();
-    MAC_printSensorStateMachine();
+    Smac_printStateMachine();
 
 //    Node_init();
 //    Node_nodeInfo_t rspNode;
@@ -327,7 +328,10 @@ void CP_CLI_startREAD()
 {
 
 //
-
+    if ((gUartHandle == NULL))
+        {
+            return ;
+        }
 
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
 
@@ -348,6 +352,10 @@ void CP_CLI_startREAD()
 
 void CP_CLI_cliPrintf(const char *_format, ...)
 {
+    if ((gUartHandle == NULL))
+        {
+            return ;
+        }
     if (strlen(_format) >= 1024)
     {
         return ;
