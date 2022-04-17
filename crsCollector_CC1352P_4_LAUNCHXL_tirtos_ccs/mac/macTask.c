@@ -119,6 +119,8 @@ static void macFnx(UArg arg0, UArg arg1)
 
     TX_init(macSemHandle);
     RX_init(macSemHandle);
+    Smac_init(macSemHandle);
+
     /*
      * Initialize EasyLink with the settings found in ti_easylink_config.h
      * Modify EASYLINK_PARAM_CONFIG in ti_easylink_config.h to change the default

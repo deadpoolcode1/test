@@ -94,6 +94,10 @@ void CollectorLink_setSeqRcv(uint16_t seqRcv)
 
 }
 
+void CollectorLink_setPendingPkts(CollectorLink_pendingPckts_t* pendingPkt)
+{
+memcpy(&(gNodes[0].pendingPacket), pendingPkt, sizeof(CollectorLink_pendingPckts_t));
+}
 void funcTest()
 {
     Util_setEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);

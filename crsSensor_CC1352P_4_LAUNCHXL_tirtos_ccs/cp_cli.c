@@ -5,16 +5,6 @@
  *      Author: epc_4
  */
 
-/*
- * sensor pesudo code:
- * start with cli recv-enterRx with sepcial cb that will send ack, using txsendpckat which uses a speical cb that enterRx(this cb will simply send ack if it has the same seq number) and start timer that wait 5 seconds, in the timer cb rasie event of ready_content and in the while loop in if of ready_content abortRx and send random content, and in the cb of content_send enterRx to wait for ack from collector and this rxcb will be rxIdle
- *
- *
- *
- *
- */
-
-
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,14 +19,13 @@
 #include "cp_cli.h"
 #include "mac/macTask.h"
 #include "mac/collectorLink.h"
-#include "mac/crs_rx.h"
 #include "mac/crs_tx.h"
-
-//#include "mac/node.h"
+#include "mac/crs_rx.h"
+#include "sm_content_ack.h"
 
 #define CUI_NUM_UART_CHARS 1024
 
-#define CLI_PROMPT "\r\nSensor> "
+#define CLI_PROMPT "\r\nCollector> "
 
 #define CLI_DEBUG "debug"
 
@@ -45,15 +34,13 @@
 #define CLI_STOP_RECIVE_PACKET "stop"
 
 
-//#define CLI_ADD_NODE "add node"
-//#define CLI_LIST_NODES "list nodes"
-
-#define CLI_ADD_COLLECTOR "add collector"
-#define CLI_LIST_COLLECTOR "show collector"
+#define CLI_ADD_NODE "add node"
+#define CLI_LIST_NODES "list nodes"
 
 
-//static void recivePacketCommand(char *line);
-//static void sendPacketCommand(char *line);
+
+static void recivePacketCommand(char *line);
+static void sendPacketCommand(char *line);
 //static void stopRecivePacketCommand(char *line);
 
 
@@ -70,10 +57,6 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 
 #define UART_WRITE_BUFF_SIZE 2000
 #define TMP_BUFF_SZIE 512
-
-
-
-
 
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
@@ -97,12 +80,9 @@ static bool gIsNewCommand = true;
 static void CLI_writeString(void *_buffer, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
-static void recivePacketCommand(char *line);
-static void sendPacketCommand(char *line);
-static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
-static void txDoneCbAckReceive(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
-static void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status);
-CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
+
+static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... );
+CP_CLI_log_handler_func_type*  gCpLogHandler = &defaultTestLog;
 
 
 static void debugCli(char *line);
@@ -110,7 +90,7 @@ static void addNodeCommand(char *line);
 
 
 
-void CLI_init()
+void CP_CLI_init()
 {
 
     if (!gModuleInitialized)
@@ -144,55 +124,18 @@ void CLI_init()
         }
 
         gModuleInitialized = true;
+        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
 
-        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
+//        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return;
     }
 
     return;
 }
 
-static void defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
-{
-    if (strlen(format) >= 512)
-       {
-           return ;
-       }
-       char printBuff[512] = { 0 };
-       if (format == NULL)
-       {
-           return ;
-       }
-                va_list args;
 
-                switch( level )
-                {
-                case CP_CLI_INFO:
-                    CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_DEBUG:
-                   return;
-                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_ERR:
-//                  return;
 
-                  CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_WARN:
-//                   return;
-
-                   CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
-                        break;
-                }
-
-                va_start(args, format);
-                SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
-                va_end(args);
-                CLI_cliPrintf(printBuff);
-}
-
-void CLI_processCliUpdate()
+void CP_CLI_processCliUpdate()
 {
 
     if (!gModuleInitialized)
@@ -220,46 +163,25 @@ void CLI_processCliUpdate()
 
        }
 
-//        if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE)-1) == 0)
-//               {
-//
-//            addNodeCommand(line);
-//
-//                   inputBad = false;
-//                   CLI_startREAD();
-//               }
-//
-//
-//        if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES)-1) == 0)
-//               {
-//
-////            Node_listNodes();
-////            CLI_cliPrintf("\r\nStatus:0x0");
-//                   inputBad = false;
-//                   CLI_startREAD();
-//               }
+        if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE)-1) == 0)
+               {
+
+            addNodeCommand(line);
+
+                   inputBad = false;
+                   CP_CLI_startREAD();
+               }
 
 
+        if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES)-1) == 0)
+               {
 
+//            Node_listNodes();
+//            CP_CLI_cliPrintf("\r\nStatus:0x0");
+                   inputBad = false;
+                   CP_CLI_startREAD();
+               }
 
-    if (memcmp(CLI_ADD_COLLECTOR, line, sizeof(CLI_ADD_COLLECTOR)-1) == 0)
-           {
-
-        addNodeCommand(line);
-
-               inputBad = false;
-               CLI_startREAD();
-           }
-
-
-    if (memcmp(CLI_LIST_COLLECTOR, line, sizeof(CLI_LIST_COLLECTOR)-1) == 0)
-           {
-
-       CollectorLink_printCollector();
-        CLI_cliPrintf("\r\nStatus:0x0");
-               inputBad = false;
-               CLI_startREAD();
-           }
 
 
     if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
@@ -268,7 +190,6 @@ void CLI_processCliUpdate()
         sendPacketCommand(line);
 
                inputBad = false;
-               CLI_cliPrintf("\r\nStatus:0x0");
 
            }
 
@@ -278,7 +199,6 @@ void CLI_processCliUpdate()
         recivePacketCommand(line);
 
                inputBad = false;
-               CLI_cliPrintf("\r\nStatus:0x0");
 
            }
 //    if (memcmp(CLI_STOP_RECIVE_PACKET, line, sizeof(CLI_STOP_RECIVE_PACKET)-1) == 0)
@@ -297,13 +217,13 @@ void CLI_processCliUpdate()
 
     if (inputBad && strlen(line) > 0)
     {
-        CLI_cliPrintf(badInputMsg);
-        CLI_startREAD();
+        CP_CLI_cliPrintf(badInputMsg);
+        CP_CLI_startREAD();
         return;
     }
     else if (inputBad)
     {
-        CLI_startREAD();
+        CP_CLI_startREAD();
         return;
     }
 
@@ -312,43 +232,47 @@ void CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
-    printSensorStateMachine();
-            CLI_startREAD();
+//    RfEasyLink_sendPacket();
+//    Smac_printStateMachine();
+
+//    Node_init();
+//    Node_nodeInfo_t rspNode;
+//    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
+//    Node_getNode(mac, &rspNode);
+    CP_CLI_startREAD();
 }
 
 
 static void addNodeCommand(char *line)
 {
-    CollectorLink_collectorLinkInfo_t node={0};
-    uint8_t mac[MAC_SIZE]={0};
-    char tempBuff[TMP_BUFF_SZIE]={0};
-    memcpy(tempBuff,line,strlen(line));
-    const char s[2] = " ";
-       char *token;
-       /* get the first token */
-       token = strtok(tempBuff, s);//add
-       token = strtok(NULL, s);//node
-       token = strtok(NULL, s);//macAddr
-       if (strlen(token)!=(MAC_SIZE+2)) {
-           CLI_cliPrintf("\r\nStatus:0x1");
-           return;
-    }
-       char tmpMacStrAddr[MAC_SIZE]={0};
-       memcpy(tmpMacStrAddr,&token[2],MAC_SIZE);
-       int i=0;
-       char* ptr=tmpMacStrAddr;
-       char tmp[2]={0};
-       //0xaa aa aa aa
-       for (i = 0; i <MAC_SIZE; i++) {
-           *tmp=*ptr;
-           node.mac[i]=(uint8_t) strtoul(tmp, NULL, 16);
-           ptr++;
-    }
-
+//    Node_nodeInfo_t node={0};
+//    uint8_t mac[MAC_SIZE]={0};
+//    char tempBuff[TMP_BUFF_SZIE]={0};
+//    memcpy(tempBuff,line,strlen(line));
+//    const char s[2] = " ";
+//       char *token;
+//       /* get the first token */
+//       token = strtok(tempBuff, s);//add
+//       token = strtok(NULL, s);//node
+//       token = strtok(NULL, s);//macAddr
+//       if (strlen(token)!=(MAC_SIZE+2)) {
+//           CP_CLI_cliPrintf("\r\nStatus:0x1");
+//           return;
+//    }
+//       char tmpMacStrAddr[MAC_SIZE]={0};
+//       memcpy(tmpMacStrAddr,&token[2],MAC_SIZE);
+//       int i=0;
+//       char* ptr=tmpMacStrAddr;
+//       char tmp[2]={0};
+//       //0xaa aa aa aa
+//       for (i = 0; i <MAC_SIZE; i++) {
+//           *tmp=*ptr;
+//           node.mac[i]=(uint8_t) strtoul(tmp, NULL, 16);
+//           ptr++;
+//    }
+//
 //       Node_addNode(&node);
-       CollectorLink_updateCollector(&node);
-
-       CLI_cliPrintf("\r\nStatus:0x0");
+//       CP_CLI_cliPrintf("\r\nStatus:0x0");
 
 
 
@@ -357,28 +281,57 @@ static void addNodeCommand(char *line)
 
 
 
+
+static void sendPacketCommand(char *line)
+{
+//    Node_nodeInfo_t node = { 0 };
+//    uint8_t mac[MAC_SIZE] = { 0 };
 //
-//static void sendPacketCommand(char *line)
-//{
-//    RfEasyLink_sendPacket();
-//}
 //
-//static void recivePacketCommand(char *line)
-//{
-//    RfEasyLink_recivePacket();
-//    CLI_startREAD();
+//    char tmpBuff[TMP_BUFF_SZIE] = { 0 };
+//    memcpy(tmpBuff, line, strlen(line));
+//    const char s[2] = " ";
+//    char *token;
+//    /* get the first token */
+//    token = strtok(&(tmpBuff[sizeof(CLI_SEND_PACKET)]), s);
 //
-//}
+//
+//    if (strlen(token) != (MAC_SIZE + 2))
+//    {
+//        CLI_cliPrintf("\r\nStatus:0x1");
+//            CP_CLI_startREAD();
+//
+//        return;
+//    }
+//    char tmpMacStrAddr[MAC_SIZE] = { 0 };
+//    memcpy(tmpMacStrAddr, &token[2], MAC_SIZE);
+
+    Mac_cliSendContent(NULL);
+    CP_CLI_startREAD();
+
+
+
+}
+
+static void recivePacketCommand(char *line)
+{
+    RX_enterRx(NULL, NULL);
+    CP_CLI_startREAD();
+
+}
 //static void stopRecivePacketCommand(char *line)
 //{
 //    RfEasyLink_stopRecivePacket();
 //}
 
-void CLI_startREAD()
+void CP_CLI_startREAD()
 {
 
 //
-
+    if ((gUartHandle == NULL))
+        {
+            return ;
+        }
 
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
 
@@ -397,8 +350,12 @@ void CLI_startREAD()
 
 }
 
-void CLI_cliPrintf(const char *_format, ...)
+void CP_CLI_cliPrintf(const char *_format, ...)
 {
+    if ((gUartHandle == NULL))
+        {
+            return ;
+        }
     if (strlen(_format) >= 1024)
     {
         return ;
@@ -650,46 +607,43 @@ static void CLI_writeString(void *_buffer, size_t _size)
 
     return ;
 }
-
-
-static void sendPacketCommand(char *line)
+static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... )
 {
-    MAC_crsPacket_t pkt = {0};
-    pkt.commandId = MAC_COMMAND_DATA;
+    if (strlen(format) >= 512)
+       {
+           return ;
+       }
+       char printBuff[512] = { 0 };
+       if (format == NULL)
+       {
+           return ;
+       }
+                va_list args;
 
-    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
-    memcpy(pkt.dstAddr, tmp, 8);
+                switch( level )
+                {
+                case CP_CLI_INFO:
+                    CP_CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_DEBUG:
+//                   return;
+                   CP_CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_ERR:
+//                  return;
 
-    uint8_t tmp2[8] = { 0xfc, 0x62, 0x4f, 0x41, 0xb4, 0x21, 0x00 };
-    memcpy(pkt.srcAddr, tmp2, 8);
+                  CP_CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
+                        break;
+                case CP_CLI_WARN:
+//                   return;
 
-    pkt.seqSent = 10;
-    pkt.seqRcv = 50;
+                   CP_CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
+                        break;
+                }
 
-    pkt.isNeedAck = 1;
-
-    int i = 0;
-
-    for (i = 0; i < 50; i++)
-    {
-        pkt.payload[i] = i;
-    }
-    pkt.len = 50;
-
-//     pkt.dstAddr
-
-    TX_sendPacket(&pkt, tmp,txDoneCbAckListen);
-    CLI_startREAD();
-
-}
-
-
-static void recivePacketCommand(char *line)
-{
-    uint8_t tmp[8] = {0xbb,0xbb,0xbb,0xbb,0xbb,0xbb,0xbb,0xbb};
-//    RX_enterRx(tmp, rxDoneCbAckSend);
-    Mac_cliReceivePacket(tmp);
-    CLI_startREAD();
-
+                va_start(args, format);
+                SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
+                va_end(args);
+                CP_CLI_cliPrintf(printBuff);
 }
 

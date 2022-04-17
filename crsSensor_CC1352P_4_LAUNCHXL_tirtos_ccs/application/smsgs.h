@@ -91,5 +91,4 @@
      Smsgs_statusValues_partialSuccess = 2,
  } Smsgs_statusValues_t;
 
-
 #endif /* APPLICATION_SMSGS_H_ */

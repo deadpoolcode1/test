@@ -165,8 +165,8 @@ static void smacFinishedSendingContentCb(EasyLink_Status status)
         Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend + 1);
         //10us per tick so for 5ms we need 500 ticks
 //        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
-        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20 * 4);
-        Node_startTimer(gSmAckContentInfo.nodeMac);
+//        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20 * 4);
+//        Node_startTimer(gSmAckContentInfo.nodeMac);
         RX_enterRx(smacReceivedContentAckCb, collectorPib.mac);
     }
 
@@ -243,23 +243,10 @@ static void waitForSensorContentTimeoutCb(void *arg)
     EasyLink_abort();
 }
 
-//typedef struct Frame
-//{
-//    //payload len
-//    uint16_t len;
-//    uint16_t seqSent;
-//    uint16_t seqRcv;
-//    uint8_t srcAddr[8];
-//    uint8_t dstAddr[8];
-//    MAC_commandId_t commandId;
-//    uint8_t isNeedAck;
-//    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
-//} MAC_crsPacket_t;
-
 static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
                                      EasyLink_Status status)
 {
-    Node_stopTimer(gSmAckContentInfo.nodeMac);
+//    Node_stopTimer(gSmAckContentInfo.nodeMac);
     //we either got the ack or we lost the ack and got the content
     Node_nodeInfo_t node = { 0 };
     Node_getNode(gSmAckContentInfo.nodeMac, &node);
@@ -279,9 +266,9 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
             Node_setSeqRcv(gSmAckContentInfo.nodeMac, node.seqRcv + 1);
             //TODO set timer to content.
             //10us per tick so for 5ms we need 500 ticks
-            Node_setTimeout(gSmAckContentInfo.nodeMac,
-                            waitForSensorContentTimeoutCb, 100 * 20 * 1000);
-            Node_startTimer(gSmAckContentInfo.nodeMac);
+//            Node_setTimeout(gSmAckContentInfo.nodeMac,
+//                            waitForSensorContentTimeoutCb, 100 * 20 * 1000);
+//            Node_startTimer(gSmAckContentInfo.nodeMac);
             RX_enterRx(smacRecivedContentCb, collectorPib.mac);
 
             Util_setEvent(&smacEvents, SMAC_RECIVED_ACK_EVT);

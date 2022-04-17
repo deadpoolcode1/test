@@ -10,6 +10,7 @@
 #include "mediator.h"
 #include <ti/sysbios/BIOS.h>
 #include <xdc/runtime/Error.h>
+#include <ti/sysbios/knl/Semaphore.h>
 
 /******************************************************************************
  Global variables
@@ -26,6 +27,10 @@ static Mailbox_Handle mbxHandleToMac;
 static Mailbox_Params mbxParamsToApp;
 static Mailbox_Handle mbxHandleToApp;
 
+static void *appSem;
+static void *macSem;
+
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -38,32 +43,47 @@ static Mailbox_Handle mbxHandleToApp;
 void Mediator_init()
 {
     Mailbox_Params_init(&mbxParamsToMac);
-    mbxHandleToMac = Mailbox_create(sizeof(Mediator_msgObj_t), 5, &mbxParamsToMac, Error_IGNORE);
+    mbxHandleToMac = Mailbox_create(sizeof(Mediator_msgObjSentToMac_t), 5, &mbxParamsToMac, Error_IGNORE);
 
     Mailbox_Params_init(&mbxParamsToApp);
-    mbxHandleToApp = Mailbox_create(sizeof(Mediator_msgObj_t), 5, &mbxParamsToApp,
+    mbxHandleToApp = Mailbox_create(sizeof(Mediator_msgObjSentToApp_t), 5, &mbxParamsToApp,
                                     Error_IGNORE);
 
 }
-void Mediator_sendMsgToApp(Mediator_msgObj_t* msg )
+
+void Mediator_setAppSem(void* sem)
+{
+    appSem = sem;
+}
+void Mediator_setMacSem(void* sem)
+{
+    macSem = sem;
+}
+
+void Mediator_sendMsgToApp(Mediator_msgObjSentToApp_t* msg )
 {
     Mailbox_post(mbxHandleToApp, msg, BIOS_NO_WAIT);
+    Semaphore_post(appSem);
+
 }
-void Mediator_sendMsgToMac(Mediator_msgObj_t* msg )
+void Mediator_sendMsgToMac(Mediator_msgObjSentToMac_t* msg )
 {
     Mailbox_post(mbxHandleToMac, msg, BIOS_NO_WAIT);
+    Semaphore_post(macSem);
+
 }
 
 //mac calls this func to get msgs from app
-void Mediator_getNextAppMsg(Mediator_msgObj_t* msg )
+bool Mediator_getNextAppMsg(Mediator_msgObjSentToMac_t* msg )
 {
-    Mailbox_pend(mbxHandleToMac, msg, BIOS_NO_WAIT);
+    bool rsp = Mailbox_pend(mbxHandleToMac, msg, BIOS_NO_WAIT);
+    return rsp;
 
 }
 
 //app calls this func to get msgs from mac
-void Mediator_getNextMacMsg(Mediator_msgObj_t* msg )
+bool Mediator_getNextMacMsg(Mediator_msgObjSentToApp_t* msg )
 {
-    Mailbox_pend(mbxHandleToApp, msg, BIOS_NO_WAIT);
+    return Mailbox_pend(mbxHandleToApp, msg, BIOS_NO_WAIT);
 }
 

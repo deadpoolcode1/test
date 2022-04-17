@@ -28,6 +28,8 @@
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include "ti_drivers_config.h"
 
+#include "crs_global_defines.h"
+
 #include "util_timer.h"
 #include "api_mac.h"
 
@@ -37,8 +39,7 @@
 #include "collector.h"
 #else
 #include "sensor.h"
-#include "jdllc.h"
-#include "ssf.h"
+
 #endif
 
 #include "crs_cli.h"
@@ -92,7 +93,6 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
 
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 
 
@@ -101,6 +101,9 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_DISASSOC "disassoc"
 
 #endif
+
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+
 
 #define CLI_DEVICE "unit"
 
@@ -289,7 +292,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
-#define UART_WRITE_BUFF_SIZE 2000
+#define UART_WRITE_BUFF_SIZE 5
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
@@ -460,10 +463,10 @@ CRS_retVal_t CLI_processCliSendMsgUpdate(void)
 CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
 {
 
-    if (!gModuleInitialized)
-    {
-        return CRS_FAILURE;
-    }
+//    if (!gModuleInitialized)
+//    {
+//        return CRS_FAILURE;
+//    }
 
     if (line == NULL)
     {
@@ -1086,13 +1089,13 @@ static CRS_retVal_t CLI_ledToggleParsing(char *line);
 #else
 static CRS_retVal_t CLI_associate(char *line)
 {
-    Ssf_assocAction();
+//    Ssf_assocAction();
     return CRS_SUCCESS;
 
 }
 static CRS_retVal_t CLI_disassociate(char *line)
 {
-    Ssf_disassocAction();
+//    Ssf_disassocAction();
     return CRS_SUCCESS;
 }
 #endif
@@ -3935,6 +3938,10 @@ static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* de
 
 CRS_retVal_t CLI_startREAD()
 {
+    if ((gUartHandle == NULL) && gIsRemoteCommand == false )
+       {
+           return CRS_UART_FAILURE;
+       }
 #ifdef CLI_SENSOR
 
     if (gIsRemoteCommand == true || (gIsRemoteTransparentBridge == true && gRspBuff != 0))
@@ -3979,6 +3986,10 @@ CRS_retVal_t CLI_startREAD()
 
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
 {
+    if ((gUartHandle == NULL))
+       {
+           return CRS_UART_FAILURE;
+       }
     if (strlen(format) >= 512)
        {
            return CRS_FAILURE;
@@ -4033,6 +4044,10 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
  */
 CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 {
+    if ((gUartHandle == NULL) && gIsRemoteCommand == false)
+       {
+           return CRS_UART_FAILURE;
+       }
     if (strlen(_format) >= 1024)
     {
         return CRS_FAILURE;

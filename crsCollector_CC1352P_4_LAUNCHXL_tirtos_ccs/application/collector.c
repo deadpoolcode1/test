@@ -89,6 +89,11 @@ ApiMac_callbacks_t Collector_macCallbacks = {
 
                                               };
 
+
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
+
 void Collector_init()
 {
     sem = ApiMac_init();
@@ -192,7 +197,7 @@ Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
 //                    {
 //                        gIsRssi = true;
 //                    }
-//                    status = Collector_status_success;
+                    status = Collector_status_success;
 //                    memcpy(gLastCrsMsg, line, SMSGS_CRS_MSG_LENGTH - 2);
 //                    memset(&gCrsLastpDstAddr, 0, sizeof(ApiMac_sAddr_t));
 //                    gCrsLastpDstAddr.addrMode = pDstAddr->addrMode;
@@ -219,7 +224,7 @@ Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
 //                    {
 //                        gIsRssi = true;
 //                    }
-//                    status = Collector_status_success;
+                    status = Collector_status_success;
 //                    memcpy(gLastCrsMsg, line, SMSGS_CRS_MSG_LENGTH);
 //
 //                    memset(&gCrsLastpDstAddr, 0, sizeof(ApiMac_sAddr_t));
@@ -343,5 +348,27 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 }
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
+    if ((pDataInd != NULL) && (pDataInd->msdu.p != NULL)
+                && (pDataInd->msdu.len > 0))
+        {
+            Smsgs_cmdIds_t cmdId = (Smsgs_cmdIds_t) *(pDataInd->msdu.p);
 
+            switch (cmdId)
+            {
+            case Smsgs_cmdIds_crsRsp:
+
+                       if (pDataInd->msdu.len > 1)
+                       {
+                           CLI_cliPrintf("%s", pDataInd->msdu.p + 1);
+                       }
+
+                       CLI_startREAD();
+
+                       break;
+
+            default:
+                /* Should not receive other messages */
+                break;
+            }
+        }
 }

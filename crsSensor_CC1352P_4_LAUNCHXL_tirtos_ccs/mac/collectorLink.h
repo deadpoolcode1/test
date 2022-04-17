@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+
 #define MAX_BYTES_PAYLOAD 256
 typedef struct collectorLinkClocks{
     uint8_t mac[MAC_SIZE];
@@ -65,6 +66,7 @@ void CollectorLink_setNumRcvPackets(uint32_t numRcvPackets);
 void CollectorLink_setNumSendPackets(uint32_t numSendPackets);
 void CollectorLink_setSeqSend(uint16_t seqSend);
 void CollectorLink_setSeqRcv(uint16_t seqRcv);
+void CollectorLink_setPendingPkts(CollectorLink_pendingPckts_t* pendingPkt);
 
 void funcTest();
 

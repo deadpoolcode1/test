@@ -55,7 +55,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 
 
 
-#define UART_WRITE_BUFF_SIZE 2000
+#define UART_WRITE_BUFF_SIZE 2
 #define TMP_BUFF_SZIE 512
 
 

@@ -15,7 +15,6 @@
 #include "easylink/EasyLink.h"
 #include "mac/mac_util.h"
 
-#include "collectorLink.h"
 
 /******************************************************************************
  Constants and definitions
@@ -45,13 +44,18 @@ void RX_init(void * semaphore)
     sem = semaphore;
 }
 
-void RX_enterRx(uint8_t dstMac[8],EasyLink_ReceiveCb cbRx)
+void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
 {
-    if (dstMac==NULL) {
-        //when the addrTable is NULL it disables addrFiltering and accepts packets from everyone
-        EasyLink_enableRxAddrFilter(NULL,8,1);
-    }else{
-        EasyLink_enableRxAddrFilter(dstMac,8,1);
+    if (dstAddr == NULL)
+    {
+        EasyLink_enableRxAddrFilter(NULL, 8, 1);
+    }
+    else
+    {
+        EasyLink_enableRxAddrFilter(NULL, 8, 1);
+
+//        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
+
     }
     if (cbRx == NULL)
     {
@@ -67,7 +71,7 @@ void RX_enterRx(uint8_t dstMac[8],EasyLink_ReceiveCb cbRx)
 
 void RX_getPacket(MAC_crsPacket_t* pkt )
 {
-    CP_LOG(CP_CLI_DEBUG, "RECIVED A PACKET");
+//    CP_LOG(CP_CLI_DEBUG, "RECIVED A PACKET");
     uint8_t* pBuf = gRxPacket.payload;
     pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
     pBuf++;
@@ -89,11 +93,6 @@ void RX_getPacket(MAC_crsPacket_t* pkt )
 
     pkt->commandId = (MAC_commandId_t)*pBuf;
 
-}
-
-void RX_getPcktStatus(EasyLink_Status* status)
-{
-    *status = gStatus;
 }
 
 void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
@@ -118,8 +117,19 @@ void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
     pBuf++;
 
     pkt->commandId = (MAC_commandId_t) *pBuf;
+
+    pkt->len = pBuf - pcktBuff;
+
+    pBuf++;
+
+
+    memcpy(pkt->payload, pBuf, 100);
 }
 
+void RX_getPcktStatus(EasyLink_Status* status)
+{
+    *status = gStatus;
+}
 
 static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
 {
@@ -149,66 +159,3 @@ static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
     Semaphore_post(sem);
 
 }
-
-
- void rxDoneCbAckSend(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
-//    if (status == EasyLink_Status_Success)
-//    {
-//    }
-//    else if(status == EasyLink_Status_Aborted)
-//    {
-////        gCbRxFailed();
-//    }
-//    else
-//    {
-////        /* Toggle GLED and RLED to indicate error */
-//    }
-    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
-        gStatus = status;
-
-        MAC_crsPacket_t pkt = {0};
-        uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
-        pkt.commandId=MAC_COMMAND_ACK;
-        TX_sendPacket(&pkt, tmp,NULL);
-        Util_setEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
-        CollectorLink_collectorLinkInfo_t collectorNode;
-        CollectorLink_getCollector(&collectorNode);
-        CollectorLink_setTimeout((Clock_FuncPtr )contentProcessCb, 50000/ Clock_tickPeriod);
-        CollectorLink_startTimer();
-        Semaphore_post(sem);
-}
-
-
-
-
- void rxDoneCbAckReceived(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
-//    if (status == EasyLink_Status_Success)
-//    {
-//    }
-//    else if(status == EasyLink_Status_Aborted)
-//    {
-////        gCbRxFailed();
-//    }
-//    else
-//    {
-////        /* Toggle GLED and RLED to indicate error */
-//    }
-    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
-        gStatus = status;
-        MAC_crsPacket_t* ptr=rxPacket->payload;
-//        if (ptr->commandId==MAC_COMMAND_ACK) {
-            Util_setEvent(&macEvents, MAC_TASK_ACK_RECEIVED);
-//        }
-//            Node_nodeInfo_t collectorNode;
-//            CollectorLink_getCollector(&collectorNode);
-//            CollectorLink_setTimeout((Clock_FuncPtr )contentProcessCb, 50000/ Clock_tickPeriod);
-//            CollectorLink_startTimer();
-        Semaphore_post(sem);
-}
-
-
- void contentProcessCb(){
-     Util_setEvent(&macEvents, MAC_TASK_CONTENT_READY);
-     Semaphore_post(sem);
- }
-

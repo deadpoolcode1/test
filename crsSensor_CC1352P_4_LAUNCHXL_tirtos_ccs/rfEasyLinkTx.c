@@ -61,20 +61,30 @@
 
 /* CRS protocol */
 #include "mac/macTask.h"
+#include "application/sensor.h"
 #include "cp_cli.h"
+#include "crs_cli.h"
+#include "mediator.h"
 
 
 
 
 
-/* Undefine to not use async mode */
 #define RFEASYLINKTX_ASYNC
 
-#define RFEASYLINKTX_TASK_STACK_SIZE    1024
+#define RFEASYLINKTX_TASK_STACK_SIZE    5
 #define RFEASYLINKTX_TASK_PRIORITY      2
 
 #define RFEASYLINKTX_BURST_SIZE         10
 #define RFEASYLINKTXPAYLOAD_LENGTH      30
+
+#define APP_TASK_STACK_SIZE 22000
+
+#define APP_TASK_PRIORITY   1
+
+Task_Struct appTask;        /* not static so you can see in ROV */
+static uint8_t appTaskStack[APP_TASK_STACK_SIZE];
+
 
 Task_Struct txTask;    /* not static so you can see in ROV */
 static Task_Params txTaskParams;
@@ -238,6 +248,32 @@ static void rfEasyLinkTxFnx(UArg arg0, UArg arg1)
     }
 }
 
+void appTaskFxn(UArg a0, UArg a1)
+{
+    Sensor_init();
+
+    /* Kick off application - Forever loop */
+       while(1)
+       {
+           Sensor_process();
+       }
+}
+
+void appTask_init()
+{
+//    pinHandle = inPinHandle;
+    Task_Params taskParams;
+
+    /* Configure task. */
+       Task_Params_init(&taskParams);
+       taskParams.stack = appTaskStack;
+       taskParams.stackSize = APP_TASK_STACK_SIZE;
+       taskParams.priority = APP_TASK_PRIORITY;
+       Task_construct(&appTask, appTaskFxn, &taskParams, NULL);
+
+
+}
+
 void txTask_init(PIN_Handle inPinHandle) {
     pinHandle = inPinHandle;
 
@@ -265,10 +301,11 @@ int main(void)
     /* Clear LED pins */
     PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED, 0);
     PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED, 0);
+//    CLI_init();
+    CP_CLI_init();
 
-            PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
-
-    CLI_init();
+    Mediator_init();
+    appTask_init();
 //    txTask_init(pinHandle);
     Mac_init();
     /* Start BIOS */

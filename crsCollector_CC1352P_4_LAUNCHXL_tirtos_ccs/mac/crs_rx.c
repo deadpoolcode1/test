@@ -52,7 +52,9 @@ void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
     }
     else
     {
-        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
+        EasyLink_enableRxAddrFilter(NULL, 8, 1);
+
+//        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
 
     }
     if (cbRx == NULL)
@@ -96,25 +98,33 @@ void RX_getPacket(MAC_crsPacket_t* pkt )
 void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
 {
     uint8_t *pBuf = pcktBuff;
-    pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
-    pBuf++;
-    pBuf++;
+       pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
+       pBuf++;
+       pBuf++;
 
-    pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
-    pBuf++;
-    pBuf++;
+       pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
+       pBuf++;
+       pBuf++;
 
-    memcpy(pkt->srcAddr, pBuf, 8);
-    pBuf = pBuf + 8;
+       memcpy(pkt->srcAddr, pBuf, 8);
+       pBuf = pBuf + 8;
 
-    memcpy(pkt->dstAddr, pBuf, 8);
-    pBuf = pBuf + 8;
+       memcpy(pkt->dstAddr, pBuf, 8);
+       pBuf = pBuf + 8;
 
-    pkt->isNeedAck = *pBuf;
+       pkt->isNeedAck = *pBuf;
 
-    pBuf++;
+       pBuf++;
 
-    pkt->commandId = (MAC_commandId_t) *pBuf;
+       pkt->commandId = (MAC_commandId_t) *pBuf;
+
+       pkt->len = pBuf - pcktBuff;
+
+       pBuf++;
+
+
+       memcpy(pkt->payload, pBuf, 100);
+
 }
 
 void RX_getPcktStatus(EasyLink_Status* status)

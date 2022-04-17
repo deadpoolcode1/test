@@ -17,6 +17,7 @@
 #include "mac/mac_util.h"
 
 
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -70,7 +71,7 @@ void TX_init(void * semaphore)
 //} EasyLink_TxPacket;
 //void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTxFailed, EasyLink_TxDoneCb cbCcaFailed, EasyLink_TxDoneCb cbSuccess)
 
-void TX_sendPacket(MAC_crsPacket_t* pkt,uint8_t dstMac[8], EasyLink_TxDoneCb cbTx)
+void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 {
 //    gCbTxFailed = cbTxFailed;
 //    gCbCcaFailed = cbCcaFailed;
@@ -107,16 +108,7 @@ void TX_sendPacket(MAC_crsPacket_t* pkt,uint8_t dstMac[8], EasyLink_TxDoneCb cbT
 
 
     txPacket.len = (pBuf - txPacket.payload) + pkt->len;
-    if (dstMac == NULL)
-    {
-//        uint8_t tmpMac[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-//        //when the addrTable is NULL it disables addrFiltering and accepts packets from everyone
-//        memcpy(txPacket.dstAddr, dstMac, 8);
-    }
-    else
-    {
-        memcpy(txPacket.dstAddr, dstMac, 8);
-    }
+    memcpy(txPacket.dstAddr, pkt->dstAddr, 8);
     /*
      * Address filtering is enabled by default on the Rx device with the
      * an address of 0xAA. This device must set the dstAddr accordingly.
@@ -131,10 +123,40 @@ void TX_sendPacket(MAC_crsPacket_t* pkt,uint8_t dstMac[8], EasyLink_TxDoneCb cbT
 
 }
 
-void TX_getPcktStatus(EasyLink_Status* status)
+void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_TxDoneCb cbTx)
 {
-    *status = gStatus;
+
+
+    if (cbTx != NULL)
+    {
+        gCbTx = cbTx;
+    }
+    else
+    {
+        gCbTx = txDoneCb;
+    }
+    EasyLink_TxPacket txPacket = { { 0 }, 0, 0, { 0 } };
+
+
+
+    memcpy(txPacket.payload, pBuf, len);
+
+    txPacket.len = len;
+    memcpy(txPacket.dstAddr, dstAddr, 8);
+    /*
+     * Address filtering is enabled by default on the Rx device with the
+     * an address of 0xAA. This device must set the dstAddr accordingly.
+     */
+//    txPacket.dstAddr[0] = CRS_PAN_ID;
+
+//    txPacket.dstAddr[0] = 0xaa;
+
+
+    EasyLink_transmitAsync(&txPacket, gCbTx);
+
+
 }
+
 
 void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
 {
@@ -156,6 +178,10 @@ void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
     memcpy(pBuf, pkt->payload, pkt->len);
 }
 
+void TX_getPcktStatus(EasyLink_Status* status)
+{
+    *status = gStatus;
+}
 
 static void txDoneCb(EasyLink_Status status)
 {
@@ -182,12 +208,4 @@ static void txDoneCb(EasyLink_Status status)
 
     Util_setEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
     Semaphore_post(sem);
-}
-
-
-
-void txDoneCbAckListen(EasyLink_RxPacket * rxPacket, EasyLink_Status status){
-    uint8_t tmp[8] = {0xcf, 0x26, 0xf4, 0x14, 0x4b, 0x12, 0x00, 0x00};
-        RX_enterRx(tmp, rxDoneCbAckReceived);
-          Semaphore_post(sem);
 }
