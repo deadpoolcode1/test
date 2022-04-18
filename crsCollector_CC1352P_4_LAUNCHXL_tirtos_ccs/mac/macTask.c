@@ -136,10 +136,10 @@ static void macFnx(UArg arg0, UArg arg1)
     CP_CLI_startREAD();
 
     Node_init(macSemHandle);
-    Node_nodeInfo_t node = { 0 };
-    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
-    memcpy(node.mac, tmp, 8);
-    Node_addNode(&node);
+//    Node_nodeInfo_t node = { 0 };
+//    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
+//    memcpy(node.mac, tmp, 8);
+//    Node_addNode(&node);
 
     while (1)
     {
@@ -149,7 +149,7 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_RX_IDLE)
         {
-
+//TODO rx on srcAddr of Collectorpib with rxdonecb that checks the cmdid-assocReq, and adds the node if it can, and sends the assocRsp and switch state to
         }
         else if (gState == MAC_SM_BEACON)
         {

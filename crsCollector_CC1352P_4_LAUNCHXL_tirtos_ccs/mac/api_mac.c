@@ -142,6 +142,9 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
 
                 /* Initiate the callback */
                 pMacCallbacks->pDataIndCb(&ind);
+
+                free(pMsg->msg);
+                free(pMsg->msg->dataInd.msdu.p);
                 //TODO: deallocate
             }
             break;
@@ -167,7 +170,7 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
 
                 /* Initiate the callback */
                 pMacCallbacks->pDataCnfCb(&cnf);
-
+                free(pMsg->msg);
                 if (pMsg->msg->dataCnf.pDataReq)
                 {
                     /* Deallocate the original data request structure */

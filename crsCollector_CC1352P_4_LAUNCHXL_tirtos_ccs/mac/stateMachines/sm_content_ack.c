@@ -59,7 +59,7 @@ typedef struct StateMachineAckContent
  Local variables
  *****************************************************************************/
 
-void *macSem = NULL;
+static void *macSem = NULL;
 
 static uint16_t smacEvents = 0;
 
