@@ -104,9 +104,10 @@ SPI1.sclkPinInstance.$name         = "CONFIG_PIN_6";
 SPI1.misoPinInstance.$name         = "CONFIG_PIN_7";
 SPI1.mosiPinInstance.$name         = "CONFIG_PIN_8";
 
-easylink.rfDesign          = "LAUNCHXL-CC1352P-4";
-easylink.configInSrfStudio = true;
-easylink.addrSize          = 8;
+easylink.rfDesign               = "LAUNCHXL-CC1352P-4";
+easylink.configInSrfStudio      = true;
+easylink.addrSize               = 8;
+easylink.radioInactivityTimeout = 100000;
 
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future

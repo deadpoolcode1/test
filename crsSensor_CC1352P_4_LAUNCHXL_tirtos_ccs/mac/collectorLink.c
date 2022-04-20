@@ -73,6 +73,12 @@ void CollectorLink_startTimer()
     Clock_start(gNodesClocks[0].clkHandle);
 }
 
+void CollectorLink_stopTimer()
+{
+    Clock_stop(gNodesClocks[0].clkHandle);
+
+}
+
 void CollectorLink_setNumRcvPackets(uint32_t numRcvPackets)
 {
     gNodes[0].numRcvPackets = numRcvPackets;

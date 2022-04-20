@@ -74,6 +74,7 @@ typedef struct FrameAsocRsp
     uint8_t srcAddr[8];
     uint16_t srcAddrShort;
     uint8_t panId;
+    uint16_t dstShortAddr;
     bool isPremited;
 
 } MAC_crsAssocRspPacket_t;

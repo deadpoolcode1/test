@@ -118,7 +118,7 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 //    txPacket.dstAddr[0] = 0xaa;
 
 
-    EasyLink_transmitAsync(&txPacket, gCbTx);
+    EasyLink_transmitCcaAsync(&txPacket, gCbTx);
 
 
 }
@@ -152,7 +152,7 @@ void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_Tx
 //    txPacket.dstAddr[0] = 0xaa;
 
 
-    EasyLink_transmitAsync(&txPacket, gCbTx);
+    EasyLink_transmitCcaAsync(&txPacket, gCbTx);
 
 
 }

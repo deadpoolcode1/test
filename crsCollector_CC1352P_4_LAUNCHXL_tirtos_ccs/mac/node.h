@@ -43,6 +43,7 @@ uint8_t mac[MAC_SIZE];
 bool istimeout;
 uint32_t numRetry;
 bool isVacant;
+uint16_t shortAddr;
 }Node_nodeInfo_t; //18 bytes in total
 
 
@@ -56,7 +57,7 @@ void Node_updateNode(Node_nodeInfo_t* node);
 void Node_eraseNode(Node_nodeInfo_t* node);
 
 
-void Node_addNode(Node_nodeInfo_t* node);
+int Node_addNode(Node_nodeInfo_t* node);
 
 void Node_setTimeout(uint8_t mac[MAC_SIZE], Clock_FuncPtr clockFxn,UInt timeout);
 

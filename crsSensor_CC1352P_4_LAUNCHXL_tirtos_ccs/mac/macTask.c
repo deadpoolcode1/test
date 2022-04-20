@@ -21,6 +21,8 @@
 #include "crs_rx.h"
 #include "mediator.h"
 #include "stateMachines/sm_content_ack.h"
+#include "stateMachines/sm_assoc.h"
+
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
 /******************************************************************************
@@ -75,6 +77,20 @@ static void sendContent(uint8_t mac[8]);
 static void initSensorPib();
 static void CCFGRead_IEEE_MAC(ApiMac_sAddrExt_t addr);
 
+
+static void buildBeaconPktFromBuf(MAC_crsBeaconPacket_t * beaconPkt, uint8_t* beaconBuff);
+static void finishedSendingAssocReqCb(EasyLink_Status status);
+static void recivedAsocRspCb(EasyLink_RxPacket *rxPacket,
+                                      EasyLink_Status status);
+
+static void waitForBeaconCb(EasyLink_RxPacket *rxPacket,
+                                      EasyLink_Status status);
+
+static void finishedSendingAssocRspAckCb(EasyLink_Status status);
+
+static void buildAssocRspPktFromBuf(MAC_crsAssocRspPacket_t * beaconPkt, uint8_t* beaconBuff);
+
+
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -120,6 +136,7 @@ static void macFnx(UArg arg0, UArg arg1)
     TX_init(macSemHandle);
     RX_init(macSemHandle);
     Smac_init(macSemHandle);
+    Smas_init(macSemHandle);
     /*
      * Initialize EasyLink with the settings found in ti_easylink_config.h
      * Modify EASYLINK_PARAM_CONFIG in ti_easylink_config.h to change the default
@@ -135,14 +152,14 @@ static void macFnx(UArg arg0, UArg arg1)
     CP_CLI_startREAD();
 
     CollectorLink_init();
-    CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
-    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
-    memcpy(collectorLink.mac, tmp, 8);
-    CollectorLink_updateCollector(&collectorLink);
+//    CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+//    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
+//    memcpy(collectorLink.mac, tmp, 8);
+//    CollectorLink_updateCollector(&collectorLink);
 
 
-    RX_enterRx( Smac_recviedCollectorContentCb, collectorLink.mac);
-    gState = MAC_SM_CONTENT_ACK;
+    RX_enterRx( Smas_waitForBeaconCb, NULL);
+    gState = MAC_SM_BEACON;
 
 //           RX_enterRx(collectorLink.mac, Smac_recviedCollectorContentCb);
     while (1)
@@ -157,6 +174,7 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_BEACON)
         {
+            Smas_process();
 
         }
         else if (gState == MAC_SM_DISCOVERY)
@@ -177,13 +195,20 @@ static void macFnx(UArg arg0, UArg arg1)
 
         if (macEvents & MAC_TASK_TX_DONE_EVT)
         {
-            processTxDone();
+//            processTxDone();
+//            sensorPib.shortAddr = rspPkt.dstShortAddr;
+//
+//            CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+//            CollectorLink_getCollector(&collectorLink);
+            CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
             Util_clearEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
         }
 
         if (macEvents & MAC_TASK_RX_DONE_EVT)
         {
             processRxDone();
+            CP_CLI_cliPrintf("\r\nFinished sending assoc req");
+
             Util_clearEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
         }
 
@@ -201,6 +226,167 @@ static void macFnx(UArg arg0, UArg arg1)
 
     }
 }
+
+//static void waitForBeaconCb(EasyLink_RxPacket *rxPacket,
+//                                      EasyLink_Status status)
+//{
+//
+//    if (status == EasyLink_Status_Success)
+//    {
+//        MAC_crsBeaconPacket_t beaconPkt = { 0 };
+//        buildBeaconPktFromBuf(&beaconPkt, rxPacket->payload);
+//
+//        if (beaconPkt.commandId == MAC_COMMAND_BEACON &&  beaconPkt.panId == CRS_GLOBAL_PAN_ID)
+//        {
+//            CollectorLink_collectorLinkInfo_t collectorLink = {0};
+//            collectorLink.isVacant = false;
+//            memcpy(collectorLink.mac, beaconPkt.srcAddr, 8);
+//            collectorLink.shortAddr = beaconPkt.srcAddrShort;
+//            CollectorLink_updateCollector(&collectorLink);
+//
+//            MAC_crsAssocReqPacket_t pktRec = { 0 };
+//            pktRec.commandId = MAC_COMMAND_ASSOC_REQ;
+//            memcpy(pktRec.srcAddr, sensorPib.mac, 8);
+//
+//            TX_sendPacketBuf(((uint8_t*)(&pktRec)), sizeof(MAC_crsAssocReqPacket_t), beaconPkt.srcAddr, finishedSendingAssocReqCb);
+//
+//        }
+//        else
+//        {
+//            RX_enterRx(waitForBeaconCb, NULL);
+//        }
+//
+//    }
+//    else
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+////        gSmacStateArrayIdx++;
+//    }
+//}
+//
+//
+//
+//
+//static void finishedSendingAssocReqCb(EasyLink_Status status)
+//{
+//    //content sent so wait for ack
+//    if (status == EasyLink_Status_Success)
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT_AGAIN;
+////        gSmacStateArrayIdx++;
+////        Node_nodeInfo_t node = { 0 };
+////        Node_getNode(gSmAckContentInfo.nodeMac, &node);
+//////        Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend);
+////        //10us per tick so for 5ms we need 500 ticks
+////        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
+////        Node_startTimer(gSmAckContentInfo.nodeMac);
+//
+//        RX_enterRx(recivedAsocRspCb, sensorPib.mac);
+//        Util_setEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
+//
+//                    /* Wake up the application thread when it waits for clock event */
+//                    Semaphore_post(macSemHandle);
+//
+//    }
+//
+//    else
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+////        gSmacStateArrayIdx++;
+//        //        gCbCcaFailed();
+//
+//    }
+//}
+//
+//static void recivedAsocRspCb(EasyLink_RxPacket *rxPacket,
+//                                      EasyLink_Status status)
+//{
+//    //content sent so wait for ack
+//    if (status == EasyLink_Status_Success)
+//    {
+//        MAC_crsAssocRspPacket_t rspPkt = { 0 };
+//        buildAssocRspPktFromBuf(&rspPkt, rxPacket->payload);
+//
+//        sensorPib.shortAddr = rspPkt.dstShortAddr;
+//
+//        CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+//        CollectorLink_getCollector(&collectorLink);
+//
+//        MAC_crsPacket_t pktRetAck = { 0 };
+//        pktRetAck.commandId = MAC_COMMAND_ACK;
+//
+//        memcpy(pktRetAck.dstAddr, collectorLink.mac, 8);
+//
+//        memcpy(pktRetAck.srcAddr, sensorPib.mac, 8);
+//
+//        pktRetAck.seqSent = collectorLink.seqSend;
+//        pktRetAck.seqRcv = collectorLink.seqRcv;
+//
+//        pktRetAck.isNeedAck = 0;
+//
+//        pktRetAck.len = 0;
+//
+//        TX_sendPacket(&pktRetAck, finishedSendingAssocRspAckCb);
+//
+//
+////        RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
+//
+//    }
+//    else
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+////        gSmacStateArrayIdx++;
+//        //        gCbCcaFailed();
+//
+//    }
+//}
+//
+//static void finishedSendingAssocRspAckCb(EasyLink_Status status)
+//{
+//    //content sent so wait for ack
+//    if (status == EasyLink_Status_Success)
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT_AGAIN;
+////        gSmacStateArrayIdx++;
+////        Node_nodeInfo_t node = { 0 };
+////        Node_getNode(gSmAckContentInfo.nodeMac, &node);
+//////        Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend);
+////        //10us per tick so for 5ms we need 500 ticks
+////        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
+////        Node_startTimer(gSmAckContentInfo.nodeMac);
+//
+//        RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
+//
+//        Util_setEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
+//
+//            /* Wake up the application thread when it waits for clock event */
+//            Semaphore_post(macSemHandle);
+//    }
+//
+//    else
+//    {
+////        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+////        gSmacStateArrayIdx++;
+//        //        gCbCcaFailed();
+//
+//    }
+//}
+//
+//
+//
+//static void buildBeaconPktFromBuf(MAC_crsBeaconPacket_t * beaconPkt, uint8_t* beaconBuff)
+//{
+//    memcpy(beaconPkt, (uint8_t*) beaconBuff, sizeof(MAC_crsBeaconPacket_t));
+//
+////    beaconPkt = (MAC_crsBeaconPacket_t*)beaconBuff;
+//}
+//
+//static void buildAssocRspPktFromBuf(MAC_crsAssocRspPacket_t * beaconPkt, uint8_t* beaconBuff)
+//{
+//    memcpy(beaconPkt, (uint8_t*) beaconBuff, sizeof(MAC_crsAssocRspPacket_t));
+//
+////    beaconPkt = (MAC_crsBeaconPacket_t*)beaconBuff;
+//}
 
 static void initSensorPib()
 {

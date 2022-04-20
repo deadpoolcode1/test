@@ -28,7 +28,7 @@
 #define CRS_MAX_PKT_RETRY 5
 typedef enum
 {
-    MAC_COMMAND_DATA, MAC_COMMAND_ACK
+    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP
 } MAC_commandId_t;
 
 typedef struct Frame
@@ -46,6 +46,40 @@ typedef struct Frame
     uint8_t isNeedAck;
     uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
 } MAC_crsPacket_t;
+
+
+typedef struct FrameBeacon
+{
+
+    MAC_commandId_t commandId;
+    uint8_t srcAddr[8];
+    uint16_t srcAddrShort;
+    uint8_t panId;
+
+} MAC_crsBeaconPacket_t;
+
+typedef struct FrameAsocReq
+{
+
+    MAC_commandId_t commandId;
+    uint8_t srcAddr[8];
+    uint16_t srcAddrShort;
+    uint8_t panId;
+
+} MAC_crsAssocReqPacket_t;
+
+typedef struct FrameAsocRsp
+{
+
+    MAC_commandId_t commandId;
+    uint8_t srcAddr[8];
+    uint16_t srcAddrShort;
+    uint8_t panId;
+    uint16_t dstShortAddr;
+    bool isPremited;
+
+} MAC_crsAssocRspPacket_t;
+
 
 typedef struct sensorNode
 {

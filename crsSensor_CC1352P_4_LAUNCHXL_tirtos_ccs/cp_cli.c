@@ -124,7 +124,7 @@ void CP_CLI_init()
         }
 
         gModuleInitialized = true;
-        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
+        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
 
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return;

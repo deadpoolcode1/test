@@ -118,7 +118,7 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 //    txPacket.dstAddr[0] = 0xaa;
 
 
-    EasyLink_transmitAsync(&txPacket, gCbTx);
+    EasyLink_transmitCcaAsync(&txPacket, gCbTx);
 
 
 }
@@ -142,7 +142,10 @@ void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_Tx
     memcpy(txPacket.payload, pBuf, len);
 
     txPacket.len = len;
-    memcpy(txPacket.dstAddr, dstAddr, 8);
+    if (dstAddr != NULL)
+    {
+        memcpy(txPacket.dstAddr, dstAddr, 8);
+    }
     /*
      * Address filtering is enabled by default on the Rx device with the
      * an address of 0xAA. This device must set the dstAddr accordingly.
@@ -152,7 +155,7 @@ void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_Tx
 //    txPacket.dstAddr[0] = 0xaa;
 
 
-    EasyLink_transmitAsync(&txPacket, gCbTx);
+    EasyLink_transmitCcaAsync(&txPacket, gCbTx);
 
 
 }

@@ -89,7 +89,7 @@ void Node_eraseNode(Node_nodeInfo_t* node)
     }
 }
 
-void Node_addNode(Node_nodeInfo_t *node)
+int Node_addNode(Node_nodeInfo_t *node)
 {
     int i = 0;
     while (i < MAC_SIZE)
@@ -98,11 +98,13 @@ void Node_addNode(Node_nodeInfo_t *node)
         {
             memcpy(&gNodes[i], node, sizeof(Node_nodeInfo_t));
             gNodes[i].isVacant = false;
+            gNodes[i].shortAddr = i;
             memcpy(gNodesClocks[i].mac, node->mac, MAC_SIZE);
-            return;
+            return i;
         }
         i++;
     }
+    return -1;
 }
 
 void Node_listNodes()

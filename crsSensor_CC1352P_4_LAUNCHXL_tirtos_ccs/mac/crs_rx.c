@@ -52,9 +52,9 @@ void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
     }
     else
     {
-        EasyLink_enableRxAddrFilter(NULL, 8, 1);
+//        EasyLink_enableRxAddrFilter(NULL, 8, 1);
 
-//        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
+        EasyLink_enableRxAddrFilter(dstAddr, 8, 1);
 
     }
     if (cbRx == NULL)

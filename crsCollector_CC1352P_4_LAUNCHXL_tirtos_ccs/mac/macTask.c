@@ -21,6 +21,8 @@
 #include "crs_rx.h"
 #include "mediator.h"
 #include "stateMachines/sm_content_ack.h"
+#include "stateMachines/sm_assoc.h"
+
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
 /******************************************************************************
@@ -136,11 +138,13 @@ static void macFnx(UArg arg0, UArg arg1)
     CP_CLI_startREAD();
 
     Node_init(macSemHandle);
+
+    Smas_init(macSemHandle);
 //    Node_nodeInfo_t node = { 0 };
 //    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
 //    memcpy(node.mac, tmp, 8);
 //    Node_addNode(&node);
-
+    gState = MAC_SM_BEACON;
     while (1)
     {
         if (gState == MAC_SM_OFF)
@@ -153,7 +157,7 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_BEACON)
         {
-
+            Smas_process();
         }
         else if (gState == MAC_SM_DISCOVERY)
         {

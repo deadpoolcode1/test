@@ -34,6 +34,7 @@ bool isContentRcv;
 typedef struct CollectorLink{
 
 CollectorLink_pendingPckts_t pendingPacket;
+uint16_t shortAddr;
 uint32_t numRcvPackets;
 uint32_t numSendPackets;
 uint16_t seqSend;
@@ -60,6 +61,8 @@ void CollectorLink_printCollector();
 void CollectorLink_setTimeout(Clock_FuncPtr clockFxn,UInt timeout);
 
 void CollectorLink_startTimer();
+
+void CollectorLink_stopTimer();
 
 
 void CollectorLink_setNumRcvPackets(uint32_t numRcvPackets);
