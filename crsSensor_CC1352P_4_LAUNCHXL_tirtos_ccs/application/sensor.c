@@ -73,6 +73,10 @@ static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType);
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf);
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
+static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd);
+static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
+static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
+
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd);
 static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16_t len,
                     uint8_t *pData);
@@ -82,7 +86,7 @@ static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16
 
 //TODO: add assoc ind cb.
 /*! API MAC Callback table */
-static ApiMac_callbacks_t Sensor_macCallbacks = {
+static ApiMac_callbacks_t Sensor_macCallbacks = {assocIndCB, disassocIndCB, discoveryIndCB,
 
 /*! Start Confirmation callback */
 NULL,
@@ -258,10 +262,30 @@ extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
 //    pDevInfo->extAddress
 }
 
+
+static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
+{
+
+}
+
+static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
+{
+
+}
+
+static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
+{
+
+}
+
+
+
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {
 
 }
+
+
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
     if ((pDataInd != NULL) && (pDataInd->msdu.p != NULL)

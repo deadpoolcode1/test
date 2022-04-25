@@ -289,7 +289,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
-#define UART_WRITE_BUFF_SIZE 2
+#define UART_WRITE_BUFF_SIZE 5
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
@@ -337,12 +337,6 @@ static uint8_t gCopyUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
 
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
 CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
-
-static CRS_retVal_t CLI_getNextElement(char *element);
-static CRS_retVal_t CLI_getPrevElement(char *element);
-static CRS_retVal_t CLI_addElement(char *element);
-static CRS_retVal_t CLI_revalueCurrElement(char *element);
-static CRS_retVal_t CLI_updateLastElement(char *element);
 
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
@@ -1073,7 +1067,30 @@ static CRS_retVal_t CLI_closeNwkParsing(char *line)
 
 static CRS_retVal_t CLI_listSensorsParsing(char *line)
 {
-//    Collector_discoverSensors();
+    int x = 0;
+       for (x = 0; (x < MAX_DEVICES_IN_NETWORK); x++)
+       {
+           if (0xffff != Cllc_associatedDevList[x].shortAddr)
+           {
+
+
+
+
+               uint32_t leftPart = 0, rightPart = 0;
+               CLI_convertExtAddrTo2Uint32(&(Cllc_associatedDevList[x].extAddr), &leftPart, &rightPart);
+
+               CLI_cliPrintf("\r\nsensor, 0x%x, 0x%x%x, 0x%x, 0x%x", 0xaabb,
+                             leftPart, rightPart,
+                             Cllc_associatedDevList[x].shortAddr,
+                             Cllc_associatedDevList[x].status);
+
+           }
+
+       }
+       CLI_startREAD();
+
+   //    discoverNextSensor();
+       return (NULL);
 
 }
 

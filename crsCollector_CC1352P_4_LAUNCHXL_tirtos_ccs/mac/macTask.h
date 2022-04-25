@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "crs_global_defines.h"
 #include "crs_cli.h"
+#include "easylink/EasyLink.h"
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
 #define MAC_TASK_TX_DONE_EVT 0x0002
@@ -26,6 +27,9 @@
 #define CRS_PKT_MAX_SIZE 150
 
 #define CRS_MAX_PKT_RETRY 5
+
+#define CRS_BEACON_INTERVAL 30
+
 typedef enum
 {
     MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP
@@ -102,5 +106,17 @@ bool MAC_sendCnfToApp(macMcpsDataCnf_t *dataCnf);
 bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
                        ApiMac_status_t status);
 bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf);
+
+void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
+                                  EasyLink_Status status);
+
+void MAC_moveToRxIdleState();
+
+bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
+                              ApiMac_status_t status);
+
+bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf);
+
+
 
 #endif /* MAC_MACTASK_H_ */

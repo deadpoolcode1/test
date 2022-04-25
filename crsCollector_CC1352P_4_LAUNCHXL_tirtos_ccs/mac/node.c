@@ -92,6 +92,23 @@ void Node_eraseNode(Node_nodeInfo_t* node)
 int Node_addNode(Node_nodeInfo_t *node)
 {
     int i = 0;
+
+    while (i < MAC_SIZE)
+    {
+        if (memcmp(gNodes[i].mac, node->mac, 8) == 0)
+        {
+            memcpy(&gNodes[i], node, sizeof(Node_nodeInfo_t));
+            gNodes[i].isVacant = false;
+            gNodes[i].shortAddr = i;
+            memcpy(gNodesClocks[i].mac, node->mac, MAC_SIZE);
+            return i;
+        }
+        i++;
+    }
+
+    i = 0;
+
+
     while (i < MAC_SIZE)
     {
         if (gNodes[i].isVacant)

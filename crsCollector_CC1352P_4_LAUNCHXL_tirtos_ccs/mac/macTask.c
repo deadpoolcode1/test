@@ -12,6 +12,7 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/BIOS.h>
 #include <xdc/runtime/System.h>
+#include <ti/sysbios/knl/Clock.h>
 
 #include "macTask.h"
 #include "cp_cli.h"
@@ -60,6 +61,13 @@ static uint8_t macTaskStack[MAC_TASK_STACK_SIZE];
 static Semaphore_Struct macSem; /* not static so you can see in ROV */
 static Semaphore_Handle macSemHandle;
 
+static Clock_Params gClkParams;
+static Clock_Struct gClkStruct;
+static Clock_Handle gClkHandle;
+
+static bool gIsNeedToSendBeacon = false;
+
+static bool gIsSendingBeacon = false;
 
 
 /******************************************************************************
@@ -76,6 +84,11 @@ static void sendContent(uint8_t mac[8]);
 
 static void initCollectorPib();
 static void CCFGRead_IEEE_MAC(ApiMac_sAddrExt_t addr);
+static void beaconClockCb(xdc_UArg arg);
+static void smasFinishedSendingBeaconCb(EasyLink_Status status);
+static void buildBeaconBufFromPkt(MAC_crsBeaconPacket_t *beaconPkt,
+                                  uint8_t *beaconBuff);
+static void sendBeacon();
 
 /******************************************************************************
  Public Functions
@@ -121,7 +134,6 @@ static void macFnx(UArg arg0, UArg arg1)
 
     TX_init(macSemHandle);
     RX_init(macSemHandle);
-    Smac_init(macSemHandle);
 
     /*
      * Initialize EasyLink with the settings found in ti_easylink_config.h
@@ -138,13 +150,32 @@ static void macFnx(UArg arg0, UArg arg1)
     CP_CLI_startREAD();
 
     Node_init(macSemHandle);
-
+//    Smri_init(macSemHandle);
     Smas_init(macSemHandle);
+    Smac_init(macSemHandle);
+
+    Clock_Params_init(&gClkParams);
+    gClkParams.period = 0;
+    gClkParams.startFlag = FALSE;
+
+    Clock_construct(&gClkStruct, NULL, 11000 / Clock_tickPeriod, &gClkParams);
+
+    gClkHandle = Clock_handle(&gClkStruct);
+
+    Clock_setFunc(gClkHandle, beaconClockCb, 0);
+    Clock_setTimeout(gClkHandle, 1000);
+//    Clock_start(gClkHandle);
+
 //    Node_nodeInfo_t node = { 0 };
 //    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
 //    memcpy(node.mac, tmp, 8);
 //    Node_addNode(&node);
-    gState = MAC_SM_BEACON;
+
+    RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
+
+    gState = MAC_SM_RX_IDLE;
+    gIsNeedToSendBeacon = true;
+
     while (1)
     {
         if (gState == MAC_SM_OFF)
@@ -153,7 +184,23 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_RX_IDLE)
         {
-//TODO rx on srcAddr of Collectorpib with rxdonecb that checks the cmdid-assocReq, and adds the node if it can, and sends the assocRsp and switch state to
+            if (gIsSendingBeacon == false)
+            {
+                //            Smri_process();
+                if (gIsNeedToSendBeacon == true && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
+                {
+                    gIsNeedToSendBeacon = false;
+                    CP_CLI_cliPrintf("\r\nSending beacon");
+
+                    EasyLink_abort();
+                    sendBeacon();
+                }
+                else
+                {
+                    processkIncomingAppMsgs();
+                }
+            }
+
         }
         else if (gState == MAC_SM_BEACON)
         {
@@ -196,10 +243,100 @@ static void macFnx(UArg arg0, UArg arg1)
         if (macEvents == 0)
         {
             Semaphore_pend(macSemHandle, BIOS_WAIT_FOREVER);
-            processkIncomingAppMsgs();
         }
 
     }
+}
+
+static void sendBeacon()
+{
+    gIsSendingBeacon = true;
+    MAC_crsBeaconPacket_t beaconPkt = { 0 };
+    beaconPkt.commandId = MAC_COMMAND_BEACON;
+    beaconPkt.panId = collectorPib.panId;
+    memcpy(beaconPkt.srcAddr, collectorPib.mac, 8);
+    beaconPkt.srcAddrShort = collectorPib.shortAddr;
+
+    uint8_t pBuf[200] = { 0 };
+    buildBeaconBufFromPkt(&beaconPkt, pBuf);
+uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
+    TX_sendPacketBuf(pBuf, sizeof(MAC_crsBeaconPacket_t), dstAddr,
+                     smasFinishedSendingBeaconCb);
+}
+
+static void smasFinishedSendingBeaconCb(EasyLink_Status status)
+{
+    gIsSendingBeacon = false;
+
+//content sent so wait for ack
+    if (status == EasyLink_Status_Success)
+    {
+//        Clock_setFunc(gClkHandle, beaconClockCb, 0);
+//        Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL*100000);
+//        Clock_start(gClkHandle);
+//        Util_setEvent(&smasEvents, SMAS_DEBUG_EVT);
+//        Semaphore_post(macSem);
+        Clock_setFunc(gClkHandle, beaconClockCb, 0);
+            Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
+            Clock_start(gClkHandle);
+        RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
+    }
+
+    else
+    {
+        CP_CLI_cliPrintf("\r\nWTF");
+
+        Clock_setFunc(gClkHandle, beaconClockCb, 0);
+                    Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
+                    Clock_start(gClkHandle);
+                RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
+
+    }
+}
+
+static void buildBeaconBufFromPkt(MAC_crsBeaconPacket_t *beaconPkt,
+                                  uint8_t *beaconBuff)
+{
+    memcpy(beaconBuff, (uint8_t*) beaconPkt, sizeof(MAC_crsBeaconPacket_t));
+}
+
+
+static void beaconClockCb(xdc_UArg arg)
+{
+    gIsNeedToSendBeacon = true;
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(macSemHandle);
+}
+
+void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
+                                  EasyLink_Status status)
+{
+    if (status == EasyLink_Status_Success)
+    {
+        if (((MAC_commandId_t) rxPacket->payload[0])
+                == MAC_COMMAND_ASSOC_REQ )
+        {
+            gState = MAC_SM_BEACON;
+
+            Smac_recivedAssocReqCb(rxPacket, status);
+        }
+
+    }
+    else
+    {
+
+    }
+}
+
+void MAC_moveToRxIdleState()
+{
+    gState = MAC_SM_RX_IDLE;
+
+    RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
+
+    Semaphore_post(macSemHandle);
+
 }
 
 static void initCollectorPib()
@@ -241,8 +378,36 @@ static void processkIncomingAppMsgs()
         pkt.len = msg.msg->msdu.len;
         pkt.panId = collectorPib.panId;
 
+        EasyLink_abort();
         Smac_sendContent(&pkt, msg.msg->msduHandle);
     }
+
+}
+
+bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
+                              ApiMac_status_t status)
+{
+    rsp->hdr.event = MAC_MLME_ASSOCIATE_IND;
+    rsp->hdr.status = status;
+
+    rsp->shortAddr = shortAddr;
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+
+    return true;
+}
+
+bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeAssociateInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
 
 }
 

@@ -20,7 +20,9 @@
  *****************************************************************************/
 void Smas_init(void *sem);
 void Smas_process();
-
+bool Smas_isNeedToSendBeacon();
+void Smac_recivedAssocReqCb(EasyLink_RxPacket *rxPacket,
+                                  EasyLink_Status status);
 
 
 #endif /* MAC_STATEMACHINES_SM_ASSOC_H_ */

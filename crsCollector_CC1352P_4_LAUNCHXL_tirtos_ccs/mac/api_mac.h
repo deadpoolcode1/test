@@ -14,13 +14,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
 /*! IEEE Address Length */
 #define APIMAC_SADDR_EXT_LEN 8
 
+#define MAC_MLME_ASSOCIATE_IND      1     /* Associate indication */
+#define MAC_MLME_DISASSOCIATE_IND   3     /* Disassociate indication */
+#define MAC_MLME_DISCOVERY_IND      4     /* Disassociate indication */
 #define MAC_MCPS_DATA_CNF           12    /* Data confirm */
 #define MAC_MCPS_DATA_IND           13    /* Data indication */
 /*!
@@ -303,127 +305,193 @@ typedef struct _apimac_mcpsdataind
     ApiMac_sData_t msdu;
 } ApiMac_mcpsDataInd_t;
 
+/*! MAC_MLME_ASSOCIATE_IND type */
+typedef struct _apimac_mlmeassociateind
+{
+    /*! The address of the device requesting association */
+    ApiMac_sAddrExt_t deviceAddress;
+    uint16_t shortAddr;
+} ApiMac_mlmeAssociateInd_t;
+
+/*! MAC_MLME_DISASSOCIATE_IND type */
+typedef struct _apimac_mlmedisassociateind
+{
+    /*! The address of the device sending the disassociate command */
+    ApiMac_sAddrExt_t deviceAddress;
+    uint16_t shortAddr;
+} ApiMac_mlmeDisassociateInd_t;
+
+/*! MAC_MLME_ASSOCIATE_IND type */
+typedef struct _apimac_mlmediscoveryind
+{
+    /*! The address of the device requesting association */
+    ApiMac_sAddrExt_t deviceAddress;
+    uint16_t shortAddr;
+    int8_t rssi;
+} ApiMac_mlmeDiscoveryInd_t;
+
 /* Extended address */
 typedef uint8_t sAddrExt_t[8];
 
 /* Combined short/extended device address */
 typedef struct
 {
-  union
-  {
-    uint16_t      shortAddr;    /* Short address */
-    sAddrExt_t  extAddr;      /* Extended address */
-  } addr;
-  uint8_t         addrMode;     /* Address mode */
+    union
+    {
+        uint16_t shortAddr; /* Short address */
+        sAddrExt_t extAddr; /* Extended address */
+    } addr;
+    uint8_t addrMode; /* Address mode */
 } sAddr_t;
 
 typedef struct
 {
-  uint8_t     *p;
-  uint16_t     len;
+    uint8_t *p;
+    uint16_t len;
 } sData_t;
-
 
 /* Data request parameters type */
 typedef struct
 {
-  sAddr_t         dstAddr;           /* The address of the destination device */
-  uint16_t          dstPanId;          /* The PAN ID of the destination device */
-  uint8_t           srcAddrMode;       /* The source address mode */
-  uint8_t           msduHandle;        /* Application-defined handle value associated with this data request */
-  uint16_t          txOptions;         /* TX options bit mask */
-  uint8_t           channel;           /* Transmit the data frame on this channel */
-  uint8_t           power;             /* Transmit the data frame at this power level */
-  uint8_t*          pIEList;           /* pointer to the payload IE list, excluding termination IEs */
-  uint16_t          payloadIELen;      /* length of the payload IE�s */
-  uint8_t           fhProtoDispatch;   /* Not Used, RESERVED for future. Shall be set to zero */
-  uint32_t          includeFhIEs;      /* Bitmap indicates which FH IE's need to be included */
+    sAddr_t dstAddr; /* The address of the destination device */
+    uint16_t dstPanId; /* The PAN ID of the destination device */
+    uint8_t srcAddrMode; /* The source address mode */
+    uint8_t msduHandle; /* Application-defined handle value associated with this data request */
+    uint16_t txOptions; /* TX options bit mask */
+    uint8_t channel; /* Transmit the data frame on this channel */
+    uint8_t power; /* Transmit the data frame at this power level */
+    uint8_t *pIEList; /* pointer to the payload IE list, excluding termination IEs */
+    uint16_t payloadIELen; /* length of the payload IE�s */
+    uint8_t fhProtoDispatch; /* Not Used, RESERVED for future. Shall be set to zero */
+    uint32_t includeFhIEs; /* Bitmap indicates which FH IE's need to be included */
 } macDataReq_t;
 
 /* MAC event header type */
 typedef struct
 {
-  uint8_t   event;              /* MAC event */
-  uint8_t   status;             /* MAC status */
+    uint8_t event; /* MAC event */
+    uint8_t status; /* MAC status */
 } macEventHdr_t;
 
 /* MCPS data request type */
 typedef struct
 {
-  macEventHdr_t   hdr;        /* Internal use only */
-  sData_t         msdu;       /* Data pointer and length */
-  macDataReq_t    mac;        /* Data request parameters */
+    macEventHdr_t hdr; /* Internal use only */
+    sData_t msdu; /* Data pointer and length */
+    macDataReq_t mac; /* Data request parameters */
 } macMcpsDataReq_t;
-
-
 
 /* MAC_MLME_START_CNF type */
 typedef struct
 {
-  macEventHdr_t   hdr;            /* Event header contains the status of the start request */
+    macEventHdr_t hdr; /* Event header contains the status of the start request */
 } macMlmeStartCnf_t;
 
 /* MCPS data confirm type */
 typedef struct
 {
-  macEventHdr_t      hdr;              /* Contains the status of the data request operation */
-  uint8_t              msduHandle;       /* Application-defined handle value associated with the data request */
-  macMcpsDataReq_t   *pDataReq;        /* Pointer to the data request buffer for this data confirm */
-  uint32_t             timestamp;        /* The time, in backoffs, at which the frame was transmitted */
-  uint16_t             timestamp2;       /* The time, in internal MAC timer units, at which the
-                                          frame was transmitted */
-  uint8_t              retries;          /* The number of retries required to transmit the data frame */
-  uint8_t              mpduLinkQuality;  /* The link quality of the received ack frame */
-  uint8_t              correlation;      /* The raw correlation value of the received ack frame */
-  int8_t               rssi;             /* The RF power of the received ack frame in units dBm */
-  uint32_t             frameCntr;        /* Frame counter value used (if any) for the transmitted frame */
+    macEventHdr_t hdr; /* Contains the status of the data request operation */
+    uint8_t msduHandle; /* Application-defined handle value associated with the data request */
+    macMcpsDataReq_t *pDataReq; /* Pointer to the data request buffer for this data confirm */
+    uint32_t timestamp; /* The time, in backoffs, at which the frame was transmitted */
+    uint16_t timestamp2; /* The time, in internal MAC timer units, at which the
+     frame was transmitted */
+    uint8_t retries; /* The number of retries required to transmit the data frame */
+    uint8_t mpduLinkQuality; /* The link quality of the received ack frame */
+    uint8_t correlation; /* The raw correlation value of the received ack frame */
+    int8_t rssi; /* The RF power of the received ack frame in units dBm */
+    uint32_t frameCntr; /* Frame counter value used (if any) for the transmitted frame */
 } macMcpsDataCnf_t;
 
 /* Data indication parameters type */
 typedef struct
 {
-  sAddr_t   srcAddr;          /* The address of the sending device */
-  sAddr_t   dstAddr;          /* The address of the destination device */
-  uint32_t    timestamp;        /* The time, in backoffs, at which the data were received */
-  uint16_t    timestamp2;       /* The time, in internal MAC timer units, at which the
-                                 data were received */
-  uint16_t    srcPanId;         /* The PAN ID of the sending device */
-  uint16_t    dstPanId;         /* The PAN ID of the destination device */
-  uint8_t     mpduLinkQuality;  /* The link quality of the received data frame */
-  uint8_t     correlation;      /* The raw correlation value of the received data frame */
-  int8_t      rssi;             /* The received RF power in units dBm */
-  uint8_t     dsn;              /* The data sequence number of the received frame */
-  uint8_t*    pPayloadIE;       /* Pointer to the start of payload IE's */
-  uint16_t    payloadIeLen;     /* length of payload ie if any */
-  uint8_t     fhProtoDispatch;  /* Not Used, RESERVED for future. */
-  uint32_t    frameCntr;        /* Frame counter value of the received data frame (if used) */
+    sAddr_t srcAddr; /* The address of the sending device */
+    sAddr_t dstAddr; /* The address of the destination device */
+    uint32_t timestamp; /* The time, in backoffs, at which the data were received */
+    uint16_t timestamp2; /* The time, in internal MAC timer units, at which the
+     data were received */
+    uint16_t srcPanId; /* The PAN ID of the sending device */
+    uint16_t dstPanId; /* The PAN ID of the destination device */
+    uint8_t mpduLinkQuality; /* The link quality of the received data frame */
+    uint8_t correlation; /* The raw correlation value of the received data frame */
+    int8_t rssi; /* The received RF power in units dBm */
+    uint8_t dsn; /* The data sequence number of the received frame */
+    uint8_t *pPayloadIE; /* Pointer to the start of payload IE's */
+    uint16_t payloadIeLen; /* length of payload ie if any */
+    uint8_t fhProtoDispatch; /* Not Used, RESERVED for future. */
+    uint32_t frameCntr; /* Frame counter value of the received data frame (if used) */
 } macDataInd_t;
 
 /* MCPS data indication type */
 typedef struct
 {
-  macEventHdr_t  hdr;         /* Internal use only */
-  sData_t        msdu;        /* Data pointer and length */
-  macDataInd_t   mac;         /* Data indication parameters */
+    macEventHdr_t hdr; /* Internal use only */
+    sData_t msdu; /* Data pointer and length */
+    macDataInd_t mac; /* Data indication parameters */
 } macMcpsDataInd_t;
 
+/* MAC_MLME_ASSOCIATE_IND type */
+typedef struct
+{
+    macEventHdr_t hdr; /* The event header */
+    sAddrExt_t deviceAddress; /* The address of the device requesting association */
+    uint16_t shortAddr;
+} macMlmeAssociateInd_t;
+
+/* MAC_MLME_DISASSOCIATE_IND type */
+typedef struct
+{
+    macEventHdr_t hdr; /* The event header */
+    sAddrExt_t deviceAddress; /* The address of the device sending the disassociate command */
+    uint16_t shortAddr;
+} macMlmeDisassociateInd_t;
+
+/* MAC_MLME_DISCOVERY_IND type */
+typedef struct
+{
+    macEventHdr_t hdr; /* The event header */
+    sAddrExt_t deviceAddress; /* The address of the device sending the disassociate command */
+    uint16_t shortAddr;
+    int8_t rssi; /* The received RF power in units dBm */
+} macMlmeDiscoveryInd_t;
 
 /* Union of callback structures */
 typedef union
 {
-  macEventHdr_t            hdr;
-  macMlmeStartCnf_t        startCnf;          /* MAC_MLME_START_CNF */
-  macMcpsDataCnf_t         dataCnf;           /* MAC_MCPS_DATA_CNF */
-  macMcpsDataInd_t         dataInd;           /* MAC_MCPS_DATA_IND */
+    macEventHdr_t hdr;
+    macMlmeAssociateInd_t associateInd; /* MAC_MLME_ASSOCIATE_IND */
+    macMlmeDisassociateInd_t disassociateInd; /* MAC_MLME_DISASSOCIATE_IND */
+    macMlmeStartCnf_t startCnf; /* MAC_MLME_START_CNF */
+    macMcpsDataCnf_t dataCnf; /* MAC_MCPS_DATA_CNF */
+    macMcpsDataInd_t dataInd; /* MAC_MCPS_DATA_IND */
+    macMlmeDiscoveryInd_t discoveryInd;
 } macCbackEvent_t;
 
+/*!
+ Disassociate Indication Callback function pointer prototype
+ for the [callback table](@ref ApiMac_callbacks_t)
+ */
+typedef void (*ApiMac_disassociateIndFp_t)(
+        ApiMac_mlmeDisassociateInd_t *pDisassociateInd);
+
+/*!
+ Associate Indication Callback function pointer prototype
+ for the [callback table](@ref ApiMac_callbacks_t)
+ */
+typedef void (*ApiMac_associateIndFp_t)(ApiMac_mlmeAssociateInd_t *pAssocInd);
+
+/*!
+ Associate Indication Callback function pointer prototype
+ for the [callback table](@ref ApiMac_callbacks_t)
+ */
+typedef void (*ApiMac_discoveryIndFp_t)(ApiMac_mlmeDiscoveryInd_t *pDiscInd);
 
 /*!
  Start Confirmation Callback function pointer prototype
  for the [callback table](@ref ApiMac_callbacks_t)
  */
 typedef void (*ApiMac_startCnfFp_t)(ApiMac_mlmeStartCnf_t *pStartCnf);
-
 
 /*!
  Data Confirmation Callback function pointer prototype
@@ -446,6 +514,12 @@ typedef void (*ApiMac_dataIndFp_t)(ApiMac_mcpsDataInd_t *pDataInd);
  */
 typedef struct _apimac_callbacks
 {
+    /*! Associate Indicated callback */
+    ApiMac_associateIndFp_t pAssocIndCb;
+    /*! Disassociate Indication callback */
+    ApiMac_disassociateIndFp_t pDisassociateIndCb;
+
+    ApiMac_discoveryIndFp_t pDiscIndCb;
 
     /*! Start Confirmation callback */
     ApiMac_startCnfFp_t pStartCnfCb;
@@ -481,7 +555,7 @@ typedef struct _apimac_devicedescriptor
  *
  * @return      pointer to a wakeup variable (semaphore in some systems)
  */
-extern void *ApiMac_init();
+extern void* ApiMac_init();
 
 /*!
  * @brief       Register for MAC callbacks.
@@ -521,7 +595,5 @@ extern void ApiMac_processIncoming(void);
  *              (@ref ApiMac_status_noResources) - Resources not available
  */
 extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData);
-
-
 
 #endif /* MAC_API_MAC_H_ */

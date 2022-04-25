@@ -168,7 +168,7 @@ static void sendAssocReq()
 //            CollectorLink_collectorLinkInfo_t collectorLink = {0};
                 CollectorLink_getCollector(&collectorLink);
 
-                CollectorLink_setTimeout(assocReqTimeoutCb, (Clock_getTicks() % 20)*1000);
+                CollectorLink_setTimeout(assocReqTimeoutCb, (Clock_getTicks() % 20)*100000);
                 CollectorLink_startTimer();
 //            Util_setEvent(&smasEvents, SMAS_SEND_ASSOC_REQ_EVT);
 //
@@ -178,7 +178,9 @@ static void sendAssocReq()
         }
         else
         {
-            RX_enterRx(Smas_waitForBeaconCb, NULL);
+            uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
+
+            RX_enterRx(Smas_waitForBeaconCb, dstAddr);
         }
 
     }
@@ -206,10 +208,10 @@ static void finishedSendingAssocReqCb(EasyLink_Status status)
 //        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
 //        Node_startTimer(gSmAckContentInfo.nodeMac);
 
-        Util_setEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
-
-                    /* Wake up the application thread when it waits for clock event */
-                    Semaphore_post(macSem);
+//        Util_setEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
+//
+//                    /* Wake up the application thread when it waits for clock event */
+//                    Semaphore_post(macSem);
 
         CollectorLink_collectorLinkInfo_t collectorLink = {0};
             CollectorLink_getCollector(&collectorLink);

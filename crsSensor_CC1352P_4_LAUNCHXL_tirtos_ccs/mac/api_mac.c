@@ -14,16 +14,12 @@
 #include "api_mac.h"
 #include "mediator.h"
 
-
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/BIOS.h>
 
-
-
 /*! Capability Information - Device is capable of becoming a PAN coordinator */
 #define CAPABLE_PAN_COORD       0x01
-
 
 /******************************************************************************
  Global variables
@@ -38,14 +34,14 @@ ApiMac_sAddrExt_t ApiMac_extAddr;
  Local variables
  *****************************************************************************/
 /*! Semaphore used to post events to the application thread */
-Semaphore_Struct appSem;  /* not static so you can see in ROV */
+Semaphore_Struct appSem; /* not static so you can see in ROV */
 static Semaphore_Handle appSemHandle;
 
 /*! Storage for Events flags */
 uint32_t appEvents = 0;
 
 /*! MAC callback table, initialized to no callback table */
-static ApiMac_callbacks_t *pMacCallbacks = (ApiMac_callbacks_t *) NULL;
+static ApiMac_callbacks_t *pMacCallbacks = (ApiMac_callbacks_t*) NULL;
 
 uint8_t appTaskId;
 
@@ -57,7 +53,6 @@ static void deallocateIncomingMsg(Mediator_msgObjSentToApp_t *pMsg);
 static void copyMacAddrToApiMacAddr(ApiMac_sAddr_t *pDst, sAddr_t *pSrc);
 static void copyDataInd(ApiMac_mcpsDataInd_t *pDst, macMcpsDataInd_t *pSrc);
 
-
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -67,7 +62,7 @@ static void copyDataInd(ApiMac_mcpsDataInd_t *pDst, macMcpsDataInd_t *pSrc);
 
  Public function defined in api_mac.h
  */
-void *ApiMac_init()
+void* ApiMac_init()
 {
     Semaphore_Params semParam;
 
@@ -91,15 +86,14 @@ void ApiMac_registerCallbacks(ApiMac_callbacks_t *pCallbacks)
     pMacCallbacks = pCallbacks;
 }
 
-
 void ApiMac_processIncoming(void)
 {
 //    macCbackEvent_t *pMsg;
 
     /* Wait for response message */
-    if(Semaphore_pend(appSemHandle, BIOS_WAIT_FOREVER ))
+    if (Semaphore_pend(appSemHandle, BIOS_WAIT_FOREVER))
     {
-        Mediator_msgObjSentToApp_t msg = {0};
+        Mediator_msgObjSentToApp_t msg = { 0 };
         bool rsp = Mediator_getNextMacMsg(&msg);
         //check if there is a msg
         if (rsp == false)
@@ -131,17 +125,81 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
     {
         switch (pMsg->msg->hdr.event)
         {
+        case MAC_MLME_ASSOCIATE_IND:
+            if (pMacCallbacks->pAssocIndCb)
+            {
+                /* Indication structure */
+                ApiMac_mlmeAssociateInd_t ind;
+
+                /* Initialize the structure */
+                memset(&ind, 0, sizeof(ApiMac_mlmeAssociateInd_t));
+
+                /* copy the message to the indication structure */
+                memcpy(ind.deviceAddress, pMsg->msg->associateInd.deviceAddress,
+                       sizeof(ApiMac_sAddrExt_t));
+                ind.shortAddr = pMsg->msg->associateInd.shortAddr;
+                free(pMsg->msg);
+
+                /* Initiate the callback */
+                pMacCallbacks->pAssocIndCb(&ind);
+            }
+            break;
+        case MAC_MLME_DISASSOCIATE_IND:
+            if (pMacCallbacks->pDisassociateIndCb)
+            {
+                /* Indication structure */
+                ApiMac_mlmeDisassociateInd_t ind;
+
+                /* Initialize the structure */
+                memset(&ind, 0, sizeof(ApiMac_mlmeDisassociateInd_t));
+
+                /* copy the message to the indication structure */
+                memcpy(ind.deviceAddress,
+                       pMsg->msg->disassociateInd.deviceAddress,
+                       sizeof(ApiMac_sAddrExt_t));
+
+                ind.shortAddr = pMsg->msg->associateInd.shortAddr;
+                free(pMsg->msg);
+                /* Initiate the callback */
+                pMacCallbacks->pDisassociateIndCb(&ind);
+            }
+            break;
+
+        case MAC_MLME_DISCOVERY_IND:
+            if (pMacCallbacks->pDiscIndCb)
+            {
+                /* Indication structure */
+                ApiMac_mlmeDiscoveryInd_t ind;
+
+                /* Initialize the structure */
+                memset(&ind, 0, sizeof(ApiMac_mlmeDiscoveryInd_t));
+
+                /* copy the message to the indication structure */
+                memcpy(ind.deviceAddress, pMsg->msg->discoveryInd.deviceAddress,
+                       sizeof(ApiMac_sAddrExt_t));
+                ind.shortAddr = pMsg->msg->discoveryInd.shortAddr;
+                ind.rssi = pMsg->msg->discoveryInd.rssi;
+                free(pMsg->msg);
+
+                /* Initiate the callback */
+                pMacCallbacks->pAssocIndCb(&ind);
+            }
+            break;
+
         case MAC_MCPS_DATA_IND:
             if (pMacCallbacks->pDataIndCb)
             {
                 /* Indication structure */
-                ApiMac_mcpsDataInd_t ind = {0};
+                ApiMac_mcpsDataInd_t ind;
 
                 /* copy structure to structure */
                 copyDataInd(&ind, &(pMsg->msg->dataInd));
 
                 /* Initiate the callback */
                 pMacCallbacks->pDataIndCb(&ind);
+
+                free(pMsg->msg);
+                free(pMsg->msg->dataInd.msdu.p);
                 //TODO: deallocate
             }
             break;
@@ -167,7 +225,7 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
 
                 /* Initiate the callback */
                 pMacCallbacks->pDataCnfCb(&cnf);
-
+                free(pMsg->msg);
                 if (pMsg->msg->dataCnf.pDataReq)
                 {
                     /* Deallocate the original data request structure */
@@ -205,7 +263,7 @@ static void copyDataInd(ApiMac_mcpsDataInd_t *pDst, macMcpsDataInd_t *pSrc)
     pDst->payloadIeLen = pSrc->mac.payloadIeLen;
     pDst->pPayloadIE = pSrc->mac.pPayloadIE;
 
-    pDst->frameCntr = (uint32_t)pSrc->mac.frameCntr;
+    pDst->frameCntr = (uint32_t) pSrc->mac.frameCntr;
 
     /* Copy the payload information */
     pDst->msdu.len = pSrc->msdu.len;
@@ -221,8 +279,8 @@ static void copyDataInd(ApiMac_mcpsDataInd_t *pDst, macMcpsDataInd_t *pSrc)
 static void copyMacAddrToApiMacAddr(ApiMac_sAddr_t *pDst, sAddr_t *pSrc)
 {
     /* Copy each element of the structure */
-    pDst->addrMode = (ApiMac_addrType_t)pSrc->addrMode;
-    if(pDst->addrMode == ApiMac_addrType_short)
+    pDst->addrMode = (ApiMac_addrType_t) pSrc->addrMode;
+    if (pDst->addrMode == ApiMac_addrType_short)
     {
         pDst->addr.shortAddr = pSrc->addr.shortAddr;
     }
@@ -237,7 +295,6 @@ static void deallocateIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
 {
 //    pMsg->msg->
 }
-
 
 /*!
  * @brief       This function sends application data to the MAC for
@@ -272,16 +329,14 @@ extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData)
     memset(data, 0, len + 100);
     memcpy(data, pData->msdu.p, len);
 
-    ApiMac_mcpsDataReq_t* p = malloc(sizeof(ApiMac_mcpsDataReq_t) + 50);
+    ApiMac_mcpsDataReq_t *p = malloc(sizeof(ApiMac_mcpsDataReq_t) + 50);
     memset(p, 0, sizeof(ApiMac_mcpsDataReq_t) + 50);
-    memcpy(p, pData, sizeof(ApiMac_mcpsDataReq_t) );
+    memcpy(p, pData, sizeof(ApiMac_mcpsDataReq_t));
 
     p->msdu.p = data;
-    Mediator_msgObjSentToMac_t msg = {0};
+    Mediator_msgObjSentToMac_t msg = { 0 };
     msg.msg = p;
 //    msg.msg->msdu.p = p;
     Mediator_sendMsgToMac(&msg);
 }
-
-
 
