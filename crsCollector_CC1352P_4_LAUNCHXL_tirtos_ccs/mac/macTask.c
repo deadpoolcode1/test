@@ -384,6 +384,10 @@ static void processkIncomingAppMsgs()
 
 }
 
+void setGstate(int state){
+gState=state;
+}
+
 bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
                               ApiMac_status_t status)
 {

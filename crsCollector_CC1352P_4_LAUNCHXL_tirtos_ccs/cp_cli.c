@@ -232,12 +232,36 @@ void CP_CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
+    Node_nodeInfo_t nodes[NUM_NODES];
+       Node_getNodes(nodes);
+    setGstate(3);
+
+           MAC_crsPacket_t pkt = { 0 };
+
+           pkt.commandId = MAC_COMMAND_DATA;
+
+           memcpy(pkt.dstAddr,nodes[0].mac,MAC_SIZE);
+
+           memcpy(pkt.srcAddr, collectorPib.mac, 8);
+
+           Node_nodeInfo_t node = { 0 };
+           Node_getNode(nodes[0].mac, &node);
+
+           pkt.seqSent = node.seqSend;
+           pkt.seqRcv = node.seqRcv;
+
+           pkt.isNeedAck = 1;
+//           memcpy(pkt.payload, msg.msg->msdu.p, msg.msg->msdu.len);
+           pkt.len = 20;
+           pkt.panId = collectorPib.panId;
+
+           EasyLink_abort();
+           Smac_sendContent(&pkt, NULL);
 //    Mediator_sendMsgToMac msgToMac={0};
 //    msgToMac
 //    MAC_crsPacket_t pkt={0};
-//    Node_nodeInfo_t nodes[NUM_NODES];
-//    Node_getNodes(nodes);
-//    memcpy(pkt.dstAddr,nodes[0].mac,MAC_SIZE);
+//
+//
 //    pkt.isNeedAck=1;
 //    Smac_sendContent(&pkt, NULL);
 

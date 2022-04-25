@@ -172,9 +172,8 @@ static void smacFinishedSendingContentCb(EasyLink_Status status)
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
         Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend + 1);
         //10us per tick so for 5ms we need 500 ticks
-//        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
-//        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20 * 4);
-//        Node_startTimer(gSmAckContentInfo.nodeMac);
+        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 1000*1000);
+        Node_startTimer(gSmAckContentInfo.nodeMac);
         RX_enterRx(smacReceivedContentAckCb, collectorPib.mac);
     }
 
@@ -259,7 +258,7 @@ static void waitForSensorContentTimeoutCb(void *arg)
 static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
                                      EasyLink_Status status)
 {
-//    Node_stopTimer(gSmAckContentInfo.nodeMac);
+    Node_stopTimer(gSmAckContentInfo.nodeMac);
     //we either got the ack or we lost the ack and got the content
     Node_nodeInfo_t node = { 0 };
     Node_getNode(gSmAckContentInfo.nodeMac, &node);
