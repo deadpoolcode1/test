@@ -10,6 +10,8 @@
 #include <ti/sysbios/knl/Clock.h>
 
 #define MAC_SIZE 8
+//if its above 16 nodes, then the memory allocated for the structs of the nodes is above 1k
+#define NUM_NODES 4
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>

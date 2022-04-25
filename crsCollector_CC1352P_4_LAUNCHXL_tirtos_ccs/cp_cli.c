@@ -232,12 +232,14 @@ void CP_CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
-    MAC_crsPacket_t pkt={0};
-    Node_nodeInfo_t nodes[NUM_NODES];
-    Node_getNodes(nodes);
-    pkt.dstAddr=nodes[0].mac;
-    pkt.isNeedAck=1;
-    Smac_sendContent(pkt, NULL);
+//    Mediator_sendMsgToMac msgToMac={0};
+//    msgToMac
+//    MAC_crsPacket_t pkt={0};
+//    Node_nodeInfo_t nodes[NUM_NODES];
+//    Node_getNodes(nodes);
+//    memcpy(pkt.dstAddr,nodes[0].mac,MAC_SIZE);
+//    pkt.isNeedAck=1;
+//    Smac_sendContent(&pkt, NULL);
 
 //    Smac_printStateMachine();
 

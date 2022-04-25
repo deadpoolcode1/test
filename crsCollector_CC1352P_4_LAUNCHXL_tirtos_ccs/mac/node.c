@@ -9,8 +9,7 @@
 #include "macTask.h"
 #include <ti/sysbios/knl/Semaphore.h>
 #include "cp_cli.h"
-//if its above 16 nodes, then the memory allocated for the structs of the nodes is above 1k
-#define NUM_NODES 4
+
 
 static Node_nodeInfo_t gNodes[NUM_NODES];
 static Node_nodeClocks_t gNodesClocks[NUM_NODES];
