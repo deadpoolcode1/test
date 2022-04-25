@@ -49,9 +49,9 @@ uint16_t shortAddr;
 
 
 void Node_init();
-
+void Node_listNodes();
 void Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
-
+void Node_getNodes(Node_nodeInfo_t rspNodes[NUM_NODES]);
 void Node_updateNode(Node_nodeInfo_t* node);
 
 void Node_eraseNode(Node_nodeInfo_t* node);

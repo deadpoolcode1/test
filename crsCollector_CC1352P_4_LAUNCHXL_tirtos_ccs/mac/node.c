@@ -8,6 +8,7 @@
 #include "node.h"
 #include "macTask.h"
 #include <ti/sysbios/knl/Semaphore.h>
+#include "cp_cli.h"
 //if its above 16 nodes, then the memory allocated for the structs of the nodes is above 1k
 #define NUM_NODES 4
 
@@ -59,6 +60,11 @@ void Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
         }
     }
 
+}
+
+void Node_getNodes(Node_nodeInfo_t rspNodes[NUM_NODES]){
+
+    memcpy(rspNodes,gNodes,sizeof(Node_nodeInfo_t)*NUM_NODES);
 }
 
 void Node_updateNode(Node_nodeInfo_t *node)

@@ -232,13 +232,15 @@ void CP_CLI_processCliUpdate()
 
 static void debugCli(char *line)
 {
-//    RfEasyLink_sendPacket();
-    Smac_printStateMachine();
+    MAC_crsPacket_t pkt={0};
+    Node_nodeInfo_t nodes[NUM_NODES];
+    Node_getNodes(nodes);
+    pkt.dstAddr=nodes[0].mac;
+    pkt.isNeedAck=1;
+    Smac_sendContent(pkt, NULL);
 
-//    Node_init();
-//    Node_nodeInfo_t rspNode;
-//    uint8_t mac[8]={0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
-//    Node_getNode(mac, &rspNode);
+//    Smac_printStateMachine();
+
     CP_CLI_startREAD();
 }
 
