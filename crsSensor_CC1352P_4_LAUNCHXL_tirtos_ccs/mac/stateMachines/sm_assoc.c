@@ -119,6 +119,7 @@ void Smas_process()
     if (smasEvents & SMAS_JOINED_NETWORK_EVT)
     {
         CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
+        MAC_moveToSmacState();
 
         Util_clearEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
     }
@@ -293,8 +294,7 @@ static void finishedSendingAssocRspAckCb(EasyLink_Status status)
 //        //10us per tick so for 5ms we need 500 ticks
 //        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
 //        Node_startTimer(gSmAckContentInfo.nodeMac);
-
-        RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
+//        RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
 
         Util_setEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
 

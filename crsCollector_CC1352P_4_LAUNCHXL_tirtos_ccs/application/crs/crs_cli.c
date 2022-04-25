@@ -289,7 +289,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
-#define UART_WRITE_BUFF_SIZE 5
+#define UART_WRITE_BUFF_SIZE 2000
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];

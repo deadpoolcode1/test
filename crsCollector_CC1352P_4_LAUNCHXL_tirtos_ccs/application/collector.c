@@ -80,10 +80,11 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
  *****************************************************************************/
 //TODO: add assoc ind cb.
 /*! API MAC Callback table */
-ApiMac_callbacks_t Collector_macCallbacks = { assocIndCB, disassocIndCB, discoveryIndCB,
+ApiMac_callbacks_t Collector_macCallbacks = { assocIndCB, disassocIndCB,
+                                              discoveryIndCB,
 
-/*! Start Confirmation callback */
-NULL,
+                                              /*! Start Confirmation callback */
+                                              NULL,
 
                                               /*! Data Confirmation callback */
                                               dataCnfCB,
@@ -170,7 +171,18 @@ void Csf_processCliUpdate()
 
 bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr)
 {
-    return true;
+    int x = 0;
+    for (x = 0; (x < MAX_DEVICES_IN_NETWORK); x++)
+    {
+        if (pDstAddr->addr.shortAddr == Cllc_associatedDevList[x].shortAddr)
+        {
+
+            return true;
+
+        }
+
+    }
+    return false;
 }
 
 Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
@@ -261,6 +273,24 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
     dataReq.dstAddr.addr.shortAddr = dstShortAddr;
     dataReq.srcAddrMode = ApiMac_addrType_short;
 
+    int x = 0;
+    for (x = 0; (x < MAX_DEVICES_IN_NETWORK); x++)
+    {
+        if (dstShortAddr == Cllc_associatedDevList[x].shortAddr)
+        {
+            dataReq.dstAddr.addrMode = ApiMac_addrType_extended;
+            memcpy(dataReq.dstAddr.addr.extAddr,
+                   Cllc_associatedDevList[x].extAddr, 8);
+            break;
+        }
+
+    }
+
+    if (x == MAX_DEVICES_IN_NETWORK)
+    {
+        return false;
+    }
+
     dataReq.msduHandle = getMsduHandle(type);
     if (type == Smsgs_cmdIds_crsReq)
     {
@@ -344,7 +374,8 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
     {
         if (Cllc_associatedDevList[x].shortAddr == pAssocInd->shortAddr)
         {
-            memset(&Cllc_associatedDevList[x], 0xff, sizeof(Cllc_associated_devices_t));
+            memset(&Cllc_associatedDevList[x], 0xff,
+                   sizeof(Cllc_associated_devices_t));
             memcpy(Cllc_associatedDevList[x].extAddr, pAssocInd->deviceAddress,
                    8);
             Cllc_associatedDevList[x].shortAddr = pAssocInd->shortAddr;
@@ -375,7 +406,8 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
     {
         if (Cllc_associatedDevList[x].shortAddr == pDisassocInd->shortAddr)
         {
-            memset(&(Cllc_associatedDevList[x]), 0xff, sizeof(Cllc_associated_devices_t));
+            memset(&(Cllc_associatedDevList[x]), 0xff,
+                   sizeof(Cllc_associated_devices_t));
             return;
         }
 
@@ -395,7 +427,6 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 
     }
 }
-
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {

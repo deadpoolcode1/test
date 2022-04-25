@@ -257,7 +257,7 @@ static void finishedSendingAckCb(EasyLink_Status status)
 //        SMAC_RECIVED_ACK_EVT
         Util_setEvent(&smacEvents, SMAC_RECIVED_CONTENT_EVT);
         Semaphore_post(macSem);
-        RX_enterRx( recviedCollectorContentAgainCb, collectorLink.mac);
+        RX_enterRx( recviedCollectorContentAgainCb, sensorPib.mac);
     }
     else
     {

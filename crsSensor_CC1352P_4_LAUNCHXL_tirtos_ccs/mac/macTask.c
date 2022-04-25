@@ -228,6 +228,18 @@ static void macFnx(UArg arg0, UArg arg1)
     }
 }
 
+void MAC_moveToSmacState()
+{
+    gState = MAC_SM_CONTENT_ACK;
+
+    RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
+
+//    Semaphore_post(macSemHandle);
+
+}
+
+
+
 
 static void initSensorPib()
 {

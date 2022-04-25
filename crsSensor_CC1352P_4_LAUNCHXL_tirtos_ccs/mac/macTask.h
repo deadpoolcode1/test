@@ -105,4 +105,7 @@ bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
                        ApiMac_status_t status);
 bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf);
 
+void MAC_moveToSmacState();
+
+
 #endif /* MAC_MACTASK_H_ */
