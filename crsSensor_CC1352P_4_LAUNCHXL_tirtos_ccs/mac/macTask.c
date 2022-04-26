@@ -30,7 +30,7 @@
  *****************************************************************************/
 #define EXTADDR_OFFSET 0x2F0
 
-#define MAC_TASK_STACK_SIZE    10024
+#define MAC_TASK_STACK_SIZE    6000
 #define MAC_TASK_PRIORITY      2
 
 typedef enum

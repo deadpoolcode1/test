@@ -119,6 +119,7 @@ void Smac_process()
         macMcpsDataCnf_t rsp = { 0 };
         MAC_createDataCnf(&rsp, gMsduHandle, ApiMac_status_success);
         MAC_sendCnfToApp(&rsp);
+        MAC_moveToSmacState();
         Util_clearEvent(&smacEvents, SMAC_RECIVED_ACK_EVT);
     }
 

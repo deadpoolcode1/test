@@ -309,7 +309,7 @@ int main(void)
     Mediator_init();
     appTask_init();
 //    txTask_init(pinHandle);
-    Mac_init();
+    Mac_init(pinHandle);
     /* Start BIOS */
     BIOS_start();
 

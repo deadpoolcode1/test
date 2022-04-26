@@ -13,6 +13,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <xdc/runtime/System.h>
 #include <ti/sysbios/knl/Clock.h>
+#include <ti/drivers/PIN.h>
 
 #include "macTask.h"
 #include "cp_cli.h"
@@ -31,7 +32,7 @@
  *****************************************************************************/
 #define EXTADDR_OFFSET 0x2F0
 
-#define MAC_TASK_STACK_SIZE    10024
+#define MAC_TASK_STACK_SIZE    8000
 #define MAC_TASK_PRIORITY      2
 
 typedef enum
@@ -69,6 +70,7 @@ static bool gIsNeedToSendBeacon = false;
 
 static bool gIsSendingBeacon = false;
 
+static PIN_Handle pinHandle;
 
 /******************************************************************************
  Local Function Prototypes
@@ -95,9 +97,9 @@ static void sendBeacon();
  *****************************************************************************/
 
 
-void Mac_init()
+void Mac_init(PIN_Handle pinHandl)
 {
-
+    pinHandle = pinHandl;
     Task_Params_init(&macTaskParams);
     macTaskParams.stackSize = MAC_TASK_STACK_SIZE;
     macTaskParams.priority = MAC_TASK_PRIORITY;
@@ -153,7 +155,7 @@ static void macFnx(UArg arg0, UArg arg1)
 //    Smri_init(macSemHandle);
     Smas_init(macSemHandle);
     Smac_init(macSemHandle);
-
+    Smd_init(macSemHandle);
     Clock_Params_init(&gClkParams);
     gClkParams.period = 0;
     gClkParams.startFlag = FALSE;
@@ -208,7 +210,7 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_DISCOVERY)
         {
-
+            Smd_process();
         }
         else if (gState == MAC_SM_CONTENT_ACK)
         {
@@ -257,16 +259,22 @@ static void sendBeacon()
     memcpy(beaconPkt.srcAddr, collectorPib.mac, 8);
     beaconPkt.srcAddrShort = collectorPib.shortAddr;
 
-    uint8_t pBuf[200] = { 0 };
+    uint8_t pBuf[800] = { 0 };
     buildBeaconBufFromPkt(&beaconPkt, pBuf);
 uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
+        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
+
     TX_sendPacketBuf(pBuf, sizeof(MAC_crsBeaconPacket_t), dstAddr,
                      smasFinishedSendingBeaconCb);
+////pBuf[600] = 'a';
+//TX_sendPacketBuf(pBuf, 700, dstAddr,
+//                     smasFinishedSendingBeaconCb);
 }
 
 static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 {
     gIsSendingBeacon = false;
+//    PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
 
 //content sent so wait for ack
     if (status == EasyLink_Status_Success)
@@ -382,10 +390,6 @@ static void processkIncomingAppMsgs()
         Smac_sendContent(&pkt, msg.msg->msduHandle);
     }
 
-}
-
-void setGstate(int state){
-gState=state;
 }
 
 bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,

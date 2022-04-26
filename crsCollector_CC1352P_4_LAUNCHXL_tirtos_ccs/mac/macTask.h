@@ -15,6 +15,7 @@
 #include "crs_global_defines.h"
 #include "crs_cli.h"
 #include "easylink/EasyLink.h"
+#include <ti/drivers/PIN.h>
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
 #define MAC_TASK_TX_DONE_EVT 0x0002
@@ -38,6 +39,7 @@ typedef enum
 typedef struct Frame
 {
     //payload len
+    MAC_commandId_t commandId;
     uint16_t len;
     uint16_t seqSent;
     uint16_t seqRcv;
@@ -46,7 +48,6 @@ typedef struct Frame
     uint16_t srcAddrShort;
     uint16_t dstAddrShort;
     uint8_t panId;
-    MAC_commandId_t commandId;
     uint8_t isNeedAck;
     uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
 } MAC_crsPacket_t;
@@ -93,7 +94,7 @@ typedef struct collectorNode
 extern MAC_collectorInfo_t collectorPib;
 extern uint16_t macEvents;
 
-void Mac_init();
+void Mac_init(PIN_Handle pinHandl);
 
 void Mac_cliUpdate();
 void MAC_printSensorStateMachine();
@@ -111,7 +112,7 @@ void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
                                   EasyLink_Status status);
 
 void MAC_moveToRxIdleState();
-void setGstate(int state);
+
 bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
                               ApiMac_status_t status);
 

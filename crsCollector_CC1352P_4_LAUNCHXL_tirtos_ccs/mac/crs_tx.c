@@ -16,18 +16,15 @@
 #include "easylink/EasyLink.h"
 #include "mac/mac_util.h"
 
-
-
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-
 
 /******************************************************************************
  Local variables
  *****************************************************************************/
 
-void* sem;
+void *sem;
 
 static EasyLink_Status gStatus;
 
@@ -42,13 +39,10 @@ static EasyLink_TxDoneCb gCbTx = NULL;
  *****************************************************************************/
 static void txDoneCb(EasyLink_Status status);
 
-
-
-void TX_init(void * semaphore)
+void TX_init(void *semaphore)
 {
     sem = semaphore;
 }
-
 
 //typedef struct Frame
 //{
@@ -71,7 +65,7 @@ void TX_init(void * semaphore)
 //} EasyLink_TxPacket;
 //void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTxFailed, EasyLink_TxDoneCb cbCcaFailed, EasyLink_TxDoneCb cbSuccess)
 
-void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
+void TX_sendPacket(MAC_crsPacket_t *pkt, EasyLink_TxDoneCb cbTx)
 {
 //    gCbTxFailed = cbTxFailed;
 //    gCbCcaFailed = cbCcaFailed;
@@ -91,7 +85,6 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
     pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
     pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
 
-
     memcpy(pBuf, pkt->srcAddr, 8);
     pBuf = pBuf + 8;
 
@@ -104,8 +97,8 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 
     pBuf++;
 
+    pBuf = Util_bufferUint16(pBuf, pkt->len);
     memcpy(pBuf, pkt->payload, pkt->len);
-
 
     txPacket.len = (pBuf - txPacket.payload) + pkt->len;
     memcpy(txPacket.dstAddr, pkt->dstAddr, 8);
@@ -114,18 +107,15 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
      * an address of 0xAA. This device must set the dstAddr accordingly.
      */
 //    txPacket.dstAddr[0] = CRS_PAN_ID;
-
 //    txPacket.dstAddr[0] = 0xaa;
-
 
     EasyLink_transmitCcaAsync(&txPacket, gCbTx);
 
-
 }
 
-void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_TxDoneCb cbTx)
+void TX_sendPacketBuf(uint8_t *pBuf, uint16_t len, uint8_t *dstAddr,
+                      EasyLink_TxDoneCb cbTx)
 {
-
 
     if (cbTx != NULL)
     {
@@ -136,8 +126,6 @@ void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_Tx
         gCbTx = txDoneCb;
     }
     EasyLink_TxPacket txPacket = { { 0 }, 0, 0, { 0 } };
-
-
 
     memcpy(txPacket.payload, pBuf, len);
 
@@ -151,17 +139,14 @@ void TX_sendPacketBuf(uint8_t* pBuf, uint16_t len, uint8_t *dstAddr, EasyLink_Tx
      * an address of 0xAA. This device must set the dstAddr accordingly.
      */
 //    txPacket.dstAddr[0] = CRS_PAN_ID;
-
 //    txPacket.dstAddr[0] = 0xaa;
 
-
+//    EasyLink_transmitCcaAsync(&txPacket, gCbTx);
     EasyLink_transmitCcaAsync(&txPacket, gCbTx);
-
 
 }
 
-
-void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
+void TX_buildBufFromSrct(MAC_crsPacket_t *pkt, uint8_t *pBuf)
 {
     pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
     pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
@@ -178,10 +163,12 @@ void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
 
     pBuf++;
 
+    pBuf = Util_bufferUint16(pBuf, pkt->len);
+
     memcpy(pBuf, pkt->payload, pkt->len);
 }
 
-void TX_getPcktStatus(EasyLink_Status* status)
+void TX_getPcktStatus(EasyLink_Status *status)
 {
     *status = gStatus;
 }
@@ -198,7 +185,7 @@ static void txDoneCb(EasyLink_Status status)
 //        gCbSuccess();
 
     }
-    else if(status == EasyLink_Status_Aborted)
+    else if (status == EasyLink_Status_Aborted)
     {
 //        gCbTxFailed();
 

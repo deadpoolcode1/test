@@ -70,7 +70,7 @@
 union setupCmd_t{
 #if ((defined LAUNCHXL_CC1352P1) || (defined LAUNCHXL_CC1352P_2) || \
      (defined LAUNCHXL_CC1352P_4)|| (defined LP_CC1352P7_1)      || \
-	 (defined LP_CC1352P7_4))
+     (defined LP_CC1352P7_4))
     rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t divSetup;
 #else
     rfc_CMD_PROP_RADIO_DIV_SETUP_t divSetup;
@@ -166,15 +166,13 @@ __attribute__((aligned(4)))
 #else
 #error This compiler is not supported.
 #endif
-static uint8_t rxBuffer[sizeof(rfc_dataEntryGeneral_t) + 1 +
-                        EASYLINK_MAX_ADDR_SIZE +
-                        EASYLINK_MAX_DATA_LENGTH];
+static uint8_t rxBuffer[sizeof(rfc_dataEntryGeneral_t) + 1000];
 
 static dataQueue_t dataQueue;
 static rfc_propRxOutput_t rxStatistics;
 
 //Tx buffer includes hdr (len=1 or 2 bytes), dst addr (max of 8 bytes) and data
-static uint8_t txBuffer[2U + EASYLINK_MAX_ADDR_SIZE + EASYLINK_MAX_DATA_LENGTH];
+static uint8_t txBuffer[2U + 1000];
 
 // Addr size for Filter and Tx/Rx operations
 // Set default to 1 byte addr to work with SmartRF studio default settings
@@ -186,7 +184,7 @@ static uint8_t defaultAddr[8] = EASYLINK_DEFAULT_ADDR;
 
 // Header Size (in bytes) for Advanced Tx operations. For IEEE 802.15.4g modes
 // it is 2 bytes, 1 for the rest
-static uint8_t hdrSize = EASYLINK_HDR_SIZE_NBYTES(EASYLINK_PROP_HDR_NBITS);
+static uint8_t hdrSize = 2;
 
 //Indicating that the API is initialized
 static uint8_t configured = 0;
@@ -539,19 +537,24 @@ static void rxDoneCallback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
                     ((EasyLink_cmdPropRxAdv.pktConf.filterOp == 1) &&
                      (rxStatistics.nRxIgnored == 1)) )
             {
+                uint16_t len = *(uint8_t*)(&pDataEntry->data + 1);
+                len = len << 8;
+                len = len | ((uint16_t)(*(uint8_t*)(&pDataEntry->data )));
+                len = len - addrSize;
+                rxPacket.len = len;
                 //copy length from pDataEntry
-                rxPacket.len = *(uint8_t*)(&pDataEntry->data) - addrSize;
+//                rxPacket.len = *(uint8_t*)(&pDataEntry->data) - addrSize;
                 if(useIeeeHeader)
                 {
                     hdrSize = EASYLINK_HDR_SIZE_NBYTES(EASYLINK_IEEE_HDR_NBITS);
                 }
                 else
                 {
-                    hdrSize = EASYLINK_HDR_SIZE_NBYTES(EASYLINK_PROP_HDR_NBITS);
+                    hdrSize = 2;
                 }
                 //copy address from packet payload (as it is not in hdr)
                 memcpy(&rxPacket.dstAddr, (&pDataEntry->data + hdrSize), addrSize);
-                if(EASYLINK_MAX_DATA_LENGTH >= rxPacket.len)
+                if(1000 >= rxPacket.len)
                 {
                     //copy payload
                     memcpy(&rxPacket.payload, (&pDataEntry->data + hdrSize + addrSize), rxPacket.len);
@@ -998,7 +1001,7 @@ EasyLink_Status EasyLink_init(EasyLink_Params *params)
     {
 #if ((defined LAUNCHXL_CC1352P1) || (defined LAUNCHXL_CC1352P_2) || \
      (defined LAUNCHXL_CC1352P_4)|| (defined LP_CC1352P7_1)      || \
-	 (defined LP_CC1352P7_4))
+     (defined LP_CC1352P7_4))
         memcpy(&EasyLink_cmdPropRadioSetup.divSetup, (rfSetting->RF_uCmdPropRadio.RF_pCmdPropRadioDivSetup), sizeof(rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t));
 #else
         memcpy(&EasyLink_cmdPropRadioSetup.divSetup, (rfSetting->RF_uCmdPropRadio.RF_pCmdPropRadioDivSetup), sizeof(rfc_CMD_PROP_RADIO_DIV_SETUP_t));
@@ -1056,8 +1059,7 @@ EasyLink_Status EasyLink_init(EasyLink_Params *params)
     EasyLink_cmdPropRxAdv.rxConf.bAppendTimestamp = 0x0;
     EasyLink_cmdPropRxAdv.rxConf.bAppendStatus = 0x0;
     EasyLink_cmdPropRxAdv.syncWord1 = 0;
-    EasyLink_cmdPropRxAdv.maxPktLen = EASYLINK_MAX_DATA_LENGTH +
-            EASYLINK_MAX_ADDR_SIZE;
+    EasyLink_cmdPropRxAdv.maxPktLen = 1000;
     if(useIeeeHeader)
     {
         EasyLink_cmdPropRxAdv.syncWord0 = EASYLINK_IEEE_TRX_SYNC_WORD;
@@ -1069,13 +1071,13 @@ EasyLink_Status EasyLink_init(EasyLink_Params *params)
     else
     {
         EasyLink_cmdPropRxAdv.syncWord0 = EASYLINK_PROP_TRX_SYNC_WORD;
-        EasyLink_cmdPropRxAdv.hdrConf.numHdrBits = EASYLINK_PROP_HDR_NBITS;
+        EasyLink_cmdPropRxAdv.hdrConf.numHdrBits = 16;
         EasyLink_cmdPropRxAdv.lenOffset = EASYLINK_PROP_LEN_OFFSET;
         // Include the header in the CRC calculation - The header (length
         // byte) is considered to be the first byte of the payload
         EasyLink_cmdPropRxAdv.pktConf.bCrcIncHdr = 1U;
     }
-    EasyLink_cmdPropRxAdv.hdrConf.numLenBits = EASYLINK_HDR_LEN_NBITS;
+    EasyLink_cmdPropRxAdv.hdrConf.numLenBits = 16;
     EasyLink_cmdPropRxAdv.hdrConf.lenPos = 0;
     EasyLink_cmdPropRxAdv.addrConf.addrType = 0;
     EasyLink_cmdPropRxAdv.addrConf.addrSize = addrSize;
@@ -1271,14 +1273,14 @@ EasyLink_Status EasyLink_setRfPower(int8_t i8TxPowerDbm)
 #if (defined CONFIG_CC1352R1F3RGZ)     || (defined CONFIG_CC1312R1F3RGZ)     || \
     (defined CONFIG_CC2652R1FRGZ)      || (defined CONFIG_CC2652R1FSIP)      || \
     (defined CONFIG_CC2652P1FSIP)      || (defined CONFIG_CC2652R7RGZ)       || \
-	(defined CONFIG_CC1312R7RGZ)       || (defined CONFIG_CC1352P7RGZ)       || \
-	(defined CONFIG_CC1312R1_LAUNCHXL) || (defined CONFIG_CC1352R1_LAUNCHXL) || \
+    (defined CONFIG_CC1312R7RGZ)       || (defined CONFIG_CC1352P7RGZ)       || \
+    (defined CONFIG_CC1312R1_LAUNCHXL) || (defined CONFIG_CC1352R1_LAUNCHXL) || \
     (defined LAUNCHXL_CC1352P1)        || (defined CONFIG_CC26X2R1_LAUNCHXL) || \
     (defined LAUNCHXL_CC1352P_4)       || (defined LAUNCHXL_CC1352P_2)       || \
     (defined CONFIG_LP_CC2652PSIP)     || (defined CONFIG_LP_CC2652RSIP)     || \
     (defined CONFIG_LP_CC1312R7)       || (defined LP_CC1352P7_4)            || \
-	(defined LP_CC1352P7_1)            || (defined CONFIG_LP_CC2652R7)
-	
+    (defined LP_CC1352P7_1)            || (defined CONFIG_LP_CC2652R7)
+
 
     RF_TxPowerTable_Entry *rfPowerTable = NULL;
     RF_TxPowerTable_Value newValue;
@@ -1404,15 +1406,15 @@ EasyLink_Status EasyLink_getRfPower(int8_t *pi8TxPowerDbm)
 #if (defined CONFIG_CC1352R1F3RGZ)     || (defined CONFIG_CC1312R1F3RGZ)     || \
     (defined CONFIG_CC2652R1FRGZ)      || (defined CONFIG_CC2652R1FSIP)      || \
     (defined CONFIG_CC2652P1FSIP)      || (defined CONFIG_CC1312R7RGZ)       || \
-	(defined CONFIG_CC1352P7RGZ)       || (defined CONFIG_CC2652R7RGZ)       || \
-	(defined CONFIG_CC1312R1_LAUNCHXL) || (defined CONFIG_CC1352R1_LAUNCHXL) || \
+    (defined CONFIG_CC1352P7RGZ)       || (defined CONFIG_CC2652R7RGZ)       || \
+    (defined CONFIG_CC1312R1_LAUNCHXL) || (defined CONFIG_CC1352R1_LAUNCHXL) || \
     (defined LAUNCHXL_CC1352P1)        || (defined CONFIG_CC26X2R1_LAUNCHXL) || \
     (defined LAUNCHXL_CC1352P_4)       || (defined LAUNCHXL_CC1352P_2)       || \
     (defined CONFIG_LP_CC2652PSIP)     || (defined CONFIG_LP_CC2652RSIP)     || \
     (defined CONFIG_LP_CC1312R7)       || (defined LP_CC1352P7_4)            || \
-	(defined LP_CC1352P7_1)            || (defined CONFIG_LP_CC2652R7)      
-	
-	
+    (defined LP_CC1352P7_1)            || (defined CONFIG_LP_CC2652R7)
+
+
 
     uint8_t rfPowerTableSize = 0;
     RF_TxPowerTable_Entry *rfPowerTable = NULL;
@@ -1746,7 +1748,7 @@ EasyLink_Status EasyLink_transmitCcaAsync(EasyLink_TxPacket *txPacket, EasyLink_
     {
         return EasyLink_Status_Busy_Error;
     }
-    if (txPacket->len > EASYLINK_MAX_DATA_LENGTH)
+    if (txPacket->len > 1000)
     {
         return EasyLink_Status_Param_Error;
     }
@@ -1768,8 +1770,11 @@ EasyLink_Status EasyLink_transmitCcaAsync(EasyLink_TxPacket *txPacket, EasyLink_
     }
     else
     {
-        hdrSize     = EASYLINK_HDR_SIZE_NBYTES(EASYLINK_PROP_HDR_NBITS);
-        txBuffer[0] = txPacket->len + addrSize;
+        hdrSize     = 2;
+        uint16_t total =txPacket->len + ((uint16_t)addrSize);
+        txBuffer[1] = (uint8_t)(0xff & total);
+        txBuffer[0] = (uint8_t)(0xff & (total >> 8));
+
     }
 
     if(EASYLINK_USE_DEFAULT_ADDR)
@@ -1791,6 +1796,8 @@ EasyLink_Status EasyLink_transmitCcaAsync(EasyLink_TxPacket *txPacket, EasyLink_
 
     //packet length to Tx includes address and length field
     EasyLink_cmdPropTxAdv.pktLen = txPacket->len + addrSize + hdrSize;
+//    EasyLink_cmdPropTxAdv.pktLen = 800;
+
     EasyLink_cmdPropTxAdv.pPkt = txBuffer;
 
     cmdTime = calculateCmdTime(txPacket);
@@ -2030,7 +2037,7 @@ EasyLink_Status EasyLink_receiveAsync(EasyLink_ReceiveCb cb, uint32_t absTime)
 
     pDataEntry = (rfc_dataEntryGeneral_t*) rxBuffer;
     //data entry rx buffer includes hdr (len-1Byte), addr (max 8Bytes) and data
-    pDataEntry->length = 1 + EASYLINK_MAX_ADDR_SIZE + EASYLINK_MAX_DATA_LENGTH;
+    pDataEntry->length = 1000;
     pDataEntry->status = 0;
     dataQueue.pCurrEntry = (uint8_t*)pDataEntry;
     dataQueue.pLastEntry = NULL;

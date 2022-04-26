@@ -104,6 +104,8 @@ void TX_sendPacket(MAC_crsPacket_t* pkt, EasyLink_TxDoneCb cbTx)
 
     pBuf++;
 
+    pBuf = Util_bufferUint16(pBuf, pkt->len);
+
     memcpy(pBuf, pkt->payload, pkt->len);
 
 
@@ -174,6 +176,8 @@ void TX_buildBufFromSrct(MAC_crsPacket_t* pkt, uint8_t *pBuf)
     *pBuf = (uint8_t) pkt->commandId;
 
     pBuf++;
+
+    pBuf = Util_bufferUint16(pBuf, pkt->len);
 
     memcpy(pBuf, pkt->payload, pkt->len);
 }

@@ -322,8 +322,8 @@ typedef struct
         uint8_t dstAddr[8];              //!<  Destination address
         uint32_t absTime;                //!< Absolute time to Tx packet (0 for immediate)
                                          //!< Layer will use last SeqNum used + 1
-        uint8_t len;                     //!< Payload Length
-        uint8_t payload[EASYLINK_MAX_DATA_LENGTH];       //!< Payload
+        uint16_t len;                     //!< Payload Length
+        uint8_t payload[1000];       //!< Payload
 } EasyLink_TxPacket;
 
 //! \brief Structure for the RX'ed Packet
@@ -336,8 +336,8 @@ typedef struct
                                          //!< when returned.
         uint32_t rxTimeout;              //!< Relative time in ticks from Rx start to Rx TimeOut
                                          //!< a value of 0 means no timeout
-        uint8_t len;                     //!< length of RX'ed packet
-        uint8_t payload[EASYLINK_MAX_DATA_LENGTH]; //!< payload of RX'ed packet
+        uint16_t len;                     //!< length of RX'ed packet
+        uint8_t payload[1000]; //!< payload of RX'ed packet
 } EasyLink_RxPacket;
 
 //! \brief EasyLink Callback function type for Received packet, registered with EasyLink_ReceiveAsync()

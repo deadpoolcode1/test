@@ -28,7 +28,7 @@
 void* sem;
 
 static EasyLink_Status gStatus;
-static EasyLink_RxPacket  gRxPacket = {0};
+//static EasyLink_RxPacket  gRxPacket = {0};
 
 
 
@@ -72,26 +72,26 @@ void RX_enterRx(EasyLink_ReceiveCb cbRx, uint8_t dstAddr[8])
 void RX_getPacket(MAC_crsPacket_t* pkt )
 {
 //    CP_LOG(CP_CLI_DEBUG, "RECIVED A PACKET");
-    uint8_t* pBuf = gRxPacket.payload;
-    pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
-    pBuf++;
-    pBuf++;
-
-    pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
-    pBuf++;
-    pBuf++;
-
-    memcpy(pkt->srcAddr, pBuf, 8);
-    pBuf = pBuf + 8;
-
-    memcpy(pkt->dstAddr, pBuf, 8);
-    pBuf = pBuf + 8;
-
-    pkt->isNeedAck = *pBuf;
-
-    pBuf++;
-
-    pkt->commandId = (MAC_commandId_t)*pBuf;
+//    uint8_t* pBuf = gRxPacket.payload;
+//    pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
+//    pBuf++;
+//    pBuf++;
+//
+//    pkt->seqRcv = Util_buildUint16(*pBuf, *(pBuf + 1));
+//    pBuf++;
+//    pBuf++;
+//
+//    memcpy(pkt->srcAddr, pBuf, 8);
+//    pBuf = pBuf + 8;
+//
+//    memcpy(pkt->dstAddr, pBuf, 8);
+//    pBuf = pBuf + 8;
+//
+//    pkt->isNeedAck = *pBuf;
+//
+//    pBuf++;
+//
+//    pkt->commandId = (MAC_commandId_t)*pBuf;
 
 }
 
@@ -118,12 +118,15 @@ void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
 
     pkt->commandId = (MAC_commandId_t) *pBuf;
 
-    pkt->len = pBuf - pcktBuff;
+    pBuf++;
 
+    pkt->len = Util_buildUint16(*pBuf, *(pBuf + 1));
+
+    pBuf++;
     pBuf++;
 
 
-    memcpy(pkt->payload, pBuf, 100);
+    memcpy(pkt->payload, pBuf, pkt->len);
 }
 
 void RX_getPcktStatus(EasyLink_Status* status)
@@ -153,7 +156,7 @@ static void rxDoneCb(EasyLink_RxPacket * rxPacket, EasyLink_Status status)
 //        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
     }
 
-    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
+//    memcpy(&gRxPacket, rxPacket, sizeof(EasyLink_RxPacket));
     gStatus = status;
     Util_setEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
     Semaphore_post(sem);
