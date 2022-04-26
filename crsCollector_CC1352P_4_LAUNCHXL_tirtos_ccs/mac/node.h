@@ -10,6 +10,8 @@
 #include <ti/sysbios/knl/Clock.h>
 
 #define MAC_SIZE 8
+//if its above 16 nodes, then the memory allocated for the structs of the nodes is above 1k
+#define NUM_NODES 4
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -49,9 +51,9 @@ uint16_t shortAddr;
 
 
 void Node_init();
-
+void Node_listNodes();
 void Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
-
+void Node_getNodes(Node_nodeInfo_t rspNodes[NUM_NODES]);
 void Node_updateNode(Node_nodeInfo_t* node);
 
 void Node_eraseNode(Node_nodeInfo_t* node);

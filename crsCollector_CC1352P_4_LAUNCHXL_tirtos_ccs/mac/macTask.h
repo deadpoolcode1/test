@@ -111,7 +111,7 @@ void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
                                   EasyLink_Status status);
 
 void MAC_moveToRxIdleState();
-
+void setGstate(int state);
 bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
                               ApiMac_status_t status);
 

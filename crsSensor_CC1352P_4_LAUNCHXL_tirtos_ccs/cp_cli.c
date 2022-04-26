@@ -25,7 +25,7 @@
 
 #define CUI_NUM_UART_CHARS 1024
 
-#define CLI_PROMPT "\r\nCollector> "
+#define CLI_PROMPT "\r\nSensor> "
 
 #define CLI_DEBUG "debug"
 
