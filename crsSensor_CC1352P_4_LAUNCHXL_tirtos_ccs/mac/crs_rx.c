@@ -98,6 +98,11 @@ void RX_getPacket(MAC_crsPacket_t* pkt )
 void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
 {
     uint8_t *pBuf = pcktBuff;
+
+    pkt->commandId = (MAC_commandId_t) *pBuf;
+
+    pBuf++;
+
     pkt->seqSent = Util_buildUint16(*pBuf, *(pBuf + 1));
     pBuf++;
     pBuf++;
@@ -116,9 +121,7 @@ void RX_buildStructPacket(MAC_crsPacket_t* pkt, uint8_t *pcktBuff )
 
     pBuf++;
 
-    pkt->commandId = (MAC_commandId_t) *pBuf;
 
-    pBuf++;
 
     pkt->len = Util_buildUint16(*pBuf, *(pBuf + 1));
 

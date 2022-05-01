@@ -9,7 +9,6 @@
 #include "macTask.h"
 #include <ti/sysbios/knl/Semaphore.h>
 //if its above 16 nodes, then the memory allocated for the structs of the nodes is above 1k
-#define NUM_NODES 4
 
 static Node_nodeInfo_t gNodes[NUM_NODES];
 static Node_nodeClocks_t gNodesClocks[NUM_NODES];
@@ -43,7 +42,7 @@ void Node_init(void *semaphore)
 
 
 
-void Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
+bool Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
 {
 
     int i = 0;
@@ -52,13 +51,21 @@ void Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
         if (macCompare(gNodes[i].mac, mac))
         {
             memcpy(rspNode, &(gNodes[i]), sizeof(Node_nodeInfo_t));
-        }
-        else
-        {
-            //failure
+            return true;
         }
     }
+    return false;
 
+}
+
+bool Node_getNodeByIdx(uint16_t idx, Node_nodeInfo_t *rspNode)
+{
+    if (idx >= NUM_NODES )
+    {
+        return false;
+    }
+    memcpy(rspNode, &(gNodes[idx]), sizeof(Node_nodeInfo_t));
+    return true;
 }
 
 void Node_updateNode(Node_nodeInfo_t *node)
@@ -66,18 +73,19 @@ void Node_updateNode(Node_nodeInfo_t *node)
     int i = 0;
     for (i = 0; i < NUM_NODES; ++i)
     {
-        if (macCompare(gNodes[i].mac, node[i].mac))
+        if (macCompare(gNodes[i].mac, node->mac))
         {
             memcpy(&gNodes[i], node, sizeof(Node_nodeInfo_t));
         }
     }
 }
+
 void Node_eraseNode(Node_nodeInfo_t* node)
 {
     int i = 0;
     for (i = 0; i < NUM_NODES; ++i)
     {
-        if (macCompare(gNodes[i].mac, node[i].mac))
+        if (macCompare(gNodes[i].mac, node->mac))
         {
             memset(&gNodes[i], 0, sizeof(Node_nodeInfo_t));
             gNodes[i].isVacant = true;
@@ -291,7 +299,7 @@ void Node_setPendingPckts(uint8_t mac[MAC_SIZE],Node_pendingPckts_t* pendingPack
 
 void funcTest()
 {
-    Util_setEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
+//    Util_setEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
     Semaphore_post(sem);
 }
 

@@ -14,12 +14,13 @@
 #include <stdint.h>
 #include "crs_global_defines.h"
 #include "crs_cli.h"
+#include "easylink/EasyLink.h"
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
 #define MAC_TASK_TX_DONE_EVT 0x0002
 #define MAC_TASK_RX_DONE_EVT 0x0004
 #define MAC_TASK_NODE_TIMEOUT_EVT 0x0008
-
+#define MAC_ENTER_BEACON_STATE_EVT 0x0010
 #define CRS_PAN_ID 0x11
 
 #define CRS_PAYLOAD_MAX_SIZE 100
@@ -28,12 +29,13 @@
 #define CRS_MAX_PKT_RETRY 5
 typedef enum
 {
-    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP
+    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP, MAC_COMMAND_DISCOVERY
 } MAC_commandId_t;
 
 typedef struct Frame
 {
     //payload len
+    MAC_commandId_t commandId;
     uint16_t len;
     uint16_t seqSent;
     uint16_t seqRcv;
@@ -42,9 +44,8 @@ typedef struct Frame
     uint16_t srcAddrShort;
     uint16_t dstAddrShort;
     uint8_t panId;
-    MAC_commandId_t commandId;
     uint8_t isNeedAck;
-    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
+    uint8_t payload[1000];
 } MAC_crsPacket_t;
 
 
@@ -55,6 +56,7 @@ typedef struct FrameBeacon
     uint8_t srcAddr[8];
     uint16_t srcAddrShort;
     uint8_t panId;
+    uint32_t discoveryTime;
 
 } MAC_crsBeaconPacket_t;
 
@@ -106,6 +108,15 @@ bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
 bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf);
 
 void MAC_moveToSmacState();
+void MAC_moveToBeaconState();
+
+void MAC_moveToSmriState();
+
+void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
+                                  EasyLink_Status status);
+void MAC_updateDiscoveryTime(uint32_t discoveryTime);
+void MAC_startDiscoveryClock();
+void MAC_stopDiscoveryClock();
 
 
 #endif /* MAC_MACTASK_H_ */

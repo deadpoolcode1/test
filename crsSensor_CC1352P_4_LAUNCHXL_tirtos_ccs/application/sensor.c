@@ -27,6 +27,7 @@
 #include "crs/crs_tdd.h"
 //#include "agc/agc.h"
 #include "crs/crs_thresholds.h"
+#include "easylink/EasyLink.h"
 
 /******************************************************************************
  Constants and definitions
@@ -37,6 +38,19 @@
 
 /* App marker in MSDU handle */
 #define APP_MARKER_MSDU_HANDLE 0x80
+#define RSSI_ARR_SIZE 10
+
+
+typedef struct _Sensor_rssi_t
+{
+    int8_t rssiArr[RSSI_ARR_SIZE];
+    uint32_t rssiArrIdx;
+    int8_t rssiMax;
+    int8_t rssiMin;
+    int8_t rssiAvg;
+    int8_t rssiLast;
+
+} Sensor_rssi_t;
 
 /******************************************************************************
  Global variables
@@ -50,8 +64,12 @@ uint16_t Sensor_events = 0;
 
 static void *sem;
 
+static Sensor_rssi_t gRssiStrct = { 0 };
+
+
 static Llc_netInfo_t parentInfo = { 0 };
 
+static bool isConnected = false;
 /*! Device's PAN ID */
 static uint16_t devicePanId = 0xFFFF;
 
@@ -80,6 +98,9 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd);
 static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16_t len,
                     uint8_t *pData);
+
+static void updateRssiStrct(int8_t rssi);
+
 /******************************************************************************
  Callback tables
  *****************************************************************************/
@@ -105,6 +126,13 @@ NULL,
 void Sensor_init()
 {
     sem = ApiMac_init();
+
+    EasyLink_getIeeeAddr(gDevInfo.extAddress);
+
+    gRssiStrct.rssiArrIdx = 0;
+    gRssiStrct.rssiMax = 0;
+    gRssiStrct.rssiMin = 0;
+    gRssiStrct.rssiLast = 0;
 
     gDevInfo.panID = CRS_GLOBAL_PAN_ID;
 //    gDevInfo.extAddress
@@ -259,23 +287,34 @@ static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType)
 extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
                                Llc_netInfo_t *pParentInfo)
 {
+    if (isConnected == false)
+    {
+        return false;
+    }
+    memcpy(pDevInfo, &gDevInfo, sizeof(ApiMac_deviceDescriptor_t));
+    memcpy(pParentInfo, &gParentInfo, sizeof(Llc_netInfo_t));
+    return true;
+
 //    pDevInfo->extAddress
 }
 
 
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
-
+    isConnected = true;
+    memcpy(gParentInfo.devInfo.extAddress, pAssocInd->deviceAddress, 8);
+    gParentInfo.devInfo.shortAddress = pAssocInd->shortAddr;
 }
 
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
+    isConnected = false;
 
 }
 
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 {
-
+    updateRssiStrct(pDiscoveryInd->rssi);
 }
 
 
@@ -312,4 +351,82 @@ static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd)
 {
     CLI_processCliUpdate((pDataInd->msdu.p) + 1, &pDataInd->srcAddr);
 }
+
+static void updateRssiStrct(int8_t rssi)
+{
+//    CRS_LOG(CRS_DEBUG, "START");
+    gRssiStrct.rssiArr[gRssiStrct.rssiArrIdx] = rssi;
+
+    if (gRssiStrct.rssiArrIdx + 1 < RSSI_ARR_SIZE)
+    {
+        gRssiStrct.rssiArrIdx += 1;
+    }
+    else if (gRssiStrct.rssiArrIdx + 1 == RSSI_ARR_SIZE)
+    {
+        gRssiStrct.rssiArrIdx = 0;
+    }
+
+    int i = 0;
+    int16_t sum = 0;
+    uint8_t numZeros = 0;
+    for (i = 0; i < RSSI_ARR_SIZE; i++)
+    {
+        sum += gRssiStrct.rssiArr[i];
+        if (gRssiStrct.rssiArr[i] == 0)
+        {
+            numZeros++;
+        }
+    }
+
+    gRssiStrct.rssiAvg = sum / (RSSI_ARR_SIZE - numZeros);
+
+    if (gRssiStrct.rssiMax == 0)
+    {
+        gRssiStrct.rssiMax = rssi;
+    }
+    if (gRssiStrct.rssiMin == 0)
+    {
+        gRssiStrct.rssiMin = rssi;
+    }
+    gRssiStrct.rssiLast = rssi;
+
+    int x = 0;
+
+    for (x = 0; x < RSSI_ARR_SIZE; x++)
+    {
+        if (gRssiStrct.rssiArr[x] != 0
+                && gRssiStrct.rssiMax > gRssiStrct.rssiArr[x])
+        {
+            gRssiStrct.rssiMax = gRssiStrct.rssiArr[x];
+        }
+
+        if (gRssiStrct.rssiArr[x] != 0
+                && gRssiStrct.rssiMin < gRssiStrct.rssiArr[x])
+        {
+            gRssiStrct.rssiMin = gRssiStrct.rssiArr[x];
+        }
+    }
+
+
+
+
+    //check for alarm
+    char envFile[1024] = { 0 };
+    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
+    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
+    Thresh_readVarsFile("MaxCableLoss", envFile, 1);
+    int32_t maxCableLoss = strtol(envFile + strlen("MaxCableLoss="), NULL, 16);
+//    CLI_cliPrintf("gRssiStrct :%x\r\n",gRssiStrct.rssiAvg);
+//    CLI_cliPrintf("MaxCableLoss :%x\r\n",MaxCableLoss);
+
+    if (gRssiStrct.rssiAvg > maxCableLoss)
+    {
+        CRS_setAlarm(MaxCableLoss);
+
+    }else{
+        CRS_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+    }
+
+}
+
 

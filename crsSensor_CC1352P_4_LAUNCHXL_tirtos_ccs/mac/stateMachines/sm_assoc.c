@@ -119,7 +119,7 @@ void Smas_process()
     if (smasEvents & SMAS_JOINED_NETWORK_EVT)
     {
         CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
-        MAC_moveToSmacState();
+        MAC_moveToSmriState();
 
         Util_clearEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
     }
@@ -160,6 +160,9 @@ static void sendAssocReq()
 
         if (beaconPkt.commandId == MAC_COMMAND_BEACON &&  beaconPkt.panId == CRS_GLOBAL_PAN_ID)
         {
+//            gDiscoveryTime = beaconPkt.discoveryTime;
+
+            MAC_updateDiscoveryTime(beaconPkt.discoveryTime);
             CollectorLink_collectorLinkInfo_t collectorLink = {0};
             collectorLink.isVacant = false;
             memcpy(collectorLink.mac, beaconPkt.srcAddr, 8);
@@ -169,7 +172,7 @@ static void sendAssocReq()
 //            CollectorLink_collectorLinkInfo_t collectorLink = {0};
                 CollectorLink_getCollector(&collectorLink);
 
-                CollectorLink_setTimeout(assocReqTimeoutCb, (Clock_getTicks() % 20)*100000);
+                CollectorLink_setTimeout(assocReqTimeoutCb, (Clock_getTicks() % 250)*2000);
                 CollectorLink_startTimer();
 //            Util_setEvent(&smasEvents, SMAS_SEND_ASSOC_REQ_EVT);
 //
@@ -295,6 +298,7 @@ static void finishedSendingAssocRspAckCb(EasyLink_Status status)
 //        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
 //        Node_startTimer(gSmAckContentInfo.nodeMac);
 //        RX_enterRx(Smac_recviedCollectorContentCb, sensorPib.mac);
+
 
         Util_setEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
 

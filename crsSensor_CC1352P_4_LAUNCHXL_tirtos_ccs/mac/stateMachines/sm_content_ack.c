@@ -28,6 +28,8 @@
 #define SMAC_RECIVED_ACK_EVT 0x0004
 #define SMAC_RECIVED_CONTENT_EVT 0x0008
 #define SMAC_FINISHED_EVT 0x0010
+#define SMAC_ERASE_COLLECTOR_EVT 0x0020
+
 
 typedef enum
 {
@@ -91,6 +93,8 @@ static void processContentTimerCb();
 
 
 static void finishedSendingSensorContentAgainCb(EasyLink_Status status);
+static void smacEraseCollector();
+
 
 /******************************************************************************
  Public Functions
@@ -119,7 +123,7 @@ void Smac_process()
         macMcpsDataCnf_t rsp = { 0 };
         MAC_createDataCnf(&rsp, gMsduHandle, ApiMac_status_success);
         MAC_sendCnfToApp(&rsp);
-        MAC_moveToSmacState();
+        MAC_moveToSmriState();
         Util_clearEvent(&smacEvents, SMAC_RECIVED_ACK_EVT);
     }
 
@@ -136,21 +140,28 @@ void Smac_process()
 
         Util_clearEvent(&smacEvents, SMAC_FINISHED_EVT);
     }
+
+    if (smacEvents & SMAC_ERASE_COLLECTOR_EVT)
+    {
+        CollectorLink_eraseCollector();
+        MAC_moveToBeaconState();
+        Util_clearEvent(&smacEvents, SMAC_ERASE_COLLECTOR_EVT);
+    }
 }
 
 void Smac_sendContent(MAC_crsPacket_t *pkt, uint8_t msduHandle)
 {
-    EasyLink_abort();
+//    EasyLink_abort();
     gMsduHandle = msduHandle;
     memset(&gSmAckContentInfo, 0, sizeof(Smac_smAckContent_t));
     memcpy(gSmAckContentInfo.nodeMac, pkt->dstAddr, APIMAC_SADDR_EXT_LEN);
 
-    uint8_t pBuf[CRS_PKT_MAX_SIZE] = { 0 };
-    TX_buildBufFromSrct(pkt, pBuf);
-
-    CollectorLink_pendingPckts_t pendingPacket = { 0 };
-    memcpy(pendingPacket.content, pBuf, CRS_PKT_MAX_SIZE - 1);
-    CollectorLink_setPendingPkts( &pendingPacket);
+//    uint8_t pBuf[CRS_PKT_MAX_SIZE] = { 0 };
+//    TX_buildBufFromSrct(pkt, pBuf);
+//
+//    CollectorLink_pendingPckts_t pendingPacket = { 0 };
+//    memcpy(pendingPacket.content, pBuf, CRS_PKT_MAX_SIZE - 1);
+//    CollectorLink_setPendingPkts( &pendingPacket);
 
     TX_sendPacket(pkt, finishedSendingSensorContentCb);
 }
@@ -166,6 +177,7 @@ void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
     gSmacStateArrayIdx++;
     if (status == EasyLink_Status_Success)
     {
+
 //check EasyLink_Status for success
 //Increment the seqRecevied num in the CollectorLink_collectorLinkInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
@@ -181,9 +193,9 @@ void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
         memcpy(pkt.srcAddr, sensorPib.mac, 8);
         pkt.len = 0;
 //copy ack packet into Node_pendingPckts_t strcut in the field 'content'
-        uint8_t pBuf[MAX_BYTES_PAYLOAD] = { 0 };
-        TX_buildBufFromSrct(&pkt, pBuf);
-        memcpy(collectorLink.pendingPacket.content, pBuf, MAX_BYTES_PAYLOAD); //check what to copy exactly
+//        uint8_t pBuf[MAX_BYTES_PAYLOAD] = { 0 };
+//        TX_buildBufFromSrct(&pkt, pBuf);
+//        memcpy(collectorLink.pendingPacket.content, pBuf, MAX_BYTES_PAYLOAD); //check what to copy exactly
         CollectorLink_updateCollector(&collectorLink);
 
         memset(&gSmAckContentInfo.pkt, 0, sizeof(MAC_crsPacket_t));
@@ -202,6 +214,7 @@ void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
+        smacEraseCollector();
         gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
         gSmacStateArrayIdx++;
     }
@@ -258,10 +271,11 @@ static void finishedSendingAckCb(EasyLink_Status status)
 //        SMAC_RECIVED_ACK_EVT
         Util_setEvent(&smacEvents, SMAC_RECIVED_CONTENT_EVT);
         Semaphore_post(macSem);
-        RX_enterRx( recviedCollectorContentAgainCb, sensorPib.mac);
+//        RX_enterRx( recviedCollectorContentAgainCb, sensorPib.mac);
     }
     else
     {
+        smacEraseCollector();
         gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
         gSmacStateArrayIdx++;
     }
@@ -279,6 +293,8 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
         CollectorLink_getCollector(&collectorLink);
         collectorLink.seqSend++;
         CollectorLink_updateCollector(&collectorLink);
+        CollectorLink_setTimeout(timeoutOnContentAckCb, 10000);
+        CollectorLink_startTimer();
 //enterRx with cb of 'recievedAckOnContentCb'
         RX_enterRx(recievedAckOnContentCb, sensorPib.mac);
 //start timer with cb 'timeoutOnContentAckCb' that will resend content(from the struct Node_pendingPckts_t)
@@ -287,6 +303,7 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
     }
     else
     {
+        smacEraseCollector();
         gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
         gSmacStateArrayIdx++;
     }
@@ -296,6 +313,7 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
 static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
                                    EasyLink_Status status)
 {
+    CollectorLink_stopTimer();
     if (status == EasyLink_Status_Success)
     {
         gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_ACK_ON_CONTENT;
@@ -312,6 +330,7 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
+        smacEraseCollector();
         gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
         gSmacStateArrayIdx++;
     }
@@ -320,13 +339,7 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
 //the sensor send content but didnt recieve ack-retry
 static void timeoutOnContentAckCb()
 {
-    gSmacStateArray[gSmacStateArrayIdx] = SMAC_TIMEOUT_ON_CONTENT;
-    gSmacStateArrayIdx++;
-//send again from the struct Node_pendingPckts_t with txdonecb of 'finishedSendingSensorContentAgainCb'
-    CollectorLink_collectorLinkInfo_t collectorLink;
-    CollectorLink_getCollector(&collectorLink);
-    TX_sendPacket(&collectorLink.pendingPacket.content,
-                  finishedSendingSensorContentAgainCb);
+    EasyLink_abort();
 
 }
 
@@ -360,6 +373,15 @@ static void processContentTimerCb()
 {
 //    Util_setEvent(&macEvents, MAC_TASK_CONTENT_READY);
 //    Semaphore_post(macSemHandle);
+}
+
+
+static void smacEraseCollector()
+{
+    Util_setEvent(&smacEvents, SMAC_ERASE_COLLECTOR_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(macSem);
 }
 
 void Smac_printSensorStateMachine()

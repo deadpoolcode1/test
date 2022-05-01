@@ -34,6 +34,12 @@ void CollectorLink_init(void *semaphore)
 
 }
 
+void CollectorLink_eraseCollector()
+{
+    memset(&gNodes[0], 0, sizeof(CollectorLink_collectorLinkInfo_t));
+    gNodes[0].isVacant = true;
+}
+
 void CollectorLink_getCollector(CollectorLink_collectorLinkInfo_t *rspNode)
 {
     if (!(gNodes[0].isVacant))

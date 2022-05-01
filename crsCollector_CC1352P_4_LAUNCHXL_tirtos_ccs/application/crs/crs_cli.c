@@ -3838,7 +3838,7 @@ static CRS_retVal_t CLI_rssiParsing(char *line)
     uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_RSSI) + 2]), NULL,
                                             16);
 #ifndef CLI_SENSOR
-//    Csf_sensorsDataPrint(shortAddr);
+    Csf_sensorsDataPrint(shortAddr);
 #else
 
 #endif

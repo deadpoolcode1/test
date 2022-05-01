@@ -74,6 +74,7 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd);
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
+static void updateCduRssiStrct(int8_t rssi, int idx);
 
 /******************************************************************************
  Callback tables
@@ -368,6 +369,7 @@ bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo)
 
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
+//    CLI_cliPrintf("\r\nassocIndCB");
     int x = 0;
 
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
@@ -401,10 +403,12 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
+//    CLI_cliPrintf("\r\ndisassocIndCB");
+
     int x = 0;
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
     {
-        if (Cllc_associatedDevList[x].shortAddr == pDisassocInd->shortAddr)
+        if (memcmp(pDisassocInd->deviceAddress, Cllc_associatedDevList[x].extAddr, 8) == 0)
         {
             memset(&(Cllc_associatedDevList[x]), 0xff,
                    sizeof(Cllc_associated_devices_t));
@@ -416,11 +420,20 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 {
+//    CLI_cliPrintf("\r\ndiscoveryIndCB");
+
     int x = 0;
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
     {
-        if (Cllc_associatedDevList[x].shortAddr == pDiscoveryInd->shortAddr)
+        if (memcmp(pDiscoveryInd->deviceAddress, Cllc_associatedDevList[x].extAddr, 8) == 0)
         {
+            updateCduRssiStrct(pDiscoveryInd->rssi, x);
+
+            Cllc_associatedDevList[x].rssiAvgCru = pDiscoveryInd->rssiRemote.rssiAvg;
+            Cllc_associatedDevList[x].rssiLastCru = pDiscoveryInd->rssiRemote.rssiLast;
+            Cllc_associatedDevList[x].rssiMaxCru = pDiscoveryInd->rssiRemote.rssiMax;
+            Cllc_associatedDevList[x].rssiMinCru = pDiscoveryInd->rssiRemote.rssiMin;
+
             //TODO update rssi here.
             return;
         }
@@ -430,11 +443,21 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {
+//    CLI_cliPrintf("\r\ndataCnfCB");
+
+    if (pDataCnf->status != ApiMac_status_success)
+    {
+        CLI_cliPrintf("\r\nStatus 0x14");
+        CLI_startREAD();
+
+    }
 
 }
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
+//    CLI_cliPrintf("\r\ndataIndCB");
+
     if ((pDataInd != NULL) && (pDataInd->msdu.p != NULL)
             && (pDataInd->msdu.len > 0))
     {
@@ -459,3 +482,123 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
         }
     }
 }
+
+static void updateCduRssiStrct(int8_t rssi, int idx)
+{
+    //    CRS_LOG(CRS_DEBUG, "START");
+    if (Cllc_associatedDevList[idx].rssiArrIdx > RSSI_ARR_SIZE)
+    {
+        Cllc_associatedDevList[idx].rssiArrIdx = 0;
+    }
+    Cllc_associatedDevList[idx].rssiArr[Cllc_associatedDevList[idx].rssiArrIdx] =
+            rssi;
+
+    if (Cllc_associatedDevList[idx].rssiArrIdx + 1 < RSSI_ARR_SIZE)
+    {
+        Cllc_associatedDevList[idx].rssiArrIdx += 1;
+    }
+    else if (Cllc_associatedDevList[idx].rssiArrIdx + 1 == RSSI_ARR_SIZE)
+    {
+        Cllc_associatedDevList[idx].rssiArrIdx = 0;
+    }
+
+    int i = 0;
+    int16_t sum = 0;
+    uint8_t numZeros = 0;
+    for (i = 0; i < RSSI_ARR_SIZE; i++)
+    {
+        if (Cllc_associatedDevList[idx].rssiArr[i] == -1)
+        {
+            numZeros++;
+        }
+        else
+        {
+            sum += Cllc_associatedDevList[idx].rssiArr[i];
+        }
+    }
+
+    Cllc_associatedDevList[idx].rssiAvgCdu = sum / (RSSI_ARR_SIZE - numZeros);
+
+    if (Cllc_associatedDevList[idx].rssiMaxCdu == -1)
+    {
+        Cllc_associatedDevList[idx].rssiMaxCdu = rssi;
+    }
+    if (Cllc_associatedDevList[idx].rssiMinCdu == -1)
+    {
+        Cllc_associatedDevList[idx].rssiMinCdu = rssi;
+    }
+    Cllc_associatedDevList[idx].rssiLastCdu = rssi;
+
+    int x = 0;
+
+    for (x = 0; x < RSSI_ARR_SIZE; x++)
+    {
+        if (Cllc_associatedDevList[idx].rssiArr[x] != -1
+                && Cllc_associatedDevList[idx].rssiMaxCdu
+                        > Cllc_associatedDevList[idx].rssiArr[x])
+        {
+            Cllc_associatedDevList[idx].rssiMaxCdu =
+                    Cllc_associatedDevList[idx].rssiArr[x];
+        }
+
+        if (Cllc_associatedDevList[idx].rssiArr[x] != -1
+                && Cllc_associatedDevList[idx].rssiMinCdu
+                        < Cllc_associatedDevList[idx].rssiArr[x])
+        {
+            Cllc_associatedDevList[idx].rssiMinCdu =
+                    Cllc_associatedDevList[idx].rssiArr[x];
+        }
+    }
+
+    //check for alarm
+    char envFile[1024] = { 0 };
+    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
+//    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
+    Thresh_readVarsFile("MaxCableLoss", envFile, 1);
+    uint32_t maxCableLoss = strtol(envFile + strlen("MaxCableLoss="), NULL, 16);
+
+    if (Cllc_associatedDevList[idx].rssiAvgCdu > maxCableLoss)
+    {
+        CRS_setAlarm(MaxCableLoss);
+    }
+    else
+    {
+        CRS_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+    }
+
+}
+
+void Csf_sensorsDataPrint(uint16_t shortAddr)
+{
+    int x = 0;
+    uint32_t numSpaces = 5;
+    char spacesStr[100] = { 0 };
+
+    memset(spacesStr, ' ', numSpaces);
+    /* Clear any timed out transactions */
+    for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
+    {
+        if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                && (Cllc_associatedDevList[x].status == 0x2201))
+        {
+            if (shortAddr == Cllc_associatedDevList[x].shortAddr)
+            {
+                CLI_cliPrintf("\r\nShortAddr=0x%x Avg=%d Max=%d Min=%d Last=%d",
+                              Cllc_associatedDevList[x].shortAddr,
+                              Cllc_associatedDevList[x].rssiAvgCru,
+                              Cllc_associatedDevList[x].rssiMaxCru,
+                              Cllc_associatedDevList[x].rssiMinCru,
+                              Cllc_associatedDevList[x].rssiLastCru);
+
+                CLI_cliPrintf(
+                        "\r\nShortAddr=0xaabb Avg=%d Max=%d Min=%d Last=%d",
+                        Cllc_associatedDevList[x].rssiAvgCdu,
+                        Cllc_associatedDevList[x].rssiMaxCdu,
+                        Cllc_associatedDevList[x].rssiMinCdu,
+                        Cllc_associatedDevList[x].rssiLastCdu);
+            }
+
+        }
+    }
+}
+

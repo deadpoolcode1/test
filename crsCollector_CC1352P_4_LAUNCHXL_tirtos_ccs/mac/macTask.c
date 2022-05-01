@@ -24,6 +24,7 @@
 #include "mediator.h"
 #include "stateMachines/sm_content_ack.h"
 #include "stateMachines/sm_assoc.h"
+#include "stateMachines/sm_discovery.h"
 
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
@@ -32,12 +33,16 @@
  *****************************************************************************/
 #define EXTADDR_OFFSET 0x2F0
 
-#define MAC_TASK_STACK_SIZE    8000
+#define MAC_TASK_STACK_SIZE    6000
 #define MAC_TASK_PRIORITY      2
 
 typedef enum
 {
-    MAC_SM_DISCOVERY, MAC_SM_RX_IDLE, MAC_SM_BEACON, MAC_SM_CONTENT_ACK, MAC_SM_OFF
+    MAC_SM_DISCOVERY,
+    MAC_SM_RX_IDLE,
+    MAC_SM_BEACON,
+    MAC_SM_CONTENT_ACK,
+    MAC_SM_OFF
 } Mac_smStateCodes_t;
 
 /******************************************************************************
@@ -47,13 +52,11 @@ typedef enum
 uint16_t macEvents = 0;
 MAC_collectorInfo_t collectorPib = { 0 };
 
-
 /******************************************************************************
  Local variables
  *****************************************************************************/
 
 static Mac_smStateCodes_t gState = MAC_SM_OFF;
-
 
 static Task_Struct macTask; /* not static so you can see in ROV */
 static Task_Params macTaskParams;
@@ -70,7 +73,13 @@ static bool gIsNeedToSendBeacon = false;
 
 static bool gIsSendingBeacon = false;
 
+static bool gIsNeedToSendDiscovery = false;
+
+static bool gIsSendingDiscovery = false;
+
 static PIN_Handle pinHandle;
+
+static uint16_t gDiscoveryNodeIdx = 0;
 
 /******************************************************************************
  Local Function Prototypes
@@ -95,7 +104,6 @@ static void sendBeacon();
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-
 
 void Mac_init(PIN_Handle pinHandl)
 {
@@ -189,13 +197,22 @@ static void macFnx(UArg arg0, UArg arg1)
             if (gIsSendingBeacon == false)
             {
                 //            Smri_process();
-                if (gIsNeedToSendBeacon == true && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
+                if (gIsNeedToSendBeacon == true
+                        && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
                 {
                     gIsNeedToSendBeacon = false;
                     CP_CLI_cliPrintf("\r\nSending beacon");
 
                     EasyLink_abort();
                     sendBeacon();
+                }
+                else if (gIsNeedToSendDiscovery == true
+                        && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
+                {
+                    gState = MAC_SM_DISCOVERY;
+                    EasyLink_abort();
+                    gIsNeedToSendDiscovery = false;
+                    Smd_startDiscovery();
                 }
                 else
                 {
@@ -259,10 +276,14 @@ static void sendBeacon()
     memcpy(beaconPkt.srcAddr, collectorPib.mac, 8);
     beaconPkt.srcAddrShort = collectorPib.shortAddr;
 
+    beaconPkt.discoveryTime = CRS_BEACON_INTERVAL;
+
+
     uint8_t pBuf[800] = { 0 };
     buildBeaconBufFromPkt(&beaconPkt, pBuf);
-uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
-        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,!PIN_getOutputValue(CONFIG_PIN_RLED));
+    uint8_t dstAddr[8] = { CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0 };
+    PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,
+                       !PIN_getOutputValue(CONFIG_PIN_RLED));
 
     TX_sendPacketBuf(pBuf, sizeof(MAC_crsBeaconPacket_t), dstAddr,
                      smasFinishedSendingBeaconCb);
@@ -285,8 +306,8 @@ static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 //        Util_setEvent(&smasEvents, SMAS_DEBUG_EVT);
 //        Semaphore_post(macSem);
         Clock_setFunc(gClkHandle, beaconClockCb, 0);
-            Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
-            Clock_start(gClkHandle);
+        Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
+        Clock_start(gClkHandle);
         RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
     }
 
@@ -295,9 +316,9 @@ static void smasFinishedSendingBeaconCb(EasyLink_Status status)
         CP_CLI_cliPrintf("\r\nWTF");
 
         Clock_setFunc(gClkHandle, beaconClockCb, 0);
-                    Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
-                    Clock_start(gClkHandle);
-                RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
+        Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
+        Clock_start(gClkHandle);
+        RX_enterRx(Smri_recivedPcktCb, collectorPib.mac);
 
     }
 }
@@ -308,26 +329,27 @@ static void buildBeaconBufFromPkt(MAC_crsBeaconPacket_t *beaconPkt,
     memcpy(beaconBuff, (uint8_t*) beaconPkt, sizeof(MAC_crsBeaconPacket_t));
 }
 
-
 static void beaconClockCb(xdc_UArg arg)
 {
-    gIsNeedToSendBeacon = true;
+    gIsNeedToSendDiscovery = true;
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(macSemHandle);
 }
 
-void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
-                                  EasyLink_Status status)
+void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket, EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        if (((MAC_commandId_t) rxPacket->payload[0])
-                == MAC_COMMAND_ASSOC_REQ )
+        if (((MAC_commandId_t) rxPacket->payload[0]) == MAC_COMMAND_ASSOC_REQ)
         {
             gState = MAC_SM_BEACON;
 
             Smac_recivedAssocReqCb(rxPacket, status);
+        }
+        else
+        {
+            MAC_moveToRxIdleState();
         }
 
     }
@@ -335,6 +357,14 @@ void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
     {
 
     }
+}
+
+void MAC_moveToBeaconState()
+{
+
+    gIsNeedToSendBeacon = true;
+    MAC_moveToRxIdleState();
+
 }
 
 void MAC_moveToRxIdleState()
@@ -365,7 +395,6 @@ static void processkIncomingAppMsgs()
     }
     else
     {
-        gState = MAC_SM_CONTENT_ACK;
 
         MAC_crsPacket_t pkt = { 0 };
 
@@ -376,7 +405,13 @@ static void processkIncomingAppMsgs()
         memcpy(pkt.srcAddr, collectorPib.mac, 8);
 
         Node_nodeInfo_t node = { 0 };
+        node.isVacant = true;
         Node_getNode(msg.msg->dstAddr.addr.extAddr, &node);
+
+        if (node.isVacant == true)
+        {
+            return;
+        }
 
         pkt.seqSent = node.seqSend;
         pkt.seqRcv = node.seqRcv;
@@ -386,14 +421,73 @@ static void processkIncomingAppMsgs()
         pkt.len = msg.msg->msdu.len;
         pkt.panId = collectorPib.panId;
 
+        gState = MAC_SM_CONTENT_ACK;
         EasyLink_abort();
         Smac_sendContent(&pkt, msg.msg->msduHandle);
+        free(msg.msg->msdu.p);
+        free(msg.msg);
     }
 
 }
 
-bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, uint16_t shortAddr,
-                              ApiMac_status_t status)
+
+bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, int8_t rssi, int8_t rssiMaxRemote, int8_t rssiMinRemote,
+                           int8_t rssiAvgRemote,  int8_t rssiLastRemote, sAddrExt_t deviceAddress)
+{
+    rsp->hdr.event = MAC_MLME_DISCOVERY_IND;
+
+    rsp->rssiRemote.rssiAvg = rssiAvgRemote;
+    rsp->rssiRemote.rssiMax = rssiMaxRemote;
+    rsp->rssiRemote.rssiMin = rssiMinRemote;
+    rsp->rssiRemote.rssiLast = rssiLastRemote;
+
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+    rsp->rssi = rssi;
+    return true;
+}
+
+bool MAC_sendDiscoveryIndToApp(macMlmeDiscoveryInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeDiscoveryInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
+
+}
+
+bool MAC_createDisssocInd(macMlmeDisassociateInd_t *rsp,
+                          sAddrExt_t deviceAddress)
+{
+    rsp->hdr.event = MAC_MLME_DISASSOCIATE_IND;
+
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+
+    return true;
+}
+
+bool MAC_sendDisassocIndToApp(macMlmeDisassociateInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeDisassociateInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
+
+}
+
+bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress,
+                        uint16_t shortAddr, ApiMac_status_t status)
 {
     rsp->hdr.event = MAC_MLME_ASSOCIATE_IND;
     rsp->hdr.status = status;
@@ -420,7 +514,7 @@ bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf)
 }
 
 bool MAC_createDataCnf(macMcpsDataCnf_t *rsp, uint8_t msduHandle,
-                              ApiMac_status_t status)
+                       ApiMac_status_t status)
 {
     rsp->hdr.event = MAC_MCPS_DATA_CNF;
     rsp->hdr.status = status;
@@ -445,7 +539,7 @@ bool MAC_sendCnfToApp(macMcpsDataCnf_t *dataCnf)
 }
 
 bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
-                              ApiMac_status_t status)
+                       ApiMac_status_t status)
 {
     rsp->hdr.event = MAC_MCPS_DATA_IND;
     rsp->hdr.status = status;

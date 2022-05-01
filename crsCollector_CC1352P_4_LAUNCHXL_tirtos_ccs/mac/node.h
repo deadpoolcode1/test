@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define NUM_NODES 4
 
 typedef struct nodeClocks{
     uint8_t mac[MAC_SIZE];
@@ -50,7 +51,7 @@ uint16_t shortAddr;
 
 void Node_init();
 
-void Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
+bool Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
 
 void Node_updateNode(Node_nodeInfo_t* node);
 
@@ -71,6 +72,7 @@ void Node_setSeqSend(uint8_t mac[MAC_SIZE],uint16_t seqSend);
 void Node_setSeqRcv(uint8_t mac[MAC_SIZE],uint16_t seqRcv);
 void Node_setPendingPckts(uint8_t mac[MAC_SIZE],Node_pendingPckts_t* pendingPacket);
 void Node_setNumRetry(uint8_t mac[MAC_SIZE], uint32_t numRetry);
+bool Node_getNodeByIdx(uint16_t idx, Node_nodeInfo_t *rspNode);
 
 //void Node_setmac(uint8_t mac[MAC_SIZE],uint8_t mac[MAC_SIZE]);
 

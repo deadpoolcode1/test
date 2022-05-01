@@ -21,6 +21,5 @@
 void Smd_init(void *sem);
 void Smd_process();
 void Smd_startDiscovery();
-void Smd_printStateMachine();
 
 #endif /* MAC_SM_DISCOVERY_H_ */

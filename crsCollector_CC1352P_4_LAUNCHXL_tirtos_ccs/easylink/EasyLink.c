@@ -537,7 +537,7 @@ static void rxDoneCallback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
                     ((EasyLink_cmdPropRxAdv.pktConf.filterOp == 1) &&
                      (rxStatistics.nRxIgnored == 1)) )
             {
-                uint16_t len = *(uint8_t*)(&pDataEntry->data + 1);
+                uint16_t len = (*(uint8_t*)(&pDataEntry->data + 1)) & 0x00ff;
                 len = len << 8;
                 len = len | ((uint16_t)(*(uint8_t*)(&pDataEntry->data )));
                 len = len - addrSize;

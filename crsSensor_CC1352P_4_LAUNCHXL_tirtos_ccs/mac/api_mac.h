@@ -328,6 +328,13 @@ typedef struct _apimac_mlmediscoveryind
     ApiMac_sAddrExt_t deviceAddress;
     uint16_t shortAddr;
     int8_t rssi;
+    struct
+    {
+        int8_t rssiMax;
+        int8_t rssiMin;
+        int8_t rssiAvg;
+        int8_t rssiLast;
+    } rssiRemote;
 } ApiMac_mlmeDiscoveryInd_t;
 
 /* Extended address */
@@ -454,6 +461,13 @@ typedef struct
     sAddrExt_t deviceAddress; /* The address of the device sending the disassociate command */
     uint16_t shortAddr;
     int8_t rssi; /* The received RF power in units dBm */
+    struct
+    {
+        int8_t rssiMax;
+        int8_t rssiMin;
+        int8_t rssiAvg;
+        int8_t rssiLast;
+    } rssiRemote;
 } macMlmeDiscoveryInd_t;
 
 /* Union of callback structures */

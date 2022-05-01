@@ -159,5 +159,6 @@ extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t
 bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr);
 
 void Cllc_getFfdShortAddr(uint16_t* shortAddr);
+void Csf_sensorsDataPrint(uint16_t shortAddr);
 
 #endif /* APPLICATION_COLLECTOR_H_ */

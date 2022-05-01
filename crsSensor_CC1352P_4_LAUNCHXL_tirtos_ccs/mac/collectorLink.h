@@ -54,6 +54,8 @@ void CollectorLink_getCollector(CollectorLink_collectorLinkInfo_t *rspNode);
 
 void CollectorLink_updateCollector(CollectorLink_collectorLinkInfo_t* node);
 
+void CollectorLink_eraseCollector();
+
 
 void CollectorLink_printCollector();
 

@@ -165,7 +165,7 @@ static void sendBeacon()
     beaconPkt.panId = collectorPib.panId;
     memcpy(beaconPkt.srcAddr, collectorPib.mac, 8);
     beaconPkt.srcAddrShort = collectorPib.shortAddr;
-
+    beaconPkt.discoveryTime = CRS_BEACON_INTERVAL;
     uint8_t pBuf[200] = { 0 };
     buildBeaconBufFromPkt(&beaconPkt, pBuf);
 

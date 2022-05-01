@@ -20,10 +20,5 @@ rfWsnConcentrator_CC1352P_4_LAUNCHXL_tirtos_ccs/
 tdd_config_CC1352P_4_LAUNCHXL_tirtos_ccs/
 tirtos_builds_cc13x2_cc26x2_release_ccs/
 
-crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.ccsproject
-crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.cproject
-crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.project
-crsCollector_CC1352P_4_LAUNCHXL_tirtos_ccs/.ccsproject
-crsCollector_CC1352P_4_LAUNCHXL_tirtos_ccs/.cproject
-crsCollector_CC1352P_4_LAUNCHXL_tirtos_ccs/.project
+
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.settings/org.eclipse.core.resources.prefs

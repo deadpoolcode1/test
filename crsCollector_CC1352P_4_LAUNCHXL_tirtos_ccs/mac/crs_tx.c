@@ -82,6 +82,9 @@ void TX_sendPacket(MAC_crsPacket_t *pkt, EasyLink_TxDoneCb cbTx)
     EasyLink_TxPacket txPacket = { { 0 }, 0, 0, { 0 } };
 
     uint8_t *pBuf = txPacket.payload;
+    *pBuf = (uint8_t) pkt->commandId;
+
+       pBuf++;
     pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
     pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
 
@@ -93,9 +96,7 @@ void TX_sendPacket(MAC_crsPacket_t *pkt, EasyLink_TxDoneCb cbTx)
 
     *pBuf = (uint8_t) pkt->isNeedAck;
     pBuf++;
-    *pBuf = (uint8_t) pkt->commandId;
 
-    pBuf++;
 
     pBuf = Util_bufferUint16(pBuf, pkt->len);
     memcpy(pBuf, pkt->payload, pkt->len);
@@ -148,6 +149,9 @@ void TX_sendPacketBuf(uint8_t *pBuf, uint16_t len, uint8_t *dstAddr,
 
 void TX_buildBufFromSrct(MAC_crsPacket_t *pkt, uint8_t *pBuf)
 {
+    *pBuf = (uint8_t) pkt->commandId;
+
+        pBuf++;
     pBuf = Util_bufferUint16(pBuf, pkt->seqSent);
     pBuf = Util_bufferUint16(pBuf, pkt->seqRcv);
 
@@ -159,9 +163,7 @@ void TX_buildBufFromSrct(MAC_crsPacket_t *pkt, uint8_t *pBuf)
 
     *pBuf = (uint8_t) pkt->isNeedAck;
     pBuf++;
-    *pBuf = (uint8_t) pkt->commandId;
 
-    pBuf++;
 
     pBuf = Util_bufferUint16(pBuf, pkt->len);
 

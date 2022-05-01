@@ -29,11 +29,11 @@
 
 #define CRS_MAX_PKT_RETRY 5
 
-#define CRS_BEACON_INTERVAL 30
+#define CRS_BEACON_INTERVAL 5
 
 typedef enum
 {
-    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP
+    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP, MAC_COMMAND_DISCOVERY
 } MAC_commandId_t;
 
 typedef struct Frame
@@ -49,7 +49,7 @@ typedef struct Frame
     uint16_t dstAddrShort;
     uint8_t panId;
     uint8_t isNeedAck;
-    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
+    uint8_t payload[1000];
 } MAC_crsPacket_t;
 
 typedef struct FrameBeacon
@@ -59,6 +59,7 @@ typedef struct FrameBeacon
     uint8_t srcAddr[8];
     uint16_t srcAddrShort;
     uint8_t panId;
+    uint32_t discoveryTime;
 
 } MAC_crsBeaconPacket_t;
 
@@ -117,6 +118,18 @@ bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress, ui
                               ApiMac_status_t status);
 
 bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf);
+
+bool MAC_createDisssocInd(macMlmeDisassociateInd_t *rsp, sAddrExt_t deviceAddress);
+
+bool MAC_sendDisassocIndToApp(macMlmeDisassociateInd_t *dataCnf);
+
+void MAC_moveToBeaconState();
+
+bool MAC_sendDiscoveryIndToApp(macMlmeDiscoveryInd_t *dataCnf);
+
+bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, int8_t rssi, int8_t rssiMaxRemote, int8_t rssiMinRemote,
+                           int8_t rssiAvgRemote,  int8_t rssiLastRemote, sAddrExt_t deviceAddress);
+
 
 
 

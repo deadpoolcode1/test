@@ -158,7 +158,7 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
                        pMsg->msg->disassociateInd.deviceAddress,
                        sizeof(ApiMac_sAddrExt_t));
 
-                ind.shortAddr = pMsg->msg->associateInd.shortAddr;
+                ind.shortAddr = pMsg->msg->disassociateInd.shortAddr;
                 free(pMsg->msg);
                 /* Initiate the callback */
                 pMacCallbacks->pDisassociateIndCb(&ind);
@@ -179,10 +179,16 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
                        sizeof(ApiMac_sAddrExt_t));
                 ind.shortAddr = pMsg->msg->discoveryInd.shortAddr;
                 ind.rssi = pMsg->msg->discoveryInd.rssi;
+
+                ind.rssiRemote.rssiAvg = pMsg->msg->discoveryInd.rssiRemote.rssiAvg;
+                ind.rssiRemote.rssiLast = pMsg->msg->discoveryInd.rssiRemote.rssiLast;
+                ind.rssiRemote.rssiMax = pMsg->msg->discoveryInd.rssiRemote.rssiMax;
+                ind.rssiRemote.rssiMin = pMsg->msg->discoveryInd.rssiRemote.rssiMin;
+
                 free(pMsg->msg);
 
                 /* Initiate the callback */
-                pMacCallbacks->pAssocIndCb(&ind);
+                pMacCallbacks->pDiscIndCb(&ind);
             }
             break;
 

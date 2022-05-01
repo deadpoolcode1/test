@@ -12,6 +12,7 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/BIOS.h>
 #include <xdc/runtime/System.h>
+#include <ti/sysbios/knl/Clock.h>
 
 #include "macTask.h"
 #include "cp_cli.h"
@@ -33,10 +34,23 @@
 #define MAC_TASK_STACK_SIZE    6000
 #define MAC_TASK_PRIORITY      2
 
+#define RSSI_ARR_SIZE 10
+
 typedef enum
 {
     MAC_SM_DISCOVERY, MAC_SM_RX_IDLE, MAC_SM_BEACON, MAC_SM_CONTENT_ACK, MAC_SM_OFF
 } Mac_smStateCodes_t;
+
+typedef struct _Sensor_rssi_t
+{
+    int8_t rssiArr[RSSI_ARR_SIZE];
+    uint32_t rssiArrIdx;
+    int8_t rssiMax;
+    int8_t rssiMin;
+    int8_t rssiAvg;
+    int8_t rssiLast;
+
+} Sensor_rssi_t;
 
 /******************************************************************************
  Global variables
@@ -52,6 +66,8 @@ MAC_sensorInfo_t sensorPib = { 0 };
 
 static Mac_smStateCodes_t gState = MAC_SM_OFF;
 
+static Sensor_rssi_t gRssiStrct = { 0 };
+
 
 static Task_Struct macTask; /* not static so you can see in ROV */
 static Task_Params macTaskParams;
@@ -60,6 +76,10 @@ static uint8_t macTaskStack[MAC_TASK_STACK_SIZE];
 static Semaphore_Struct macSem; /* not static so you can see in ROV */
 static Semaphore_Handle macSemHandle;
 
+static Clock_Params gClkParams;
+static Clock_Struct gClkStruct;
+static Clock_Handle gClkHandle;
+static uint32_t gDiscoveryTime;
 
 
 /******************************************************************************
@@ -78,18 +98,13 @@ static void initSensorPib();
 static void CCFGRead_IEEE_MAC(ApiMac_sAddrExt_t addr);
 
 
-static void buildBeaconPktFromBuf(MAC_crsBeaconPacket_t * beaconPkt, uint8_t* beaconBuff);
-static void finishedSendingAssocReqCb(EasyLink_Status status);
-static void recivedAsocRspCb(EasyLink_RxPacket *rxPacket,
+
+static void finishedSendingDiscoveryAckCb(EasyLink_Status status);
+static void discoveryCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status);
 
-static void waitForBeaconCb(EasyLink_RxPacket *rxPacket,
-                                      EasyLink_Status status);
-
-static void finishedSendingAssocRspAckCb(EasyLink_Status status);
-
-static void buildAssocRspPktFromBuf(MAC_crsAssocRspPacket_t * beaconPkt, uint8_t* beaconBuff);
-
+static void updateRssiStrct(int8_t rssi);
+static void discoveryTimeoutCb(xdc_UArg arg);
 
 /******************************************************************************
  Public Functions
@@ -152,15 +167,23 @@ static void macFnx(UArg arg0, UArg arg1)
     CP_CLI_startREAD();
 
     CollectorLink_init();
+
+    Clock_Params_init(&gClkParams);
+    gClkParams.period = 0;
+    gClkParams.startFlag = FALSE;
+
+    Clock_construct(&gClkStruct, NULL, 11000 / Clock_tickPeriod, &gClkParams);
+
+    gClkHandle = Clock_handle(&gClkStruct);
+
+
+
 //    CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
 //    uint8_t tmp[8] = { 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb };
 //    memcpy(collectorLink.mac, tmp, 8);
 //    CollectorLink_updateCollector(&collectorLink);
 
-    uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
-
-    RX_enterRx( Smas_waitForBeaconCb, dstAddr);
-    gState = MAC_SM_BEACON;
+    MAC_moveToBeaconState();
 
 //           RX_enterRx(collectorLink.mac, Smac_recviedCollectorContentCb);
     while (1)
@@ -171,7 +194,13 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_RX_IDLE)
         {
-
+            if (macEvents & MAC_ENTER_BEACON_STATE_EVT)
+            {
+                CP_CLI_cliPrintf("\r\nMAC_ENTER_BEACON_STATE_EVT");
+                CollectorLink_eraseCollector();
+                   MAC_moveToBeaconState();
+                Util_clearEvent(&macEvents, MAC_ENTER_BEACON_STATE_EVT);
+            }
         }
         else if (gState == MAC_SM_BEACON)
         {
@@ -228,6 +257,13 @@ static void macFnx(UArg arg0, UArg arg1)
     }
 }
 
+void MAC_moveToSmriState()
+{
+    gState = MAC_SM_RX_IDLE;
+
+    RX_enterRx(Smri_recivedPcktCb, sensorPib.mac);
+}
+
 void MAC_moveToSmacState()
 {
     gState = MAC_SM_CONTENT_ACK;
@@ -238,8 +274,143 @@ void MAC_moveToSmacState()
 
 }
 
+void MAC_moveToBeaconState()
+{
+    uint8_t dstAddr[8] = {CRS_GLOBAL_PAN_ID, 0, 0, 0, 0, 0, 0, 0};
+
+       RX_enterRx( Smas_waitForBeaconCb, dstAddr);
+       gState = MAC_SM_BEACON;
+
+//    Semaphore_post(macSemHandle);
+
+}
 
 
+
+void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
+                                  EasyLink_Status status)
+{
+    if (status == EasyLink_Status_Success)
+    {
+        if (((MAC_commandId_t) rxPacket->payload[0])
+                == MAC_COMMAND_DISCOVERY )
+        {
+            gState = MAC_SM_DISCOVERY;
+            discoveryCb(rxPacket, status);
+//            Smac_recivedAssocReqCb(rxPacket, status);
+        }
+        else if(((MAC_commandId_t) rxPacket->payload[0])
+                == MAC_COMMAND_DATA )
+        {
+            gState = MAC_SM_CONTENT_ACK;
+            Smac_recviedCollectorContentCb(rxPacket, status);
+
+        }
+
+    }
+    else
+    {
+
+    }
+}
+
+
+
+static void discoveryCb(EasyLink_RxPacket *rxPacket,
+                                      EasyLink_Status status)
+{
+    if (status == EasyLink_Status_Success)
+    {
+        MAC_stopDiscoveryClock();
+
+
+        updateRssiStrct(rxPacket->rssi);
+
+
+
+        CollectorLink_collectorLinkInfo_t collectorLink;
+        CollectorLink_getCollector(&collectorLink);
+        collectorLink.seqRcv++;
+        MAC_crsPacket_t pkt = { 0 };
+        pkt.commandId = MAC_COMMAND_ACK;
+        pkt.seqSent = collectorLink.seqSend;
+        pkt.seqRcv = collectorLink.seqRcv;
+        pkt.isNeedAck = 0;
+        memcpy(pkt.dstAddr, collectorLink.mac, 8);
+        memcpy(pkt.srcAddr, sensorPib.mac, 8);
+        pkt.len = 4;
+
+
+        pkt.payload[0] = (uint8_t)gRssiStrct.rssiAvg;
+        pkt.payload[1] = (uint8_t)gRssiStrct.rssiLast;
+        pkt.payload[2] = (uint8_t)gRssiStrct.rssiMax;
+        pkt.payload[3] = (uint8_t)gRssiStrct.rssiMin;
+
+        CollectorLink_updateCollector(&collectorLink);
+
+
+        //send ack with cb of 'finishedSendingAckCb'
+        TX_sendPacket(&pkt, finishedSendingDiscoveryAckCb);
+
+    }
+    else
+    {
+
+    }
+}
+
+static void finishedSendingDiscoveryAckCb(EasyLink_Status status)
+{
+    if (status == EasyLink_Status_Success)
+    {
+        CollectorLink_collectorLinkInfo_t collectorLink;
+        CollectorLink_getCollector(&collectorLink);
+        collectorLink.seqSend++;
+        CollectorLink_updateCollector(&collectorLink);
+
+        MAC_startDiscoveryClock();
+
+        MAC_moveToSmriState();
+        //enterRx with cb of 'recviedCollectorContentAgainCb'
+//        gIsDoneSendingDiscoveryAck = true;
+
+    }
+    else
+    {
+        CollectorLink_eraseCollector();
+        MAC_moveToBeaconState();
+
+    }
+}
+
+void MAC_updateDiscoveryTime(uint32_t discoveryTime)
+{
+    gDiscoveryTime = discoveryTime + 1;
+}
+
+void MAC_startDiscoveryClock()
+{
+    Clock_setFunc(gClkHandle, discoveryTimeoutCb, 0);
+    Clock_setTimeout(gClkHandle, gDiscoveryTime * 100000);
+    Clock_start(gClkHandle);
+
+}
+
+void MAC_stopDiscoveryClock()
+{
+    Clock_stop(gClkHandle);
+}
+
+static void discoveryTimeoutCb(xdc_UArg arg)
+{
+    EasyLink_abort();
+    Util_setEvent(&macEvents, MAC_ENTER_BEACON_STATE_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(macSemHandle);
+
+
+}
 
 static void initSensorPib()
 {
@@ -281,6 +452,9 @@ static void processkIncomingAppMsgs()
         pkt.panId = sensorPib.panId;
 
         Smac_sendContent(&pkt, msg.msg->msduHandle);
+
+        free(msg.msg->msdu.p);
+        free(msg.msg);
     }
 
 }
@@ -417,3 +591,60 @@ static void sendContent(uint8_t mac[8])
 }
 
 //SMAC_SENT_CONTENT_AGAIN
+
+
+static void updateRssiStrct(int8_t rssi)
+{
+//    CRS_LOG(CRS_DEBUG, "START");
+    gRssiStrct.rssiArr[gRssiStrct.rssiArrIdx] = rssi;
+
+    if (gRssiStrct.rssiArrIdx + 1 < RSSI_ARR_SIZE)
+    {
+        gRssiStrct.rssiArrIdx += 1;
+    }
+    else if (gRssiStrct.rssiArrIdx + 1 == RSSI_ARR_SIZE)
+    {
+        gRssiStrct.rssiArrIdx = 0;
+    }
+
+    int i = 0;
+    int16_t sum = 0;
+    uint8_t numZeros = 0;
+    for (i = 0; i < RSSI_ARR_SIZE; i++)
+    {
+        sum += gRssiStrct.rssiArr[i];
+        if (gRssiStrct.rssiArr[i] == 0)
+        {
+            numZeros++;
+        }
+    }
+
+    gRssiStrct.rssiAvg = sum / (RSSI_ARR_SIZE - numZeros);
+
+    if (gRssiStrct.rssiMax == 0)
+    {
+        gRssiStrct.rssiMax = rssi;
+    }
+    if (gRssiStrct.rssiMin == 0)
+    {
+        gRssiStrct.rssiMin = rssi;
+    }
+    gRssiStrct.rssiLast = rssi;
+
+    int x = 0;
+
+    for (x = 0; x < RSSI_ARR_SIZE; x++)
+    {
+        if (gRssiStrct.rssiArr[x] != 0
+                && gRssiStrct.rssiMax > gRssiStrct.rssiArr[x])
+        {
+            gRssiStrct.rssiMax = gRssiStrct.rssiArr[x];
+        }
+
+        if (gRssiStrct.rssiArr[x] != 0
+                && gRssiStrct.rssiMin < gRssiStrct.rssiArr[x])
+        {
+            gRssiStrct.rssiMin = gRssiStrct.rssiArr[x];
+        }
+    }
+}
