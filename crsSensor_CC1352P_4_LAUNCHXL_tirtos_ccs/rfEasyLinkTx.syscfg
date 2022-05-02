@@ -85,6 +85,8 @@ UART1.txPinInstance.$name = "CONFIG_PIN_0";
 UART1.rxPinInstance.$name = "CONFIG_PIN_1";
 
 UART2.$name               = "CONFIG_UART_1";
+UART2.uart.txPin.$assign  = "boosterpack.32";
+UART2.uart.rxPin.$assign  = "boosterpack.31";
 UART2.txPinInstance.$name = "CONFIG_PIN_9";
 UART2.rxPinInstance.$name = "CONFIG_PIN_10";
 
@@ -126,8 +128,6 @@ UART1.uart.$suggestSolution                                       = "UART1";
 UART1.uart.txPin.$suggestSolution                                 = "boosterpack.4";
 UART1.uart.rxPin.$suggestSolution                                 = "boosterpack.3";
 UART2.uart.$suggestSolution                                       = "UART0";
-UART2.uart.txPin.$suggestSolution                                 = "boosterpack.32";
-UART2.uart.rxPin.$suggestSolution                                 = "boosterpack.18";
 NVSSPI25XDevice1.slaveSelectGpioInstance.gpioPin.$suggestSolution = "boosterpack.38";
 SPI1.spi.$suggestSolution                                         = "SSI0";
 SPI1.spi.sclkPin.$suggestSolution                                 = "boosterpack.7";
