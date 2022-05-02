@@ -568,11 +568,14 @@ static void setVars(char *file, char *vars, const char *d)
     char *delim;
     char *tk_delim;
     //char *tok_cont = token + strlen(token) + 1;
-    char copyFile[strlen(file)+1];
+    //char copyFile[strlen(file)+1];
+    char copyFile[2048];
     strcpy(copyFile, file);
-    char copyFileContent[strlen(file)+1];
+    //char copyFileContent[strlen(file)+1];
+    char copyFileContent[2048];
     strcpy(copyFileContent, file);
-    char copyVars[strlen(vars)+1];
+    //char copyVars[strlen(vars)+1];
+    char copyVars[2048];
     strcpy(copyVars, vars);
     char *token = strtok(copyVars, d);
     while (token)
@@ -629,9 +632,11 @@ static void getVars(char *file, char *keys, char *values)
 //    memset(values, 0, MAX_LINE_CHARS);
     char *key;
     char *delim;
-    char copyFile[strlen(file)+1];
+    //char copyFile[strlen(file)+1];
+    char copyFile[2048];
     strcpy(copyFile, file);
-    char copyKeys[strlen(keys)+1];
+    //char copyKeys[strlen(keys)+1];
+    char copyKeys[2048];
     strcpy(copyKeys, keys);
     char *token = strtok(copyKeys, s);
 
