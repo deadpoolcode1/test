@@ -421,7 +421,8 @@ CRS_retVal_t CLI_init()
         CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
         CLI_startREAD();
 #else
-        CLI_writeString("\r\nSensor\r\nFinding a nwk...", strlen("\r\nSensor\r\nFinding a nwk..."));
+        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
+               CLI_startREAD();
 #endif
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return CRS_SUCCESS;
@@ -2162,7 +2163,7 @@ static CRS_retVal_t CLI_fsLsParsing(char *line)
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
                    CLI_startREAD();
                }
-        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
         return CRS_SUCCESS;
     }
@@ -2206,7 +2207,7 @@ static CRS_retVal_t CLI_fsReadLineParsing(char *line)
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
                    CLI_startREAD();
                }
-        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
         return CRS_SUCCESS;
     }
@@ -4209,6 +4210,10 @@ static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* de
 
 CRS_retVal_t CLI_startREAD()
 {
+    if ((gUartHandle == NULL) && gIsRemoteCommand == false )
+       {
+           return CRS_UART_FAILURE;
+       }
 #ifdef CLI_SENSOR
 
     if (gIsRemoteCommand == true || (gIsRemoteTransparentBridge == true && gRspBuff != 0))
@@ -4250,7 +4255,6 @@ CRS_retVal_t CLI_startREAD()
     return CRS_SUCCESS;
 
 }
-
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
 {
     if (strlen(format) >= 512)
@@ -4307,6 +4311,10 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
  */
 CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 {
+    if ((gUartHandle == NULL) && gIsRemoteCommand == false)
+       {
+           return CRS_UART_FAILURE;
+       }
     if (strlen(_format) >= 1024)
     {
         return CRS_FAILURE;
