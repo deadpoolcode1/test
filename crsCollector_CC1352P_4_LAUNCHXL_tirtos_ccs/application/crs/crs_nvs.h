@@ -56,7 +56,7 @@ CRS_retVal_t Nvs_treadVarsFile(char *vars, int file_type);
 CRS_retVal_t Nvs_setVarsFile(char* vars, int file_type);
 CRS_retVal_t Nvs_rmVarsFile(char* vars, int file_type);
 CRS_retVal_t Nvs_createVarsFile(char* vars, int file_type);
-
+CRS_retVal_t Nvs_isFileExists(char *filename);
 
 char* Nvs_readFileWithMalloc(char *filename);
 

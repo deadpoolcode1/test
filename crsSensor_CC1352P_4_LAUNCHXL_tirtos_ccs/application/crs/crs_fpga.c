@@ -185,12 +185,31 @@ void Fpga_process(void)
 
     if (Fpga_events & FPGA_OPEN_FAIL_EV)
     {
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-        CLI_startREAD();
         memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
         //memset(gUartRxBuffer, 0, 1);
         gUartTxBufferIdx = 0;
         Fpga_close();
+        if (gCbFpgaOpenFn != NULL)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+
+            CRS_LOG(CRS_DEBUG, "fpga failed to open");
+
+            FPGA_cbArgs_t cbArgs;
+            cbArgs.arg0 = gUartTxBufferIdx;
+            cbArgs.arg3 = gUartTxBuffer;
+
+            gCbFpgaOpenFn(cbArgs);
+            gCbFpgaOpenFn = NULL;
+        }
+        else
+        {
+
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+
+
+        }
         Util_clearEvent(&Fpga_events, FPGA_OPEN_FAIL_EV);
     }
 
@@ -425,7 +444,7 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
     {
         CLI_cliPrintf("\r\nFinished sending 0x%x lines", gLineNumber);
         CLI_startREAD();
-        return;
+        return CRS_SUCCESS;
     }
 
     gIsUploadingSnapshot = true;
@@ -501,7 +520,7 @@ CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
     {
         CLI_cliPrintf("\r\nFinished sending 0x%x lines", gLineNumber);
         CLI_startREAD();
-        return;
+        return CRS_SUCCESS;
     }
 
     gIsUploadingSnapshot = true;
@@ -694,7 +713,7 @@ if(gIsDoneFilling)
             gIsDoneFilling = false;
             UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
 
-            return CRS_SUCCESS;
+            return ;
 }
 }
 
@@ -746,7 +765,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
                       cbArgs.arg1 = gCommandSize;
                       cbArgs.arg3 = gUartTxBuffer;
                       gCbFn(cbArgs);
-                      return 0;
+                      return ;
                   }
               }
               UART_read(gUartHandle, gUartRxBuffer, 1);

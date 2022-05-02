@@ -28,7 +28,6 @@ static CRS_retVal_t Nvs_writeFATRecord(CRS_FAT_t *fat, uint32_t location);
 static CRS_retVal_t Nvs_writeFAT_64files(CRS_FAT_t *fat, int i);
 static CRS_retVal_t Nvs_readFATNumFiles(CRS_FAT_t *fat, uint32_t start,
                                         uint32_t numFiles);
-static CRS_retVal_t isFileExists(char *filename);
 static CRS_retVal_t isVarsFileExists(int file_type);
 
 static void getVars(char * file, char * keys, char * values);
@@ -654,7 +653,7 @@ CRS_retVal_t Nvs_writeTempFile(char *filename, char *buff)
     if (strlenPrev > 0x1000)
     {
         CLI_cliPrintf("\r\nTEMP is above 4k!!\r\n");
-        return;
+        return CRS_SUCCESS;
     }
 
     NVS_read(
@@ -668,7 +667,7 @@ CRS_retVal_t Nvs_writeTempFile(char *filename, char *buff)
     if (newStrlen > 0x1000)
        {
            CLI_cliPrintf("\r\nTEMP is above 4k!!\r\n");
-           return;
+           return CRS_SUCCESS;
        }
     int2hex(newStrlen, strlenStr);
 
@@ -1102,7 +1101,7 @@ CRS_retVal_t Nvs_insertSpecificLine(char *filename, const char *line,
 }
 
 
-static CRS_retVal_t isFileExists(char *filename)
+CRS_retVal_t Nvs_isFileExists(char *filename)
 {
     CRS_FAT_t fat;
       uint32_t i = 0;

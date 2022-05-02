@@ -27,6 +27,7 @@
 #include "crs/crs_tdd.h"
 //#include "agc/agc.h"
 #include "crs/crs_thresholds.h"
+#include "agc/agc.h"
 
 #include "easylink/EasyLink.h"
 
@@ -119,6 +120,7 @@ void Collector_init()
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
+    Agc_init();
 //       Agc_init();
 
 }

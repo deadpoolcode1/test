@@ -15,6 +15,7 @@
 typedef struct {
     uint32_t arg0;
     uint32_t arg1;
+    CRS_retVal_t status;
     char*    arg3;
 } TDD_cbArgs_t;
 
@@ -28,6 +29,7 @@ CRS_retVal_t Tdd_isLocked();
 CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setSyncMode(bool mode, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setSCS(uint8_t scs, TDD_cbFn_t _cbFn);
+CRS_retVal_t Tdd_setSs_pos(uint8_t ss_pos, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setHolTime(uint8_t min, uint8_t sec, TDD_cbFn_t _cbFn);

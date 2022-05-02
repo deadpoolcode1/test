@@ -25,7 +25,7 @@
 #include "crs_snap_rf.h"
 #include "crs_script_dig.h"
 #include "crs/crs_tdd.h"
-//#include "agc/agc.h"
+#include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "easylink/EasyLink.h"
 
@@ -152,7 +152,7 @@ void Sensor_init()
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
-//       Agc_init();
+       Agc_init();
 
 }
 

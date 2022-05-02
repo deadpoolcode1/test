@@ -5,6 +5,8 @@
  *      Author: epc_4
  */
 #include "crs_thresholds.h"
+#include "crs_nvs.h"
+
 #include "crs_cli.h"
 //#include "osal_port.h"
 /* Driver Header files */
@@ -15,7 +17,20 @@
 
 #define STRLEN_BYTES 32
 #define MAX_LINE_CHARS 1024
-
+#define THRSH_FILENAME "thrsh"
+#define ENV_FILENAME "env"
+#ifndef CLI_SENSOR
+#define THRSH_FILE "Technology=5G\nBand=B48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\n\
+    MaxCableLossThr=35\nDLMaxInputPower=-35\nDLRxMaxGainThr=45\nULTxMaxGainThr=55\nULMaxOutputPower=20\n\
+    SyncMode=Manual\nCPType=Normal\nSensorMode=0\nDLRxGain=28\nULTxGain=28\nTmpThr=40"
+#define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0"
+#else
+#define THRSH_FILE "Technology=5G\nBand=B48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\n\
+    MaxCableLossThr=35\nULMaxInputPower=-35\nULRxMaxGainThr=60\nDLTxMaxGainThr=55\nDLMaxOutputPower=20\n\
+    DLSystemMaxGainThr=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\nULRxGain=30\nDLTxGain=28\n\
+    DLSystemGain=20\nTmpThr=40"
+#define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0"
+#endif
 
 static NVS_Handle gNvsHandle;
 static NVS_Attrs gRegionAttrs;
@@ -26,7 +41,46 @@ static void setVars(char *file, char *vars, const char *d);
 static void getVars(char *file, char *keys, char *values);
 static int hex2int(char ch);
 
+static CRS_retVal_t defaultVarFile(int fileIndex);
+
 static char* gThreshCache = NULL;
+static char* gEnvCache = NULL;
+static char* gFileCache = NULL;
+
+
+static CRS_retVal_t defaultVarFile(int fileIndex){
+    CRS_retVal_t ret = CRS_FAILURE;
+    if(fileIndex){
+        if(Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS){
+            gFileCache = Nvs_readFileWithMalloc(THRSH_FILENAME);
+            if(gFileCache){
+                ret = createVarsFile(gFileCache+STRLEN_BYTES+1, fileIndex);
+            }
+        }
+        else{
+            ret = createVarsFile(THRSH_FILE, fileIndex);
+        }
+    }
+    else{
+        if(Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS){
+            gFileCache = Nvs_readFileWithMalloc(ENV_FILENAME);
+            if(gFileCache){
+                ret = createVarsFile(gFileCache+STRLEN_BYTES+1, fileIndex);
+            }
+        }
+        else{
+            ret = createVarsFile(ENV_FILE, fileIndex);
+        }
+    }
+    CRS_free(gFileCache);
+    return ret;
+}
+
+CRS_retVal_t Thresh_restore(int fileIndex){
+    Thresh_format(fileIndex);
+    CRS_retVal_t ret = defaultVarFile(fileIndex);
+    return ret;
+}
 
 CRS_retVal_t Thresh_init()
 {
@@ -39,7 +93,7 @@ CRS_retVal_t Thresh_init()
     {
         CLI_cliPrintf("NVS_open() failed.\r\n");
 
-        return (NULL);
+        return CRS_FAILURE;
     }
     /*
      * This will populate a NVS_Attrs structure with properties specific
@@ -49,16 +103,16 @@ CRS_retVal_t Thresh_init()
     NVS_getAttrs(gNvsHandle, &gRegionAttrs);
     uint32_t numFiles = (gRegionAttrs.regionSize / gRegionAttrs.sectorSize);
 
+    CRS_retVal_t env = isVarsFileExists(0);
+    if (env != CRS_SUCCESS)
+    {
+        defaultVarFile(0);
+    }
+
     CRS_retVal_t trsh = isVarsFileExists(1);
     if (trsh != CRS_SUCCESS)
     {
-#ifndef CLI_SENSOR
-        createVarsFile(
-                "Technology=5G\nBand=l48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\nMaxCableLoss=35\nDLMaxInputPower=-35\nDLRxMaxGain=45\nULTxMaxGain=55\nULMaxOutputPower=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\ntmp=40",
-                1);
-#else
-        createVarsFile("Technology=5G\nBand=l48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\nMaxCableLoss=35\nULMaxInputPower=-35\nULRxMaxGain=60\nDLTxMaxGain=55\nDLMaxOutputPower=20\nDLSystemMaxGain=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\ntmp=40", 1);
-    #endif
+        defaultVarFile(1);
     }
 
     return CRS_SUCCESS;
@@ -121,6 +175,14 @@ static CRS_retVal_t createVarsFile(char *vars, int fileIndex)
 
 CRS_retVal_t Thresh_format(int fileIndex)
 {
+    if(fileIndex){
+        CRS_free(gThreshCache);
+        gThreshCache = NULL;
+    }
+    else{
+        CRS_free(gEnvCache);
+        gEnvCache = NULL;
+    }
     int_fast16_t retStatus = NVS_erase(gNvsHandle, fileIndex * gRegionAttrs.sectorSize, gRegionAttrs.sectorSize);
     return CRS_SUCCESS;
 
@@ -130,56 +192,77 @@ CRS_retVal_t Thresh_format(int fileIndex)
 CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
 {
     char *fileContent = CRS_malloc( 1200);
-    char *prevFileContent = fileContent;
+    char *prevFileContnet = fileContent;
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
     }
     memset(fileContent, 0, 1200);
 
-        char strlenStr[STRLEN_BYTES+1] = { 0 };
-    if (gThreshCache == NULL)
+    char strlenStr[STRLEN_BYTES+1] = { 0 };
+    char * ptr;
+    if(fileIndex){
+        ptr = gThreshCache;
+    }
+    else{
+        ptr = gEnvCache;
+    }
+
+    if (ptr == NULL)
     {
         NVS_read(gNvsHandle, (fileIndex) * gRegionAttrs.sectorSize,
-                     (void*) fileContent, 512);
+                     (void*) fileContent, MAX_LINE_CHARS);
             memcpy(strlenStr, fileContent, STRLEN_BYTES);
             if (strlen(strlenStr) > 3)
             {
-                CRS_free(prevFileContent);
+                CRS_free(fileContent);
 
                 return CRS_FAILURE;
             }
             uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
-            if (strlenPrev > 1024)
+            if (strlenPrev > MAX_LINE_CHARS)
             {
-                CRS_free(prevFileContent);
+                CRS_free(fileContent);
 
                 return CRS_FAILURE;
             }
-            if (strlenPrev > 500)
+            if (strlenPrev > MAX_LINE_CHARS)
             {
                 NVS_read(gNvsHandle, (fileIndex) * gRegionAttrs.sectorSize + 512,
                          (void*) fileContent + 512, 512);
 
             }
             fileContent = fileContent + STRLEN_BYTES + 1;
-            gThreshCache = CRS_malloc(strlen(fileContent) + 100);
-            if (gThreshCache == NULL)
+            ptr = CRS_malloc(strlen(fileContent) + 100);
+            if (ptr == NULL)
             {
-                CRS_free(prevFileContent);
+                CRS_free(prevFileContnet);
 
                 return CRS_FAILURE;
             }
-            memset(gThreshCache, 0, strlen(fileContent) + 100);
-            memcpy(gThreshCache, fileContent, strlen(fileContent));
+            memset(ptr, 0, strlen(fileContent) + 100);
+            memcpy(ptr, fileContent, strlen(fileContent));
+
+            if(fileIndex){
+                gThreshCache = ptr;
+            }
+            else{
+                gEnvCache = ptr;
+            }
+//            if(fileIndex){
+//                CRS_free(gThreshCache);
+//                gThreshCache = gTempCache;
+//            }
+//            else{
+//                CRS_free(gEnvCache);
+//                gEnvCache = gTempCache;
+//            }
 
     }
     else
     {
-        memcpy(fileContent, gThreshCache, strlen(gThreshCache));
+        memcpy(fileContent, ptr, strlen(ptr));
     }
-
-
 
 
     if (vars != NULL && strlen(vars) > 0 && strlen(vars) < MAX_LINE_CHARS)
@@ -196,7 +279,7 @@ CRS_retVal_t Thresh_readVarsFile(char *vars, char *returnedVars, int fileIndex)
         memcpy(returnedVars, fileContent ,
                strlen(fileContent ));
     }
-    CRS_free(prevFileContent);
+    CRS_free(prevFileContnet);
 
     return CRS_SUCCESS;
 }
@@ -205,8 +288,7 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
 {
 
     char *fileContent = CRS_malloc(1200);
-    char *prevFileContent = fileContent;
-
+    char *prevFileContnet = fileContent;
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
@@ -215,29 +297,35 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
     char strlenStr[STRLEN_BYTES] = { 0 };
 
     NVS_read(gNvsHandle, (fileIndex) * gRegionAttrs.sectorSize,
-             (void*) fileContent, 512);
+             (void*) fileContent, MAX_LINE_CHARS);
     memcpy(strlenStr, fileContent, STRLEN_BYTES);
+    uint32_t strlenPrev;
     if (strlen(strlenStr) > 3)
     {
-        CRS_free(prevFileContent);
+        CRS_free(fileContent);
 
         return CRS_FAILURE;
     }
-    uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
-    if (strlenPrev > 1024)
+    if(strlenStr[0] == '\0'){
+        strlenPrev = 0;
+    }
+    else{
+        strlenPrev = CLI_convertStrUint(strlenStr);
+    }
+    if (strlenPrev > MAX_LINE_CHARS)
     {
-        CRS_free(prevFileContent);
+        CRS_free(fileContent);
 
         return CRS_FAILURE;
     }
-    if (strlenPrev > 500)
+    if (strlenPrev > MAX_LINE_CHARS)
     {
         NVS_read(gNvsHandle, (fileIndex) * gRegionAttrs.sectorSize + 512,
                  (void*) fileContent + 512, 512);
     }
 
     char *copyFileContent = fileContent + STRLEN_BYTES + 1;
-    char copyFile[512] = { 0 };
+    char copyFile[MAX_LINE_CHARS] = { 0 };
 
     const char s[2] = " ";
 
@@ -257,34 +345,56 @@ CRS_retVal_t Thresh_setVarsFile(char *vars, int fileIndex)
     NVS_write(gNvsHandle, startFile, (void*) fileContent,
               STRLEN_BYTES + newStrlen + 3, NVS_WRITE_ERASE);
 
-    fileContent = fileContent + STRLEN_BYTES + 1;
 
-    if (gThreshCache == NULL)
+    fileContent = fileContent + STRLEN_BYTES + 1;
+    char * ptr;
+    if(fileIndex){
+        ptr = gThreshCache;
+    }
+    else{
+        ptr = gEnvCache;
+    }
+
+    if (ptr == NULL)
     {
-        gThreshCache = CRS_malloc(strlen(fileContent ) + 100);
-        if (gThreshCache == NULL)
+        ptr = CRS_malloc(strlen(fileContent ) + 100);
+        if (ptr == NULL)
         {
-            CRS_free(prevFileContent);
+            CRS_free(prevFileContnet);
 
             return CRS_FAILURE;
         }
-        memset(gThreshCache, 0, strlen(fileContent) + 100);
-        memcpy(gThreshCache, fileContent, strlen(fileContent));
+        memset(ptr, 0, strlen(fileContent) + 100);
+        memcpy(ptr, fileContent, strlen(fileContent));
     }
     else
     {
-        CRS_free(gThreshCache);
-        gThreshCache = CRS_malloc(strlen(fileContent) + 100);
-        if (gThreshCache == NULL)
+        CRS_free(ptr);
+        ptr = CRS_malloc(strlen(fileContent) + 100);
+        if (ptr == NULL)
         {
-            CRS_free(prevFileContent);
+            CRS_free(prevFileContnet);
 
             return CRS_FAILURE;
         }
-        memset(gThreshCache, 0, strlen(fileContent) + 100);
-        memcpy(gThreshCache, fileContent, strlen(fileContent));
+        memset(ptr, 0, strlen(fileContent) + 100);
+        memcpy(ptr, fileContent, strlen(fileContent));
     }
-    CRS_free(prevFileContent);
+
+//    if(fileIndex){
+//        gThreshCache = gTempCache;
+//    }
+//    else{
+//        gEnvCache = gTempCache;
+//    }
+//    gTempCache = NULL;
+    if(fileIndex){
+        gThreshCache = ptr;
+    }
+    else{
+        gEnvCache = ptr;
+    }
+    CRS_free(prevFileContnet);
 
     return CRS_SUCCESS;
 }
@@ -293,8 +403,7 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
 {
 
     char *fileContent = CRS_malloc(1200);
-    char *prevFileContent = fileContent;
-
+    char *prevFileContnet = fileContent;
     if (fileContent == NULL)
     {
         return CRS_FAILURE;
@@ -303,22 +412,22 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
     char strlenStr[STRLEN_BYTES] = { 0 };
 
     NVS_read(gNvsHandle, fileIndex * gRegionAttrs.sectorSize,
-             (void*) fileContent, 512);
+             (void*) fileContent, MAX_LINE_CHARS);
     memcpy(strlenStr, fileContent, STRLEN_BYTES);
     uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
     if (strlen(strlenStr) > 3)
     {
-        CRS_free(prevFileContent);
+        CRS_free(fileContent);
 
         return CRS_FAILURE;
     }
-    if (strlenPrev > 1024)
+    if (strlenPrev > MAX_LINE_CHARS)
     {
-        CRS_free(prevFileContent);
+        CRS_free(fileContent);
 
         return CRS_FAILURE;
     }
-    if (strlenPrev > 500)
+    if (strlenPrev > MAX_LINE_CHARS)
     {
 
         NVS_read(gNvsHandle, (fileIndex) * gRegionAttrs.sectorSize + 512,
@@ -399,33 +508,55 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
               STRLEN_BYTES + newStrlen + 3, NVS_WRITE_ERASE);
 
     fileContent = fileContent + STRLEN_BYTES + 1;
+    char * ptr;
+    if(fileIndex){
+        ptr = gThreshCache;
+    }
+    else{
+        ptr = gEnvCache;
+    }
 
-    if (gThreshCache == NULL)
+    if (ptr == NULL)
     {
-        gThreshCache = CRS_malloc(strlen(fileContent) + 100);
-        if (gThreshCache == NULL)
+        ptr = CRS_malloc(strlen(fileContent) + 100);
+        if (ptr == NULL)
         {
-            CRS_free(prevFileContent);
+            CRS_free(prevFileContnet);
 
             return CRS_FAILURE;
         }
-        memset(gThreshCache, 0, strlen(fileContent) + 100);
-        memcpy(gThreshCache, fileContent, strlen(fileContent));
+        memset(ptr, 0, strlen(fileContent) + 100);
+        memcpy(ptr, fileContent, strlen(fileContent));
     }
     else
     {
-        CRS_free(gThreshCache);
-        gThreshCache = CRS_malloc(strlen(fileContent) + 100);
-        if (gThreshCache == NULL)
+        CRS_free(ptr);
+        ptr = CRS_malloc(strlen(fileContent) + 100);
+        if (ptr == NULL)
         {
-            CRS_free(prevFileContent);
+            CRS_free(prevFileContnet);
 
             return CRS_FAILURE;
         }
-        memset(gThreshCache, 0, strlen(fileContent) + 100);
-        memcpy(gThreshCache, fileContent, strlen(fileContent));
+        memset(ptr, 0, strlen(fileContent) + 100);
+        memcpy(ptr, fileContent, strlen(fileContent));
     }
-    CRS_free(prevFileContent);
+
+//    if(fileIndex){
+//        CRS_free(gThreshCache);
+//        gThreshCache = gTempCache;
+//    }
+//    else{
+//        CRS_free(gEnvCache);
+//        gEnvCache = gTempCache;
+//    }
+    if(fileIndex){
+        gThreshCache = ptr;
+    }
+    else{
+        gEnvCache = ptr;
+    }
+    CRS_free(prevFileContnet);
 
     return CRS_SUCCESS;
 }
@@ -433,20 +564,24 @@ CRS_retVal_t Thresh_rmVarsFile(char *vars, int fileIndex)
 static void setVars(char *file, char *vars, const char *d)
 {
     bool is_before = false;
-    char copyFile[512] = { 0 };
-    memcpy(copyFile, file, 512);
     char *key;
     char *delim;
     char *tk_delim;
-    char *token = strtok(vars, d);
-    char *tok_cont = token + strlen(token) + 1;
+    //char *tok_cont = token + strlen(token) + 1;
+    char copyFile[strlen(file)+1];
+    strcpy(copyFile, file);
+    char copyFileContent[strlen(file)+1];
+    strcpy(copyFileContent, file);
+    char copyVars[strlen(vars)+1];
+    strcpy(copyVars, vars);
+    char *token = strtok(copyVars, d);
     while (token)
     {
         tk_delim = strstr(token, "=");
         if (!tk_delim || tk_delim == token)
         {
             token = strtok(NULL, d);
-            tok_cont = token + strlen(token) + 1;
+            //tok_cont = token + strlen(token) + 1;
             continue;
         }
         key = strtok(copyFile, "\n");
@@ -472,16 +607,14 @@ static void setVars(char *file, char *vars, const char *d)
             strcat(file, "\n");
         }
         is_before = false;
-        memcpy(copyFile, file, 512);
-        if (tok_cont < vars + MAX_LINE_CHARS)
-        {
-            token = strtok(tok_cont, d);
-            tok_cont = token + strlen(token) + 1;
+        strcpy(copyFile, copyFileContent);
+        strcpy(copyVars, vars);
+        key = strtok(copyVars, d);
+        while(strcmp(key, token) != 0){
+            key = strtok(NULL, d);
         }
-        else
-        {
-            token = NULL;
-        }
+        token = strtok(NULL, d);
+
     }
 }
 
@@ -496,10 +629,11 @@ static void getVars(char *file, char *keys, char *values)
 //    memset(values, 0, MAX_LINE_CHARS);
     char *key;
     char *delim;
-    char *token = strtok(keys, s);
-    char *tok_cont = token + strlen(token) + 1;
-    char copyFile[512] = { 0 };
-    memcpy(copyFile, file, 512);
+    char copyFile[strlen(file)+1];
+    strcpy(copyFile, file);
+    char copyKeys[strlen(keys)+1];
+    strcpy(copyKeys, keys);
+    char *token = strtok(copyKeys, s);
 
     while (token != NULL)
     {
@@ -515,21 +649,19 @@ static void getVars(char *file, char *keys, char *values)
                     *delim = '=';
                     strcat(values, key);
                     strcat(values, "\n");
+                    key = NULL;
                 }
                 *delim = '=';
             }
             key = strtok(NULL, "\n");
         }
-        memcpy(copyFile, file, 512);
-        if (tok_cont < keys + MAX_LINE_CHARS)
-        {
-            token = strtok(tok_cont, s);
-            char *tok_cont = token + strlen(token) + 1;
+        strcpy(copyFile, file);
+        strcpy(copyKeys, keys);
+        key = strtok(copyKeys, s);
+        while(strcmp(key, token) != 0){
+            key = strtok(NULL, s);
         }
-        else
-        {
-            token = NULL;
-        }
+        token = strtok(NULL, s);
 
     }
 }

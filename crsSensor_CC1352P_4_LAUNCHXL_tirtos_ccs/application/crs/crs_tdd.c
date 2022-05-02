@@ -129,7 +129,7 @@ static uint8_t gFrame = 0;
 static uint8_t gAlloc = 0;
 
 static TDD_tdArgs_t tdArgs = { .period = 5000,
-                               .dl1 = 1214};
+                               .dl1 = 3857};
 
 uint16_t gPeriod [2] = {5000, 10000};
 uint16_t gConfigs[2][15] ={ {1214, 1642, 1714, 1785, 1857, 2214, 2642, 2714, 2785, 2857, 3214, 3642, 3714, 3785, 3857},
@@ -227,6 +227,7 @@ void Tdd_process(void)
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_SUCCESS;
         gInnerCbFn(cbArgs);
 //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
         Util_clearEvent(&Tdd_events, TDD_OPEN_EV);
@@ -239,6 +240,7 @@ void Tdd_process(void)
         TDD_cbArgs_t cbArgs;
                cbArgs.arg0 = gUartTxBufferIdx;
                cbArgs.arg3 = gUartTxBuffer;
+               cbArgs.status = CRS_SUCCESS;
                gInnerCbFn(cbArgs);
                gFinalCbFn(cbArgs);
         Util_clearEvent(&Tdd_events, TDD_STATUS_RSP_EV);
@@ -251,6 +253,7 @@ void Tdd_process(void)
         TDD_cbArgs_t cbArgs;
                cbArgs.arg0 = gUartTxBufferIdx;
                cbArgs.arg3 = gUartTxBuffer;
+               cbArgs.status = CRS_SUCCESS;
                gInnerCbFn(cbArgs);
                gFinalCbFn(cbArgs);
         Util_clearEvent(&Tdd_events, TDD_SET_RSP_EV);
@@ -262,11 +265,12 @@ void Tdd_process(void)
 
         if (    gIsPrintStatusCommand == true)
         {
-                    CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+                    //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
                     Tdd_close();
                     TDD_cbArgs_t cbArgs;
                                    cbArgs.arg0 = gUartTxBufferIdx;
                                    cbArgs.arg3 = gUartTxBuffer;
+                                   cbArgs.status = CRS_FAILURE;
                                    gFinalCbFn(cbArgs);
         }
         else
@@ -448,7 +452,7 @@ static void  makeRequest(Tdd_setRequest_t request, uint8_t * request_array)
 static void getInitStatus(const TDD_cbArgs_t _cbArgs)
 {
 
-    uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
+    uint8_t scs = gUartTxBuffer[29];
     uint8_t pattern2 = gUartTxBuffer[30];
     uint8_t sspos = gUartTxBuffer[31];
     uint8_t detect = gUartTxBuffer[33];
@@ -462,6 +466,7 @@ static void getInitStatus(const TDD_cbArgs_t _cbArgs)
     TDD_cbArgs_t cbArgs;
                    cbArgs.arg0 = gUartTxBufferIdx;
                    cbArgs.arg3 = gUartTxBuffer;
+                   cbArgs.status = CRS_SUCCESS;
     printStatus(cbArgs);
     gFinalCbFn(cbArgs);
 }
@@ -503,10 +508,11 @@ CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -518,7 +524,7 @@ CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
 
 static void printStatus(const TDD_cbArgs_t _cbArgs)
 {
-    CLI_cliPrintf("\r\nTDDStatus=OK");
+    //CLI_cliPrintf("\r\nTDDStatus=OK");
     bool isGood = true;
     uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
     if (scs == 1)
@@ -530,7 +536,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         isGood = false;
         CLI_cliPrintf("\r\nSCS=30");
     }
-    else if (scs == 3)
+    else if (scs == 4)
     {
         isGood = false;
         CLI_cliPrintf("\r\nSCS=60");
@@ -580,7 +586,13 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     tdArgs.dl1 = dl;
     CLI_cliPrintf("\r\nPeriod1=0x%x", period);
     CLI_cliPrintf("\r\nDL1=0x%x", dl);
-
+    if(gUartTxBuffer[10]==1){
+        CLI_cliPrintf("\r\nType=TD-LTE", dl);
+    }
+    else{
+        CLI_cliPrintf("\r\nType=TD-5GNR", dl);
+    }
+    CLI_cliPrintf("\r\nVersion=0x%x", gUartTxBuffer[11]);
     if (isGood == false)
     {
         return;
@@ -592,27 +604,27 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         if (dl == 6214 || dl == 7214 || dl == 8214)
         {
             gFrame = 0;
-            CLI_cliPrintf("\r\nFrameFormat=0");
+            CLI_cliPrintf("\r\nFrameFormat=5");
         }
         if (dl == 6642 || dl == 7642 || dl == 8642)
         {
             gFrame = 1;
 
-            CLI_cliPrintf("\r\nFrameFormat=1");
+            CLI_cliPrintf("\r\nFrameFormat=6");
 
         }
         if (dl == 6714 || dl == 7714 || dl == 8714)
         {
             gFrame = 2;
 
-            CLI_cliPrintf("\r\nFrameFormat=2");
+            CLI_cliPrintf("\r\nFrameFormat=7");
 
         }
         if (dl == 6785 || dl == 7785 || dl == 8785)
         {
             gFrame = 3;
 
-            CLI_cliPrintf("\r\nFrameFormat=3");
+            CLI_cliPrintf("\r\nFrameFormat=8");
 
         }
         if (dl == 6857 || dl == 7857 || dl == 8857)
@@ -646,25 +658,25 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         {
             gFrame = 0;
 
-            CLI_cliPrintf("\r\nFrameFormat=0");
+            CLI_cliPrintf("\r\nFrameFormat=5");
         }
         if (dl == 1642 || dl == 2642 || dl == 3642)
         {
             gFrame = 1;
 
-            CLI_cliPrintf("\r\nFrameFormat=1");
+            CLI_cliPrintf("\r\nFrameFormat=6");
         }
         if (dl == 1714 || dl == 2714 || dl == 3714)
         {
             gFrame = 2;
 
-            CLI_cliPrintf("\r\nFrameFormat=2");
+            CLI_cliPrintf("\r\nFrameFormat=7");
         }
         if (dl == 1785 || dl == 2785 || dl == 3785)
         {
             gFrame = 3;
 
-            CLI_cliPrintf("\r\nFrameFormat=3");
+            CLI_cliPrintf("\r\nFrameFormat=8");
         }
         if (dl == 1857 || dl == 2857 || dl == 3857)
         {
@@ -703,7 +715,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     uint16_t holdover_time = hol_sec + (hol_min * 60);
     CLI_cliPrintf("\r\nHoldoverTime=0x%x", holdover_time);
 
-    return CRS_SUCCESS;
+    return ;
 
 
 }
@@ -713,10 +725,11 @@ CRS_retVal_t Tdd_setSyncMode(bool mode, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -741,15 +754,57 @@ CRS_retVal_t Tdd_setSCS(uint8_t scs, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
     Tdd_setRequest_t set = createRequest();
+    if(scs>=3){
+        scs = 4;
+    }
+    else if (scs == 0){
+        scs =1;
+    }
     set.scs = &scs;
+
+    uint8_t req[100] = {0};
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_setSs_pos(uint8_t ss_pos, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        TDD_cbArgs_t cbArgs;
+        cbArgs.arg0 = gUartTxBufferIdx;
+        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
+        _cbFn(cbArgs);
+        return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    uint8_t valid_pos[13] = {0, 2, 4, 8, 16, 20, 22, 30, 32, 36, 44, 48, 50};
+    int i;
+    bool valid = false;
+    for(i=0;i<13;i++){
+        if(valid_pos[i] == ss_pos){
+            valid = true;
+        }
+    }
+    if(!valid){
+        ss_pos = 0;
+    }
+    set.ss_pos = &ss_pos;
 
     uint8_t req[100] = {0};
     makeRequest(set, req);
@@ -764,10 +819,11 @@ CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -835,10 +891,11 @@ CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -907,10 +964,11 @@ static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame, uint8_t alloc
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -973,10 +1031,11 @@ CRS_retVal_t Tdd_setHolTime(uint8_t min, uint8_t sec, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -1002,10 +1061,11 @@ CRS_retVal_t Tdd_setTtg(int8_t * ttg_vals, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
@@ -1030,10 +1090,11 @@ CRS_retVal_t Tdd_setRtg(int8_t * rtg_vals, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
-        CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
         cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
