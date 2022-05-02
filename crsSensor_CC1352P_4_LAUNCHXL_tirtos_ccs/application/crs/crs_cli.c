@@ -1236,24 +1236,19 @@ static CRS_retVal_t CLI_unit(char *line)
 #ifndef CLI_SENSOR
 //        CRS_LOG(CRS_DEBUG,"Collector");
         CLI_cliPrintf("\r\ncollector");
-        char envFile[512] = {0};
+        char envFile[1024] = {0};
 
-                         CRS_retVal_t rspStatus = Nvs_treadVarsFile(envFile, 0);
-                         if (rspStatus == CRS_SUCCESS)
-                         {
-                             char* token;
-
-                                                      const char d[2] = "\n";
-                                                      token = strtok(envFile, d);
-
-                                                      while (token != NULL)
-                                                      {
-                                                          char * pEqual = strstr(token, "=");
-                                                          CLI_cliPrintf(", %s",pEqual+1 );
-                                                          token = strtok(NULL, d);
-                                                      }
-
-                         }
+        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+              if (rspStatus == CRS_SUCCESS){
+                  char* token;
+                  const char d[2] = "\n";
+                  token = strtok(envFile, d);
+                  while (token != NULL){
+                      char * pEqual = strstr(token, "=");
+                      CLI_cliPrintf(", %s",pEqual+1 );
+                      token = strtok(NULL, d);
+                  }
+              }
 
 
 
@@ -1276,25 +1271,20 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #else
         CLI_cliPrintf("\r\nsensor");
-        char envFile[512] = {0};
+        char envFile[1024] = {0};
 
-                                CRS_retVal_t rspStatus = Nvs_treadVarsFile(envFile, 0);
-                                if (rspStatus == CRS_SUCCESS)
-                                {
-                                    char* token;
-
-                                                                  const char d[2] = "\n";
-                                                                  token = strtok(envFile, d);
-
-                                                                  while (token != NULL)
-                                                                  {
-                                                                      char * pEqual = strstr(token, "=");
-                                                                      CLI_cliPrintf(", %s",pEqual+1 );
-                                                                      token = strtok(NULL, d);
-                                                                  }
-
-                                }
-
+        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+              if (rspStatus == CRS_SUCCESS){
+                  char* token;
+                  const char d[2] = "\n";
+                  token = strtok(envFile, d);
+                  while (token != NULL)
+                  {
+                    char * pEqual = strstr(token, "=");
+                    CLI_cliPrintf(", %s",pEqual+1 );
+                    token = strtok(NULL, d);
+                  }
+              }
 
         uint32_t left = 0, right = 0;
                bool rsp = true;
