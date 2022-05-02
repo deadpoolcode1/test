@@ -54,7 +54,7 @@ static CRS_retVal_t defaultVarFile(int fileIndex){
         if(Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS){
             gFileCache = Nvs_readFileWithMalloc(THRSH_FILENAME);
             if(gFileCache){
-                ret = createVarsFile(gFileCache+STRLEN_BYTES+1, fileIndex);
+                ret = createVarsFile(gFileCache, fileIndex);
             }
         }
         else{
@@ -65,7 +65,7 @@ static CRS_retVal_t defaultVarFile(int fileIndex){
         if(Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS){
             gFileCache = Nvs_readFileWithMalloc(ENV_FILENAME);
             if(gFileCache){
-                ret = createVarsFile(gFileCache+STRLEN_BYTES+1, fileIndex);
+                ret = createVarsFile(gFileCache, fileIndex);
             }
         }
         else{
