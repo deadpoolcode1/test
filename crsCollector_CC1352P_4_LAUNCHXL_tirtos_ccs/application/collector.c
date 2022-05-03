@@ -459,7 +459,7 @@ static uint16_t gTotalSmacPackts = 0;
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
-    CLI_cliPrintf("\r\ndataIndCB 0x%x", gTotalSmacPackts);
+//    CLI_cliPrintf("\r\ndataIndCB 0x%x", gTotalSmacPackts);
     gTotalSmacPackts++;
 
     if ((pDataInd != NULL) && (pDataInd->msdu.p != NULL)
