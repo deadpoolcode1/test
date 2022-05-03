@@ -14,8 +14,8 @@
 #include <ti/drivers/GPIO.h>
 
 #include "ti_drivers_config.h"
-#include "util_timer.h"
-#include "mac_util.h"
+#include "application/util_timer.h"
+#include "mac/mac_util.h"
 
 #include "crs_cli.h"
 
@@ -458,11 +458,11 @@ static void getInitStatus(const TDD_cbArgs_t _cbArgs)
     uint8_t detect = gUartTxBuffer[33];
     uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);
 
-    if (scs != 1 || pattern2 != 0x30 || sspos != 0x0 || (period != 5000 && period != 10000))
-    {
-        setFrameFormatAndAllocationMode(0,0,gFinalCbFn);
-                return;
-    }
+//    if (scs != 1 || pattern2 != 0x30 || sspos != 0x0 || (period != 5000 && period != 10000))
+//    {
+//        setFrameFormatAndAllocationMode(0,0,gFinalCbFn);
+//                return;
+//    }
     TDD_cbArgs_t cbArgs;
                    cbArgs.arg0 = gUartTxBufferIdx;
                    cbArgs.arg3 = gUartTxBuffer;
@@ -593,10 +593,10 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         CLI_cliPrintf("\r\nType=TD-5GNR", dl);
     }
     CLI_cliPrintf("\r\nVersion=0x%x", gUartTxBuffer[11]);
-    if (isGood == false)
-    {
-        return;
-    }
+//    if (isGood == false)
+//    {
+//        return;
+//    }
 
 
     if (period == 10000)
@@ -842,10 +842,10 @@ CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn)
         alloc=5;
     }
 
-    set.scs = &scs;
-    set.pattern2 = &pattern2;
-    set.ss_pos = &ss_pos;
-    set.detect = &detect;
+//    set.scs = &scs;
+//    set.pattern2 = &pattern2;
+//    set.ss_pos = &ss_pos;
+//    set.detect = &detect;
 
     uint8_t frame = gFrame;
 
@@ -909,10 +909,10 @@ CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
 
     Tdd_setRequest_t set = createRequest();
 
-    set.scs = &scs;
-    set.pattern2 = &pattern2;
-    set.ss_pos = &ss_pos;
-    set.detect = &detect;
+//    set.scs = &scs;
+//    set.pattern2 = &pattern2;
+//    set.ss_pos = &ss_pos;
+//    set.detect = &detect;
 
     uint8_t alloc = gAlloc;
 
@@ -982,10 +982,10 @@ static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame, uint8_t alloc
 
     Tdd_setRequest_t set = createRequest();
 
-    set.scs = &scs;
-    set.pattern2 = &pattern2;
-    set.ss_pos = &ss_pos;
-    set.detect = &detect;
+//    set.scs = &scs;
+//    set.pattern2 = &pattern2;
+//    set.ss_pos = &ss_pos;
+//    set.detect = &detect;
 
 
 
@@ -1113,6 +1113,29 @@ CRS_retVal_t Tdd_setRtg(int8_t * rtg_vals, TDD_cbFn_t _cbFn)
     gInnerCbFn = printStatus;
     sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
     return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_restart(TDD_cbFn_t _cbFn)
+{
+
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+        TDD_cbArgs_t cbArgs;
+        cbArgs.arg0 = gUartTxBufferIdx;
+        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.status = CRS_FAILURE;
+        _cbFn(cbArgs);
+        return CRS_FAILURE;
+    }
+
+    uint8_t commandRequest[11] = { 0x16, 0x16, 0x16, 0x16, 0xff, 0xff, 0x10, 0x0, 0x0, 0x52, 0x6f};
+    //makeRequest(set, req);
+
+    //gFinalCbFn = _cbFn;
+    //gInnerCbFn = printStatus;
+    //sendMsgAndGetStatus(commandRequest, 11, 0, tddGetStatusCallback);
+    return Tdd_writeString(commandRequest, 11);
+
 }
 
 static CRS_retVal_t sendMsgAndGetStatus(void * _buffer, size_t _sizeToSend,uint32_t bytesToRead ,TDD_cbFn_t _cbFn )

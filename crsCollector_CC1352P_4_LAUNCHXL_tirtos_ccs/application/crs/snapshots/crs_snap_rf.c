@@ -6,7 +6,7 @@
  */
 
 #include "crs_snap_rf.h"
-#include "util_timer.h"
+#include "application/util_timer.h"
 
 #include <ctype.h>
 #define READ_NEXT_REG_EV 0x1

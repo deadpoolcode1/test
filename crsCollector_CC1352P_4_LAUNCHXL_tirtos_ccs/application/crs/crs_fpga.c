@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "mac_util.h"
-#include "util_timer.h"
+#include "mac/mac_util.h"
+#include "application/util_timer.h"
 
 
 #include "crs_fpga.h"

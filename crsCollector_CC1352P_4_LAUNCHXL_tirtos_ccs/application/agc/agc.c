@@ -1,15 +1,15 @@
-#include "mac_util.h"
+#include "mac/mac_util.h"
 //#include "crs_nvs.h"
-#include "crs_thresholds.h"
+#include "application/crs/crs_thresholds.h"
 #include "scif/scif.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "crs.h"
+#include "application/crs/crs.h"
 #include "agc.h"
-#include "crs_tdd.h"
-#include "util_timer.h"
-#include "crs_cli.h"
+#include "application/crs/crs_tdd.h"
+#include "application/util_timer.h"
+#include "application/crs/crs_cli.h"
 
 #include <ti/drivers/utils/Random.h>
 #include <ti/devices/DeviceFamily.h>

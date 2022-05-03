@@ -292,7 +292,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <sccode name="event0" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
 if(state.tddMode == 2){
     evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
-    //evhSetupTimer0Trigger(0, 100, 2);
+    evhSetupTimer0Trigger(0, 100, 2);
 }else{
     //if(state.tddMode == 0){
     //    state.tddMode = 1;
@@ -351,7 +351,7 @@ if(state.tddMode == 2){
             // Select channel
             // a = channel
             if(cfg.unitType == 0){
-               adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
+                adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
             }
@@ -526,7 +526,7 @@ if(state.tddMode == 2){
     //fwScheduleTask(1);
     if(state.tddMode == 2){
         evhSetupGpioTrigger(2, AUXIO_I_TDD_SYNCH, 0, EVH_GPIO_TRIG_ON_EDGE);
-        //evhSetupTimer0Trigger(0, 100, 2);
+        evhSetupTimer0Trigger(0, 100, 2);
     }else{
         evhSetupTimer0Trigger(2, 1, 2);
     }
@@ -582,7 +582,7 @@ if(state.tddMode == 2){
             // Select channel
             // a = channel
             if(cfg.unitType == 0){
-               adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
+                adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
             }
@@ -759,7 +759,7 @@ if(state.tddMode == 2){
     if(state.tddMode == 2){
         evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
         //evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
-        //evhSetupTimer0Trigger(0, 100, 2);
+        evhSetupTimer0Trigger(0, 100, 2);
     }else{
         evhSetupTimer0Trigger(0, 1, 2);
     }
@@ -771,7 +771,7 @@ if(state.tddMode == 2){
         <sccode name="initialize" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
 if(state.tddMode == 2){
     evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-    //evhSetupTimer0Trigger(0, 100, 2);
+    evhSetupTimer0Trigger(0, 100, 2);
 }else {
     //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
     //evhSetupTimer0CustomTrigger(1);
