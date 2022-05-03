@@ -66,8 +66,9 @@ static uint16_t smacEvents = 0;
 static volatile bool gIsDoneSendingAck = false;
 
 static Smac_smAckContent_t gSmAckContentInfo = { 0 };
+static uint16_t gTotalSmacPackts = 0;
 
-static Mac_smStateCodes_t gSmacStateArray[100] = { 0 };
+//static Mac_smStateCodes_t gSmacStateArray[100] = { 0 };
 static uint32_t gSmacStateArrayIdx = 0;
 
 static uint8_t gMsduHandle = 0;
@@ -120,6 +121,7 @@ void Smac_process()
 
     if (smacEvents & SMAC_RECIVED_ACK_EVT)
     {
+        gTotalSmacPackts++;
         macMcpsDataCnf_t rsp = { 0 };
         MAC_createDataCnf(&rsp, gMsduHandle, ApiMac_status_success);
         MAC_sendCnfToApp(&rsp);
@@ -173,8 +175,8 @@ void Smac_sendContent(MAC_crsPacket_t *pkt, uint8_t msduHandle)
 void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status)
 {
-    gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVE_CONTENT;
-    gSmacStateArrayIdx++;
+//    gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVE_CONTENT;
+//    gSmacStateArrayIdx++;
     if (status == EasyLink_Status_Success)
     {
 
@@ -215,8 +217,8 @@ void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
     else
     {
         smacEraseCollector();
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
@@ -227,8 +229,8 @@ static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
     if (status == EasyLink_Status_Success)
     {
 
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_CONTENT_AGAIN;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_CONTENT_AGAIN;
+//        gSmacStateArrayIdx++;
 //check seqRecived num- if it is the smaller by 1 from the seqSent in the struct of CollectorLink_collectorLinkInfo_t then:
         //send ack from  Node_pendingPckts_t strcut in the field 'content'
         CollectorLink_collectorLinkInfo_t collectorLink;
@@ -245,8 +247,8 @@ static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
@@ -255,8 +257,8 @@ static void finishedSendingAckCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_ACK;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_ACK;
+//        gSmacStateArrayIdx++;
 //start timer that process content, with cb 'processContentTimerCb' that raises event 'MAC_TASK_CONTENT_READY'
 //        Clock_setFunc(gclkMacTaskTimer, processContentTimerCb, NULL);
 //        Clock_start(gclkMacTaskTimer);
@@ -276,8 +278,8 @@ static void finishedSendingAckCb(EasyLink_Status status)
     else
     {
         smacEraseCollector();
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
@@ -286,8 +288,8 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT;
+//        gSmacStateArrayIdx++;
 //Increment the seqSent num in the CollectorLink_collectorLinkInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -304,8 +306,8 @@ static void finishedSendingSensorContentCb(EasyLink_Status status)
     else
     {
         smacEraseCollector();
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
@@ -316,8 +318,8 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
     CollectorLink_stopTimer();
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_ACK_ON_CONTENT;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_ACK_ON_CONTENT;
+//        gSmacStateArrayIdx++;
 //Increment the seqRecevied num in the Node_nodeInfo_t struct
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -331,8 +333,8 @@ static void recievedAckOnContentCb(EasyLink_RxPacket *rxPacket,
     else
     {
         smacEraseCollector();
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 
 }
@@ -349,9 +351,9 @@ static void finishedSendingSensorContentAgainCb(EasyLink_Status status)
 
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] =
-                SMAC_FINISHED_SENDING_RETRY_CONTENT;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] =
+//                SMAC_FINISHED_SENDING_RETRY_CONTENT;
+//        gSmacStateArrayIdx++;
 //enterRx with cb of 'recievedAckOnContentCb'
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -363,8 +365,8 @@ static void finishedSendingSensorContentAgainCb(EasyLink_Status status)
     }
     else
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
 
     }
 }
@@ -386,48 +388,48 @@ static void smacEraseCollector()
 
 void Smac_printSensorStateMachine()
 {
-    int i = 0;
-    for (i = 0; i < gSmacStateArrayIdx; ++i)
-    {
-        switch (gSmacStateArray[i])
-        {
-        case SMAC_RX_IDLE:
-            CLI_cliPrintf("\r\nSMAC_RX_IDLE");
-            break;
-        case SMAC_RECIEVE_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_RECIEVE_CONTENT");
-            break;
-        case SMAC_SENDING_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_SENDING_CONTENT");
-
-            break;
-        case SMAC_FINISHED_SENDING_ACK:
-            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_ACK");
-
-            break;
-        case SMAC_FINISHED_SENDING_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT");
-
-            break;
-        case SMAC_RECIEVED_ACK_ON_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_RECIEVED_ACK_ON_CONTENT");
-            break;
-        case SMAC_TIMEOUT_ON_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_TIMEOUT_ON_CONTENT");
-            break;
-
-        case SMAC_RECIEVED_CONTENT_AGAIN:
-            CLI_cliPrintf("\r\nSMAC_RECIEVED_CONTENT_AGAIN");
-            break;
-
-        case SMAC_FINISHED_SENDING_RETRY_CONTENT:
-            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_RETRY_CONTENT");
-            break;
-        case SMAC_ERROR:
-            CLI_cliPrintf("\r\nSMAC_ERROR");
-            break;
-        default:
-            break;
-        }
-    }
+//    int i = 0;
+//    for (i = 0; i < gSmacStateArrayIdx; ++i)
+//    {
+//        switch (gSmacStateArray[i])
+//        {
+//        case SMAC_RX_IDLE:
+//            CLI_cliPrintf("\r\nSMAC_RX_IDLE");
+//            break;
+//        case SMAC_RECIEVE_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_RECIEVE_CONTENT");
+//            break;
+//        case SMAC_SENDING_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_SENDING_CONTENT");
+//
+//            break;
+//        case SMAC_FINISHED_SENDING_ACK:
+//            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_ACK");
+//
+//            break;
+//        case SMAC_FINISHED_SENDING_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT");
+//
+//            break;
+//        case SMAC_RECIEVED_ACK_ON_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_RECIEVED_ACK_ON_CONTENT");
+//            break;
+//        case SMAC_TIMEOUT_ON_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_TIMEOUT_ON_CONTENT");
+//            break;
+//
+//        case SMAC_RECIEVED_CONTENT_AGAIN:
+//            CLI_cliPrintf("\r\nSMAC_RECIEVED_CONTENT_AGAIN");
+//            break;
+//
+//        case SMAC_FINISHED_SENDING_RETRY_CONTENT:
+//            CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_RETRY_CONTENT");
+//            break;
+//        case SMAC_ERROR:
+//            CLI_cliPrintf("\r\nSMAC_ERROR");
+//            break;
+//        default:
+//            break;
+//        }
+//    }
 }

@@ -149,7 +149,7 @@ static void sendAssocReq()
 
 }
 
- void Smas_waitForBeaconCb(EasyLink_RxPacket *rxPacket,
+void Smas_waitForBeaconCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status)
 {
 
@@ -190,8 +190,9 @@ static void sendAssocReq()
     }
     else
     {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-//        gSmacStateArrayIdx++;
+        CollectorLink_eraseCollector();
+
+                MAC_moveToBeaconState();
     }
 }
 
@@ -233,7 +234,9 @@ static void finishedSendingAssocReqCb(EasyLink_Status status)
 
     else
     {
+        CollectorLink_eraseCollector();
 
+        MAC_moveToBeaconState();
         CP_CLI_cliPrintf("\r\nWTF");
     }
 }
@@ -277,9 +280,9 @@ static void recivedAsocRspCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-//        gSmacStateArrayIdx++;
-        //        gCbCcaFailed();
+        CollectorLink_eraseCollector();
+
+                MAC_moveToBeaconState();
 
     }
 }
@@ -308,9 +311,9 @@ static void finishedSendingAssocRspAckCb(EasyLink_Status status)
 
     else
     {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-//        gSmacStateArrayIdx++;
-        //        gCbCcaFailed();
+        CollectorLink_eraseCollector();
+
+                MAC_moveToBeaconState();
 
     }
 }

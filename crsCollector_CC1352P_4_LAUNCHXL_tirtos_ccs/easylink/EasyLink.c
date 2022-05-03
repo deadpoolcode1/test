@@ -1046,13 +1046,13 @@ EasyLink_Status EasyLink_init(EasyLink_Params *params)
     EasyLink_cmdPropRxAdv.condition.nSkip = 0x0;
     EasyLink_cmdPropRxAdv.pktConf.bFsOff = 0x0;
     EasyLink_cmdPropRxAdv.pktConf.bRepeatOk = 0x0;
-    EasyLink_cmdPropRxAdv.pktConf.bRepeatNok = 0x0;
+    EasyLink_cmdPropRxAdv.pktConf.bRepeatNok = 0x1;
     EasyLink_cmdPropRxAdv.pktConf.bUseCrc = 0x1;
     EasyLink_cmdPropRxAdv.pktConf.bCrcIncSw = 0x0;
     EasyLink_cmdPropRxAdv.pktConf.endType = 0x0;
     EasyLink_cmdPropRxAdv.pktConf.filterOp = !(EASYLINK_ENABLE_ADDR_FILTERING);
-    EasyLink_cmdPropRxAdv.rxConf.bAutoFlushIgnored = 0x0;
-    EasyLink_cmdPropRxAdv.rxConf.bAutoFlushCrcErr = 0x0;
+    EasyLink_cmdPropRxAdv.rxConf.bAutoFlushIgnored = 0x1;
+    EasyLink_cmdPropRxAdv.rxConf.bAutoFlushCrcErr = 0x1;
     EasyLink_cmdPropRxAdv.rxConf.bIncludeHdr = 0x1;
     EasyLink_cmdPropRxAdv.rxConf.bIncludeCrc = 0x0;
     EasyLink_cmdPropRxAdv.rxConf.bAppendRssi = 0x0;

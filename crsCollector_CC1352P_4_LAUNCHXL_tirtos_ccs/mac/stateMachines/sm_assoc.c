@@ -32,7 +32,6 @@
  Constants and definitions
  *****************************************************************************/
 #define SMAS_ADDED_NEW_NODE_EVT 0x0001
-#define SMAS_SEND_BEACON_EVT 0x0002
 #define SMAS_DEBUG_EVT 0x0004
 
 //SMAS_DEBUG_EVT
@@ -139,39 +138,10 @@ void Smas_process()
         Util_clearEvent(&smasEvents, SMAS_DEBUG_EVT);
     }
 
-    if (smasEvents & SMAS_SEND_BEACON_EVT)
-    {
-        //TODO send beacon pkt with txdone cb that will rx on PAN ID.
-        sendBeacon();
-        Util_clearEvent(&smasEvents, SMAS_SEND_BEACON_EVT);
-    }
 
 }
 
-bool Smas_isNeedToSendBeacon()
-{
-    if (smasEvents & SMAS_SEND_BEACON_EVT)
-    {
-        return true;
-    }
-    return false;
 
-}
-
-static void sendBeacon()
-{
-    MAC_crsBeaconPacket_t beaconPkt = { 0 };
-    beaconPkt.commandId = MAC_COMMAND_BEACON;
-    beaconPkt.panId = collectorPib.panId;
-    memcpy(beaconPkt.srcAddr, collectorPib.mac, 8);
-    beaconPkt.srcAddrShort = collectorPib.shortAddr;
-    beaconPkt.discoveryTime = CRS_BEACON_INTERVAL;
-    uint8_t pBuf[200] = { 0 };
-    buildBeaconBufFromPkt(&beaconPkt, pBuf);
-
-    TX_sendPacketBuf(pBuf, sizeof(MAC_crsBeaconPacket_t), NULL,
-                     smasFinishedSendingBeaconCb);
-}
 
 static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 {
@@ -310,11 +280,5 @@ static void buildAssocReqPktFromBuf(MAC_crsAssocReqPacket_t *beaconPkt,
 //xdc_UArg
 //TODO: CB OF BEACON TIMER: RAISE SMAS_SEND_BEACON_EVT. only if the state now is rx_idle. so change to BEACON state.
 
-static void beaconClockCb(xdc_UArg arg)
-{
-    Util_setEvent(&smasEvents, SMAS_SEND_BEACON_EVT);
 
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(macSem);
-}
 

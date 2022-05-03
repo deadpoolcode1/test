@@ -65,9 +65,11 @@ static void *macSem = NULL;
 
 static uint16_t smacEvents = 0;
 
+static uint16_t gTotalSmacPackts = 0;
+
 static Smac_smAckContent_t gSmAckContentInfo = { 0 };
 
-static Mac_smStateCodes_t gSmacStateArray[100] = { 0 };
+static uint8_t gSmacStateArray[100] = { 0 };
 static uint32_t gSmacStateArrayIdx = 0;
 
 static uint8_t gMsduHandle = 0;
@@ -133,6 +135,7 @@ void Smac_process()
 
     if (smacEvents & SMAC_RECIVED_CONTENT_EVT)
     {
+        gTotalSmacPackts++;
         macMcpsDataInd_t rsp = {0};
         MAC_createDataInd(&rsp, &gSmAckContentInfo.pkt, ApiMac_status_success);
         MAC_sendDataIndToApp(&rsp);
@@ -191,14 +194,14 @@ static void smacFinishedSendingContentCb(EasyLink_Status status)
     //content sent so wait for ack
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT;
+//        gSmacStateArrayIdx++;
         Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
         Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend + 1);
         //10us per tick so for 5ms we need 500 ticks
 //        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
-        Node_setTimeout(gSmAckContentInfo.nodeMac, timeoutCb, 100000);
+        Node_setTimeout(gSmAckContentInfo.nodeMac, timeoutCb, 10000);
         Node_startTimer(gSmAckContentInfo.nodeMac);
 
         RX_enterRx(smacReceivedContentAckCb, collectorPib.mac);
@@ -206,9 +209,11 @@ static void smacFinishedSendingContentCb(EasyLink_Status status)
 
     else
     {
+        gSmacStateArray[0] = 6;
+
         smacEraseNode();
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
         //        gCbCcaFailed();
 
     }
@@ -219,8 +224,8 @@ static void smacFinishedSendingContentAgainCb(EasyLink_Status status)
     //content sent so wait for ack
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT_AGAIN;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT_AGAIN;
+//        gSmacStateArrayIdx++;
         Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
 //        Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend);
@@ -233,8 +238,8 @@ static void smacFinishedSendingContentAgainCb(EasyLink_Status status)
 
     else
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
         //        gCbCcaFailed();
 
     }
@@ -242,6 +247,8 @@ static void smacFinishedSendingContentAgainCb(EasyLink_Status status)
 
 static void timeoutCb(void *arg)
 {
+    gSmacStateArray[1] = 1;
+
     EasyLink_abort();
 
 }
@@ -302,8 +309,8 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
                 && pktReceived.seqSent == node.seqRcv
                 && memcmp(node.mac, pktReceived.srcAddr, 8) == 0)
         {
-            gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT_ACK;
-            gSmacStateArrayIdx++;
+//            gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT_ACK;
+//            gSmacStateArrayIdx++;
             //TODO add to seq.
             Node_setSeqRcv(gSmAckContentInfo.nodeMac, node.seqRcv + 1);
 
@@ -323,61 +330,23 @@ static void smacReceivedContentAckCb(EasyLink_RxPacket *rxPacket,
         }
         else
         {
+            gSmacStateArray[0] = 3;
+
             smacEraseNode();
 
         }
-        //we missed the ack and got the content. so only send ack on content
-//        else if (pktReceived.commandId == MAC_COMMAND_DATA
-//                && pktReceived.seqSent == node.seqRcv + 1)
-//        {
-//            gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT;
-//            gSmacStateArrayIdx++;
-//            Node_setSeqRcv(gSmAckContentInfo.nodeMac, node.seqRcv + 2);
-//
-//            MAC_crsPacket_t pktRetAck = { 0 };
-//            pktRetAck.commandId = MAC_COMMAND_ACK;
-//
-//            memcpy(pktRetAck.dstAddr, node.mac, 8);
-//
-//            memcpy(pktRetAck.srcAddr, collectorPib.mac, 8);
-//
-//            pktRetAck.seqSent = node.seqSend;
-//            pktRetAck.seqRcv = node.seqRcv + 2;
-//
-//            pktRetAck.isNeedAck = 0;
-//
-//            pktRetAck.len = 0;
-//
-//            uint8_t pBuf[100] = { 0 };
-//            TX_buildBufFromSrct(&pktRetAck, pBuf);
-//            Node_pendingPckts_t pendingPacket = { 0 };
-//            memcpy(pendingPacket.content, pBuf, 100);
-//            Node_setPendingPckts(gSmAckContentInfo.nodeMac, &pendingPacket);
-//
-//            TX_sendPacket(&pktRetAck, smacNotifySuccessCb);
-//            RX_buildStructPacket(&gSmAckContentInfo.pkt, rxPacket->payload);
-//            memcpy(gSmAckContentInfo.contentRsp, rxPacket->payload,
-//                   rxPacket->len);
-//            gSmAckContentInfo.contentRspLen = rxPacket->len;
-//            gSmAckContentInfo.contentRspRssi = rxPacket->rssi;
-//
-//            Util_setEvent(&smacEvents, SMAC_RECIVED_ACK_EVT);
-//            Util_setEvent(&smacEvents, SMAC_RECIVED_CONTENT_EVT);
-//
-////            SMAC_RECIVED_CONTENT_EVT
-//            /* Wake up the application thread when it waits for clock event */
-//            Semaphore_post(macSem);
-//        }
 
     }
 
     //if timeout then retransmit
     else
     {
+        gSmacStateArray[0] = 4;
+
         smacEraseNode();
 
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
 
     }
 }
@@ -392,12 +361,14 @@ static void smacRecivedContentCb(EasyLink_RxPacket *rxPacket,
         RX_buildStructPacket(&gSmAckContentInfo.pkt, rxPacket->payload);
         if ( memcmp(gSmAckContentInfo.nodeMac, gSmAckContentInfo.pkt.srcAddr, 8) != 0)
         {
+            gSmacStateArray[0] = 2;
+
             smacEraseNode();
             return;
         }
 
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT;
+//        gSmacStateArrayIdx++;
 
 
 //        memcpy(gSmAckContentInfo.contentRsp, rxPacket->payload, rxPacket->len);
@@ -439,10 +410,12 @@ static void smacRecivedContentCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
+        gSmacStateArray[0] = 1;
+
         smacEraseNode();
 
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
@@ -450,8 +423,8 @@ static void smacFinishedSendingContentAckCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT_ACK;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT_ACK;
+//        gSmacStateArrayIdx++;
 
         Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
@@ -469,10 +442,11 @@ static void smacFinishedSendingContentAckCb(EasyLink_Status status)
     }
     else
     {
+        gSmacStateArray[0] = 0;
         smacEraseNode();
 
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 
 }
@@ -481,8 +455,8 @@ static void smacFinishedSendingContentAckAgainCb(EasyLink_Status status)
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT_ACK;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_FINISHED_SENDING_CONTENT_ACK;
+//        gSmacStateArrayIdx++;
 
         Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
@@ -495,8 +469,8 @@ static void smacFinishedSendingContentAckAgainCb(EasyLink_Status status)
     }
     else
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 
 }
@@ -506,8 +480,8 @@ static void smacRecivedContentAgainCb(EasyLink_RxPacket *rxPacket,
 {
     if (status == EasyLink_Status_Success)
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT_AGAIN;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIVED_CONTENT_AGAIN;
+//        gSmacStateArrayIdx++;
         Node_nodeInfo_t node = { 0 };
         Node_getNode(gSmAckContentInfo.nodeMac, &node);
 
@@ -535,8 +509,8 @@ static void smacRecivedContentAgainCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
-        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-        gSmacStateArrayIdx++;
+//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
+//        gSmacStateArrayIdx++;
     }
 }
 
