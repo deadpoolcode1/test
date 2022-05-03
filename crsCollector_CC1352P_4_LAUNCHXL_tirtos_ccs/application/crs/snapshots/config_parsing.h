@@ -8,10 +8,10 @@
 #ifndef APPLICATION_CRS_SNAPSHOTS_CONFIG_PARSING_H_
 #define APPLICATION_CRS_SNAPSHOTS_CONFIG_PARSING_H_
 
-#include "crs_cli.h"
-#include "crs_nvs.h"
-#include "crs.h"
-#include "crs_fpga.h"
+#include "application/crs/crs_cli.h"
+#include "application/crs/crs_nvs.h"
+#include "application/crs/crs.h"
+#include "application/crs/crs_fpga.h"
 #include "crs_snap_rf.h"
 #include <stdio.h>
 #include <string.h>

@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "crs_global_defines.h"
-#include "crs_cli.h"
+#include "application/crs/crs_cli.h"
 #include "easylink/EasyLink.h"
 #include <ti/drivers/PIN.h>
 

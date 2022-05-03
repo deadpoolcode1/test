@@ -14,8 +14,8 @@
 #include <ti/drivers/GPIO.h>
 
 #include "ti_drivers_config.h"
-#include "util_timer.h"
-#include "mac_util.h"
+#include "application/util_timer.h"
+#include "mac/mac_util.h"
 
 #include "crs_cli.h"
 

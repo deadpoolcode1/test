@@ -31,29 +31,29 @@
 #include "crs_global_defines.h"
 
 
-#include "util_timer.h"
-#include "api_mac.h"
+#include "application/util_timer.h"
+#include "mac/api_mac.h"
 
 #include "crs.h"
 
 #ifndef CLI_SENSOR
-#include "collector.h"
+#include "application/collector.h"
 #else
 #include "sensor.h"
 #endif
 
 #include "crs_cli.h"
-#include "crs_snapshot.h"
+#include "application/crs/snapshots/crs_snapshot.h"
 #include "crs_nvs.h"
 #include "crs_fpga.h"
 //#include "application/agc/agc.h"
-#include "config_parsing.h"
-#include "crs_snap_rf.h"
-#include "crs_script_dig.h"
+#include "application/crs/snapshots/config_parsing.h"
+#include "application/crs/snapshots/crs_snap_rf.h"
+#include "application/crs/snapshots/crs_script_dig.h"
 
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
-#include "agc/agc.h"
+#include "application/agc/agc.h"
 
 #define CLI_ESC_UP              "\033[A"
 #define CLI_ESC_DOWN            "\033[B"

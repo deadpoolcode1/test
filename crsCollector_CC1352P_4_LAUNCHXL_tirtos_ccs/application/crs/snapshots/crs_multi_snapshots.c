@@ -10,10 +10,10 @@
 #include <stdint.h>
 #include <ti/sysbios/knl/Semaphore.h>
 #include "ti_drivers_config.h"
-#include "crs.h"
-#include "crs_nvs.h"
+#include "application/crs/crs.h"
+#include "application/crs/crs_nvs.h"
 #include "config_parsing.h"
-#include "mac_util.h"
+#include "mac/mac_util.h"
 #include "crs_snap_rf.h"
 #include "crs_script_dig.h"
 

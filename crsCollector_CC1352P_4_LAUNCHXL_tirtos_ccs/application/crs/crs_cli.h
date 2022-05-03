@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include "crs.h"
 //#include <time.h>
-#include "api_mac.h"
+#include "mac/api_mac.h"
 
 CRS_retVal_t CLI_init();
 CRS_retVal_t CLI_processCliUpdate(char* line, ApiMac_sAddr_t *pDstAddr );

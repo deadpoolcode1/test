@@ -21,10 +21,10 @@
 #include <ti/sysbios/knl/Clock.h>
 
 #include "sm_assoc.h"
-#include "node.h"
-#include "crs_tx.h"
-#include "crs_rx.h"
-#include "mac_util.h"
+#include "mac/node.h"
+#include "mac/crs_tx.h"
+#include "mac/crs_rx.h"
+#include "mac/mac_util.h"
 #include "cp_cli.h"
 #include "easylink/EasyLink.h"
 

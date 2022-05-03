@@ -63,8 +63,8 @@
 #include "mac/macTask.h"
 #include "application/collector.h"
 #include "cp_cli.h"
-#include "crs_cli.h"
-#include "mediator.h"
+#include "application/crs/crs_cli.h"
+#include "mac/mediator.h"
 
 
 
