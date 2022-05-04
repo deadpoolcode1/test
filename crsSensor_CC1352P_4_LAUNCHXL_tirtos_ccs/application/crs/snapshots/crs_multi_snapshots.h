@@ -8,9 +8,9 @@
 #ifndef APPLICATION_CRS_SNAPSHOTS_CRS_MULTI_SNAPSHOTS_H_
 #define APPLICATION_CRS_SNAPSHOTS_CRS_MULTI_SNAPSHOTS_H_
 
-#include "crs_fpga.h"
+#include "application/crs/crs_fpga.h"
 #include "crs_snapshot.h"
-#include "crs.h"
+#include "application/crs/crs.h"
 #include "config_parsing.h"
 
 CRS_retVal_t MultiFiles_multiFilesInit(void *sem);

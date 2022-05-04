@@ -37,6 +37,7 @@ CRS_retVal_t Tdd_setHolTime(uint8_t min, uint8_t sec, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setTtg(int8_t * ttg_vals, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setRtg(int8_t * rtg_vals, TDD_cbFn_t _cbFn);
 
+CRS_retVal_t Tdd_restart(TDD_cbFn_t _cbFn);
 typedef struct {
     uint16_t period;
     uint16_t dl1;

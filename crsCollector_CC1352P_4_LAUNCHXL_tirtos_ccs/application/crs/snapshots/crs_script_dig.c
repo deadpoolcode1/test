@@ -320,7 +320,7 @@ static CRS_retVal_t runLine(char *line)
                 const FPGA_cbArgs_t cbArgs;
                 gCbFn(cbArgs);
                 Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-                return;
+                return CRS_SUCCESS;
             }
         }
     }

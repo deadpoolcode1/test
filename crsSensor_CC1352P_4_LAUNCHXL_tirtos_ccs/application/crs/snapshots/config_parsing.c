@@ -6,7 +6,7 @@
  */
 #include "config_parsing.h"
 #include <ti/sysbios/knl/Semaphore.h>
-#include "crs_fpga.h"
+#include "application/crs/crs_fpga.h"
 #include "crs_convert_snapshot.h"
 #include "crs_multi_snapshots.h"
 

@@ -13,11 +13,11 @@
 #include <stdint.h>
 #include <ti/sysbios/knl/Semaphore.h>
 #include "crs_convert_snapshot.h"
-#include "mac_util.h"
+#include "mac/mac_util.h"
 
-#include "crs_cli.h"
-#include "crs_nvs.h"
-#include "crs_fpga.h"
+#include "application/crs/crs_cli.h"
+#include "application/crs/crs_nvs.h"
+#include "application/crs/crs_fpga.h"
 /* Driver Header files */
 #include <ti/drivers/NVS.h>
 
