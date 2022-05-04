@@ -170,6 +170,10 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
         return CRS_FAILURE;
     }
 
+    #ifdef CRS_CB
+        GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, 0x1f | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
+    #endif
+
     {
         // General UART setup
         UART_init();
