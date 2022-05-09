@@ -28,6 +28,7 @@
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "easylink/EasyLink.h"
+#include "application/crs/crs_alarms.h"
 
 /******************************************************************************
  Constants and definitions
@@ -421,10 +422,10 @@ static void updateRssiStrct(int8_t rssi)
 
     if (gRssiStrct.rssiAvg > maxCableLoss)
     {
-        CRS_setAlarm(MaxCableLoss);
+        Alarms_setAlarm(MaxCableLoss);
 
     }else{
-        CRS_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }
