@@ -67,6 +67,7 @@ void Ssf_processCliUpdate();
 
 extern Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg);
 
+void Ssf_crsInitScript();
 
 extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
                               Llc_netInfo_t  *pParentInfo);

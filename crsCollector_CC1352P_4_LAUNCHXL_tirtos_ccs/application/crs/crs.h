@@ -58,44 +58,16 @@ typedef enum CRS_chipType
 
 #define NAMEVALUE_NAME_SZ 30
 #define NAME_VALUES_SZ 10
-#define ALARMS_NUM 8
+
 typedef struct CRS_nameValue
 {
     char name[NAMEVALUE_NAME_SZ];
     int32_t value;
 } CRS_nameValue_t;
 
-typedef enum CRS_alarmType
-{
-    DLMaxInputPower,
-    ULMaxOutputPower,
-    MaxCableLoss,
-    SystemTemperature,
-    ULMaxInputPower,
-    DLMaxOutputPower
-} CRS_alarmType_t;
-
-typedef enum CRS_alarmMode
-{
-    ALARM_INACTIVE,
-    ALARM_ACTIVE,
-    ALARM_STICKY
-} CRS_alarmMode_t;
-
-#define ALARM_ACTIVE_BIT_LOCATION 0
-#define ALARM_STICKY_BIT_LOCATION 1
-
-
-void CRS_setTemperatureHigh(int16_t temperature);
-void CRS_setTemperatureLow(int16_t temperature);
-
-void CRS_printAlarms();
-CRS_retVal_t CRS_setAlarm(CRS_alarmType_t alarmType);
-CRS_retVal_t CRS_clearAlarm(CRS_alarmType_t alarmType, CRS_alarmMode_t alarmMode);
 
 void *CRS_malloc(uint16_t size);
 void CRS_free(void *ptr);
-void CRS_getTemperature(int16_t* currentTemperature);
 void CRS_init();
 
 #endif /* APPLICATION_CRS_CRS_H_ */

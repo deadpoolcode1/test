@@ -12,22 +12,23 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "api_mac.h"
+#include "mac/api_mac.h"
 #include "sensor.h"
 #include "smsgs.h"
 #include "mac/api_mac.h"
 #include "crs/crs_cli.h"
 #include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
-#include "crs_snapshot.h"
-#include "config_parsing.h"
-#include "crs_multi_snapshots.h"
-#include "crs_snap_rf.h"
-#include "crs_script_dig.h"
+#include "application/crs/snapshots/crs_snapshot.h"
+#include "application/crs/snapshots/config_parsing.h"
+#include "application/crs/snapshots/crs_multi_snapshots.h"
+#include "application/crs/snapshots/crs_snap_rf.h"
+#include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "easylink/EasyLink.h"
+#include "application/crs/crs_alarms.h"
 
 /******************************************************************************
  Constants and definitions
@@ -100,7 +101,9 @@ static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16
                     uint8_t *pData);
 
 static void updateRssiStrct(int8_t rssi);
-
+static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
 /******************************************************************************
  Callback tables
  *****************************************************************************/
@@ -153,7 +156,7 @@ void Sensor_init()
     Tdd_initSem(sem);
     CRS_init();
        Agc_init();
-
+       Ssf_crsInitScript();
 }
 
 void Sensor_process(void)
@@ -182,10 +185,72 @@ void Sensor_process(void)
     Fpga_process();
     DIG_process();
     Tdd_process();
+    Alarms_process();
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
     }
+}
+
+
+void Ssf_crsInitScript()
+{
+//    CRS_LOG(CRS_DEBUG, "Running script");
+
+    CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
+    if (retStatus != CRS_SUCCESS)
+    {
+        FPGA_cbArgs_t cbArgs;
+        CLI_cliPrintf("\r\nUnable to run init script");
+
+        fpgaCrsDoneCallback(cbArgs);
+    }
+}
+
+
+static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
+{
+//    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
+    CRS_retVal_t retStatus = Config_runConfigFile("flat",
+                                                  fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run flat file");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
+                                                NULL, fpgaCrsDoneCallback);
+//    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CLI_startREAD();
+
+//    if (CONFIG_AUTO_START)
+//    {
+//        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
+//
+//        /* Start the device */
+//        Util_setEvent(&Collector_events, COLLECTOR_START_EVT);
+//        Semaphore_post(collectorSem);
+//
+//    }
 }
 
 void Ssf_processCliUpdate()
@@ -421,10 +486,10 @@ static void updateRssiStrct(int8_t rssi)
 
     if (gRssiStrct.rssiAvg > maxCableLoss)
     {
-        CRS_setAlarm(MaxCableLoss);
+        Alarms_setAlarm(MaxCableLoss);
 
     }else{
-        CRS_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }

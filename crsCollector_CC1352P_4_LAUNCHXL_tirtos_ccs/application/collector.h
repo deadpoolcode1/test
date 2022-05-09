@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "mac/api_mac.h"
 #include "crs_global_defines.h"
+#include "application/crs/crs_alarms.h"
 
 #define MAX_DEVICES_IN_NETWORK 4
 #define CSF_INVALID_SHORT_ADDR 0xffff
@@ -22,6 +23,7 @@
 #define COLLECTOR_START_EVT               0x0001
 #define COLLECTOR_UI_INPUT_EVT               0x0002
 #define COLLECTOR_SEND_MSG_EVT 0x0004
+
 //COLLECTOR_UI_INPUT_EVT
 
 #define RSSI_ARR_SIZE 10
@@ -152,6 +154,7 @@ extern void Collector_process(void);
 void Csf_processCliUpdate();
 void Csf_processCliSendMsgUpdate();
 bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo);
+void Csf_crsInitScript();
 
 
 extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t* line);

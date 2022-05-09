@@ -21,7 +21,7 @@
 #include "mac/collectorLink.h"
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
-#include "sm_content_ack.h"
+#include "mac/stateMachines/sm_content_ack.h"
 
 #define CUI_NUM_UART_CHARS 1024
 
