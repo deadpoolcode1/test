@@ -18,7 +18,7 @@
 #include "mac/mac_util.h"
 
 #include "crs_cli.h"
-
+#include "crs_fpga.h"
 #define CRC_TAB_SIZE 256
 #define WIDTH (8 * sizeof(uint16_t))
 #define LOCK_TIMEOUT 300000 // time to wait between each status request to TDD when timeout status is on
@@ -74,6 +74,7 @@ static uint16_t crcTable [CRC_TAB_SIZE] =
 #define TDD_STATUS_RSP_EV 0x2
 #define TDD_SET_RSP_EV 0x4
 #define TDD_OPEN_FAIL_EV 0x8
+#define TDD_START_EV 0x10
 
 static uint8_t gStatusCommand[STATUS_REQ_NUM_BYTES] = {0x16, 0x16, 0x16, 0x16, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x11, 0x0C};
 
@@ -125,6 +126,9 @@ static  bool gIsPrintStatusCommand = false;
 static bool gIsOpen = false;
 static uint8_t gIsLocked;
 
+static uint32_t gNumReadCh = 0;
+
+
 static uint8_t gFrame = 0;
 static uint8_t gAlloc = 0;
 
@@ -148,6 +152,7 @@ static CRS_retVal_t sendMsgAndGetStatus(void * _buffer, size_t _sizeToSend,uint3
 static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame, uint8_t alloc, TDD_cbFn_t _cbFn);
 static void getInitStatus(const TDD_cbArgs_t _cbArgs);
 static void Tdd_setTddClock(uint32_t tddTime);
+static void processTddStartCallback(UArg a0);
 
 static CRS_retVal_t Tdd_writeString(void * _buffer, size_t _size);
 static CRS_retVal_t startRead(uint32_t bytesRead);
@@ -165,20 +170,22 @@ CRS_retVal_t Tdd_initSem(void *sem)
 CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 {
 
-    if (gUartHandle != NULL)
+    if (gUartHandle != NULL || Fpga_isOpen() == CRS_SUCCESS)
     {
         return CRS_FAILURE;
     }
 
-    #ifdef CRS_CB
-        GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, 0x1f | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
-    #endif
+#ifdef CRS_CB
+    GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, 0x1f | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
+#endif
 
     {
         // General UART setup
         UART_init();
         UART_Params_init(&gUartParams);
+//        gUartParams.baudRate = 57600;
         gUartParams.baudRate = 38400;
+
         //        gUartParams.writeMode = UART_MODE_CALLBACK;
         gUartParams.writeMode = UART_MODE_CALLBACK;
         gUartParams.writeCallback = UartWriteCallback;
@@ -186,7 +193,7 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
         gUartParams.writeDataMode = UART_DATA_BINARY;
         //gUartParams.writeCallback = UartWriteCallback;
         gUartParams.readReturnMode = UART_RETURN_FULL;
-        gUartParams.baudRate = 38400;
+//        gUartParams.baudRate = 38400;
         gUartParams.readEcho = UART_ECHO_OFF;
         gUartParams.readMode = UART_MODE_CALLBACK;
         gUartParams.readDataMode = UART_DATA_BINARY;
@@ -204,12 +211,11 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 
         gUartTxBufferIdx = 0;
         gReadNextCommand = false;
-        UART_read(gUartHandle, gUartRxBuffer, 1);
-
         gFinalCbFn = _cbFn;
-        gInnerCbFn = getInitStatus;
-        startRead(70);
-        sendMsgAndGetStatus(gStatusCommand, 11, 69, tddOpenCallback);
+
+        UtilTimer_setFunc(tddClkHandle, processTddStartCallback, 0);
+        Tdd_setTddClock(5);
+
         return CRS_SUCCESS;
 
     }
@@ -266,6 +272,14 @@ void Tdd_process(void)
     if (Tdd_events & TDD_OPEN_FAIL_EV)
     {
         UtilTimer_stop(&tddClkStruct);
+//        uint32_t counter = 0;
+//            while (counter < 40)
+//            {
+//                CLI_cliPrintf("\r\n0x%x: 0x%x", counter,gUartTxBuffer[counter]);
+//                counter++;
+//            }
+//            CLI_cliPrintf("\r\n0x%x: 0x%x", gNumReadCh);
+
 
         if (    gIsPrintStatusCommand == true)
         {
@@ -284,7 +298,30 @@ void Tdd_process(void)
         Util_clearEvent(&Tdd_events, TDD_OPEN_FAIL_EV);
     }
 
+    if (Tdd_events & TDD_START_EV)
+    {
+        UtilTimer_setFunc(tddClkHandle, processTddTimeoutCallback, 0);
 
+
+        UART_read(gUartHandle, gUartRxBuffer, 1);
+
+                gInnerCbFn = getInitStatus;
+                startRead(70);
+
+                sendMsgAndGetStatus(gStatusCommand, 11, 69, tddOpenCallback);
+        Util_clearEvent(&Tdd_events, TDD_START_EV);
+    }
+
+
+
+}
+
+static void processTddStartCallback(UArg a0)
+{
+
+    Util_setEvent(&Tdd_events, TDD_START_EV);
+
+       Semaphore_post(collectorSem);
 
 }
 
@@ -455,6 +492,12 @@ static void  makeRequest(Tdd_setRequest_t request, uint8_t * request_array)
 
 static void getInitStatus(const TDD_cbArgs_t _cbArgs)
 {
+//    int counter = 0;
+//    while (counter < 40)
+//    {
+//        CLI_cliPrintf("\r\n0x%x: 0x%x", counter,gUartTxBuffer[counter]);
+//        counter++;
+//    }
 
     uint8_t scs = gUartTxBuffer[29];
     uint8_t pattern2 = gUartTxBuffer[30];
@@ -490,7 +533,7 @@ CRS_retVal_t Tdd_close()
 
 CRS_retVal_t Tdd_isOpen()
 {
-    if (gIsOpen){
+    if (gUartHandle != NULL){
         return CRS_SUCCESS;
     }
 
@@ -498,11 +541,11 @@ CRS_retVal_t Tdd_isOpen()
 }
 
 CRS_retVal_t Tdd_isLocked(){
-    GPIO_init();
-    if(GPIO_read(CONFIG_GPIO_BTN1)){
-        return CRS_TDD_NOT_LOCKED;
-    }
-    return CRS_SUCCESS;
+//    GPIO_init();
+//    if(GPIO_read(CONFIG_GPIO_BTN1)){
+//        return CRS_TDD_NOT_LOCKED;
+//    }
+//    return CRS_SUCCESS;
 //    if(gIsLocked){
 //        return CRS_SUCCESS;
 //    }
@@ -510,6 +553,7 @@ CRS_retVal_t Tdd_isLocked(){
 
 CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
 {
+//    CLI_cliPrintf("\r\ndebug");
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
@@ -590,6 +634,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     tdArgs.dl1 = dl;
     CLI_cliPrintf("\r\nPeriod1=0x%x", period);
     CLI_cliPrintf("\r\nDL1=0x%x", dl);
+
     if(gUartTxBuffer[10]==1){
         CLI_cliPrintf("\r\nType=TD-LTE", dl);
     }
@@ -719,7 +764,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     uint16_t holdover_time = hol_sec + (hol_min * 60);
     CLI_cliPrintf("\r\nHoldoverTime=0x%x", holdover_time);
 
-    return ;
+    return;
 
 
 }
@@ -1180,11 +1225,11 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
 
 }
-
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
     if (_size)
     {
+        gNumReadCh++;
         gIsOpen = true;
         if (gReadNextCommand == false)
         {
@@ -1195,7 +1240,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
 
         gUartTxBuffer[gUartTxBufferIdx] = ((uint8_t*) _buf)[0];
         gUartTxBufferIdx++;
-        memset(gUartRxBuffer, 0, _size);
+        memset(gUartRxBuffer, 0, 1);
         if (gIsWantedTxBytesKnown == true)
         {
             gWantedTxBytes--;
@@ -1259,6 +1304,7 @@ static void tddGetStatusCallback(const TDD_cbArgs_t _cbArgs)
     Semaphore_post(collectorSem);
 
 }
+
 
 static void Tdd_setTddClock(uint32_t tddTime)
 {
