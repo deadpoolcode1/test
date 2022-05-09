@@ -31,6 +31,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="cfg.measuresCount" type="expr" content="struct" scope="task" min="0" max="65535">BUFFER_SIZE</tattr>
         <tattr name="cfg.modesChannel" type="expr" content="struct" scope="task" min="0" max="65535">MODES_CHANNEL_SIZE</tattr>
         <tattr name="cfg.samplesCount" desc="ALERT interrupt generation threshold" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
+        <tattr name="cfg.samplesNum" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="cfg.tddMode" desc="0 - ManualDL 1 - ManualUL 2 - Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.randomDelayRX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
