@@ -76,11 +76,11 @@ uint32_t pOverrides[] =
     // Tx: Configure PA ramp time, PACTL2.RC=0x3 (in ADI0, set PACTL2[4:3]=0x3)
     ADI_2HALFREG_OVERRIDE(0,16,0x8,0x8,17,0x1,0x1),
     // Rx: Set AGC reference level to 0x1C (default: 0x2E)
-    HW_REG_OVERRIDE(0x609C,0x001C),
+    HW_REG_OVERRIDE(0x609C,0x0016),
     // Rx: Set RSSI offset to adjust reported RSSI by -7 dB (default: -2), trimmed for external bias and differential configuration
     (uint32_t)0x000788A3,
     // Rx: Set anti-aliasing filter bandwidth to 0xD (in ADI0, set IFAMPCTL3[7:4]=0xD)
-    ADI_HALFREG_OVERRIDE(0,61,0xF,0xD),
+    ADI_HALFREG_OVERRIDE(0,61,0xF,0x8),
     // override_prop_common.xml
     // DC/DC regulator: In Tx with 14 dBm PA setting, use DCDCCTL5[3:0]=0xF (DITHER_EN=1 and IPEAK=7). In Rx, use default settings.
     (uint32_t)0x00F788D3,
@@ -113,12 +113,12 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .condition.rule = 0x1,
     .condition.nSkip = 0x0,
     .modulation.modType = 0x1,
-    .modulation.deviation = 0x64,
+    .modulation.deviation = 0xC8,
     .modulation.deviationStepSz = 0x0,
     .symbolRate.preScale = 0xF,
-    .symbolRate.rateWord = 0x8000,
+    .symbolRate.rateWord = 0x20000,
     .symbolRate.decimMode = 0x0,
-    .rxBw = 0x51,
+    .rxBw = 0x58,
     .preamConf.nPreamBytes = 0x4,
     .preamConf.preamMode = 0x0,
     .formatConf.nSwBits = 0x20,
@@ -134,7 +134,7 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .txPower = 0x003F,
     .pRegOverride = pOverrides,
     .centerFreq = 0x013B,
-    .intFreq = 0x8000,
+    .intFreq = 0x0999,
     .loDivider = 0x0F,
     .pRegOverrideTxStd = 0,
     .pRegOverrideTx20 = 0

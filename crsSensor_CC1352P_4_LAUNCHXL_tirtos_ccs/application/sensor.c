@@ -12,22 +12,23 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "api_mac.h"
+#include "mac/api_mac.h"
 #include "sensor.h"
 #include "smsgs.h"
 #include "mac/api_mac.h"
 #include "crs/crs_cli.h"
 #include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
-#include "crs_snapshot.h"
-#include "config_parsing.h"
-#include "crs_multi_snapshots.h"
-#include "crs_snap_rf.h"
-#include "crs_script_dig.h"
+#include "application/crs/snapshots/crs_snapshot.h"
+#include "application/crs/snapshots/config_parsing.h"
+#include "application/crs/snapshots/crs_multi_snapshots.h"
+#include "application/crs/snapshots/crs_snap_rf.h"
+#include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "easylink/EasyLink.h"
+#include "application/crs/crs_alarms.h"
 
 /******************************************************************************
  Constants and definitions
@@ -421,10 +422,10 @@ static void updateRssiStrct(int8_t rssi)
 
     if (gRssiStrct.rssiAvg > maxCableLoss)
     {
-        CRS_setAlarm(MaxCableLoss);
+        Alarms_setAlarm(MaxCableLoss);
 
     }else{
-        CRS_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }

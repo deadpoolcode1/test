@@ -13,7 +13,7 @@
  *****************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
-#include "macTask.h"
+#include "mac/macTask.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************

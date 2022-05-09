@@ -33,6 +33,7 @@
 
 #include "application/util_timer.h"
 #include "mac/api_mac.h"
+#include "application/crs/crs_alarms.h"
 
 #include "crs.h"
 
@@ -872,6 +873,22 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
 
       }
 
+
+      if (memcmp(CLI_LIST_ALARMS_LIST, line, sizeof(CLI_LIST_ALARMS_LIST) - 1) == 0)
+        {
+
+          CLI_AlarmsListParsing(line);
+            inputBad = false;
+
+        }
+      if (memcmp(CLI_LIST_ALARMS_SET, line, sizeof(CLI_LIST_ALARMS_SET) - 1) == 0)
+          {
+
+            CLI_AlarmsSetParsing(line);
+              inputBad = false;
+
+          }
+
       else if (memcmp(CLI_CRS_FS_INSERT, line, sizeof(CLI_CRS_FS_INSERT) - 1)
               == 0)
       {
@@ -1169,7 +1186,7 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
     }
 #endif
 
-    CRS_printAlarms();
+        Alarms_printAlarms();
         CLI_startREAD();
 
 
@@ -1220,9 +1237,9 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
 #endif
          CRS_retVal_t retStatus=CRS_FAILURE;
          if(CHECK_BIT(state,ALARM_ACTIVE_BIT_LOCATION)==0){
-              retStatus=CRS_clearAlarm((CRS_alarmType_t) id - 1, ALARM_ACTIVE);
-         }else if(CHECK_BIT(state,ALARM_STICKY_BIT_LOCATION)==0){
-             CRS_clearAlarm((CRS_alarmType_t) id - 1, ALARM_STICKY);
+              retStatus=Alarms_clearAlarm((Alarms_alarmType_t) id - 1, ALARM_INACTIVE);
+         }if(CHECK_BIT(state,ALARM_STICKY_BIT_LOCATION)==0){
+             Alarms_clearAlarm((Alarms_alarmType_t) id - 1, ALARM_STICKY);
          }
          if (retStatus == CRS_FAILURE)
          {
@@ -1232,12 +1249,7 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
                  }
          CLI_startREAD();
-
-
 }
-
-
-
 
 
 static CRS_retVal_t CLI_unit(char *line)
@@ -3626,6 +3638,7 @@ static CRS_retVal_t CLI_envRestore(char *line)
 
 }
 
+
 static CRS_retVal_t CLI_trshUpdate(char *line)
 {
     const char s[2] = " ";
@@ -3685,9 +3698,13 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
                //System Temperature : ID=4, thrshenv= tmp
                Thresh_readVarsFile("TmpThr", envFile, 1);
                int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
-               NULL, 16);
-               CRS_setTemperatureHigh(highTempThrsh);
-
+               NULL, 10);
+               Alarms_setTemperatureHigh(highTempThrsh);
+               int16_t currentTemperature=0;
+               Alarms_getTemperature(&currentTemperature);
+               if (currentTemperature<=highTempThrsh) {
+                   Alarms_clearAlarm(SystemTemperature, ALARM_INACTIVE);
+            }
            }
            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
 
@@ -4128,7 +4145,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
             }
         #endif
             int16_t temp = 0;
-            CRS_getTemperature(&temp);
+            Alarms_getTemperature(&temp);
             CLI_cliPrintf("\r\n%d", (int)temp);
             CLI_startREAD();
             return CRS_SUCCESS;
@@ -4320,7 +4337,7 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
                     CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
                         break;
                 case CRS_DEBUG:
-                   return CRS_SUCCESS;
+//                   return CRS_SUCCESS;
                    CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
                         break;
                 case CRS_ERR:
