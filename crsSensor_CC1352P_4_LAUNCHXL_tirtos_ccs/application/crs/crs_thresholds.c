@@ -20,12 +20,12 @@
 #define THRSH_FILENAME "thrsh"
 #define ENV_FILENAME "env"
 #ifndef CLI_SENSOR
-#define THRSH_FILE "Technology=5G\nBand=B48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\n\
+#define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
     MaxCableLossThr=35\nDLMaxInputPower=-35\nDLRxMaxGainThr=45\nULTxMaxGainThr=55\nULMaxOutputPower=20\n\
     SyncMode=Manual\nCPType=Normal\nSensorMode=0\nDLRxGain=28\nULTxGain=28\nTmpThr=40"
 #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0"
 #else
-#define THRSH_FILE "Technology=5G\nBand=B48\nBandwidth=20\nEARFCN=55340\nCentralFreq=3560\nMIMO=2x2\n\
+#define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
     MaxCableLossThr=35\nULMaxInputPower=-35\nULRxMaxGainThr=60\nDLTxMaxGainThr=55\nDLMaxOutputPower=20\n\
     DLSystemMaxGainThr=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\nULRxGain=30\nDLTxGain=28\n\
     DLSystemGain=20\nTmpThr=40"
