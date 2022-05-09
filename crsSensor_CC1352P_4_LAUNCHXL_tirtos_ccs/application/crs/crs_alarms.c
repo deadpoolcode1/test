@@ -15,13 +15,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <ti/drivers/Temperature.h>
-#include "application/collector.h"
+
 #include "mac/mac_util.h"
 
 static uint8_t gAlarmArr[ALARMS_NUM];
 static Temperature_NotifyObj gNotifyObject;
 static Semaphore_Handle collectorSem;
-
+static uint16_t Alarms_events = 0;
+#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
 void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
                                    int16_t thresholdTemperature,
                                    uintptr_t clientArg,
@@ -89,6 +90,17 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
         return CRS_SUCCESS;
     }
     return CRS_FAILURE;
+}
+
+
+CRS_retVal_t Alarms_process(void){
+    if (Alarms_events & ALARMS_SET_TEMP_ALARM_EVT)
+      {
+         Alarms_setAlarm(SystemTemperature);
+          /* Clear the event */
+          Util_clearEvent(&Alarms_events, ALARMS_SET_TEMP_ALARM_EVT);
+      }
+
 }
 
 CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
@@ -161,7 +173,7 @@ void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
                                    uintptr_t clientArg,
                                    Temperature_NotifyObj *notifyObject)
 {
-    Util_setEvent(&Collector_events, COLLECTOR_SET_TEMP_ALARM_EVT);
+    Util_setEvent(&Alarms_events, ALARMS_SET_TEMP_ALARM_EVT);
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(collectorSem);

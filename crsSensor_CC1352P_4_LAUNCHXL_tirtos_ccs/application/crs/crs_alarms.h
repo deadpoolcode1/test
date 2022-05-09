@@ -36,6 +36,7 @@ typedef enum Alarms_alarmMode
 
 CRS_retVal_t Alarms_init(void *sem);
 CRS_retVal_t Alarms_printAlarms();
+CRS_retVal_t Alarms_process(void);
 CRS_retVal_t Alarms_setAlarm(Alarms_alarmType_t alarmType);
 
 CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,

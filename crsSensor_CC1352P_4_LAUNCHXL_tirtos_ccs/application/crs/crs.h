@@ -10,6 +10,7 @@
 //#define CLI_SENSOR
 #include <stdint.h>
 #include <ti/drivers/Temperature.h>
+#include "crs_global_defines.h"
 typedef enum CRS_retVal
 {
     CRS_SUCCESS,

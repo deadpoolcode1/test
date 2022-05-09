@@ -78,7 +78,9 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd);
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
 static void updateCduRssiStrct(int8_t rssi, int idx);
-
+static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
+static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
 /******************************************************************************
  Callback tables
  *****************************************************************************/
@@ -125,6 +127,7 @@ void Collector_init()
     Agc_init();
     Alarms_init(sem);
     Alarms_temp_Init();
+    Csf_crsInitScript();
 //       Agc_init();
 
 }
@@ -147,13 +150,6 @@ void Collector_process(void)
         /* Clear the event */
         Util_clearEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
     }
-
-    if (Collector_events & COLLECTOR_SET_TEMP_ALARM_EVT)
-      {
-         Alarms_setAlarm(SystemTemperature);
-          /* Clear the event */
-          Util_clearEvent(&Collector_events, COLLECTOR_SET_TEMP_ALARM_EVT);
-      }
     Config_process();
     MultiFiles_process();
     RF_process();
@@ -161,10 +157,72 @@ void Collector_process(void)
     Fpga_process();
     DIG_process();
     Tdd_process();
+    Alarms_process();
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
     }
+}
+
+
+void Csf_crsInitScript()
+{
+//    CRS_LOG(CRS_DEBUG, "Running script");
+
+    CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
+    if (retStatus != CRS_SUCCESS)
+    {
+        FPGA_cbArgs_t cbArgs;
+        CLI_cliPrintf("\r\nUnable to run init script");
+
+        fpgaCrsDoneCallback(cbArgs);
+    }
+}
+
+
+static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
+{
+//    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
+    CRS_retVal_t retStatus = Config_runConfigFile("flat",
+                                                  fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run flat file");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
+                                                NULL, fpgaCrsDoneCallback);
+//    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CLI_startREAD();
+
+//    if (CONFIG_AUTO_START)
+//    {
+//        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
+//
+//        /* Start the device */
+//        Util_setEvent(&Collector_events, COLLECTOR_START_EVT);
+//        Semaphore_post(collectorSem);
+//
+//    }
 }
 
 void Csf_processCliSendMsgUpdate()

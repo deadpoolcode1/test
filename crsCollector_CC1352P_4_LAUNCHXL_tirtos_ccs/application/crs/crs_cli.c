@@ -95,7 +95,6 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
 
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 
 
@@ -181,6 +180,7 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_CRS_TMP "tmp"
 #define CLI_CRS_RSSI "rssi"
 
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 
 #ifndef CLI_SENSOR
@@ -422,10 +422,8 @@ CRS_retVal_t CLI_init()
         gModuleInitialized = true;
 #ifndef CLI_SENSOR
         CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
-        CLI_startREAD();
 #else
         CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
-               CLI_startREAD();
 #endif
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return CRS_SUCCESS;
