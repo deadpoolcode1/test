@@ -16,10 +16,10 @@
 #include "sm_assoc.h"
 #include "sm_content_ack.h"
 
-#include "collectorLink.h"
-#include "crs_tx.h"
-#include "crs_rx.h"
-#include "mac_util.h"
+#include "mac/collectorLink.h"
+#include "mac/crs_tx.h"
+#include "mac/crs_rx.h"
+#include "mac/mac_util.h"
 #include "cp_cli.h"
 #include "easylink/EasyLink.h"
 

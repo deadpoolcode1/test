@@ -39,7 +39,7 @@
 #ifndef CLI_SENSOR
 #include "application/collector.h"
 #else
-#include "sensor.h"
+#include "application/sensor.h"
 #endif
 
 #include "crs_cli.h"

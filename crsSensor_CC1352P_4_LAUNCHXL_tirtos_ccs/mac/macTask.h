@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "crs_global_defines.h"
-#include "crs_cli.h"
+#include "application/crs/crs_cli.h"
 #include "easylink/EasyLink.h"
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
