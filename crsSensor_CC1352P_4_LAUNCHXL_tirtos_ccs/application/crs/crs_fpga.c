@@ -255,7 +255,7 @@ void Fpga_process(void)
     {
 //        if (gUartTxBuffer[0] == 'r')
 #ifndef CLI_SENSOR
-//        CLI_cliPrintf("%s", gUartTxBuffer);
+        CLI_cliPrintf("%s", gUartTxBuffer);
 #endif
         char line[50] = {0};
 

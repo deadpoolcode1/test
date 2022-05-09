@@ -40,7 +40,7 @@
 #ifndef CLI_SENSOR
 #include "application/collector.h"
 #else
-#include "application/sensor.h"
+#include "sensor.h"
 #endif
 
 #include "crs_cli.h"
@@ -4335,7 +4335,7 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
                     CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
                         break;
                 case CRS_DEBUG:
-//                   return CRS_SUCCESS;
+                   return CRS_SUCCESS;
                    CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
                         break;
                 case CRS_ERR:
