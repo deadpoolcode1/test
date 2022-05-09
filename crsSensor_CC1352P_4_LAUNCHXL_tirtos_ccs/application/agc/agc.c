@@ -96,8 +96,6 @@ CRS_retVal_t Agc_init(){
     scifOsalRegisterCtrlReadyCallback(scCtrlReadyCallback);
     scifOsalRegisterTaskAlertCallback(scTaskAlertCallback);
     scifInit(&scifDriverSetup);
-    // Configure and run the ADC Data Streamer task.
-    scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
     //Nvs_close();
     //Nvs_init(sem);
     //Nvs_readFile("Agc_LUT", agc_lut);
@@ -147,12 +145,14 @@ CRS_retVal_t Agc_init(){
     #else
         scifTaskData.systemAgc.cfg.unitType = 1;
     #endif
-
+    // start task.
+    scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
     agcClkHandle = UtilTimer_construct(&agcClkStruct,
                                        processAgcTimeoutCallback,
                                        AGC_TIMEOUT, 0,
                                         true,
                                         0);
+
     gAgcInitialized = 1;
     //key = strtok(NULL, s);
     return CRS_SUCCESS;
@@ -208,10 +208,25 @@ uint16_t Agc_getChannel(){
 }
 
 CRS_retVal_t Agc_setMode(int mode){
+    // change tdd_mode in thrsh file.
     char envFile[1024] = { 0 };
     sprintf(envFile, "SensorMode=%x\n", mode);
     Thresh_setVarsFile(envFile, 1);
+    //  clear the interrupt flag, reset results struct and rerun task.
+    scifClearAlertIntSource();
+    if(gAgcReady){
+        scifAckAlertEvents();
+    }
+    gAgcReady = 0;
+    scifStopTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
+    scifResetTaskStructs(BV(SCIF_SYSTEM_AGC_TASK_ID), BV(SCIF_STRUCT_OUTPUT));
+    //scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
+    scifTaskData.systemAgc.cfg.samplesCount = scifTaskData.systemAgc.cfg.samplesNum;
+    //scifExecuteTasksOnceNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
+
+    //scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
+
     if(scifTaskData.systemAgc.cfg.tddMode == mode){
         return CRS_SUCCESS;
     }
@@ -373,14 +388,14 @@ CRS_retVal_t Agc_sample(){
         if( retVal == CRS_TDD_NOT_LOCKED){
             AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A"};
             gAgcMaxResults = gAgcNewResults;
-            CLI_cliPrintf("\r\nSC is not locked");
+            //CLI_cliPrintf("\r\nSC is not locked");
             return retVal;
         }
     }
     if(!gAgcReady){
         AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A"};
         gAgcMaxResults = gAgcNewResults;
-        CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
+        //CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
         return CRS_FAILURE;
     }
     // Clear the ALERT interrupt source
