@@ -4,27 +4,29 @@
  *  Created on: 29 Mar 2022
  *      Author: epc_4
  */
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <ti/drivers/dpl/SystemP.h>
 #include <ti/drivers/UART.h>
 #include <ti/drivers/uart/UARTCC26XX.h>
 #include "ti_drivers_config.h"
-
-
 #include "cp_cli.h"
 #include "mac/macTask.h"
 #include "mac/collectorLink.h"
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
 #include "mac/stateMachines/sm_content_ack.h"
-
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define CUI_NUM_UART_CHARS 1024
-
+#define UART_WRITE_BUFF_SIZE 2
+#define TMP_BUFF_SZIE 512
 #define CLI_PROMPT "\r\nSensor> "
 
 #define CLI_DEBUG "debug"
@@ -33,63 +35,53 @@
 #define CLI_RECIVE_PACKET "rec"
 #define CLI_STOP_RECIVE_PACKET "stop"
 
-
 #define CLI_ADD_NODE "add node"
 #define CLI_LIST_NODES "list nodes"
 
-
-
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 static void recivePacketCommand(char *line);
 static void sendPacketCommand(char *line);
-//static void stopRecivePacketCommand(char *line);
 
-
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 static bool gModuleInitialized = false;
-
 static UART_Params gUartParams;
 static UART_Handle gUartHandle = NULL;
 static uint8_t gUartTxBuffer[CUI_NUM_UART_CHARS] = { 0 };
 static uint32_t gUartTxBufferIdx = 0;
-
 static uint8_t gUartRxBuffer[2] = { 0 };
-
-
-
-#define UART_WRITE_BUFF_SIZE 2
-#define TMP_BUFF_SZIE 512
-
-
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
-
 static volatile uint32_t gWriteNowBuffIdx = 0;
 static volatile uint32_t gWriteNowBuffSize = 0;
 static volatile uint32_t gWriteWaitingBuffIdx = 0;
-
-
 static volatile bool gIsDoneWriting = true;
 static volatile bool gIsDoneFilling = false;
 static volatile bool gIsNoPlaceForPrompt = false;
-
 static volatile bool gIsAsyncCommand = false;
-
 static bool gReadNextCommand = false;
-
 static bool gIsNewCommand = true;
 
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 static void CLI_writeString(void *_buffer, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
-
-static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... );
-CP_CLI_log_handler_func_type*  gCpLogHandler = &defaultTestLog;
-
-
+static void defaultTestLog(const cp_log_level level, const char *file,
+                           const int line, const char *format, ...);
 static void debugCli(char *line);
 static void addNodeCommand(char *line);
-
-
-
+/******************************************************************************
+ Global variables
+ *****************************************************************************/
+CP_CLI_log_handler_func_type *gCpLogHandler = &defaultTestLog;
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 void CP_CLI_init()
 {
 
@@ -124,7 +116,8 @@ void CP_CLI_init()
         }
 
         gModuleInitialized = true;
-        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
+        CLI_writeString("\r\n------Restart Sensor------",
+                        sizeof("\r\n------Restart Sensor------"));
 
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return;
@@ -133,18 +126,15 @@ void CP_CLI_init()
     return;
 }
 
-
-
 void CP_CLI_processCliUpdate()
 {
 
     if (!gModuleInitialized)
     {
-        return ;
+        return;
     }
-    uint8_t* line = gUartTxBuffer;
-            gUartTxBuffer[gUartTxBufferIdx - 1] = 0;
-
+    uint8_t *line = gUartTxBuffer;
+    gUartTxBuffer[gUartTxBufferIdx - 1] = 0;
 
     const char badInputMsg[] = "\r\nINVALID INPUT";
 
@@ -152,55 +142,50 @@ void CP_CLI_processCliUpdate()
 
     bool is_async_command = false;
 
-
-
-    if (memcmp(CLI_DEBUG, line, sizeof(CLI_DEBUG)-1) == 0)
-       {
+    if (memcmp(CLI_DEBUG, line, sizeof(CLI_DEBUG) - 1) == 0)
+    {
 
         debugCli(line);
 
-           inputBad = false;
+        inputBad = false;
 
-       }
+    }
 
-        if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE)-1) == 0)
-               {
+    if (memcmp(CLI_ADD_NODE, line, sizeof(CLI_ADD_NODE) - 1) == 0)
+    {
 
-            addNodeCommand(line);
+        addNodeCommand(line);
 
-                   inputBad = false;
-                   CP_CLI_startREAD();
-               }
+        inputBad = false;
+        CP_CLI_startREAD();
+    }
 
-
-        if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES)-1) == 0)
-               {
+    if (memcmp(CLI_LIST_NODES, line, sizeof(CLI_LIST_NODES) - 1) == 0)
+    {
 
 //            Node_listNodes();
 //            CP_CLI_cliPrintf("\r\nStatus:0x0");
-                   inputBad = false;
-                   CP_CLI_startREAD();
-               }
+        inputBad = false;
+        CP_CLI_startREAD();
+    }
 
-
-
-    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET)-1) == 0)
-           {
+    if (memcmp(CLI_SEND_PACKET, line, sizeof(CLI_SEND_PACKET) - 1) == 0)
+    {
 
         sendPacketCommand(line);
 
-               inputBad = false;
+        inputBad = false;
 
-           }
+    }
 
-    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET)-1) == 0)
-           {
+    if (memcmp(CLI_RECIVE_PACKET, line, sizeof(CLI_RECIVE_PACKET) - 1) == 0)
+    {
 
         recivePacketCommand(line);
 
-               inputBad = false;
+        inputBad = false;
 
-           }
+    }
 //    if (memcmp(CLI_STOP_RECIVE_PACKET, line, sizeof(CLI_STOP_RECIVE_PACKET)-1) == 0)
 //              {
 //
@@ -211,9 +196,6 @@ void CP_CLI_processCliUpdate()
 //              }
 //
 //
-
-
-
 
     if (inputBad && strlen(line) > 0)
     {
@@ -227,9 +209,63 @@ void CP_CLI_processCliUpdate()
         return;
     }
 
-    return ;
+    return;
 }
 
+void CP_CLI_startREAD()
+{
+
+//
+    if ((gUartHandle == NULL))
+    {
+        return;
+    }
+
+    CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
+
+    gIsNewCommand = true;
+    memset(gUartTxBuffer, 0, CUI_NUM_UART_CHARS - 1);
+
+    gUartTxBufferIdx = 0;
+    if (gReadNextCommand == false)
+    {
+        gReadNextCommand = true;
+//        UART_read(gUartHandle, gUartRxBuffer, 1);
+
+    }
+
+    return;
+
+}
+
+void CP_CLI_cliPrintf(const char *_format, ...)
+{
+    if ((gUartHandle == NULL))
+    {
+        return;
+    }
+    if (strlen(_format) >= 1024)
+    {
+        return;
+    }
+    char printBuff[1024] = { 0 };
+    if (_format == NULL)
+    {
+        return;
+    }
+    va_list args;
+
+    va_start(args, _format);
+    SystemP_vsnprintf(printBuff, sizeof(printBuff), _format, args);
+    va_end(args);
+
+    CLI_writeString(printBuff, strlen(printBuff));
+    return;
+}
+
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static void debugCli(char *line)
 {
 //    RfEasyLink_sendPacket();
@@ -241,7 +277,6 @@ static void debugCli(char *line)
 //    Node_getNode(mac, &rspNode);
     CP_CLI_startREAD();
 }
-
 
 static void addNodeCommand(char *line)
 {
@@ -274,13 +309,7 @@ static void addNodeCommand(char *line)
 //       Node_addNode(&node);
 //       CP_CLI_cliPrintf("\r\nStatus:0x0");
 
-
-
-
 }
-
-
-
 
 static void sendPacketCommand(char *line)
 {
@@ -309,8 +338,6 @@ static void sendPacketCommand(char *line)
     Mac_cliSendContent(NULL);
     CP_CLI_startREAD();
 
-
-
 }
 
 static void recivePacketCommand(char *line)
@@ -319,63 +346,6 @@ static void recivePacketCommand(char *line)
     CP_CLI_startREAD();
 
 }
-//static void stopRecivePacketCommand(char *line)
-//{
-//    RfEasyLink_stopRecivePacket();
-//}
-
-void CP_CLI_startREAD()
-{
-
-//
-    if ((gUartHandle == NULL))
-        {
-            return ;
-        }
-
-        CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
-
-    gIsNewCommand = true;
-    memset(gUartTxBuffer, 0, CUI_NUM_UART_CHARS - 1);
-
-    gUartTxBufferIdx = 0;
-    if (gReadNextCommand == false)
-    {
-        gReadNextCommand = true;
-//        UART_read(gUartHandle, gUartRxBuffer, 1);
-
-    }
-
-    return ;
-
-}
-
-void CP_CLI_cliPrintf(const char *_format, ...)
-{
-    if ((gUartHandle == NULL))
-        {
-            return ;
-        }
-    if (strlen(_format) >= 1024)
-    {
-        return ;
-    }
-    char printBuff[1024] = { 0 };
-    if (_format == NULL)
-    {
-        return ;
-    }
-    va_list args;
-
-    va_start(args, _format);
-    SystemP_vsnprintf(printBuff, sizeof(printBuff), _format, args);
-    va_end(args);
-
-
-    CLI_writeString(printBuff, strlen(printBuff));
-    return ;
-}
-
 
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
@@ -404,7 +374,7 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
         gIsDoneFilling = false;
         UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
 
-        return ;
+        return;
     }
 
     if (gIsNoPlaceForPrompt == true)
@@ -423,7 +393,6 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
     //    }
 }
 
-
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
 {
     if (_size)
@@ -433,16 +402,14 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
             UART_read(gUartHandle, gUartRxBuffer, 1);
             return;
         }
-        if (gUartTxBufferIdx == CUI_NUM_UART_CHARS-1)
+        if (gUartTxBufferIdx == CUI_NUM_UART_CHARS - 1)
         {
-            if ( ((uint8_t*) _buf)[0] != '\r')
+            if (((uint8_t*) _buf)[0] != '\r')
             {
                 return;
             }
 
         }
-
-
 
         gUartTxBuffer[gUartTxBufferIdx] = ((uint8_t*) _buf)[0];
         gUartTxBufferIdx++;
@@ -474,7 +441,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
                 gUartTxBufferIdx--;
 
                 UART_read(gUartHandle, gUartRxBuffer, 1);
-                return ;
+                return;
             }
 
 #ifndef CLI_NO_ECHO
@@ -491,7 +458,6 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
             gReadNextCommand = false;
             UART_read(gUartHandle, gUartRxBuffer, 1);
             Mac_cliUpdate();
-
 
         }
 
@@ -517,12 +483,12 @@ static void CLI_writeString(void *_buffer, size_t _size)
     //Error if no buffer
     if ((gUartHandle == NULL))
     {
-        return ;
+        return;
     }
 
     if (_buffer == NULL)
     {
-        return ;
+        return;
     }
 
     if (gIsDoneWriting == true)
@@ -544,7 +510,7 @@ static void CLI_writeString(void *_buffer, size_t _size)
 //        gWriteNowBuffTotalSize = gWriteNowBuffSize;
         UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
 
-        return ;
+        return;
     }
     else
     {
@@ -556,15 +522,13 @@ static void CLI_writeString(void *_buffer, size_t _size)
                 gIsDoneFilling = true;
                 gIsNoPlaceForPrompt = true;
             }
-            return ;
+            return;
         }
         bool flag = false;
         while (gIsDoneFilling == true)
         {
-            flag  = true;
+            flag = true;
         }
-
-
 
         memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
         gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
@@ -582,68 +546,66 @@ static void CLI_writeString(void *_buffer, size_t _size)
             gIsDoneFilling = true;
         }
 
-
         if (gIsDoneWriting && gIsDoneFilling)
-                {
+        {
 
+            gWriteNowBuffSize = gWriteWaitingBuffIdx;
 
-
-                    gWriteNowBuffSize = gWriteWaitingBuffIdx;
-
-                    memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-                    memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
-                    memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
-                    gWriteWaitingBuffIdx = 0;
-                    gWriteNowBuffIdx = 0;
-                    gIsDoneWriting = false;
+            memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+            memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
+            memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
+            gWriteWaitingBuffIdx = 0;
+            gWriteNowBuffIdx = 0;
+            gIsDoneWriting = false;
 //                    gWriteNowBuffTotalSize = gWriteNowBuffSize;
-                    UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+            UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
 
-                    return ;
-                }
+            return;
+        }
 
-        return ;
+        return;
     }
 
-    return ;
+    return;
 }
-static void defaultTestLog( const cp_log_level level, const char* file, const int line, const char* format, ... )
+static void defaultTestLog(const cp_log_level level, const char *file,
+                           const int line, const char *format, ...)
 {
     if (strlen(format) >= 512)
-       {
-           return ;
-       }
-       char printBuff[512] = { 0 };
-       if (format == NULL)
-       {
-           return ;
-       }
-                va_list args;
+    {
+        return;
+    }
+    char printBuff[512] = { 0 };
+    if (format == NULL)
+    {
+        return;
+    }
+    va_list args;
 
-                switch( level )
-                {
-                case CP_CLI_INFO:
-                    CP_CLI_cliPrintf( "\r\n[INFO   ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_DEBUG:
+    switch (level)
+    {
+    case CP_CLI_INFO:
+        CP_CLI_cliPrintf("\r\n[INFO   ] %s:%d : ", file, line);
+        break;
+    case CP_CLI_DEBUG:
 //                   return;
-                   CP_CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_ERR:
+        CP_CLI_cliPrintf("\r\n[DEBUG  ] %s:%d : ", file, line);
+        break;
+    case CP_CLI_ERR:
 //                  return;
 
-                  CP_CLI_cliPrintf( "\r\n[ERROR  ] %s:%d : ", file, line);
-                        break;
-                case CP_CLI_WARN:
+        CP_CLI_cliPrintf("\r\n[ERROR  ] %s:%d : ", file, line);
+        break;
+    case CP_CLI_WARN:
 //                   return;
 
-                   CP_CLI_cliPrintf( "\r\n[WARNING] %s:%d : ", file, line);
-                        break;
-                }
+        CP_CLI_cliPrintf("\r\n[WARNING] %s:%d : ", file, line);
+        break;
+    }
 
-                va_start(args, format);
-                SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
-                va_end(args);
-                CP_CLI_cliPrintf(printBuff);
+    va_start(args, format);
+    SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
+    va_end(args);
+    CP_CLI_cliPrintf(printBuff);
 }
 

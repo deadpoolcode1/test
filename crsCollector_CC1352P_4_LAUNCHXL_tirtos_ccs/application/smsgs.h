@@ -8,25 +8,27 @@
 #ifndef APPLICATION_SMSGS_H_
 #define APPLICATION_SMSGS_H_
 
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define SMSGS_CRS_MSG_LENGTH 800
 #define SMSGS_CRS_DISC_MSG_LENGTH 100
 
 #define SMSGS_CRS_ALARMS_MSG_LENGTH 100
 
-
 /*!
  Message IDs for Sensor data messages.  When sent over-the-air in a message,
  this field is one byte.
  */
- typedef enum
- {
+typedef enum
+{
     /*! Configuration message, sent from the collector to the sensor */
     Smsgs_cmdIds_configReq = 1,
     /*! Configuration Response message, sent from the sensor to the collector */
     Smsgs_cmdIds_configRsp = 2,
     /*! Tracking request message, sent from the the collector to the sensor */
     Smsgs_cmdIds_trackingReq = 3,
-     /*! Tracking response message, sent from the sensor to the collector */
+    /*! Tracking response message, sent from the sensor to the collector */
     Smsgs_cmdIds_trackingRsp = 4,
     /*! Sensor data message, sent from the sensor to the collector */
     Smsgs_cmdIds_sensorData = 5,
@@ -47,9 +49,9 @@
     /* Identify LED response msg */
     Smsgs_cmdIds_IdentifyLedRsp = 13,
     /*! SM Commissioning start command sent from collector to the sensor */
-    Smgs_cmdIds_CommissionStart  = 14,
+    Smgs_cmdIds_CommissionStart = 14,
     /*! SM Commissioning message sent bi-directionally between the collector and sensor */
-    Smgs_cmdIds_CommissionMsg  = 15,
+    Smgs_cmdIds_CommissionMsg = 15,
     /* Device type request msg */
     Smsgs_cmdIds_DeviceTypeReq = 16,
     /* Device type response msg */
@@ -72,24 +74,23 @@
     Smsgs_cmdIds_crsAlarmsSetReq = 28,
     Smsgs_cmdIds_crsAlarmsSetRsp = 29,
 
- } Smsgs_cmdIds_t;
+} Smsgs_cmdIds_t;
 
- /*!
-  Status values for the over-the-air messages
-  */
- typedef enum
- {
-     /*! Success */
-     Smsgs_statusValues_success = 0,
-     /*! Message was invalid and ignored */
-     Smsgs_statusValues_invalid = 1,
-     /*!
-      Config message was received but only some frame control fields
-      can be sent or the reportingInterval or pollingInterval fail
-      range checks.
-      */
-     Smsgs_statusValues_partialSuccess = 2,
- } Smsgs_statusValues_t;
-
+/*!
+ Status values for the over-the-air messages
+ */
+typedef enum
+{
+    /*! Success */
+    Smsgs_statusValues_success = 0,
+    /*! Message was invalid and ignored */
+    Smsgs_statusValues_invalid = 1,
+    /*!
+     Config message was received but only some frame control fields
+     can be sent or the reportingInterval or pollingInterval fail
+     range checks.
+     */
+    Smsgs_statusValues_partialSuccess = 2,
+} Smsgs_statusValues_t;
 
 #endif /* APPLICATION_SMSGS_H_ */

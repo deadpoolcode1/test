@@ -4,9 +4,18 @@
  *  Created on: 11 april 2022
  *      Author: nizan
  */
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "util_timer.h"
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
+
 static Clock_Params gclkTimerParams;
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 
 Clock_Handle UtilTimer_construct(Clock_Struct *pClock,
 Clock_FuncPtr clockCB,
@@ -16,7 +25,8 @@ Clock_FuncPtr clockCB,
     Clock_Params_init(&gclkTimerParams);
     gclkTimerParams.period = clockPeriod;
     gclkTimerParams.startFlag = startFlag;
-    Clock_construct(pClock, clockCB, (clockDuration*1000)/Clock_tickPeriod, &gclkTimerParams);
+    Clock_construct(pClock, clockCB, (clockDuration * 1000) / Clock_tickPeriod,
+                    &gclkTimerParams);
     return (Clock_handle(pClock));
 
 }
@@ -45,21 +55,21 @@ void UtilTimer_stop(Clock_Struct *pClock)
 
 void UtilTimer_setTimeout(Clock_Handle handle, uint32_t timeout)
 {
-uint32_t timeoutUs=timeout*1000;
-    Clock_setTimeout(handle, timeoutUs/Clock_tickPeriod);
+    uint32_t timeoutUs = timeout * 1000;
+    Clock_setTimeout(handle, timeoutUs / Clock_tickPeriod);
 
 }
 
+uint32_t UtilTimer_getTimeout(Clock_Handle handle)
+{
 
-
-uint32_t UtilTimer_getTimeout(Clock_Handle handle){
-
-return Clock_getTimeout(handle);
+    return Clock_getTimeout(handle);
 
 }
 
-void UtilTimer_setFunc(Clock_Handle handle, Clock_FuncPtr fxn, UArg arg){
+void UtilTimer_setFunc(Clock_Handle handle, Clock_FuncPtr fxn, UArg arg)
+{
 
-    Clock_setFunc(handle,fxn,arg);
+    Clock_setFunc(handle, fxn, arg);
 
 }
