@@ -4,15 +4,27 @@
  *  Created on: 2 Jan 2022
  *      Author: epc_4
  */
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "crs_convert_snapshot.h"
-
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 static uint32_t gRfChain = 1;
 static int gLUT_num = 1;
 static bool gIsRfChainChanged = false;
 static bool gIsFirstLine = true;
+
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 static CRS_retVal_t changeRfChain(uint32_t addrVal);
 static CRS_retVal_t checkRfChain(uint32_t addrVal);
+
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 CRS_retVal_t Convert_readLineRf(char *line,
                                 char respLine[9][CRS_NVS_LINE_BYTES],
                                 uint32_t LUT_line, CRS_chipMode_t chipMode)
@@ -516,6 +528,127 @@ CRS_retVal_t Convert_rdParser(char *addr, char respLine[9][CRS_NVS_LINE_BYTES])
     memcpy(respLine[1], rd_converted[1], CRS_NVS_LINE_BYTES);
 }
 
+CRS_retVal_t Convert_applyLine(char respLine[9][CRS_NVS_LINE_BYTES],
+                               uint32_t LUT_line, CRS_chipMode_t chipMode)
+{
+//    CLI_cliPrintf("\r\nConvert_applyLine");
+
+    gIsFirstLine = true;
+    int rspLineIdx = 0;
+    char LUT[20] = { 0 };
+    if (chipMode == MODE_NATIVE)
+    {
+        memcpy(LUT, "wr 0x50 0x43", strlen("wr 0x50 0x43"));
+    }
+    else if (chipMode == MODE_SPI_SLAVE)
+    {
+        memcpy(LUT, "wr 0x60 0x43", strlen("wr 0x60 0x43"));
+
+    }
+    uint32_t i = 0;
+    i |= (0xf & gLUT_num);
+    i |= (0xf80 & (LUT_line << 8));
+    char i_str[20] = { 0 };
+    int2hex(i, i_str);
+    int len_i_str = strlen(i_str);
+    len_i_str = 4 - len_i_str;
+    int k = 0;
+    for (k = 0; k < len_i_str; ++k)
+    {
+        strcat(LUT, "0");
+    }
+    //            CLI_cliPrintf("\r\nLUT1: %s", LUT);
+
+    strcat(LUT, i_str);
+    //            CLI_cliPrintf("\r\nLUT3: %s", LUT);
+
+    memcpy(respLine[rspLineIdx], LUT, strlen(LUT)); //LUT number and line number
+    //apply
+    rspLineIdx++;
+
+    char lines[2][25] = { 0 };
+    memset(lines[0], 0, 24);
+    memset(lines[1], 0, 24);
+
+    if (chipMode == MODE_NATIVE)
+    {
+        memcpy(lines[0], "wr 0x50 0x000001", strlen("wr 0x50 0x000001"));
+        memcpy(lines[1], "wr 0x50 0x000000", strlen("wr 0x50 0x000000"));
+
+    }
+    else if (chipMode == MODE_SPI_SLAVE)
+    {
+        memcpy(lines[0], "wr 0x60 0x000001", strlen("wr 0x60 0x000001"));
+        memcpy(lines[1], "wr 0x60 0x000000", strlen("wr 0x60 0x000000"));
+
+    }
+    memcpy(respLine[rspLineIdx], lines[0], strlen(lines[0]));
+    rspLineIdx++;
+
+    memcpy(respLine[rspLineIdx], lines[1], strlen(lines[1]));
+}
+
+//slave:
+//wr 0x62 0xCH CH A A 0000
+//rd 0x62
+CRS_retVal_t Convert_rd(uint32_t addr, CRS_chipMode_t mode, uint32_t rfAddr,
+                        char convertedResp[2][CRS_NVS_LINE_BYTES])
+{
+
+    char addrStr[15] = { 0 };
+
+    if (mode == MODE_NATIVE)
+    {
+        sprintf(convertedResp[0], "wr 0x51 0x%x0000", addr);
+        sprintf(convertedResp[1], "rd 0x51");
+
+    }
+    else if (mode == MODE_SPI_SLAVE)
+    {
+        sprintf(convertedResp[0], "wr 0x62 0x%x0000", addr);
+        sprintf(convertedResp[1], "rd 0x62");
+
+    }
+    else
+    {
+        CLI_cliPrintf("\r\nIN Convert_rd INVALID MODE");
+        return CRS_FAILURE;
+    }
+    return CRS_SUCCESS;
+
+}
+
+//slave:
+//wr 0x60 0xCH CH A A DDDD
+//rd 0x61
+CRS_retVal_t Convert_wr(uint32_t addr, uint32_t value, CRS_chipMode_t mode,
+                        uint32_t rfAddr,
+                        char convertedResp[2][CRS_NVS_LINE_BYTES])
+{
+    //rfAddr for byte 6
+//char valStr[]
+    if (mode == MODE_NATIVE)
+    {
+        sprintf(convertedResp[0], "wr 0x50 0x%x%x", addr, value);
+    }
+    else if (mode == MODE_SPI_SLAVE)
+    {
+        sprintf(convertedResp[0], "wr 0x60 0x%x%x", addr, value);
+        sprintf(convertedResp[1], "wwr 0x61 0x0");
+
+    }
+    else
+    {
+        CLI_cliPrintf("\r\nIN Convert_rd INVALID MODE");
+        return CRS_FAILURE;
+    }
+    return CRS_SUCCESS;
+
+}
+
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static CRS_retVal_t checkRfChain(uint32_t addrVal)
 {
 //    CLI_cliPrintf("\r\in checkRfChain");
@@ -603,122 +736,3 @@ static CRS_retVal_t changeRfChain(uint32_t addrVal)
         }
     }
 }
-
-CRS_retVal_t Convert_applyLine(char respLine[9][CRS_NVS_LINE_BYTES],
-                               uint32_t LUT_line, CRS_chipMode_t chipMode)
-{
-//    CLI_cliPrintf("\r\nConvert_applyLine");
-
-    gIsFirstLine = true;
-    int rspLineIdx = 0;
-    char LUT[20] = { 0 };
-    if (chipMode == MODE_NATIVE)
-    {
-        memcpy(LUT, "wr 0x50 0x43", strlen("wr 0x50 0x43"));
-    }
-    else if (chipMode == MODE_SPI_SLAVE)
-    {
-        memcpy(LUT, "wr 0x60 0x43", strlen("wr 0x60 0x43"));
-
-    }
-    uint32_t i = 0;
-    i |= (0xf & gLUT_num);
-    i |= (0xf80 & (LUT_line << 8));
-    char i_str[20] = { 0 };
-    int2hex(i, i_str);
-    int len_i_str = strlen(i_str);
-    len_i_str = 4 - len_i_str;
-    int k = 0;
-    for (k = 0; k < len_i_str; ++k)
-    {
-        strcat(LUT, "0");
-    }
-    //            CLI_cliPrintf("\r\nLUT1: %s", LUT);
-
-    strcat(LUT, i_str);
-    //            CLI_cliPrintf("\r\nLUT3: %s", LUT);
-
-    memcpy(respLine[rspLineIdx], LUT, strlen(LUT)); //LUT number and line number
-    //apply
-    rspLineIdx++;
-
-    char lines[2][25] = { 0 };
-    memset(lines[0], 0, 24);
-    memset(lines[1], 0, 24);
-
-    if (chipMode == MODE_NATIVE)
-    {
-        memcpy(lines[0], "wr 0x50 0x000001", strlen("wr 0x50 0x000001"));
-        memcpy(lines[1], "wr 0x50 0x000000", strlen("wr 0x50 0x000000"));
-
-    }
-    else if (chipMode == MODE_SPI_SLAVE)
-    {
-        memcpy(lines[0], "wr 0x60 0x000001", strlen("wr 0x60 0x000001"));
-        memcpy(lines[1], "wr 0x60 0x000000", strlen("wr 0x60 0x000000"));
-
-    }
-    memcpy(respLine[rspLineIdx], lines[0], strlen(lines[0]));
-    rspLineIdx++;
-
-    memcpy(respLine[rspLineIdx], lines[1], strlen(lines[1]));
-}
-
-
-//slave:
-//wr 0x62 0xCH CH A A 0000
-//rd 0x62
-CRS_retVal_t Convert_rd(uint32_t addr, CRS_chipMode_t mode, uint32_t rfAddr,
-                        char convertedResp[2][CRS_NVS_LINE_BYTES])
-{
-
-    char addrStr[15] = { 0 };
-
-    if (mode == MODE_NATIVE)
-    {
-        sprintf(convertedResp[0], "wr 0x51 0x%x0000", addr);
-        sprintf(convertedResp[1], "rd 0x51");
-
-    }
-    else if (mode == MODE_SPI_SLAVE)
-    {
-        sprintf(convertedResp[0], "wr 0x62 0x%x0000", addr);
-        sprintf(convertedResp[1], "rd 0x62");
-
-    }
-    else
-    {
-        CLI_cliPrintf("\r\nIN Convert_rd INVALID MODE");
-        return CRS_FAILURE;
-    }
-    return CRS_SUCCESS;
-
-}
-
-//slave:
-//wr 0x60 0xCH CH A A DDDD
-//rd 0x61
-CRS_retVal_t Convert_wr(uint32_t addr, uint32_t value, CRS_chipMode_t mode, uint32_t rfAddr,
-                        char convertedResp[2][CRS_NVS_LINE_BYTES])
-{
-    //rfAddr for byte 6
-//char valStr[]
-    if (mode == MODE_NATIVE)
-    {
-        sprintf(convertedResp[0], "wr 0x50 0x%x%x", addr, value);
-    }
-    else if (mode == MODE_SPI_SLAVE)
-    {
-        sprintf(convertedResp[0], "wr 0x60 0x%x%x", addr, value);
-        sprintf(convertedResp[1], "wwr 0x61 0x0");
-
-    }
-    else
-    {
-        CLI_cliPrintf("\r\nIN Convert_rd INVALID MODE");
-        return CRS_FAILURE;
-    }
-    return CRS_SUCCESS;
-
-}
-
