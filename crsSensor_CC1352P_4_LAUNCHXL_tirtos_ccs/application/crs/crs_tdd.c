@@ -191,7 +191,8 @@ static void Tdd_setTddClock(uint32_t tddTime);
 static void processTddStartCallback(UArg a0);
 static CRS_retVal_t Tdd_writeString(void *_buffer, size_t _size);
 static CRS_retVal_t startRead(uint32_t bytesRead);
-
+static Tdd_setRequest_t createRequest();
+static void makeRequest(Tdd_setRequest_t request, uint8_t *request_array);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
