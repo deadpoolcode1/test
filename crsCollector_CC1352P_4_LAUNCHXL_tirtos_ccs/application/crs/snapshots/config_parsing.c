@@ -164,7 +164,7 @@ void Config_process(void)
             return;
         }
 
-        crs_package_t packageLineStruct;
+        crs_package_t packageLineStruct={0};
         rspStatus = Config_parsePackageLine(line, &packageLineStruct);
         if (rspStatus != CRS_SUCCESS)
         {
