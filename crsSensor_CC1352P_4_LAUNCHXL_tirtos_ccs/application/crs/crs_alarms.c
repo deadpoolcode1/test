@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <ti/drivers/Temperature.h>
 
+//#include "application/collector.h"
+
 #include "mac/mac_util.h"
 
 static uint8_t gAlarmArr[ALARMS_NUM];

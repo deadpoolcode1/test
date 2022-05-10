@@ -991,7 +991,6 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
 
         }
 
-
     initRfSnapValues();
 
     gCbFn = cbFunc;

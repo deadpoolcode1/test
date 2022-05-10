@@ -164,7 +164,7 @@ void Config_process(void)
             return;
         }
 
-        crs_package_t packageLineStruct;
+        crs_package_t packageLineStruct={0};
         rspStatus = Config_parsePackageLine(line, &packageLineStruct);
         if (rspStatus != CRS_SUCCESS)
         {
@@ -175,24 +175,6 @@ void Config_process(void)
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
         }
-//        int i = 0;
-//        int j = 0;
-//        for (i = 0; i < FILEINFO_SZ; ++i)
-//        {
-//            for (j = 0; j < NAME_VALUES_SZ; ++j)
-//            {
-//                if (memcmp(packageLineStruct.fileInfos[i].nameValues[j].name,
-//                           gFileInfos[i].nameValues[j].name, NAMEVALUE_NAME_SZ)
-//                        == 0)
-//                {
-//                    packageLineStruct.fileInfos[i].nameValues[j].value =
-//                            gFileInfos[i].nameValues[j].value;
-//                }else{
-//                    //TODO: add this param
-//                }
-//            }
-//
-//        }
 
         gInvLineNumber++;
         if (gIsSingleLine == true)
@@ -1049,6 +1031,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
             i++;
         }
         valueInt = strtol(value, NULL, 10);
+
         int idx = 0;
         while (1)
         {
@@ -1061,21 +1044,10 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
             }
             idx++;
         }
+
     }
 
     static CRS_retVal_t findScriptNameIdx(char *scriptName, int *respIdx)
     {
-//        int i = 0;
-//        while (i < NAME_VALUES_SZ)
-//        {
-//            if (memcmp(scriptName, gFileInfos, FILENAME_SZ) == 0)
-//            {
-//                *respIdx = i;
-//                return CRS_SUCCESS;
-//            }
-//            i++;
-//        }
-//        *respIdx = 0;
-//        return CRS_SUCCESS;
     }
 
