@@ -178,10 +178,10 @@ void Smac_recivedAssocReqCb(EasyLink_RxPacket *rxPacket, EasyLink_Status status)
             memset(&gSmAsocInfo, 0, sizeof(Smas_smAsoc_t));
             memcpy(gSmAsocInfo.nodeMac, pktRec.srcAddr, 8);
 
-            Util_setEvent(&smasEvents, SMAS_DEBUG_EVT);
+//            Util_setEvent(&smasEvents, SMAS_DEBUG_EVT);
             gNumReq++;
             /* Wake up the application thread when it waits for clock event */
-            Semaphore_post(macSem);
+//            Semaphore_post(macSem);
             Node_nodeInfo_t node = { 0 };
             memcpy(node.mac, pktRec.srcAddr, 8);
 //            node.shortAddr = pktRec.srcAddrShort;

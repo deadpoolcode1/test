@@ -194,11 +194,32 @@ static void macFnx(UArg arg0, UArg arg1)
         }
         else if (gState == MAC_SM_RX_IDLE)
         {
+
+
+            if (macEvents & MAC_DISCOVERY_EVT)
+            {
+                CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+                CollectorLink_getCollector(&collectorLink);
+
+                macMlmeDiscoveryInd_t rsp2 = { 0 };
+                MAC_createDiscovryInd(&rsp2,
+                                      collectorLink.mac);
+                MAC_sendDiscoveryIndToApp(&rsp2);
+                Util_clearEvent(&macEvents, MAC_DISCOVERY_EVT);
+            }
+
+
+
             if (macEvents & MAC_ENTER_BEACON_STATE_EVT)
             {
                 CP_CLI_cliPrintf("\r\nMAC_ENTER_BEACON_STATE_EVT");
+                CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+                                CollectorLink_getCollector(&collectorLink);
+                macMlmeDisassociateInd_t rsp2 = { 0 };
+                MAC_createDisssocInd(&rsp2, collectorLink.mac);
+                MAC_sendDisassocIndToApp(&rsp2);
                 CollectorLink_eraseCollector();
-                   MAC_moveToBeaconState();
+                MAC_moveToBeaconState();
                 Util_clearEvent(&macEvents, MAC_ENTER_BEACON_STATE_EVT);
             }
         }
@@ -352,6 +373,11 @@ static void discoveryCb(EasyLink_RxPacket *rxPacket,
         //send ack with cb of 'finishedSendingAckCb'
         TX_sendPacket(&pkt, finishedSendingDiscoveryAckCb);
 
+        Util_setEvent(&macEvents, MAC_DISCOVERY_EVT);
+
+        /* Wake up the application thread when it waits for clock event */
+        Semaphore_post(macSemHandle);
+
     }
     else
     {
@@ -371,6 +397,7 @@ static void finishedSendingDiscoveryAckCb(EasyLink_Status status)
         MAC_startDiscoveryClock();
 
         MAC_moveToSmriState();
+
         //enterRx with cb of 'recviedCollectorContentAgainCb'
 //        gIsDoneSendingDiscoveryAck = true;
 
@@ -458,6 +485,84 @@ static void processkIncomingAppMsgs()
     }
 
 }
+
+
+
+bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, sAddrExt_t deviceAddress)
+{
+    rsp->hdr.event = MAC_MLME_DISCOVERY_IND;
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+    return true;
+}
+
+bool MAC_sendDiscoveryIndToApp(macMlmeDiscoveryInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeDiscoveryInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
+
+}
+
+bool MAC_createDisssocInd(macMlmeDisassociateInd_t *rsp,
+                          sAddrExt_t deviceAddress)
+{
+    rsp->hdr.event = MAC_MLME_DISASSOCIATE_IND;
+
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+
+    return true;
+}
+
+bool MAC_sendDisassocIndToApp(macMlmeDisassociateInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeDisassociateInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
+
+}
+
+bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress,
+                        uint16_t shortAddr, ApiMac_status_t status)
+{
+    rsp->hdr.event = MAC_MLME_ASSOCIATE_IND;
+    rsp->hdr.status = status;
+
+    rsp->shortAddr = shortAddr;
+    memcpy(rsp->deviceAddress, deviceAddress, 8);
+
+    return true;
+}
+
+bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf)
+{
+    macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
+    memset(cbEvent, 0, sizeof(macCbackEvent_t));
+
+    memcpy(cbEvent, dataCnf, sizeof(macMlmeAssociateInd_t));
+
+    Mediator_msgObjSentToApp_t msg = { 0 };
+    msg.msg = cbEvent;
+
+    Mediator_sendMsgToApp(&msg);
+    return true;
+
+}
+
+
 
 bool MAC_createDataCnf(macMcpsDataCnf_t *rsp, uint8_t msduHandle,
                               ApiMac_status_t status)

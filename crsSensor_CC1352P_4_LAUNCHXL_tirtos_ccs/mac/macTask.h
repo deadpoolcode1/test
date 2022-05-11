@@ -21,6 +21,10 @@
 #define MAC_TASK_RX_DONE_EVT 0x0004
 #define MAC_TASK_NODE_TIMEOUT_EVT 0x0008
 #define MAC_ENTER_BEACON_STATE_EVT 0x0010
+#define MAC_DISCOVERY_EVT 0x0020
+#define MAC_DISASSOC_EVT 0x0040
+
+
 #define CRS_PAN_ID 0x11
 
 #define CRS_PAYLOAD_MAX_SIZE 100
@@ -111,6 +115,15 @@ void MAC_moveToSmacState();
 void MAC_moveToBeaconState();
 
 void MAC_moveToSmriState();
+
+bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, sAddrExt_t deviceAddress);
+bool MAC_sendDiscoveryIndToApp(macMlmeDiscoveryInd_t *dataCnf);
+bool MAC_createDisssocInd(macMlmeDisassociateInd_t *rsp,
+                          sAddrExt_t deviceAddress);
+bool MAC_sendDisassocIndToApp(macMlmeDisassociateInd_t *dataCnf);
+bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress,
+                        uint16_t shortAddr, ApiMac_status_t status);
+bool MAC_sendAssocIndToApp(macMlmeAssociateInd_t *dataCnf);
 
 void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
                                   EasyLink_Status status);
