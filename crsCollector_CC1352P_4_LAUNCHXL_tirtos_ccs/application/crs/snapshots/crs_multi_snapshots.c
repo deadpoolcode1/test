@@ -4,6 +4,9 @@
  *  Created on: 2 Jan 2022
  *      Author: epc_4
  */
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "crs_multi_snapshots.h"
 #include <string.h>
 #include <stdlib.h>
@@ -17,30 +20,55 @@
 #include "crs_snap_rf.h"
 #include "crs_script_dig.h"
 
-
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define RUN_NEXT_FILE_EV 0x1
 #define RUN_NEXT_LINE_EV 0x2
-
-static crs_package_t gPackage = {0};
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
+static crs_package_t gPackage = { 0 };
 static uint16_t gMultiFilesEvents = 0;
-
 static uint32_t gLutLineIdx = 0;
 static uint32_t gFileIdx = 0;
-
 static FPGA_cbFn_t gCbFn = NULL;
-
 static Semaphore_Handle collectorSem;
 static CRS_chipType_t gChipType;
 static CRS_chipMode_t gChipMode;
-
-static CRS_retVal_t getNextLutLine(uint32_t* lineNum);
-
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
+static CRS_retVal_t getNextLutLine(uint32_t *lineNum);
 static void uploadSnapRfCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
 
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 CRS_retVal_t MultiFiles_multiFilesInit(void *sem)
 {
     collectorSem = sem;
+}
+
+CRS_retVal_t MultiFiles_runMultiFiles(crs_package_t *package,
+                                      CRS_chipType_t chipType,
+                                      CRS_chipMode_t chipMode,
+                                      FPGA_cbFn_t cbFunc)
+{
+    gLutLineIdx = 0;
+    gFileIdx = 0;
+    gChipType = chipType;
+    gChipMode = chipMode;
+
+    memset(&gPackage, 0, sizeof(crs_package_t));
+    memcpy(&gPackage, package, sizeof(crs_package_t));
+    CRS_LOG(CRS_DEBUG, "in MultiFiles_runMultiFiles");
+    gCbFn = cbFunc;
+    Util_setEvent(&gMultiFilesEvents, RUN_NEXT_FILE_EV);
+
+    Semaphore_post(collectorSem);
+    return CRS_SUCCESS;
 }
 
 void MultiFiles_process(void)
@@ -50,7 +78,7 @@ void MultiFiles_process(void)
 
     if (gMultiFilesEvents & RUN_NEXT_FILE_EV)
     {
-        CRS_LOG(CRS_DEBUG,"in MultiFiles_process RUN_NEXT_FILE_EV");
+        CRS_LOG(CRS_DEBUG, "in MultiFiles_process RUN_NEXT_FILE_EV");
 
         if (gFileIdx >= gPackage.numFileInfos)
         {
@@ -70,11 +98,15 @@ void MultiFiles_process(void)
         }
         else if (gChipType == DIG)
         {
-            rspStatus = DIG_uploadSnapDig(gPackage.fileInfos[gFileIdx].name, gChipMode, 0xff, gPackage.fileInfos[gFileIdx].nameValues, uploadSnapDigCb);
+            rspStatus = DIG_uploadSnapDig(
+                    gPackage.fileInfos[gFileIdx].name, gChipMode, 0xff,
+                    gPackage.fileInfos[gFileIdx].nameValues, uploadSnapDigCb);
         }
         else
         {
-            rspStatus = DIG_uploadSnapFpga(gPackage.fileInfos[gFileIdx].name, gChipMode,gPackage.fileInfos[gFileIdx].nameValues, uploadSnapDigCb);
+            rspStatus = DIG_uploadSnapFpga(
+                    gPackage.fileInfos[gFileIdx].name, gChipMode,
+                    gPackage.fileInfos[gFileIdx].nameValues, uploadSnapDigCb);
         }
 
         gFileIdx++;
@@ -92,10 +124,11 @@ void MultiFiles_process(void)
 
     if (gMultiFilesEvents & RUN_NEXT_LINE_EV)
     {
-        CRS_LOG(CRS_DEBUG,"in MultiFiles_process RUN_NEXT_LINE_EV");
+        CRS_LOG(CRS_DEBUG, "in MultiFiles_process RUN_NEXT_LINE_EV");
 
         //if ends lutlines then: gFileIdx++
-        while (gLutLineIdx < LUT_SZ && (gPackage.fileInfos[gFileIdx].LUTline[gLutLineIdx] == 0))
+        while (gLutLineIdx < LUT_SZ
+                && (gPackage.fileInfos[gFileIdx].LUTline[gLutLineIdx] == 0))
         {
             gLutLineIdx++;
         }
@@ -110,7 +143,9 @@ void MultiFiles_process(void)
 
         }
 
-        CRS_retVal_t rspStatus = RF_uploadSnapRf(gPackage.fileInfos[gFileIdx].name, 0xff, gLutLineIdx, gChipMode, gPackage.fileInfos[gFileIdx].nameValues,uploadSnapRfCb);
+        CRS_retVal_t rspStatus = RF_uploadSnapRf(
+                gPackage.fileInfos[gFileIdx].name, 0xff, gLutLineIdx, gChipMode,
+                gPackage.fileInfos[gFileIdx].nameValues, uploadSnapRfCb);
         if (rspStatus != CRS_SUCCESS)
         {
             const FPGA_cbArgs_t cbArgs;
@@ -122,29 +157,11 @@ void MultiFiles_process(void)
         Util_clearEvent(&gMultiFilesEvents, RUN_NEXT_LINE_EV);
     }
 
-
 }
 
-
-
-
-CRS_retVal_t MultiFiles_runMultiFiles(crs_package_t *package, CRS_chipType_t chipType, CRS_chipMode_t chipMode,FPGA_cbFn_t cbFunc)
-{
-    gLutLineIdx = 0;
-    gFileIdx = 0;
-    gChipType = chipType;
-    gChipMode = chipMode;
-
-    memset(&gPackage, 0, sizeof(crs_package_t));
-    memcpy(&gPackage, package, sizeof(crs_package_t));
-    CRS_LOG(CRS_DEBUG,"in MultiFiles_runMultiFiles");
-    gCbFn = cbFunc;
-    Util_setEvent(&gMultiFilesEvents, RUN_NEXT_FILE_EV);
-
-    Semaphore_post(collectorSem);
-    return CRS_SUCCESS;
-}
-
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs)
 {
     Util_setEvent(&gMultiFilesEvents, RUN_NEXT_FILE_EV);
@@ -156,5 +173,4 @@ static void uploadSnapRfCb(const FPGA_cbArgs_t _cbArgs)
     Util_setEvent(&gMultiFilesEvents, RUN_NEXT_LINE_EV);
     Semaphore_post(collectorSem);
 }
-
 

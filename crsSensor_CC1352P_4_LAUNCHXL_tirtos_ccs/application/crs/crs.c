@@ -4,8 +4,11 @@
  *  Created on: 23 Jan 2022
  *      Author: avi
  */
-#include "crs_nvs.h"
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 
+#include "crs_nvs.h"
 #include "crs.h"
 #include "crs_cli.h"
 #include "crs_thresholds.h"
@@ -14,17 +17,13 @@
 #include <stdio.h>
 #include <ti/drivers/Temperature.h>
 
-
-
-
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 void CRS_init()
 {
 
 }
-
-
-
-
 
 void* CRS_malloc(uint16_t size)
 {

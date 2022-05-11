@@ -4,18 +4,22 @@
  *  Created on: 2 Jan 2022
  *      Author: epc_4
  */
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "crs_snapshot.h"
-
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define FILE_CACHE_SZ 300
-
 #define LINE_SZ 50
-
 #define RUN_NEXT_LINE_EV 0x1
 #define STAR_RSP_EV 0x2
 #define FINISHED_FILE_EV 0x4
 
-
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 static uint32_t gLineNumber = 1;
 static char gFileToUpload[FILENAME_SZ] = { 0 };
 
@@ -34,7 +38,9 @@ static Semaphore_Handle collectorSem;
 
 static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
 static uint32_t gFileContentCacheIdx = 0;
-
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 static void uploadSnapRawCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
@@ -51,9 +57,114 @@ static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
 static void Nvs_uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs);
 static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
 
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 CRS_retVal_t SnapInit(void *sem)
 {
     collectorSem = sem;
+
+}
+CRS_retVal_t Snap_uploadSnapRf(char *filename, uint32_t rfAddr,
+                               uint32_t LUTLineNum, CRS_chipMode_t chipMode,
+                               CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
+{
+    gCbFn = cbFunc;
+    gLUT_line = LUTLineNum;
+    gMode = chipMode;
+    gChipType = RF;
+    CLI_cliPrintf("\r\n");
+    CLI_cliPrintf("\r\nin Snap_uploadSnapRf runing %s, lut line:0x%x", filename,
+                  LUTLineNum);
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+
+    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        return rspStatus;
+    }
+    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+
+}
+
+CRS_retVal_t Snap_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
+                                FPGA_cbFn_t cbFunc)
+{
+    gCbFn = cbFunc;
+    gMode = chipMode;
+    gChipType = DIG;
+    CLI_cliPrintf("\r\n");
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+
+    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        return rspStatus;
+    }
+    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+
+}
+
+CRS_retVal_t Snap_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
+                                 FPGA_cbFn_t cbFunc)
+{
+    gCbFn = cbFunc;
+    gMode = chipMode;
+    gChipType = UNKNOWN;
+    CLI_cliPrintf("\r\n");
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+
+    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        return rspStatus;
+    }
+    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+
+}
+CRS_retVal_t Snap_uploadSnapRaw(char *filename, CRS_chipMode_t chipMode,
+                                FPGA_cbFn_t cbFunc)
+{
+    gCbFn = cbFunc;
+    gMode = chipMode;
+    gChipType = UNKNOWN;
+    CLI_cliPrintf("\r\n");
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+
+    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    Nvs_readFile(gFileToUpload, gFileContentCache);
+    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
 
 }
 
@@ -80,9 +191,8 @@ void Snap_process(void)
             }
             const FPGA_cbArgs_t cbArgs;
             gCbFn(cbArgs);
-                            Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-                            return;
-
+            Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+            return;
 
         }
 
@@ -163,12 +273,13 @@ void Snap_process(void)
 
         if (gChipType == RF)
         {
-            rspStatus = Convert_readLineRf(starParsedLine, gLineToSendArray, gLUT_line,
-                                           gMode);
+            rspStatus = Convert_readLineRf(starParsedLine, gLineToSendArray,
+                                           gLUT_line, gMode);
         }
         else if (gChipType == DIG)
         {
-            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray, gMode);
+            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
+                                            gMode);
         }
         else if (gChipType == UNKNOWN)
         {
@@ -211,6 +322,9 @@ void Snap_process(void)
 
 }
 
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static CRS_retVal_t digRunNextLine()
 {
     CRS_retVal_t rspStatus;
@@ -369,9 +483,8 @@ static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs)
 static void finishedFileCb(const FPGA_cbArgs_t _cbArgs)
 {
 
-
     const FPGA_cbArgs_t cbArgs;
-                gCbFn(cbArgs);
+    gCbFn(cbArgs);
 //                Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
 }
 
@@ -386,112 +499,4 @@ static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
     Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
     Semaphore_post(collectorSem);
 }
-
-CRS_retVal_t Snap_uploadSnapRf(char *filename, uint32_t rfAddr,
-                               uint32_t LUTLineNum, CRS_chipMode_t chipMode,CRS_nameValue_t *nameVals,
-                               FPGA_cbFn_t cbFunc)
-{
-    gCbFn = cbFunc;
-    gLUT_line = LUTLineNum;
-    gMode = chipMode;
-    gChipType = RF;
-    CLI_cliPrintf("\r\n");
-    CLI_cliPrintf("\r\nin Snap_uploadSnapRf runing %s, lut line:0x%x", filename, LUTLineNum);
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-
-    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
-    if (rspStatus != CRS_SUCCESS)
-    {
-        return rspStatus;
-    }
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
-}
-
-CRS_retVal_t Snap_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
-                                FPGA_cbFn_t cbFunc)
-{
-    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = DIG;
-    CLI_cliPrintf("\r\n");
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-
-    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
-    if (rspStatus != CRS_SUCCESS)
-    {
-        return rspStatus;
-    }
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
-}
-
-CRS_retVal_t Snap_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
-                                FPGA_cbFn_t cbFunc)
-{
-    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = UNKNOWN;
-    CLI_cliPrintf("\r\n");
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-
-    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    rspStatus = Nvs_readFile(gFileToUpload, gFileContentCache);
-    if (rspStatus != CRS_SUCCESS)
-    {
-        return rspStatus;
-    }
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
-}
-
-
-
-CRS_retVal_t Snap_uploadSnapRaw(char *filename, CRS_chipMode_t chipMode,
-                                FPGA_cbFn_t cbFunc)
-{
-    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = UNKNOWN;
-    CLI_cliPrintf("\r\n");
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-
-    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    Nvs_readFile(gFileToUpload, gFileContentCache);
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
-}
-
-
-
 

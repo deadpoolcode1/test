@@ -7,11 +7,17 @@
 
 #ifndef APPLICATION_CRS_CRS_ALARMS_H_
 #define APPLICATION_CRS_CRS_ALARMS_H_
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "application/crs/crs.h"
 #include "application/crs/crs_cli.h"
-
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define ALARMS_NUM 8
-
+#define ALARM_ACTIVE_BIT_LOCATION 0
+#define ALARM_STICKY_BIT_LOCATION 1
 typedef enum Alarms_alarmType
 {
     DLMaxInputPower,
@@ -21,7 +27,6 @@ typedef enum Alarms_alarmType
     ULMaxInputPower,
     DLMaxOutputPower
 } Alarms_alarmType_t;
-
 typedef enum Alarms_alarmMode
 {
     ALARM_INACTIVE,
@@ -29,11 +34,12 @@ typedef enum Alarms_alarmMode
     ALARM_STICKY
 } Alarms_alarmMode_t;
 
-#define ALARM_ACTIVE_BIT_LOCATION 0
-#define ALARM_STICKY_BIT_LOCATION 1
 
 
 
+/******************************************************************************
+ Function Prototypes
+ *****************************************************************************/
 CRS_retVal_t Alarms_init(void *sem);
 CRS_retVal_t Alarms_printAlarms();
 CRS_retVal_t Alarms_process(void);
@@ -47,6 +53,9 @@ CRS_retVal_t Alarms_setTemperatureHigh(int16_t temperature);
 CRS_retVal_t Alarms_setTemperatureLow(int16_t temperature);
 CRS_retVal_t Alarms_temp_Init();
 CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg);
-
+void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
+                                   int16_t thresholdTemperature,
+                                   uintptr_t clientArg,
+                                   Temperature_NotifyObj *notifyObject);
 
 #endif /* APPLICATION_CRS_CRS_ALARMS_H_ */
