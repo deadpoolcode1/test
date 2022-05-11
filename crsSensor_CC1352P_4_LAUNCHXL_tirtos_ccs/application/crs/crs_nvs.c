@@ -6,6 +6,7 @@
  */
 
 #include "crs_nvs.h"
+#include <ti/sysbios/knl/Task.h>
 
 #define ENV_FILENAME "env.txt"
 #define ENV_FILE_IDX (MAX_FILES - 50)
@@ -813,6 +814,7 @@ CRS_retVal_t Nvs_cat(char *filename)
     while (token != NULL)
     {
         CLI_cliPrintf("\r\n%s", token);
+        Task_sleep(100);
         token = strtok(NULL, s);
     }
     return CRS_SUCCESS;
