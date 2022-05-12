@@ -15,7 +15,7 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define ALARMS_NUM 8
+
 #define ALARM_ACTIVE_BIT_LOCATION 0
 #define ALARM_STICKY_BIT_LOCATION 1
 typedef enum Alarms_alarmType
@@ -25,8 +25,13 @@ typedef enum Alarms_alarmType
     MaxCableLoss,
     SystemTemperature,
     ULMaxInputPower,
-    DLMaxOutputPower
+    DLMaxOutputPower,
+    TDDLock,
+    PLLLock,
+    SyncPLLLock,
+    NumberOfAlarms
 } Alarms_alarmType_t;
+#define ALARMS_NUM 9
 typedef enum Alarms_alarmMode
 {
     ALARM_INACTIVE,
@@ -52,10 +57,11 @@ CRS_retVal_t Alarms_setTemperatureHigh(int16_t temperature);
 
 CRS_retVal_t Alarms_setTemperatureLow(int16_t temperature);
 CRS_retVal_t Alarms_temp_Init();
+CRS_retVal_t Alarms_TDDLock_Init();
 CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg);
 void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
                                    int16_t thresholdTemperature,
                                    uintptr_t clientArg,
                                    Temperature_NotifyObj *notifyObject);
-
+void Alarms_TDDLockNotifyFxn(uint_least8_t index);
 #endif /* APPLICATION_CRS_CRS_ALARMS_H_ */

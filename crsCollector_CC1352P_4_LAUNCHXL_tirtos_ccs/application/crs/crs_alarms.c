@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <ti/drivers/Temperature.h>
 #include "mac/mac_util.h"
+#include <ti/drivers/GPIO.h>
 
 /******************************************************************************
  Local variables
@@ -30,7 +31,7 @@ static uint16_t Alarms_events = 0;
  Constants and definitions
  *****************************************************************************/
 #define ALARMS_SET_TEMP_ALARM_EVT 0x0001
-
+#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -43,6 +44,10 @@ CRS_retVal_t Alarms_printAlarms()
     CLI_cliPrintf("\r\n4 SystemTemperature 0x%x", gAlarmArr[SystemTemperature]);
     CLI_cliPrintf("\r\n5 ULMaxInputPower 0x%x", gAlarmArr[ULMaxInputPower]);
     CLI_cliPrintf("\r\n6 DLMaxOutputPower 0x%x", gAlarmArr[DLMaxOutputPower]);
+    CLI_cliPrintf("\r\n7 TDDLock 0x%x", gAlarmArr[TDDLock]);
+    CLI_cliPrintf("\r\n8 PLLLock 0x%x", gAlarmArr[PLLLock]);
+    CLI_cliPrintf("\r\n9 SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
+
 }
 /**
  * turns on the alarm_active bit
@@ -107,6 +112,19 @@ CRS_retVal_t Alarms_process(void)
         /* Clear the event */
         Util_clearEvent(&Alarms_events, ALARMS_SET_TEMP_ALARM_EVT);
     }
+    if (Alarms_events & ALARMS_SET_TDDLOCK_ALARM_EVT)
+    {
+//        CLI_cliPrintf("\r\nTDD interrupt!");
+        //if rising edge-->tdd is not locked!
+        if (GPIO_read(CONFIG_GPIO_BTN1))
+        {
+            Alarms_setAlarm(TDDLock);
+        }else{
+            Alarms_clearAlarm(TDDLock, ALARM_INACTIVE);
+        }
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events, ALARMS_SET_TDDLOCK_ALARM_EVT);
+    }
 
 }
 
@@ -138,6 +156,8 @@ CRS_retVal_t Alarms_setTemperatureLow(int16_t temperature)
 CRS_retVal_t Alarms_init(void *sem)
 {
     collectorSem = sem;
+    Alarms_temp_Init();
+    Alarms_TDDLock_Init();
 }
 
 /*!
@@ -156,6 +176,19 @@ CRS_retVal_t Alarms_temp_Init()
     CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh);
     return status;
 
+}
+
+/*!
+ *  @brief set interrupt on both edges whenever the tdd is not locked
+ *
+ */
+CRS_retVal_t Alarms_TDDLock_Init()
+{
+    GPIO_init();
+    //set on both edges
+//    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_INT_BOTH_EDGES);
+    GPIO_setCallback(CONFIG_GPIO_BTN1,Alarms_TDDLockNotifyFxn);
+    GPIO_enableInt(CONFIG_GPIO_BTN1);
 }
 
 CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
@@ -183,5 +216,12 @@ void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(collectorSem);
-//    Alarms_setAlarm(SystemTemperature);
+}
+
+void Alarms_TDDLockNotifyFxn(uint_least8_t index)
+{
+    Util_setEvent(&Alarms_events, ALARMS_SET_TDDLOCK_ALARM_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
 }
