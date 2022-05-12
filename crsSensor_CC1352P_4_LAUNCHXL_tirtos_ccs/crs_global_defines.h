@@ -9,6 +9,9 @@
 #define CRS_GLOBAL_DEFINES_H_
 #define CRS_CB
 
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define CRS_GLOBAL_PAN_ID 0x3
 #define CRS_GLOBAL_COLLECTOR_SHORT_ADDR 0xaabb
 

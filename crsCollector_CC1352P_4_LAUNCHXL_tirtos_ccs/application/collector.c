@@ -26,11 +26,8 @@
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
 #include "application/crs/crs_alarms.h"
-
-//#include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "agc/agc.h"
-
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -48,6 +45,7 @@
  *****************************************************************************/
 /* Task pending events */
 uint16_t Collector_events = 0;
+Cllc_associated_devices_t Cllc_associatedDevList[4];
 
 /******************************************************************************
  Local variables
@@ -62,8 +60,6 @@ static uint16_t gDeviceShortAddr = 0xaabb;
 
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
-
-Cllc_associated_devices_t Cllc_associatedDevList[4];
 
 /******************************************************************************
  Local function prototypes
@@ -126,7 +122,6 @@ void Collector_init()
     CRS_init();
     Agc_init();
     Alarms_init(sem);
-    Alarms_temp_Init();
     Csf_crsInitScript();
 //       Agc_init();
 
@@ -164,7 +159,6 @@ void Collector_process(void)
     }
 }
 
-
 void Csf_crsInitScript()
 {
 //    CRS_LOG(CRS_DEBUG, "Running script");
@@ -178,53 +172,6 @@ void Csf_crsInitScript()
         fpgaCrsDoneCallback(cbArgs);
     }
 }
-
-
-static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
-{
-//    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    CRS_retVal_t retStatus = Config_runConfigFile("flat",
-                                                  fpgaCrsDoneCallback);
-
-    if (retStatus == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nUnable to run flat file");
-        FPGA_cbArgs_t cbArgs;
-        fpgaCrsDoneCallback(cbArgs);
-    }
-
-}
-
-static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
-{
-    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
-                                                NULL, fpgaCrsDoneCallback);
-//    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
-
-    if (retStatus == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
-        FPGA_cbArgs_t cbArgs;
-        fpgaCrsDoneCallback(cbArgs);
-    }
-
-}
-
-static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
-{
-    CLI_startREAD();
-
-//    if (CONFIG_AUTO_START)
-//    {
-//        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
-//
-//        /* Start the device */
-//        Util_setEvent(&Collector_events, COLLECTOR_START_EVT);
-//        Semaphore_post(collectorSem);
-//
-//    }
-}
-
 void Csf_processCliSendMsgUpdate()
 {
     Util_setEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
@@ -332,6 +279,101 @@ Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
     return (status);
 }
 
+bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo)
+{
+    nwkInfo->devInfo.panID = CRS_GLOBAL_PAN_ID;
+    nwkInfo->devInfo.shortAddress = CRS_GLOBAL_COLLECTOR_SHORT_ADDR;
+    EasyLink_getIeeeAddr(nwkInfo->devInfo.extAddress);
+    return true;
+}
+
+void Csf_sensorsDataPrint(uint16_t shortAddr)
+{
+    int x = 0;
+    uint32_t numSpaces = 5;
+    char spacesStr[100] = { 0 };
+
+    memset(spacesStr, ' ', numSpaces);
+    /* Clear any timed out transactions */
+    for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
+    {
+        if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                && (Cllc_associatedDevList[x].status == 0x2201))
+        {
+            if (shortAddr == Cllc_associatedDevList[x].shortAddr)
+            {
+                CLI_cliPrintf("\r\nShortAddr=0x%x Avg=%d Max=%d Min=%d Last=%d",
+                              Cllc_associatedDevList[x].shortAddr,
+                              Cllc_associatedDevList[x].rssiAvgCru,
+                              Cllc_associatedDevList[x].rssiMaxCru,
+                              Cllc_associatedDevList[x].rssiMinCru,
+                              Cllc_associatedDevList[x].rssiLastCru);
+
+                CLI_cliPrintf(
+                        "\r\nShortAddr=0xaabb Avg=%d Max=%d Min=%d Last=%d",
+                        Cllc_associatedDevList[x].rssiAvgCdu,
+                        Cllc_associatedDevList[x].rssiMaxCdu,
+                        Cllc_associatedDevList[x].rssiMinCdu,
+                        Cllc_associatedDevList[x].rssiLastCdu);
+            }
+
+        }
+    }
+}
+
+void Cllc_getFfdShortAddr(uint16_t *shortAddr)
+{
+    *shortAddr = gDeviceShortAddr;
+}
+
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
+static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
+{
+//    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
+    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run flat file");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
+    NULL,
+                                                fpgaCrsDoneCallback);
+//    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+
+    if (retStatus == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
+        FPGA_cbArgs_t cbArgs;
+        fpgaCrsDoneCallback(cbArgs);
+    }
+
+}
+
+static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
+{
+    CLI_startREAD();
+
+//    if (CONFIG_AUTO_START)
+//    {
+//        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
+//
+//        /* Start the device */
+//        Util_setEvent(&Collector_events, COLLECTOR_START_EVT);
+//        Semaphore_post(collectorSem);
+//
+//    }
+}
+
 static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
                     uint8_t *pData)
 {
@@ -425,19 +467,6 @@ static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType)
     return (msduHandle);
 }
 
-void Cllc_getFfdShortAddr(uint16_t *shortAddr)
-{
-    *shortAddr = gDeviceShortAddr;
-}
-
-bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo)
-{
-    nwkInfo->devInfo.panID = CRS_GLOBAL_PAN_ID;
-    nwkInfo->devInfo.shortAddress = CRS_GLOBAL_COLLECTOR_SHORT_ADDR;
-    EasyLink_getIeeeAddr(nwkInfo->devInfo.extAddress);
-    return true;
-}
-
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
 //    CLI_cliPrintf("\r\nassocIndCB");
@@ -479,7 +508,8 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
     int x = 0;
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
     {
-        if (memcmp(pDisassocInd->deviceAddress, Cllc_associatedDevList[x].extAddr, 8) == 0)
+        if (memcmp(pDisassocInd->deviceAddress,
+                   Cllc_associatedDevList[x].extAddr, 8) == 0)
         {
             memset(&(Cllc_associatedDevList[x]), 0xff,
                    sizeof(Cllc_associated_devices_t));
@@ -496,14 +526,19 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
     int x = 0;
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
     {
-        if (memcmp(pDiscoveryInd->deviceAddress, Cllc_associatedDevList[x].extAddr, 8) == 0)
+        if (memcmp(pDiscoveryInd->deviceAddress,
+                   Cllc_associatedDevList[x].extAddr, 8) == 0)
         {
             updateCduRssiStrct(pDiscoveryInd->rssi, x);
 
-            Cllc_associatedDevList[x].rssiAvgCru = pDiscoveryInd->rssiRemote.rssiAvg;
-            Cllc_associatedDevList[x].rssiLastCru = pDiscoveryInd->rssiRemote.rssiLast;
-            Cllc_associatedDevList[x].rssiMaxCru = pDiscoveryInd->rssiRemote.rssiMax;
-            Cllc_associatedDevList[x].rssiMinCru = pDiscoveryInd->rssiRemote.rssiMin;
+            Cllc_associatedDevList[x].rssiAvgCru =
+                    pDiscoveryInd->rssiRemote.rssiAvg;
+            Cllc_associatedDevList[x].rssiLastCru =
+                    pDiscoveryInd->rssiRemote.rssiLast;
+            Cllc_associatedDevList[x].rssiMaxCru =
+                    pDiscoveryInd->rssiRemote.rssiMax;
+            Cllc_associatedDevList[x].rssiMinCru =
+                    pDiscoveryInd->rssiRemote.rssiMin;
 
             //TODO update rssi here.
             return;
@@ -644,38 +679,3 @@ static void updateCduRssiStrct(int8_t rssi, int idx)
     }
 
 }
-
-void Csf_sensorsDataPrint(uint16_t shortAddr)
-{
-    int x = 0;
-    uint32_t numSpaces = 5;
-    char spacesStr[100] = { 0 };
-
-    memset(spacesStr, ' ', numSpaces);
-    /* Clear any timed out transactions */
-    for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
-    {
-        if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
-                && (Cllc_associatedDevList[x].status == 0x2201))
-        {
-            if (shortAddr == Cllc_associatedDevList[x].shortAddr)
-            {
-                CLI_cliPrintf("\r\nShortAddr=0x%x Avg=%d Max=%d Min=%d Last=%d",
-                              Cllc_associatedDevList[x].shortAddr,
-                              Cllc_associatedDevList[x].rssiAvgCru,
-                              Cllc_associatedDevList[x].rssiMaxCru,
-                              Cllc_associatedDevList[x].rssiMinCru,
-                              Cllc_associatedDevList[x].rssiLastCru);
-
-                CLI_cliPrintf(
-                        "\r\nShortAddr=0xaabb Avg=%d Max=%d Min=%d Last=%d",
-                        Cllc_associatedDevList[x].rssiAvgCdu,
-                        Cllc_associatedDevList[x].rssiMaxCdu,
-                        Cllc_associatedDevList[x].rssiMinCdu,
-                        Cllc_associatedDevList[x].rssiLastCdu);
-            }
-
-        }
-    }
-}
-

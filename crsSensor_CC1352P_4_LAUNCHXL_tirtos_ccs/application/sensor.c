@@ -157,6 +157,7 @@ void Sensor_init()
     CRS_init();
        Agc_init();
        Ssf_crsInitScript();
+       Alarms_init(sem);
 }
 
 void Sensor_process(void)
@@ -366,6 +367,8 @@ extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
 
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
+//        CLI_cliPrintf("\r\nassocIndCB");
+
     isConnected = true;
     memcpy(gParentInfo.devInfo.extAddress, pAssocInd->deviceAddress, 8);
     gParentInfo.devInfo.shortAddress = pAssocInd->shortAddr;
@@ -373,13 +376,17 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
+//        CLI_cliPrintf("\r\ndisassocIndCB");
+
     isConnected = false;
 
 }
 
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 {
-    updateRssiStrct(pDiscoveryInd->rssi);
+//        CLI_cliPrintf("\r\ndiscoveryIndCB");
+
+//    updateRssiStrct(pDiscoveryInd->rssi);
 }
 
 

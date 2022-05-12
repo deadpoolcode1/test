@@ -11,8 +11,13 @@
  *  Created on: 2 Jan 2022
  *      Author: epc_4
  */
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "crs_script_dig.h"
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 
 #define FILE_CACHE_SZ 300
 
@@ -23,6 +28,9 @@
 #define FINISHED_FILE_EV 0x4
 #define CHANGE_DIG_CHIP_EV 0x8
 
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 
 static CRS_nameValue_t gNameValues[NAME_VALUES_SZ];
 
@@ -51,6 +59,9 @@ static char *gFileContentCache = NULL;
 static uint32_t gFileContentCacheIdx = 0;
 
 static bool gIsFileDone = false;
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 
 static void uploadSnapRawCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
@@ -91,6 +102,10 @@ static void uploadSnapRdDigCb(const FPGA_cbArgs_t _cbArgs);
 static void changedDigChipCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t runWrCommand(char *line);
 
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
+
 CRS_retVal_t DigInit(void *sem)
 {
     collectorSem = sem;
@@ -101,8 +116,104 @@ CRS_retVal_t DigInit(void *sem)
 
 }
 
+CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
+                               uint32_t chipNumber, CRS_nameValue_t *nameVals,
+                               FPGA_cbFn_t cbFunc)
+{
 
+    if (Fpga_isOpen() == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nOpen Fpga first");
+        const FPGA_cbArgs_t cbArgs = { 0 };
+        cbFunc(cbArgs);
+        return CRS_FAILURE;
 
+    }
+    CRS_LOG(CRS_DEBUG, "running file: %s", filename);
+    gDigAddr = chipNumber;
+    gCbFn = cbFunc;
+    gMode = chipMode;
+    gChipType = DIG;
+    CLI_cliPrintf("\r\n");
+    if (nameVals != NULL)
+    {
+        int i;
+        for (i = 0; i < NAME_VALUES_SZ; ++i)
+        {
+            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
+            gNameValues[i].value = nameVals[i].value;
+        }
+    }
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+
+//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    gFileContentCache = Nvs_readFileWithMalloc(filename);
+    if (gFileContentCache == NULL)
+    {
+        return CRS_FAILURE;
+    }
+
+    if (chipNumber == 0xff)
+    {
+        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+    }
+    else
+    {
+        Util_setEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
+    }
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+
+}
+
+CRS_retVal_t DIG_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
+                                CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
+{
+    if (Fpga_isOpen() == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nOpen Fpga first");
+        const FPGA_cbArgs_t cbArgs = { 0 };
+        cbFunc(cbArgs);
+        return CRS_FAILURE;
+
+    }
+    gCbFn = cbFunc;
+    gMode = chipMode;
+    gChipType = UNKNOWN;
+    CLI_cliPrintf("\r\n");
+    if (nameVals != NULL)
+    {
+        int i;
+        for (i = 0; i < NAME_VALUES_SZ; ++i)
+        {
+            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
+            gNameValues[i].value = nameVals[i].value;
+        }
+    }
+    CRS_LOG(CRS_DEBUG, "running file: %s", filename);
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    memcpy(gFileToUpload, filename, FILENAME_SZ);
+    gFileContentCacheIdx = 0;
+    gIsFileDone = false;
+
+//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    gFileContentCache = Nvs_readFileWithMalloc(filename);
+    if (gFileContentCache == NULL)
+    {
+        return CRS_FAILURE;
+    }
+    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+
+}
 void DIG_process(void)
 {
     CRS_retVal_t rspStatus;
@@ -194,7 +305,7 @@ void DIG_process(void)
     //CHANGE_DIG_CHIP_EV
     if (gDigEvents & CHANGE_DIG_CHIP_EV)
     {
-        CRS_LOG(CRS_DEBUG,"\r\nin CHANGE_DIG_CHIP_EV runing");
+        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
         char line[100] = { 0 };
         sprintf(line, "wr 0xff 0x%x", gDigAddr);
         Fpga_writeMultiLine(line, changedDigChipCb);
@@ -203,6 +314,9 @@ void DIG_process(void)
 
 }
 
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static void changedDigChipCb(const FPGA_cbArgs_t _cbArgs)
 {
     Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
@@ -236,7 +350,6 @@ static CRS_retVal_t runLine(char *line)
         {
             retVal = runWrCommand(line);
             return CRS_SUCCESS;
-
 
         }
         else if (memcmp(line, "r ", 2) == 0)
@@ -679,7 +792,6 @@ static CRS_retVal_t runWCommand(char *line)
 static CRS_retVal_t runWrCommand(char *line)
 {
 
-
     Fpga_writeMultiLine(line, uploadSnapDigCb);
 
     return CRS_SUCCESS;
@@ -715,7 +827,7 @@ static CRS_retVal_t runEwCommand(char *line)
     strcat(lineToSend, token);
     token = strtok(NULL, s); //param or val
     int i = 0;
-    lineToSend[strlen(lineToSend)]=' ';
+    lineToSend[strlen(lineToSend)] = ' ';
     //TODO: verify with michael how do we set params in files.
     if (*token == '_')
     {
@@ -1048,104 +1160,6 @@ static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
 {
     Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
     Semaphore_post(collectorSem);
-}
-
-CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,uint32_t chipNumber,
-                               CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
-{
-
-    if (Fpga_isOpen() == CRS_FAILURE)
-        {
-            CLI_cliPrintf("\r\nOpen Fpga first");
-            const FPGA_cbArgs_t cbArgs = { 0 };
-            cbFunc(cbArgs);
-            return CRS_FAILURE;
-
-        }
-    CRS_LOG(CRS_DEBUG, "running file: %s", filename);
-    gDigAddr = chipNumber;
-    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = DIG;
-    CLI_cliPrintf("\r\n");
-    if (nameVals != NULL)
-    {
-        int i;
-        for (i = 0; i < NAME_VALUES_SZ; ++i)
-        {
-            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
-        }
-    }
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-
-//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
-    {
-        return CRS_FAILURE;
-    }
-
-    if (chipNumber == 0xff)
-    {
-        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    }
-    else
-    {
-        Util_setEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
-    }
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
-}
-
-CRS_retVal_t DIG_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
-                                CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
-{
-    if (Fpga_isOpen() == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nOpen Fpga first");
-        const FPGA_cbArgs_t cbArgs = { 0 };
-        cbFunc(cbArgs);
-        return CRS_FAILURE;
-
-    }
-    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = UNKNOWN;
-    CLI_cliPrintf("\r\n");
-    if (nameVals != NULL)
-    {
-        int i;
-        for ( i = 0; i < NAME_VALUES_SZ; ++i)
-        {
-            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
-        }
-    }
-    CRS_LOG(CRS_DEBUG, "running file: %s", filename);
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-    gIsFileDone = false;
-
-//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
-    {
-        return CRS_FAILURE;
-    }
-    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-
 }
 
 static void processDigTimeoutCallback(UArg a0)

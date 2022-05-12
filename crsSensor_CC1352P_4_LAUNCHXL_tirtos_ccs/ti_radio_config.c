@@ -72,14 +72,14 @@ RF_TxPowerTable_Entry txPowerTable[TX_POWER_TABLE_SIZE] =
 // Overrides for CMD_PROP_RADIO_DIV_SETUP_PA
 uint32_t pOverrides[] =
 {
-    // override_tc112.xml
+    // override_tc148.xml
     // Tx: Configure PA ramp time, PACTL2.RC=0x3 (in ADI0, set PACTL2[4:3]=0x3)
     ADI_2HALFREG_OVERRIDE(0,16,0x8,0x8,17,0x1,0x1),
-    // Rx: Set AGC reference level to 0x1C (default: 0x2E)
+    // Rx: Set AGC reference level to 0x16 (default: 0x2E)
     HW_REG_OVERRIDE(0x609C,0x0016),
     // Rx: Set RSSI offset to adjust reported RSSI by -7 dB (default: -2), trimmed for external bias and differential configuration
     (uint32_t)0x000788A3,
-    // Rx: Set anti-aliasing filter bandwidth to 0xD (in ADI0, set IFAMPCTL3[7:4]=0xD)
+    // Rx: Set anti-aliasing filter bandwidth to 0x8 (in ADI0, set IFAMPCTL3[7:4]=0x8)
     ADI_HALFREG_OVERRIDE(0,61,0xF,0x8),
     // override_prop_common.xml
     // DC/DC regulator: In Tx with 14 dBm PA setting, use DCDCCTL5[3:0]=0xF (DITHER_EN=1 and IPEAK=7). In Rx, use default settings.
@@ -96,7 +96,6 @@ uint32_t pOverrides[] =
     HW_REG_OVERRIDE(0x60A8,0x0401),
     (uint32_t)0xFFFFFFFF
 };
-
 
 // CMD_PROP_RADIO_DIV_SETUP_PA
 // Proprietary Mode Radio Setup Command for All Frequency Bands
@@ -139,7 +138,6 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .pRegOverrideTxStd = 0,
     .pRegOverrideTx20 = 0
 };
-
 
 // CMD_RADIO_SETUP_PA
 // Radio Setup Command for Pre-Defined Schemes
@@ -192,7 +190,6 @@ rfc_CMD_FS_t RF_cmdFs =
     .__dummy2 = 0x00,
     .__dummy3 = 0x0000
 };
-
 
 // CMD_PROP_TX
 // Proprietary Mode Transmit Command

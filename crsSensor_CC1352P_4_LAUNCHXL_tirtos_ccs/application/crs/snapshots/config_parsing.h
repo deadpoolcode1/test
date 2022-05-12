@@ -7,7 +7,9 @@
 
 #ifndef APPLICATION_CRS_SNAPSHOTS_CONFIG_PARSING_H_
 #define APPLICATION_CRS_SNAPSHOTS_CONFIG_PARSING_H_
-
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
 #include "application/crs/crs.h"
@@ -15,7 +17,10 @@
 #include "crs_snap_rf.h"
 #include <stdio.h>
 #include <string.h>
-//#define FILENAME_SZ 50
+
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define NAME_SZ 20
 #define ADDR_SZ 20
 #define CLASSID_SZ 12
@@ -78,22 +83,26 @@ typedef struct crs_box
     crs_inv_t cu;
 } crs_box_t;
 
+/******************************************************************************
+ Function Prototypes
+ *****************************************************************************/
 CRS_retVal_t Config_configInit(void *sem);
-void Config_process(void);
 CRS_retVal_t Config_runConfigFile(char *filename, FPGA_cbFn_t cbFunc);
-CRS_retVal_t Config_getInvLine(char *invName, uint32_t lineNum, char *fileContent,
-                        char *respLine);
+CRS_retVal_t Config_getInvLine(char *invName, uint32_t lineNum,
+                               char *fileContent, char *respLine);
 CRS_retVal_t Config_getPackageLine(uint32_t lineNum, char *fileContent,
-                            char *respLine);
+                                   char *respLine);
 CRS_retVal_t Config_getDiscoveryLine(uint32_t lineNum, char *fileContent,
-                              char *respLine);
-
-//CRS_retVal_t Config_getInvLine(char *invName, uint32_t lineNum, char *fileContent,
-//                        char *respLine);
-CRS_retVal_t Config_parsePackageLine(char *buff, crs_package_t *respStructPackage);
-CRS_retVal_t Config_parseDiscoveryLine(char *buff, crs_discseqLine_t* respStructDiscseq);
-CRS_retVal_t Config_parseInvLine(char *buff, CRS_invLine_t *respStructInventory);
-CRS_retVal_t Config_runConfigFileLine(char *filename, uint32_t lineNum, char* fileInfos, FPGA_cbFn_t cbFunc);
-CRS_retVal_t Config_runConfigDirect(char *filename,char *type,char* fileInfos ,FPGA_cbFn_t cbFunc);
-
+                                     char *respLine);
+CRS_retVal_t Config_parsePackageLine(char *buff,
+                                     crs_package_t *respStructPackage);
+CRS_retVal_t Config_parseDiscoveryLine(char *buff,
+                                       crs_discseqLine_t *respStructDiscseq);
+CRS_retVal_t Config_parseInvLine(char *buff,
+                                 CRS_invLine_t *respStructInventory);
+CRS_retVal_t Config_runConfigFileLine(char *filename, uint32_t lineNum,
+                                      char *fileInfos, FPGA_cbFn_t cbFunc);
+CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
+                                    FPGA_cbFn_t cbFunc);
+void Config_process(void);
 #endif /* APPLICATION_CRS_SNAPSHOTS_CONFIG_PARSING_H_ */

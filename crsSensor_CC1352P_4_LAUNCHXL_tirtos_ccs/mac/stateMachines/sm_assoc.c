@@ -48,6 +48,7 @@ typedef enum
 typedef struct StateMachineAsoc
 {
     uint8_t nodeMac[8];
+    uint16_t shortAddr;
     MAC_crsPacket_t pkt;
     uint8_t contentRsp[256];
     uint16_t contentRspLen;
@@ -118,8 +119,14 @@ void Smas_process()
 //    SMAC_RECIVE_CONTENT_TIMEOUT_EVT SMAC_RECIVED_ACK SMAC_RECIVED_CONTENT_EVT
     if (smasEvents & SMAS_JOINED_NETWORK_EVT)
     {
-        CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
+        macMlmeAssociateInd_t rsp = { 0 };
+        MAC_createAssocInd(&rsp, gSmAsocInfo.nodeMac, gSmAsocInfo.shortAddr,
+                           ApiMac_status_success);
         MAC_moveToSmriState();
+
+        MAC_sendAssocIndToApp(&rsp);
+
+        CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
 
         Util_clearEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
     }
@@ -161,7 +168,8 @@ void Smas_waitForBeaconCb(EasyLink_RxPacket *rxPacket,
         if (beaconPkt.commandId == MAC_COMMAND_BEACON &&  beaconPkt.panId == CRS_GLOBAL_PAN_ID)
         {
 //            gDiscoveryTime = beaconPkt.discoveryTime;
-
+            memcpy(gSmAsocInfo.nodeMac, beaconPkt.srcAddr, 8);
+            gSmAsocInfo.shortAddr = beaconPkt.srcAddrShort;
             MAC_updateDiscoveryTime(beaconPkt.discoveryTime);
             CollectorLink_collectorLinkInfo_t collectorLink = {0};
             collectorLink.isVacant = false;

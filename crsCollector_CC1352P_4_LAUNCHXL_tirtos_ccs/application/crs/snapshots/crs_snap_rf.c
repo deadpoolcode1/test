@@ -4,11 +4,16 @@
  *  Created on: 18 Jan 2022
  *      Author: epc_4
  */
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 
 #include "crs_snap_rf.h"
 #include "application/util_timer.h"
-
 #include <ctype.h>
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define READ_NEXT_REG_EV 0x1
 #define READ_NEXT_GLOBAL_REG_EV 0x2
 #define FINISHED_FILE_EV 0x4
@@ -16,37 +21,28 @@
 #define START_UPLOAD_FILE_EV 0x10
 #define WRITE_NEXT_LUT_EV 0x20
 #define CHANGE_RF_CHIP_EV 0x40
-
-
 #define LUT_REG_NUM 8
 #define NUM_LUTS 4
 #define NUM_GLOBAL_REG 4
-
 #define FILE_CACHE_SZ 4096
 #define LINE_SZ 50
-
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
 static Clock_Struct rfClkStruct;
 static Clock_Handle rfClkHandle;
-
 static uint32_t gRegIdx = 0;
 static uint32_t gLutIdx = 0;
 static uint32_t gGlobalIdx = 0;
-
 static uint16_t gLineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
 static uint16_t gGlobalReg[NUM_GLOBAL_REG] = { 0 };
-
 static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
-
 static uint32_t gRfAddr = 0;
 static uint32_t gRFline = 0;
 static CRS_chipMode_t gMode = MODE_NATIVE;
-
 static FPGA_cbFn_t gCbFn = NULL;
-
 static uint16_t gRFEvents = 0;
-
 static char gLutRegRdResp[LINE_SZ] = { 0 };
-
 static Semaphore_Handle collectorSem;
 
 static bool gIsInTheMiddleOfTheFile = false;
@@ -55,6 +51,9 @@ static char *gFileContentCache = NULL;
 static uint32_t gFileContentCacheIdx = 0;
 
 static CRS_nameValue_t gNameValues[NAME_VALUES_SZ];
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 
 static void changedActiveLineCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
@@ -97,6 +96,10 @@ static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr);
 static void processRfTimeoutCallback(UArg a0);
 static void setRfClock(uint32_t time);
 static void changedRfChipCb(const FPGA_cbArgs_t _cbArgs);
+
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 CRS_retVal_t RF_init(void *sem)
 {
     collectorSem = sem;
@@ -106,6 +109,61 @@ CRS_retVal_t RF_init(void *sem)
                                       false,
                                       0);
 }
+
+CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
+                             uint32_t RfLineNum, CRS_chipMode_t chipMode,
+                             CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
+{
+    if (Fpga_isOpen() == CRS_FAILURE)
+    {
+        CLI_cliPrintf("\r\nOpen Fpga first");
+        const FPGA_cbArgs_t cbArgs = { 0 };
+        cbFunc(cbArgs);
+        return CRS_FAILURE;
+
+    }
+
+    initRfSnapValues();
+
+    gCbFn = cbFunc;
+    gRFline = RfLineNum;
+    gMode = chipMode;
+    gRfAddr = rfAddr;
+    if (nameVals != NULL)
+    {
+        int i;
+        for (i = 0; i < NAME_VALUES_SZ; ++i)
+        {
+            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
+            gNameValues[i].value = nameVals[i].value;
+        }
+    }
+    CLI_cliPrintf("\r\n");
+    CRS_LOG(CRS_DEBUG, " runing %s, lut line:0x%x", filename, RfLineNum);
+
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+    gFileContentCache = Nvs_readFileWithMalloc(filename);
+    if (gFileContentCache == NULL)
+    {
+        return CRS_FAILURE;
+    }
+
+//filling up local rf line
+    if (rfAddr == 0xff)
+    {
+        Util_setEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
+    }
+    else
+    {
+        Util_setEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
+    }
+
+    Semaphore_post(collectorSem);
+
+    return rspStatus;
+}
+
 void RF_process(void)
 {
     if (gRFEvents & READ_NEXT_REG_EV)
@@ -143,7 +201,7 @@ void RF_process(void)
 
     if (gRFEvents & CHANGE_ACTIVE_LINE_EV)
     {
-        CRS_LOG(CRS_DEBUG,"in CHANGE_ACTIVE_LINE_EV runing");
+        CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
         char line[100] = { 0 };
         sprintf(line, "wr 0xa 0x%x", gRFline);
         Fpga_writeMultiLine(line, changedActiveLineCb);
@@ -152,7 +210,7 @@ void RF_process(void)
 
     if (gRFEvents & CHANGE_RF_CHIP_EV)
     {
-        CRS_LOG(CRS_DEBUG,"in CHANGE_RF_CHIP_EV runing");
+        CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
         char line[100] = { 0 };
         sprintf(line, "wr 0xff 0x%x", gRfAddr);
         Fpga_writeMultiLine(line, changedRfChipCb);
@@ -228,6 +286,9 @@ void RF_process(void)
 
 }
 
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static CRS_retVal_t runFile()
 {
 
@@ -470,7 +531,6 @@ static CRS_retVal_t runEwCommand(char *line)
 }
 static CRS_retVal_t runErCommand(char *line)
 {
-
 
 }
 
@@ -978,60 +1038,6 @@ static void changedRfChipCb(const FPGA_cbArgs_t _cbArgs)
     Semaphore_post(collectorSem);
 }
 
-CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
-                             uint32_t RfLineNum, CRS_chipMode_t chipMode,
-                             CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
-{
-    if (Fpga_isOpen() == CRS_FAILURE)
-        {
-            CLI_cliPrintf("\r\nOpen Fpga first");
-            const FPGA_cbArgs_t cbArgs = { 0 };
-            cbFunc(cbArgs);
-            return CRS_FAILURE;
-
-        }
-
-    initRfSnapValues();
-
-    gCbFn = cbFunc;
-    gRFline = RfLineNum;
-    gMode = chipMode;
-    gRfAddr = rfAddr;
-    if (nameVals != NULL)
-    {
-        int i;
-        for ( i = 0; i < NAME_VALUES_SZ; ++i)
-        {
-            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
-        }
-    }
-    CLI_cliPrintf("\r\n");
-    CRS_LOG(CRS_DEBUG, " runing %s, lut line:0x%x", filename, RfLineNum);
-
-    CRS_retVal_t rspStatus = CRS_SUCCESS;
-
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
-    {
-        return CRS_FAILURE;
-    }
-
-//filling up local rf line
-    if (rfAddr == 0xff)
-    {
-        Util_setEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
-    }
-    else
-    {
-        Util_setEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
-    }
-
-    Semaphore_post(collectorSem);
-
-    return rspStatus;
-}
-
 static CRS_retVal_t initRfSnapValues()
 {
     gIsInTheMiddleOfTheFile = false;
@@ -1154,24 +1160,23 @@ static CRS_retVal_t getVal(char *line, char *rsp)
 
     token = strtok(NULL, s); // value | param
     //TODO: verify with michael how do we set params in files.
-     if (*token == '_')//if token is param
-     {
-         int i = 0;
-         while (i < NAME_VALUES_SZ)
-         {
-             if (memcmp(gNameValues[i].name, token, strlen(token)) == 0)
-             {
-                 sprintf(rsp, "%x",
-                         gNameValues[i].value);
-                 break;
-             }
-             i++;
-         }
-     }
-     else//if token is a value
-     {
-         memcpy(rsp, &token[2], 4);
-     }
+    if (*token == '_')    //if token is param
+    {
+        int i = 0;
+        while (i < NAME_VALUES_SZ)
+        {
+            if (memcmp(gNameValues[i].name, token, strlen(token)) == 0)
+            {
+                sprintf(rsp, "%x", gNameValues[i].value);
+                break;
+            }
+            i++;
+        }
+    }
+    else    //if token is a value
+    {
+        memcpy(rsp, &token[2], 4);
+    }
 
     return CRS_SUCCESS;
 

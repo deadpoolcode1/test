@@ -16,15 +16,15 @@
 #include "mac/api_mac.h"
 #include "crs_global_defines.h"
 #include "application/crs/crs_alarms.h"
-
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 #define MAX_DEVICES_IN_NETWORK 4
 #define CSF_INVALID_SHORT_ADDR 0xffff
 /*! Event ID - Start the device in the network */
 #define COLLECTOR_START_EVT               0x0001
 #define COLLECTOR_UI_INPUT_EVT               0x0002
 #define COLLECTOR_SEND_MSG_EVT 0x0004
-
-//COLLECTOR_UI_INPUT_EVT
 
 #define RSSI_ARR_SIZE 10
 /*! Building block for association table */
@@ -137,6 +137,9 @@ typedef struct
     uint16_t broadcastMsgSentCnt;
 } Collector_statistics_t;
 
+/******************************************************************************
+ Global variables
+ *****************************************************************************/
 /*! Collector events flags */
 extern uint16_t Collector_events;
 
@@ -147,6 +150,9 @@ extern ApiMac_callbacks_t Collector_macCallbacks;
 
 extern Cllc_associated_devices_t Cllc_associatedDevList[MAX_DEVICES_IN_NETWORK];
 
+/******************************************************************************
+ Public Functions
+ *****************************************************************************/
 extern void Collector_init();
 
 extern void Collector_process(void);
@@ -156,12 +162,12 @@ void Csf_processCliSendMsgUpdate();
 bool Csf_getNetworkInformation(Llc_netInfo_t *nwkInfo);
 void Csf_crsInitScript();
 
-
-extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t* line);
+extern Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr,
+                                               uint8_t *line);
 
 bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr);
 
-void Cllc_getFfdShortAddr(uint16_t* shortAddr);
+void Cllc_getFfdShortAddr(uint16_t *shortAddr);
 void Csf_sensorsDataPrint(uint16_t shortAddr);
 
 #endif /* APPLICATION_COLLECTOR_H_ */

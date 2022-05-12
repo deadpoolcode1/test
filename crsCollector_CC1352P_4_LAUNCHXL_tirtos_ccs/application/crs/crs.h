@@ -7,10 +7,17 @@
 
 #ifndef APPLICATION_CRS_CRS_H_
 #define APPLICATION_CRS_CRS_H_
-//#define CLI_SENSOR
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include <stdint.h>
 #include <ti/drivers/Temperature.h>
 #include "crs_global_defines.h"
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
+#define NAMEVALUE_NAME_SZ 30
+#define NAME_VALUES_SZ 10
 typedef enum CRS_retVal
 {
     CRS_SUCCESS,
@@ -41,23 +48,13 @@ typedef enum CRS_retVal
 
 typedef enum CRS_chipMode
 {
-   MODE_NATIVE,
-   MODE_SPI_SLAVE
+    MODE_NATIVE, MODE_SPI_SLAVE
 } CRS_chipMode_t;
 
 typedef enum CRS_chipType
 {
-   DIG,
-   RF,
-   UNKNOWN,
-   RCM11,
-   RCM12,
-   RCM21,
-   RCM22
+    DIG, RF, UNKNOWN, RCM11, RCM12, RCM21, RCM22
 } CRS_chipType_t;
-
-#define NAMEVALUE_NAME_SZ 30
-#define NAME_VALUES_SZ 10
 
 typedef struct CRS_nameValue
 {
@@ -65,8 +62,10 @@ typedef struct CRS_nameValue
     int32_t value;
 } CRS_nameValue_t;
 
-
-void *CRS_malloc(uint16_t size);
+/******************************************************************************
+ Function Prototypes
+ *****************************************************************************/
+void* CRS_malloc(uint16_t size);
 void CRS_free(void *ptr);
 void CRS_init();
 

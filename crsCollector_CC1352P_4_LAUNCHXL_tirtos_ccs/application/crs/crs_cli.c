@@ -4,20 +4,16 @@
  *  Created on: 20 Nov 2021
  *      Author: avi
  */
-
-//#define CLI_SENSOR
+/******************************************************************************
+ Includes
+ *****************************************************************************/
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
-//#define CLI_NO_ECHO
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
-
 #include <ti/sysbios/hal/Seconds.h>
-
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/dpl/SystemP.h>
@@ -27,41 +23,37 @@
 #include <ti/drivers/apps/LED.h>
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include "ti_drivers_config.h"
-
 #include "crs_global_defines.h"
-
-
 #include "application/util_timer.h"
 #include "mac/api_mac.h"
 #include "application/crs/crs_alarms.h"
-
 #include "crs.h"
-
 #ifndef CLI_SENSOR
 #include "application/collector.h"
 #else
 #include "application/sensor.h"
 #endif
-
 #include "crs_cli.h"
 #include "application/crs/snapshots/crs_snapshot.h"
 #include "crs_nvs.h"
 #include "crs_fpga.h"
-//#include "application/agc/agc.h"
 #include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
-
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
 #include "application/agc/agc.h"
+
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
 
 #define CLI_ESC_UP              "\033[A"
 #define CLI_ESC_DOWN            "\033[B"
 #define CLI_ESC_RIGHT           "\033[C"
 #define CLI_ESC_LEFT            "\033[D"
 
-static uint8_t *gTmp = CLI_ESC_UP;
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 #define CUI_NUM_UART_CHARS 1024
 #define RSP_BUFFER_SIZE 1024
@@ -94,8 +86,6 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_LIST_SENSORS "list units"
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
-
-
 
 
 #else
@@ -146,9 +136,7 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_CRS_FS_UPLOAD "fs upload orig"
 #define CLI_CRS_FS_UPLOAD_RF "fs upload rf"
 #define CLI_CRS_FS_UPLOAD_DIG "fs upload dig"
-//shortAddr filename chipmode nameVals
 #define CLI_CRS_FS_UPLOAD_FPGA "fs upload fpga"
-
 #define CLI_CRS_FS_FORMAT "fs format"
 
 #define CLI_AGC "sensor"
@@ -180,10 +168,17 @@ static uint8_t *gTmp = CLI_ESC_UP;
 #define CLI_CRS_TMP "tmp"
 #define CLI_CRS_RSSI "rssi"
 
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
+/******************************************************************************
+ Local variables
+ *****************************************************************************/
+
+static uint8_t *gTmp = CLI_ESC_UP;
 
 #ifndef CLI_SENSOR
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
 
 static CRS_retVal_t CLI_formNwkParsing(char *line);
 static CRS_retVal_t CLI_openNwkParsing(char *line);
@@ -271,8 +266,7 @@ static CRS_retVal_t CLI_config_file(char *line);
 static CRS_retVal_t CLI_config_line(char *line);
 
 static CRS_retVal_t CLI_tmpParsing(char *line);
-//#define CLI_CRS_TMP "tmp"
-//#define CLI_CRS_RSSI "rssi"
+
 static CRS_retVal_t CLI_rssiParsing(char *line);
 
 static void tddCallback(const TDD_cbArgs_t _cbArgs);
@@ -280,6 +274,17 @@ static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
 
+
+static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
+static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right);
+static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
+static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
+static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size);
+static int CLI_hex2int(char ch);
+static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs);
+
+static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
+CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -346,20 +351,6 @@ static bool gIsNewCommand = true;
 static uint8_t gTmpUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
 
 static uint8_t gCopyUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
-
-
-static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
-CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
-
-
-static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
-static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right);
-static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
-static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
-static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size);
-static int CLI_hex2int(char ch);
-static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs);
-
 
 
 /******************************************************************************
@@ -1085,6 +1076,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
 
 #ifndef CLI_SENSOR
 
+
+
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static CRS_retVal_t CLI_formNwkParsing(char *line)
 {
 //    Csf_formNwkAction();
@@ -4881,15 +4877,6 @@ CRS_retVal_t CLI_updateRssi(int8_t rssi)
 {
     gRssi = rssi;
 }
-
-
-
-
-//version
-//image
-//box type
-//box name
-
 
 
 //void CLI_printHeapStatus()
