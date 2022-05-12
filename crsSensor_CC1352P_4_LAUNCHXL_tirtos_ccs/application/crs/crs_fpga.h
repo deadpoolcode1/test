@@ -44,6 +44,7 @@ CRS_retVal_t  Fpga_isOpen();
 CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn);
 void Fpga_process(void);
 void FPGA_setFpgaClock(uint32_t fpgaTime);
+CRS_retVal_t Fpga_writeMultiLineNoPrint(char *line, FPGA_cbFn_t _cbFn);
 
 
 #endif /* APPLICATION_CRS_CRS_FPGA_H_ */

@@ -13,12 +13,14 @@
 #include "crs.h"
 #include "crs_cli.h"
 #include "crs_thresholds.h"
+#include "crs_fpga.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <ti/drivers/Temperature.h>
 #include "mac/mac_util.h"
 #include <ti/drivers/GPIO.h>
+#include <ti/sysbios/knl/Clock.h>
 
 /******************************************************************************
  Local variables
@@ -27,11 +29,19 @@ static uint8_t gAlarmArr[ALARMS_NUM];
 static Temperature_NotifyObj gNotifyObject;
 static Semaphore_Handle collectorSem;
 static uint16_t Alarms_events = 0;
+static Clock_Params gClkParams;
+static Clock_Struct gClkStruct;
+static Clock_Handle gClkHandle;
+static void Alarms_PLL_Check(void *arg);
+static void Alarms_TDDFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
 #define ALARMS_SET_TEMP_ALARM_EVT 0x0001
 #define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
+#define ALARMS_SET_CHECKPLL_ALARM_EVT 0x0004
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -119,13 +129,102 @@ CRS_retVal_t Alarms_process(void)
         if (GPIO_read(CONFIG_GPIO_BTN1))
         {
             Alarms_setAlarm(TDDLock);
-        }else{
+        }
+        else
+        {
             Alarms_clearAlarm(TDDLock, ALARM_INACTIVE);
         }
         /* Clear the event */
         Util_clearEvent(&Alarms_events, ALARMS_SET_TDDLOCK_ALARM_EVT);
     }
 
+    if (Alarms_events & ALARMS_SET_CHECKPLL_ALARM_EVT)
+    {
+
+//            CLI_cliPrintf("\r\npll checking!");
+        char checkTddLock[30] =  "wr 0x51 0x510000\nrd 0x51" ;
+        //check fpga open
+        if (Fpga_isOpen() == CRS_SUCCESS)
+        {
+            if (Fpga_writeMultiLineNoPrint(checkTddLock, Alarms_TDDFpgaRsp)
+                    == CRS_SUCCESS)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+        //check if fpga is busy
+
+        //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
+
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLL_ALARM_EVT);
+    }
+
+}
+
+static void Alarms_TDDFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+{
+    char *line = _cbArgs.arg3;
+    char rdRespLine[200] = { 0 };
+    uint32_t size = _cbArgs.arg0;
+
+    memset(rdRespLine, 0, 200);
+
+    int gTmpLine_idx = 0;
+    int counter = 0;
+    bool isNumber = false;
+    bool isFirst = true;
+    while (memcmp(&line[counter], "AP>", 3) != 0)
+    {
+        if (line[counter] == '0' && line[counter + 1] == 'x')
+        {
+            if (isFirst == true)
+            {
+                counter++;
+                isFirst = false;
+                continue;
+
+            }
+            isNumber = true;
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
+        }
+
+        if (line[counter] == '\r' || line[counter] == '\n')
+        {
+            isNumber = false;
+        }
+
+        if (isNumber == true)
+        {
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
+
+        }
+        counter++;
+    }
+
+    uint32_t resp = strtoul(rdRespLine+6, NULL, 16);
+    if (CHECK_BIT(resp, 9))
+    {
+        Alarms_clearAlarm(PLLLock, ALARM_INACTIVE);
+    }
+    else
+    {
+        Alarms_setAlarm(PLLLock);
+    }
 }
 
 CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
@@ -158,6 +257,7 @@ CRS_retVal_t Alarms_init(void *sem)
     collectorSem = sem;
     Alarms_temp_Init();
     Alarms_TDDLock_Init();
+    Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
 }
 
 /*!
@@ -187,8 +287,33 @@ CRS_retVal_t Alarms_TDDLock_Init()
     GPIO_init();
     //set on both edges
 //    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_INT_BOTH_EDGES);
-    GPIO_setCallback(CONFIG_GPIO_BTN1,Alarms_TDDLockNotifyFxn);
+    GPIO_setCallback(CONFIG_GPIO_BTN1, Alarms_TDDLockNotifyFxn);
     GPIO_enableInt(CONFIG_GPIO_BTN1);
+}
+
+CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
+{
+    memset(&gClkStruct, 0, sizeof(gClkStruct));
+    memset(&gClkHandle, 0, sizeof(gClkHandle));
+    Clock_Params_init(&gClkParams);
+    gClkParams.period = 1000000 / Clock_tickPeriod; //params.period specifies the periodic rate. (BTW, setting it = 0 gives us a 1-shot timer.)
+    gClkParams.startFlag = FALSE; //params.startFlag tells the user-clock instance to run right-away (after BIOS_start()).
+    Clock_construct(&gClkStruct, clockFxn, 100000 / Clock_tickPeriod,
+                    &gClkParams);
+//    Clock_setFunc(gClkHandle,clockFxn,NULL);
+    gClkHandle = Clock_handle(&gClkStruct);
+    Clock_start(gClkHandle);
+
+}
+
+static void Alarms_PLL_Check(void *arg)
+{
+    //set event
+    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLL_ALARM_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+
 }
 
 CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
