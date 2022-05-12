@@ -142,12 +142,15 @@ CRS_retVal_t Alarms_process(void)
     {
 
 //            CLI_cliPrintf("\r\npll checking!");
-        char checkTddLock[30] =  "wr 0x51 0x510000\nrd 0x51" ;
+        char checkTddLockFirstChip[70] =
+                "wr 0xff 0x8000\nwr 0x51 0x510000\nrd 0x51";
+        char checkTddLockSecondChip[70] =
+                "wr 0xff 0x8001\nwr 0x51 0x510000\nrd 0x51"; //need to complete
         //check fpga open
         if (Fpga_isOpen() == CRS_SUCCESS)
         {
-            if (Fpga_writeMultiLineNoPrint(checkTddLock, Alarms_TDDFpgaRsp)
-                    == CRS_SUCCESS)
+            if (Fpga_writeMultiLineNoPrint(checkTddLockFirstChip,
+                                           Alarms_TDDFpgaRsp) == CRS_SUCCESS)
             {
 
             }
@@ -155,6 +158,7 @@ CRS_retVal_t Alarms_process(void)
             {
 
             }
+
         }
         else
         {
@@ -216,7 +220,7 @@ static void Alarms_TDDFpgaRsp(const FPGA_cbArgs_t _cbArgs)
         counter++;
     }
 
-    uint32_t resp = strtoul(rdRespLine+6, NULL, 16);
+    uint32_t resp = strtoul(rdRespLine + 6, NULL, 16);
     if (CHECK_BIT(resp, 9))
     {
         Alarms_clearAlarm(PLLLock, ALARM_INACTIVE);
@@ -289,6 +293,11 @@ CRS_retVal_t Alarms_TDDLock_Init()
 //    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_INT_BOTH_EDGES);
     GPIO_setCallback(CONFIG_GPIO_BTN1, Alarms_TDDLockNotifyFxn);
     GPIO_enableInt(CONFIG_GPIO_BTN1);
+    //initial check
+    if (GPIO_read(CONFIG_GPIO_BTN1))
+    {
+        Alarms_setAlarm(TDDLock);
+    }
 }
 
 CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)

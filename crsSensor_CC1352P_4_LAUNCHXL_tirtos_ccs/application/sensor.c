@@ -157,7 +157,6 @@ void Sensor_init()
     CRS_init();
        Agc_init();
        Ssf_crsInitScript();
-       Alarms_init(sem);
 }
 
 void Sensor_process(void)
@@ -208,14 +207,15 @@ void Ssf_crsInitScript()
     }
 }
 
-
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    CRS_retVal_t retStatus = Config_runConfigFile("flat",
-                                                  fpgaCrsDoneCallback);
+    if (Fpga_isOpen() == CRS_SUCCESS)
+    {
+        CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
 
-    if (retStatus == CRS_FAILURE)
+    }
+    else
     {
         CLI_cliPrintf("\r\nUnable to run flat file");
         FPGA_cbArgs_t cbArgs;
@@ -227,7 +227,8 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
-                                                NULL, fpgaCrsDoneCallback);
+    NULL,
+                                                fpgaCrsDoneCallback);
 //    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
 
     if (retStatus == CRS_FAILURE)
@@ -242,6 +243,7 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
+    Alarms_init(sem);
 
 //    if (CONFIG_AUTO_START)
 //    {
@@ -253,7 +255,6 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 //
 //    }
 }
-
 void Ssf_processCliUpdate()
 {
     Util_setEvent(&Sensor_events, SENSOR_UI_INPUT_EVT);
