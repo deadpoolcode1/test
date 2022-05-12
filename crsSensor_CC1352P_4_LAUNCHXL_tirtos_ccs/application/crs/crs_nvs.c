@@ -720,6 +720,53 @@ CRS_retVal_t Nvs_cat(char *filename)
     return CRS_SUCCESS;
 }
 
+CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize)
+{
+    char strlenStr[STRLEN_BYTES] = { 0 };
+    CRS_FAT_t fat[MAX_FILES];
+    Nvs_readFAT((fat));
+    int i = 0;
+    while (i < MAX_FILES)
+    {
+        if (memcmp(fat[i].filename, filename, strlen(filename)) == 0)
+        {
+            break;
+        }
+        i++;
+    }
+    if (i == MAX_FILES)
+    {
+        CLI_cliPrintf("\r\nfile not found!\r\n");
+        return CRS_SUCCESS;
+    }
+    char fileContent[4096] = { 0 };
+    NVS_read(gNvsHandle,
+             (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
+             (void*) strlenStr, STRLEN_BYTES);
+
+    uint32_t strlen;
+    sscanf(strlenStr, "%x", &strlen);
+    size_t startFile = ((fat[i].index + gFAT_sector_sz)
+            * gRegionAttrs.sectorSize) + (STRLEN_BYTES + 1);
+    NVS_read(gNvsHandle, startFile, (void*) fileContent, strlen);
+//    char line[50] = { 0 };
+    const char s[2] = "\n";
+    char *token;
+    char fileSegment[1024] = { 0 };
+    if((fileIndex+readSize)>4096){
+        readSize = 4096 - fileIndex;
+    }
+    memcpy(fileSegment, &fileContent[fileIndex], readSize);
+    token = strtok((fileSegment), s);
+    while (token != NULL)
+    {
+        CLI_cliPrintf("\r\n%s", token);
+        Task_sleep(100);
+        token = strtok(NULL, s);
+    }
+    return CRS_SUCCESS;
+}
+
 CRS_retVal_t Nvs_rm(char *filename)
 {
     CRS_FAT_t fat[MAX_FILES];

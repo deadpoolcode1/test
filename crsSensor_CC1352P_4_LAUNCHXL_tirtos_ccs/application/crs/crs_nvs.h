@@ -48,6 +48,7 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff);
 CRS_retVal_t Nvs_writeTempFile(char *filename, char *buff);
 CRS_retVal_t Nvs_JsonFile(char *filename, char *buff);
 CRS_retVal_t Nvs_cat(char *filename);
+CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize);
 CRS_retVal_t Nvs_debug();
 CRS_retVal_t Nvs_format();
 CRS_retVal_t Nvs_insertSpecificLine(char *filename, const char *line,
