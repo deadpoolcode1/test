@@ -122,7 +122,6 @@ void Collector_init()
     CRS_init();
     Agc_init();
     Alarms_init(sem);
-    Alarms_temp_Init();
     Csf_crsInitScript();
 //       Agc_init();
 

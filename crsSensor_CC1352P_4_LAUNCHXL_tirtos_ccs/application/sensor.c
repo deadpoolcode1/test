@@ -157,6 +157,7 @@ void Sensor_init()
     CRS_init();
        Agc_init();
        Ssf_crsInitScript();
+       Alarms_init(sem);
 }
 
 void Sensor_process(void)
