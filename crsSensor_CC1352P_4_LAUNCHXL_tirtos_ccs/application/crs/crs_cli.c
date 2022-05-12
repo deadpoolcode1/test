@@ -2328,9 +2328,22 @@ static CRS_retVal_t CLI_fsReadFileParsing(char *line)
     token = strtok(NULL, s);
     memcpy(filename, token, strlen(token));
     uint32_t filenameSize = strlen(token);
-
+    token = strtok(NULL, s);
+    uint32_t fileIndex = strtoul(&(token[2]), NULL, 16);
+    token = strtok(NULL, s);
+    uint32_t readSize = strtoul(&(token[2]), NULL, 16);
 //    Fs_readFile(filename);
-    Nvs_cat(filename);
+    if(token){
+        if(readSize<1024){
+            Nvs_catSegment(filename, fileIndex, readSize);
+        }
+        else{
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        }
+    }
+    else{
+        Nvs_cat(filename);
+    }
     CLI_startREAD();
 
 }

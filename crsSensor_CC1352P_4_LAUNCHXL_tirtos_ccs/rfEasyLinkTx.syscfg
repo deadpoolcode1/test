@@ -28,6 +28,8 @@ const Temperature = scripting.addModule("/ti/drivers/Temperature");
 const UART        = scripting.addModule("/ti/drivers/UART", {}, false);
 const UART1       = UART.addInstance();
 const UART2       = UART.addInstance();
+const Watchdog    = scripting.addModule("/ti/drivers/Watchdog", {}, false);
+const Watchdog1   = Watchdog.addInstance();
 const easylink    = scripting.addModule("/ti/easylink/easylink");
 
 /**
@@ -99,6 +101,9 @@ UART2.uart.rxPin.$assign  = "boosterpack.31";
 UART2.txPinInstance.$name = "CONFIG_PIN_9";
 UART2.rxPinInstance.$name = "CONFIG_PIN_10";
 
+Watchdog1.$name  = "CONFIG_WATCHDOG_0";
+Watchdog1.period = 5000;
+
 const NVSSPI25XDevice                                      = scripting.addModule("/ti/drivers/nvs/NVSSPI25XDevice", {}, false);
 const NVSSPI25XDevice1                                     = NVSSPI25XDevice.addInstance({}, false);
 NVSSPI25XDevice1.$name                                     = "CONFIG_NVS_SPI_0";
@@ -134,6 +139,7 @@ UART1.uart.$suggestSolution                                       = "UART1";
 UART1.uart.txPin.$suggestSolution                                 = "boosterpack.4";
 UART1.uart.rxPin.$suggestSolution                                 = "boosterpack.3";
 UART2.uart.$suggestSolution                                       = "UART0";
+Watchdog1.watchdog.$suggestSolution                               = "WDT0";
 NVSSPI25XDevice1.slaveSelectGpioInstance.gpioPin.$suggestSolution = "boosterpack.38";
 SPI1.spi.$suggestSolution                                         = "SSI0";
 SPI1.spi.sclkPin.$suggestSolution                                 = "boosterpack.7";
