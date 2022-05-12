@@ -83,9 +83,12 @@ static uint16_t Fpga_events = 0;
 
 static Semaphore_Handle collectorSem;
 
+static bool gIsRunnigLines = false;
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
+
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void processFpgaTimeoutCallback(UArg a0);
@@ -102,6 +105,7 @@ static void fpgaMultiLineReadCallback(const FPGA_cbArgs_t _cbArgs);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
+
 CRS_retVal_t Fpga_initSem(void *sem)
 {
     collectorSem = sem;
@@ -157,6 +161,8 @@ CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
             gCbFpgaOpenFn = _cbFn;
         }
         UART_read(gUartHandle, gUartRxBuffer, 1);
+        gIsRunnigLines = true;
+
         FPGA_setFpgaClock(20);
         FPGA_writeString("rd 0x51\r", strlen("rd 0x51\r"));
 //        UART_write(gUartHandle, buffer[5], 1);
@@ -203,7 +209,7 @@ CRS_retVal_t Fpga_close()
 
 CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
 {
-    if (line == NULL || _cbFn == NULL || gUartHandle == NULL)
+    if (line == NULL || _cbFn == NULL || gUartHandle == NULL || gIsRunnigLines == true)
     {
         FPGA_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
@@ -211,7 +217,7 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
-
+    gIsRunnigLines = true;
     gCbMultiLineFn = _cbFn;
     int i;
     gNumLines = 0;
@@ -279,7 +285,7 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
 
 CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
 {
-    if (line == NULL || _cbFn == NULL || gUartHandle == NULL)
+    if (line == NULL || _cbFn == NULL || gUartHandle == NULL || gIsRunnigLines == true)
     {
         FPGA_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
@@ -287,6 +293,7 @@ CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
+    gIsRunnigLines = true;
 
     gCbMultiLineFn = _cbFn;
     int i;
@@ -384,6 +391,7 @@ CRS_retVal_t Fpga_transparentWrite(void *_buffer, size_t _size)
     }
 
     gCbFn = fpgaTransparentCliParsingCallback;
+    gIsRunnigLines = true;
 
     memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
     //memset(gUartRxBuffer, 0, 1);
@@ -402,6 +410,7 @@ CRS_retVal_t Fpga_transparentOpen()
     UART_read(gUartHandle, gUartRxBuffer, 1);
 
 }
+
 CRS_retVal_t Fpga_transparentClose()
 {
     gIsTransparentBridge = false;
@@ -414,6 +423,8 @@ void Fpga_process(void)
 
     if (Fpga_events & FPGA_OPEN_FAIL_EV)
     {
+        gIsRunnigLines = false;
+
         memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
         //memset(gUartRxBuffer, 0, 1);
         gUartTxBufferIdx = 0;
@@ -443,6 +454,8 @@ void Fpga_process(void)
 
     if (Fpga_events & FPGA_OPEN_EV)
     {
+        gIsRunnigLines = false;
+
         //CLI_cliPrintf("%s", gUartTxBuffer);
         UtilTimer_stop(&fpgaClkStruct);
         if (gCbFpgaOpenFn != NULL)
@@ -470,6 +483,8 @@ void Fpga_process(void)
 
     if (Fpga_events & FPGA_TRANSPARENT_EV)
     {
+        gIsRunnigLines = false;
+
         CLI_cliPrintf("%s", gUartTxBuffer);
         CLI_startREAD();
         memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
@@ -481,6 +496,7 @@ void Fpga_process(void)
 
     if (Fpga_events & FPGA_WRITE_LINES_EV)
     {
+
 //        if (gUartTxBuffer[0] == 'r')
 #ifndef CLI_SENSOR
         CLI_cliPrintf("%s", gUartTxBuffer);
@@ -491,6 +507,7 @@ void Fpga_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
 //            CLI_cliPrintf("\r\nfinished sending: 0x%x", gLineNumber);
+            gIsRunnigLines = false;
 
             Util_clearEvent(&Fpga_events, FPGA_WRITE_LINES_EV);
 
@@ -520,6 +537,8 @@ void Fpga_process(void)
 
         if (rspStatus != CRS_SUCCESS)
         {
+            gIsRunnigLines = false;
+
             Util_clearEvent(&Fpga_events, FPGA_WRITE_LINES_EV);
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             FPGA_cbArgs_t cbArgs;
@@ -542,6 +561,7 @@ void Fpga_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             //            CLI_cliPrintf("\r\nfinished sending: 0x%x", gLineNumber);
+            gIsRunnigLines = false;
 
             Util_clearEvent(&Fpga_events, FPGA_READ_LINES_EV);
 
@@ -571,6 +591,8 @@ void Fpga_process(void)
 
         if (rspStatus != CRS_SUCCESS)
         {
+            gIsRunnigLines = false;
+
             Util_clearEvent(&Fpga_events, FPGA_READ_LINES_EV);
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             FPGA_cbArgs_t cbArgs;
@@ -612,6 +634,7 @@ static CRS_retVal_t Fpga_getLine(char *line)
     memcpy(line, gFileToUpload[gLineNumber], LINE_SIZE);
     return CRS_SUCCESS;
 }
+
 static CRS_retVal_t FPGA_writeString(void *_buffer, size_t _size)
 {
     /*
@@ -815,6 +838,7 @@ static void fpgaMultiLineWriteCallback(const FPGA_cbArgs_t _cbArgs)
 
     Semaphore_post(collectorSem);
 }
+
 static void fpgaMultiLineReadCallback(const FPGA_cbArgs_t _cbArgs)
 {
 
