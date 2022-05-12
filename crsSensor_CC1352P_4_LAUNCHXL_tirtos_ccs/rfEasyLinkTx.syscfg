@@ -18,7 +18,7 @@ const GPIO2       = GPIO.addInstance();
 const GPIO3       = GPIO.addInstance();
 const GPIO4       = GPIO.addInstance();
 const GPIO5       = GPIO.addInstance();
-const GPIO7       = GPIO.addInstance();
+const GPIO6       = GPIO.addInstance();
 const NVS         = scripting.addModule("/ti/drivers/NVS", {}, false);
 const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
@@ -59,17 +59,18 @@ GPIO3.pinInstance.$name = "CONFIG_PIN_3";
 
 GPIO4.$name             = "CONFIG_GPIO_BTN1";
 GPIO4.$hardware         = system.deviceData.board.components["BTN-1"];
+GPIO4.interruptTrigger  = "Both Edges";
 GPIO4.pinInstance.$name = "CONFIG_PIN_4";
 
 GPIO5.$hardware         = system.deviceData.board.components["BTN-2"];
 GPIO5.$name             = "CONFIG_GPIO_BTN2";
 GPIO5.pinInstance.$name = "CONFIG_PIN_5";
 
-GPIO7.$name             = "CONFIG_GPIO_TDD_SWITCH";
-GPIO7.mode              = "Output";
-GPIO7.gpioPin.$assign   = "43";
-GPIO7.pinInstance.$name = "CONFIG_PIN_11";
-scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@",GPIO7.gpioPin);
+GPIO6.$name             = "CONFIG_GPIO_TDD_SWITCH";
+GPIO6.mode              = "Output";
+GPIO6.gpioPin.$assign   = "43";
+GPIO6.pinInstance.$name = "CONFIG_PIN_11";
+scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@",GPIO6.gpioPin);
 
 NVS1.nvsType                  = "External";
 NVS1.$hardware                = system.deviceData.board.components.MX25R8035F;
