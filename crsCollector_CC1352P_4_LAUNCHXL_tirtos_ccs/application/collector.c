@@ -121,7 +121,6 @@ void Collector_init()
     Tdd_initSem(sem);
     CRS_init();
     Agc_init();
-    Alarms_init(sem);
     Csf_crsInitScript();
 //       Agc_init();
 
@@ -153,6 +152,7 @@ void Collector_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
+
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
@@ -362,6 +362,7 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
+    Alarms_init(sem);
 
 //    if (CONFIG_AUTO_START)
 //    {

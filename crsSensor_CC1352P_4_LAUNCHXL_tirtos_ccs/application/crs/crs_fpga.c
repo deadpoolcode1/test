@@ -87,6 +87,7 @@ static uint16_t Fpga_events = 0;
 static Semaphore_Handle collectorSem;
 
 static bool gIsRunnigLines = false;
+static bool gIsToPrint = true;
 
 /******************************************************************************
  Local Function Prototypes
@@ -215,6 +216,12 @@ CRS_retVal_t Fpga_close()
 
 }
 
+CRS_retVal_t Fpga_writeMultiLineNoPrint(char *line, FPGA_cbFn_t _cbFn)
+{
+    gIsToPrint = false;
+    Fpga_writeMultiLine(line, _cbFn);
+}
+
 CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
 {
     if (line == NULL || _cbFn == NULL || gUartHandle == NULL || gIsRunnigLines == true)
@@ -225,6 +232,8 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
+
+
     gIsRunnigLines = true;
     gCbMultiLineFn = _cbFn;
     int i;
@@ -507,7 +516,10 @@ void Fpga_process(void)
 
 //        if (gUartTxBuffer[0] == 'r')
 #ifndef CLI_SENSOR
-        CLI_cliPrintf("%s", gUartTxBuffer);
+        if (gIsToPrint == true)
+        {
+            CLI_cliPrintf("%s", gUartTxBuffer);
+        }
 #endif
         char line[50] = { 0 };
 
@@ -516,7 +528,7 @@ void Fpga_process(void)
         {
 //            CLI_cliPrintf("\r\nfinished sending: 0x%x", gLineNumber);
             gIsRunnigLines = false;
-
+            gIsToPrint = true;
             Util_clearEvent(&Fpga_events, FPGA_WRITE_LINES_EV);
 
             FPGA_cbArgs_t cbArgs;
@@ -546,7 +558,7 @@ void Fpga_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             gIsRunnigLines = false;
-
+            gIsToPrint = true;
             Util_clearEvent(&Fpga_events, FPGA_WRITE_LINES_EV);
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             FPGA_cbArgs_t cbArgs;
@@ -600,7 +612,7 @@ void Fpga_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             gIsRunnigLines = false;
-
+            gIsToPrint = true;
             Util_clearEvent(&Fpga_events, FPGA_READ_LINES_EV);
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             FPGA_cbArgs_t cbArgs;
