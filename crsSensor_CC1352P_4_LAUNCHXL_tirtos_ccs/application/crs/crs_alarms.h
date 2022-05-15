@@ -28,11 +28,12 @@ typedef enum Alarms_alarmType
     ULMaxInputPower,
     DLMaxOutputPower,
     TDDLock,
-    PLLLock,
+    PLLLockPrimary,
+    PLLLockSecondary,
     SyncPLLLock,
     NumberOfAlarms
 } Alarms_alarmType_t;
-#define ALARMS_NUM 9
+#define ALARMS_NUM 10
 typedef enum Alarms_alarmMode
 {
     ALARM_INACTIVE,
