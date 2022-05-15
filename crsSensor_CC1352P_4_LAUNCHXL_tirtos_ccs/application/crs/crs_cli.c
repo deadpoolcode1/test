@@ -98,6 +98,8 @@
 
 #define CLI_LIST_ALARMS_LIST "alarms list"
 #define CLI_LIST_ALARMS_SET "alarms set"
+#define CLI_LIST_ALARMS_STOP "alarms stop"
+#define CLI_LIST_ALARMS_START "alarms start"
 
 #define CLI_CRS_EV_OPEN "evopen"
 #define CLI_CRS_EV_CLOSE "evclose"
@@ -307,7 +309,7 @@ static uint8_t gUartRxBuffer[2] = { 0 };
 static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
-#define UART_WRITE_BUFF_SIZE 2000
+#define UART_WRITE_BUFF_SIZE 2500
 
 static volatile uint8_t gWriteNowBuff[UART_WRITE_BUFF_SIZE];
 static volatile uint8_t gWriteWaitingBuff[UART_WRITE_BUFF_SIZE];
@@ -877,6 +879,21 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
               inputBad = false;
 
           }
+
+      if (memcmp(CLI_LIST_ALARMS_STOP, line, sizeof(CLI_LIST_ALARMS_STOP) - 1) == 0)
+             {
+
+                 Alarms_stopPooling();
+                 inputBad = false;
+                 CLI_startREAD();
+             }
+      if (memcmp(CLI_LIST_ALARMS_START, line, sizeof(CLI_LIST_ALARMS_START) - 1) == 0)
+               {
+
+                   Alarms_startPooling();
+                   inputBad = false;
+                   CLI_startREAD();
+               }
 
       else if (memcmp(CLI_CRS_FS_INSERT, line, sizeof(CLI_CRS_FS_INSERT) - 1)
               == 0)

@@ -67,4 +67,6 @@ void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
                                    uintptr_t clientArg,
                                    Temperature_NotifyObj *notifyObject);
 void Alarms_TDDLockNotifyFxn(uint_least8_t index);
+CRS_retVal_t Alarms_stopPooling();
+CRS_retVal_t Alarms_startPooling();
 #endif /* APPLICATION_CRS_CRS_ALARMS_H_ */

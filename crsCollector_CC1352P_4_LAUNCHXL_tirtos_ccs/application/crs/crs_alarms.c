@@ -46,9 +46,10 @@ static Clock_Handle gClkHandle;
  Local Function Prototypes
  *****************************************************************************/
 static void Alarms_PLL_Check(void *arg);
-static void  Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
-static void  Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
-static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs, uint32_t* rspUint32);
+static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
+static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
+static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
+                                    uint32_t *rspUint32);
 
 /******************************************************************************
  Public Functions
@@ -157,7 +158,8 @@ CRS_retVal_t Alarms_process(void)
         if (Fpga_isOpen() == CRS_SUCCESS)
         {
             if (Fpga_writeMultiLineNoPrint(checkTddLockFirstChip,
-                                           Alarms_PLLPrimaryFpgaRsp) == CRS_SUCCESS)
+                                           Alarms_PLLPrimaryFpgaRsp)
+                    == CRS_SUCCESS)
             {
 
             }
@@ -179,45 +181,44 @@ CRS_retVal_t Alarms_process(void)
         Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
     }
     if (Alarms_events & ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT)
-       {
+    {
 
-   //            CLI_cliPrintf("\r\npll checking!");
-           char checkTddLockSecondChip[70] =
-                   "wr 0xff 0x8001\nwr 0x51 0x510000\nrd 0x51"; //need to complete
-           //check fpga open
-           if (Fpga_isOpen() == CRS_SUCCESS)
-           {
-               if (Fpga_writeMultiLineNoPrint(checkTddLockSecondChip,
-                                              Alarms_PLLSecondaryFpgaRsp) == CRS_SUCCESS)
-               {
+        //            CLI_cliPrintf("\r\npll checking!");
+        char checkTddLockSecondChip[70] =
+                "wr 0xff 0x8001\nwr 0x51 0x510000\nrd 0x51"; //need to complete
+        //check fpga open
+        if (Fpga_isOpen() == CRS_SUCCESS)
+        {
+            if (Fpga_writeMultiLineNoPrint(checkTddLockSecondChip,
+                                           Alarms_PLLSecondaryFpgaRsp)
+                    == CRS_SUCCESS)
+            {
 
-               }
-               else
-               {
+            }
+            else
+            {
 
-               }
+            }
 
-           }
-           else
-           {
+        }
+        else
+        {
 
-           }
-           //check if fpga is busy
+        }
+        //check if fpga is busy
 
-           //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
+        //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
 
-           /* Clear the event */
-           Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
-       }
-
-
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+    }
 
 }
 
-static void  Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
 {
-    uint32_t resp=0;
-    Alarms_parseRsp((_cbArgs),&resp);
+    uint32_t resp = 0;
+    Alarms_parseRsp((_cbArgs), &resp);
     if (CHECK_BIT(resp, 9))
     {
         Alarms_clearAlarm(PLLLockPrimary, ALARM_INACTIVE);
@@ -228,19 +229,17 @@ static void  Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
     }
 
     //set event
-        Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
 
-        /* Wake up the application thread when it waits for clock event */
-        Semaphore_post(collectorSem);
-
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
 
 }
 
-
-static void  Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
 {
-    uint32_t resp=0;
-    Alarms_parseRsp((_cbArgs),&resp);
+    uint32_t resp = 0;
+    Alarms_parseRsp((_cbArgs), &resp);
     if (CHECK_BIT(resp, 9))
     {
         Alarms_clearAlarm(PLLLockSecondary, ALARM_INACTIVE);
@@ -251,57 +250,56 @@ static void  Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
     }
 }
 
-
-static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs, uint32_t* rspUint32){
-    char *line=_cbArgs.arg3;
+static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
+                                    uint32_t *rspUint32)
+{
+    char *line = _cbArgs.arg3;
     char rdRespLine[200] = { 0 };
-      uint32_t size = _cbArgs.arg0;
+    uint32_t size = _cbArgs.arg0;
 
-      memset(rdRespLine, 0, 200);
+    memset(rdRespLine, 0, 200);
 
-      int gTmpLine_idx = 0;
-      int counter = 0;
-      bool isNumber = false;
-      bool isFirst = true;
-      while (memcmp(&line[counter], "AP>", 3) != 0)
-      {
-          if (line[counter] == '0' && line[counter + 1] == 'x')
-          {
-              if (isFirst == true)
-              {
-                  counter++;
-                  isFirst = false;
-                  continue;
+    int gTmpLine_idx = 0;
+    int counter = 0;
+    bool isNumber = false;
+    bool isFirst = true;
+    while (memcmp(&line[counter], "AP>", 3) != 0)
+    {
+        if (line[counter] == '0' && line[counter + 1] == 'x')
+        {
+            if (isFirst == true)
+            {
+                counter++;
+                isFirst = false;
+                continue;
 
-              }
-              isNumber = true;
-              rdRespLine[gTmpLine_idx] = line[counter];
-              gTmpLine_idx++;
-              counter++;
-              continue;
-          }
+            }
+            isNumber = true;
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
+        }
 
-          if (line[counter] == '\r' || line[counter] == '\n')
-          {
-              isNumber = false;
-          }
+        if (line[counter] == '\r' || line[counter] == '\n')
+        {
+            isNumber = false;
+        }
 
-          if (isNumber == true)
-          {
-              rdRespLine[gTmpLine_idx] = line[counter];
-              gTmpLine_idx++;
-              counter++;
-              continue;
+        if (isNumber == true)
+        {
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
 
-          }
-          counter++;
-      }
+        }
+        counter++;
+    }
 
-      *rspUint32 = strtoul(rdRespLine + 6, NULL, 16);
-
+    *rspUint32 = strtoul(rdRespLine + 6, NULL, 16);
 
 }
-
 
 CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
 {
@@ -431,3 +429,16 @@ void Alarms_TDDLockNotifyFxn(uint_least8_t index)
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(collectorSem);
 }
+
+CRS_retVal_t Alarms_stopPooling()
+{
+    Clock_stop(gClkHandle);
+}
+
+
+CRS_retVal_t Alarms_startPooling()
+{
+    Clock_start(gClkHandle);
+}
+
+
