@@ -101,6 +101,7 @@
 #define CLI_LIST_ALARMS_STOP "alarms stop"
 #define CLI_LIST_ALARMS_START "alarms start"
 
+
 #define CLI_CRS_EV_OPEN "evopen"
 #define CLI_CRS_EV_CLOSE "evclose"
 #define CLI_CRS_EV_GET_EV "evnext"
@@ -894,6 +895,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
                    inputBad = false;
                    CLI_startREAD();
                }
+
+
 
       else if (memcmp(CLI_CRS_FS_INSERT, line, sizeof(CLI_CRS_FS_INSERT) - 1)
               == 0)

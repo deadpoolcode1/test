@@ -209,8 +209,8 @@ static void macFnx(UArg arg0, UArg arg1)
                 else if (gIsNeedToSendDiscovery == true
                         && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
                 {
-                    PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,
-                                           !PIN_getOutputValue(CONFIG_PIN_RLED));
+//                    PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,
+//                                           !PIN_getOutputValue(CONFIG_PIN_RLED));
                     gState = MAC_SM_DISCOVERY;
                     EasyLink_abort();
                     gIsNeedToSendDiscovery = false;
@@ -306,8 +306,8 @@ static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 //        Clock_start(gClkHandle);
 //        Util_setEvent(&smasEvents, SMAS_DEBUG_EVT);
 //        Semaphore_post(macSem);
-        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,
-                               !PIN_getOutputValue(CONFIG_PIN_RLED));
+//        PIN_setOutputValue(pinHandle, CONFIG_PIN_RLED,
+//                               !PIN_getOutputValue(CONFIG_PIN_RLED));
         Clock_setFunc(gClkHandle, beaconClockCb, 0);
         Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);
         Clock_start(gClkHandle);
@@ -445,7 +445,7 @@ static void processkIncomingAppMsgs()
         memcpy(pkt.payload, msg.msg->msdu.p, msg.msg->msdu.len);
         pkt.len = msg.msg->msdu.len;
         pkt.panId = collectorPib.panId;
-        PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+//        PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
 
         gState = MAC_SM_CONTENT_ACK;
         EasyLink_abort();
@@ -586,7 +586,7 @@ bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
 
 bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf)
 {
-    PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+//    PIN_setOutputValue(pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
 
     macCbackEvent_t *cbEvent = malloc(sizeof(macCbackEvent_t));
     memset(cbEvent, 0, sizeof(macCbackEvent_t));

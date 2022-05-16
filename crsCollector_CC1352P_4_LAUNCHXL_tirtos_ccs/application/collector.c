@@ -99,7 +99,7 @@ ApiMac_callbacks_t Collector_macCallbacks = { assocIndCB, disassocIndCB,
  Public Functions
  *****************************************************************************/
 
-void Collector_init()
+void Collector_init(PIN_Handle pinHandl)
 {
     sem = ApiMac_init();
     /* initialize association table */
@@ -119,7 +119,7 @@ void Collector_init()
     //    AGCinit(sem);
     DigInit(sem);
     Tdd_initSem(sem);
-    CRS_init();
+    CRS_init(pinHandl);
     Agc_init();
     Csf_crsInitScript();
 //       Agc_init();

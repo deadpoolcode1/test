@@ -126,7 +126,7 @@ NULL,
  Public Functions
  *****************************************************************************/
 
-void Sensor_init()
+void Sensor_init(PIN_Handle pinHandl)
 {
     sem = ApiMac_init();
 
@@ -154,7 +154,7 @@ void Sensor_init()
     //    AGCinit(sem);
     DigInit(sem);
     Tdd_initSem(sem);
-    CRS_init();
+    CRS_init(pinHandl);
        Agc_init();
        Ssf_crsInitScript();
 }

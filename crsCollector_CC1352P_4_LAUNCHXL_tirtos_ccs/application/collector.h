@@ -13,6 +13,9 @@
  *****************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
+#include <ti/drivers/PIN.h>
+#include "ti_drivers_config.h"
+
 #include "mac/api_mac.h"
 #include "crs_global_defines.h"
 #include "application/crs/crs_alarms.h"
@@ -153,7 +156,7 @@ extern Cllc_associated_devices_t Cllc_associatedDevList[MAX_DEVICES_IN_NETWORK];
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-extern void Collector_init();
+extern void Collector_init(PIN_Handle pinHandl);
 
 extern void Collector_process(void);
 
