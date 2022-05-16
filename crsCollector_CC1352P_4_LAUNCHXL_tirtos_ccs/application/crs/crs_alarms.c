@@ -382,6 +382,8 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
 //    Clock_setFunc(gClkHandle,clockFxn,NULL);
     gClkHandle = Clock_handle(&gClkStruct);
     Clock_start(gClkHandle);
+    //for cnc to work, by defult would stop pooling until a user writes in the cli 'alarms start'
+    Alarms_stopPooling();
 
 }
 
