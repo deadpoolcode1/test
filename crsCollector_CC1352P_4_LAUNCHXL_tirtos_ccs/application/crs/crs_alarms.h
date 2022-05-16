@@ -19,6 +19,8 @@
 
 #define ALARM_ACTIVE_BIT_LOCATION 0
 #define ALARM_STICKY_BIT_LOCATION 1
+#define ALARM_DISCOVERY_BIT_LOCATION 2
+
 typedef enum Alarms_alarmType
 {
     DLMaxInputPower,
@@ -69,4 +71,6 @@ void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
 void Alarms_TDDLockNotifyFxn(uint_least8_t index);
 CRS_retVal_t Alarms_stopPooling();
 CRS_retVal_t Alarms_startPooling();
+CRS_retVal_t Alarms_discoveryPllPrimary();
+CRS_retVal_t Alarms_discoveryPllSecondary();
 #endif /* APPLICATION_CRS_CRS_ALARMS_H_ */

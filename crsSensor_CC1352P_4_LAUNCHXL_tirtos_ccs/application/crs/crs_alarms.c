@@ -23,6 +23,20 @@
 #include <ti/sysbios/knl/Clock.h>
 
 /******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
+#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
+#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
+#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0004
+#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
+#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
+#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
+
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+#define TEMP_SZ 200
+#define EXPECTEDVAL_SZ 20
+
+/******************************************************************************
  Local variables
  *****************************************************************************/
 static uint8_t gAlarmArr[ALARMS_NUM];
@@ -32,15 +46,11 @@ static uint16_t Alarms_events = 0;
 static Clock_Params gClkParams;
 static Clock_Struct gClkStruct;
 static Clock_Handle gClkHandle;
+static bool gIsPllPrimaryDiscoverd = false;
+static bool gIsPllsecondaryDiscoverd = false;
+static char gDiscRdRespLine[TEMP_SZ] = { 0 };
+static char gDiscExpectVal[EXPECTEDVAL_SZ] = { 0 };
 
-/******************************************************************************
- Constants and definitions
- *****************************************************************************/
-#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
-#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
-#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0004
-#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 /******************************************************************************
  Local Function Prototypes
@@ -48,9 +58,11 @@ static Clock_Handle gClkHandle;
 static void Alarms_PLL_Check(void *arg);
 static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
+static void Alarms_PLLPrimaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
+static void Alarms_PLLSecondaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
                                     uint32_t *rspUint32);
-
+static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -70,13 +82,23 @@ CRS_retVal_t Alarms_printAlarms()
 
 }
 /**
- * turns on the alarm_active bit
+ * turns on the alarm_active bit or the failed to discover bit
  */
 CRS_retVal_t Alarms_setAlarm(Alarms_alarmType_t alarmType)
 {
     if (alarmType >= ALARMS_NUM)
     {
         return CRS_FAILURE;
+    }
+    if (alarmType == PLLLockPrimary && (gIsPllPrimaryDiscoverd == false))
+    {
+        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
+        return CRS_SUCCESS;
+    }
+    if (alarmType == PLLLockSecondary && (gIsPllsecondaryDiscoverd == false))
+    {
+        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
+        return CRS_SUCCESS;
     }
     gAlarmArr[alarmType] |= 1UL << ALARM_ACTIVE_BIT_LOCATION; //turn on the alarm active bit
     gAlarmArr[alarmType] |= 1UL << ALARM_STICKY_BIT_LOCATION; //turn on the alarm sticky bit
@@ -148,156 +170,112 @@ CRS_retVal_t Alarms_process(void)
         Util_clearEvent(&Alarms_events, ALARMS_SET_TDDLOCK_ALARM_EVT);
     }
 
+    if (Alarms_events & ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT)
+    {
+        if (Alarms_cmpDiscRsp(gDiscRdRespLine, gDiscExpectVal) == CRS_SUCCESS)
+        {
+            gIsPllPrimaryDiscoverd = true;
+            Util_setEvent(&Alarms_events,
+            ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT);
+        }
+        else
+        {
+            Alarms_setAlarm(PLLLockPrimary);
+        }
+        memset(gDiscRdRespLine, 0, TEMP_SZ);
+        char discoveryPllSecondary[70] =
+                "wr 0xff 0x8001\nwr 0x50 0x071234\nwr 0x51 0x070000\nrd 0x51";
+        Fpga_writeMultiLineNoPrint(discoveryPllSecondary,
+                                   Alarms_PLLSecondaryDiscoveryFpgaRsp);
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events,
+        ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT);
+    }
+
+    if (Alarms_events & ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT)
+    {
+        if (Alarms_cmpDiscRsp(gDiscRdRespLine, gDiscExpectVal) == CRS_SUCCESS)
+        {
+            gIsPllsecondaryDiscoverd = true;
+        }
+        else
+        {
+            Alarms_setAlarm(PLLLockSecondary);
+        }
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events,
+        ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT);
+    }
+
     if (Alarms_events & ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT)
     {
-
-//            CLI_cliPrintf("\r\npll checking!");
-        char checkTddLockFirstChip[70] =
-                "wr 0xff 0x8000\nwr 0x51 0x510000\nrd 0x51";
-        //check fpga open
-        if (Fpga_isOpen() == CRS_SUCCESS)
+        if (gIsPllPrimaryDiscoverd)
         {
-            if (Fpga_writeMultiLineNoPrint(checkTddLockFirstChip,
-                                           Alarms_PLLPrimaryFpgaRsp)
-                    == CRS_SUCCESS)
+//            CLI_cliPrintf("\r\npll checking!");
+            char checkTddLockFirstChip[70] =
+                    "wr 0xff 0x8000\nwr 0x51 0x510000\nrd 0x51";
+            //check fpga open
+            if (Fpga_isOpen() == CRS_SUCCESS)
             {
+                if (Fpga_writeMultiLineNoPrint(checkTddLockFirstChip,
+                                               Alarms_PLLPrimaryFpgaRsp)
+                        == CRS_SUCCESS)
+                {
+
+                }
+                else
+                {
+
+                }
 
             }
             else
             {
 
             }
+            //check if fpga is busy
 
+            //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
         }
-        else
-        {
-
-        }
-        //check if fpga is busy
-
-        //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
-
         /* Clear the event */
-        Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
+        Util_clearEvent(&Alarms_events,
+        ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
     }
+
     if (Alarms_events & ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT)
     {
-
-        //            CLI_cliPrintf("\r\npll checking!");
-        char checkTddLockSecondChip[70] =
-                "wr 0xff 0x8001\nwr 0x51 0x510000\nrd 0x51"; //need to complete
-        //check fpga open
-        if (Fpga_isOpen() == CRS_SUCCESS)
+        if (gIsPllsecondaryDiscoverd)
         {
-            if (Fpga_writeMultiLineNoPrint(checkTddLockSecondChip,
-                                           Alarms_PLLSecondaryFpgaRsp)
-                    == CRS_SUCCESS)
+            //            CLI_cliPrintf("\r\npll checking!");
+            char checkTddLockSecondChip[70] =
+                    "wr 0xff 0x8001\nwr 0x51 0x510000\nrd 0x51";
+            //check fpga open
+            if (Fpga_isOpen() == CRS_SUCCESS)
             {
+                if (Fpga_writeMultiLineNoPrint(checkTddLockSecondChip,
+                                               Alarms_PLLSecondaryFpgaRsp)
+                        == CRS_SUCCESS)
+                {
+
+                }
+                else
+                {
+
+                }
 
             }
             else
             {
 
             }
+            //check if fpga is busy
 
+            //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
         }
-        else
-        {
-
-        }
-        //check if fpga is busy
-
-        //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
-
         /* Clear the event */
-        Util_clearEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+        Util_clearEvent(&Alarms_events,
+        ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
     }
-
-}
-
-static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
-{
-    uint32_t resp = 0;
-    Alarms_parseRsp((_cbArgs), &resp);
-    if (CHECK_BIT(resp, 9))
-    {
-        Alarms_clearAlarm(PLLLockPrimary, ALARM_INACTIVE);
-    }
-    else
-    {
-        Alarms_setAlarm(PLLLockPrimary);
-    }
-
-    //set event
-    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
-
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(collectorSem);
-
-}
-
-static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
-{
-    uint32_t resp = 0;
-    Alarms_parseRsp((_cbArgs), &resp);
-    if (CHECK_BIT(resp, 9))
-    {
-        Alarms_clearAlarm(PLLLockSecondary, ALARM_INACTIVE);
-    }
-    else
-    {
-        Alarms_setAlarm(PLLLockSecondary);
-    }
-}
-
-static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
-                                    uint32_t *rspUint32)
-{
-    char *line = _cbArgs.arg3;
-    char rdRespLine[200] = { 0 };
-    uint32_t size = _cbArgs.arg0;
-
-    memset(rdRespLine, 0, 200);
-
-    int gTmpLine_idx = 0;
-    int counter = 0;
-    bool isNumber = false;
-    bool isFirst = true;
-    while (memcmp(&line[counter], "AP>", 3) != 0)
-    {
-        if (line[counter] == '0' && line[counter + 1] == 'x')
-        {
-            if (isFirst == true)
-            {
-                counter++;
-                isFirst = false;
-                continue;
-
-            }
-            isNumber = true;
-            rdRespLine[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-        }
-
-        if (line[counter] == '\r' || line[counter] == '\n')
-        {
-            isNumber = false;
-        }
-
-        if (isNumber == true)
-        {
-            rdRespLine[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-
-        }
-        counter++;
-    }
-
-    *rspUint32 = strtoul(rdRespLine + 6, NULL, 16);
 
 }
 
@@ -372,6 +350,10 @@ CRS_retVal_t Alarms_TDDLock_Init()
 
 CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
 {
+    memcpy(gDiscExpectVal, "0x1234", sizeof("0x1234"));
+    char discoveryPllPrimary[70] =
+            "wr 0xff 0x8000\nwr 0x50 0x071234\nwr 0x51 0x070000\nrd 0x51";
+    Fpga_writeMultiLine(discoveryPllPrimary, Alarms_PLLPrimaryDiscoveryFpgaRsp);
     memset(&gClkStruct, 0, sizeof(gClkStruct));
     memset(&gClkHandle, 0, sizeof(gClkHandle));
     Clock_Params_init(&gClkParams);
@@ -384,15 +366,6 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
     Clock_start(gClkHandle);
     //for cnc to work, by defult would stop pooling until a user writes in the cli 'alarms start'
     Alarms_stopPooling();
-}
-
-static void Alarms_PLL_Check(void *arg)
-{
-    //set event
-    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
-
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(collectorSem);
 
 }
 
@@ -436,10 +409,220 @@ CRS_retVal_t Alarms_stopPooling()
     Clock_stop(gClkHandle);
 }
 
-
 CRS_retVal_t Alarms_startPooling()
 {
     Clock_start(gClkHandle);
 }
 
+CRS_retVal_t Alarms_discoveryPllPrimary()
+{
 
+}
+
+CRS_retVal_t Alarms_discoveryPllSecondary()
+{
+}
+
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
+
+static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+{
+    uint32_t resp = 0;
+    Alarms_parseRsp((_cbArgs), &resp);
+    if (CHECK_BIT(resp, 9))
+    {
+        Alarms_clearAlarm(PLLLockPrimary, ALARM_INACTIVE);
+    }
+    else
+    {
+        Alarms_setAlarm(PLLLockPrimary);
+    }
+
+    //set event
+    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+
+}
+
+static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+{
+    uint32_t resp = 0;
+    Alarms_parseRsp((_cbArgs), &resp);
+    if (CHECK_BIT(resp, 9))
+    {
+        Alarms_clearAlarm(PLLLockSecondary, ALARM_INACTIVE);
+    }
+    else
+    {
+        Alarms_setAlarm(PLLLockSecondary);
+    }
+}
+
+static void Alarms_PLLPrimaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+{
+    memcpy(gDiscRdRespLine, _cbArgs.arg3, strlen(_cbArgs.arg3));
+//    CLI_cliPrintf("\r\ndiscovery pll primary resp: %s",_cbArgs.arg3);
+    Util_setEvent(&Alarms_events, ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT);
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+}
+
+static void Alarms_PLLSecondaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs)
+{
+    memcpy(gDiscRdRespLine, _cbArgs.arg3, strlen(_cbArgs.arg3));
+//    CLI_cliPrintf("\r\ndiscovery pll primary resp: %s",_cbArgs.arg3);
+    Util_setEvent(&Alarms_events, ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT);
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+}
+
+static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
+                                    uint32_t *rspUint32)
+{
+    char *line = _cbArgs.arg3;
+    char rdRespLine[200] = { 0 };
+    uint32_t size = _cbArgs.arg0;
+
+    memset(rdRespLine, 0, 200);
+
+    int gTmpLine_idx = 0;
+    int counter = 0;
+    bool isNumber = false;
+    bool isFirst = true;
+    while (memcmp(&line[counter], "AP>", 3) != 0)
+    {
+        if (line[counter] == '0' && line[counter + 1] == 'x')
+        {
+            if (isFirst == true)
+            {
+                counter++;
+                isFirst = false;
+                continue;
+
+            }
+            isNumber = true;
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
+        }
+
+        if (line[counter] == '\r' || line[counter] == '\n')
+        {
+            isNumber = false;
+        }
+
+        if (isNumber == true)
+        {
+            rdRespLine[gTmpLine_idx] = line[counter];
+            gTmpLine_idx++;
+            counter++;
+            continue;
+
+        }
+        counter++;
+    }
+
+    *rspUint32 = strtoul(rdRespLine + 6, NULL, 16);
+
+}
+
+static void Alarms_PLL_Check(void *arg)
+{
+    //set event
+    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+
+}
+
+static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal)
+{
+    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[6],
+               strlen(&gDiscExpectVal[2])) != 0)
+    {
+        if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+        {
+            return CRS_FAILURE;
+        }
+
+    }
+
+    if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+    {
+        return CRS_SUCCESS;
+    }
+    int i = 0;
+    char tokenValue[CRS_NVS_LINE_BYTES] = { 0 };
+    memcpy(tokenValue, &expVal[4], CRS_NVS_LINE_BYTES - 4);
+
+    if (memcmp(expVal, "16b", 3) == 0)
+    {
+
+        for (i = 0; i < 16; i++)
+        {
+            uint16_t val = CLI_convertStrUint(&rsp[6]);
+            uint16_t valPrev = val;
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val &= ~(1 << (15 - i));
+                if (val != (~(0)))
+                {
+                    return CRS_FAILURE;
+                }
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= (1 << (15 - i));
+                if (val != 0)
+                {
+                    return CRS_FAILURE;
+                }
+            }
+
+        }
+
+    }
+    else if (memcmp(expVal, "32b", 3) == 0)
+    {
+
+        for (i = 0; i < 32; i++)
+        {
+            uint32_t val = CLI_convertStrUint(&rsp[6]);
+            uint32_t valPrev = val;
+
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val |= (1 << (31 - i));
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= ~(1 << (31 - i));
+            }
+
+            if (val != valPrev)
+            {
+                return CRS_FAILURE;
+            }
+        }
+
+//        int2hex(val, valStr);
+
+    }
+
+    return CRS_SUCCESS;
+
+}
