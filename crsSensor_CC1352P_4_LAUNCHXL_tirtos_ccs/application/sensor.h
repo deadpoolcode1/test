@@ -13,7 +13,8 @@
  *****************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <ti/drivers/PIN.h>
+#include "ti_drivers_config.h"
 #include "crs_global_defines.h"
 #include "mac/api_mac.h"
 
@@ -53,13 +54,11 @@ typedef enum
 /*! Collector events flags */
 extern uint16_t Sensor_events;
 
-
-
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
 
-extern void Sensor_init();
+extern void Sensor_init(PIN_Handle pinHandl);
 
 extern void Sensor_process(void);
 

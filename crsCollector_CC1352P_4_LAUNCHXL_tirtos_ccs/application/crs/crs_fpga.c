@@ -16,6 +16,9 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/drivers/UART.h>
 #include <ti/drivers/uart/UARTCC26XX.h>
+#include <ti/drivers/GPIO.h>
+#include <ti/drivers/gpio/GPIOCC26XX.h>
+
 #include "mac/mac_util.h"
 #include "application/util_timer.h"
 #include "crs_fpga.h"
@@ -124,6 +127,11 @@ CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
     {
         return CRS_FAILURE;
     }
+
+    #ifdef CRS_CB
+        GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, 0x1f | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW);
+    #endif
+
 
     {
         // General UART setup

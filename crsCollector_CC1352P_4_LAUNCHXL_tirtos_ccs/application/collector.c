@@ -99,7 +99,7 @@ ApiMac_callbacks_t Collector_macCallbacks = { assocIndCB, disassocIndCB,
  Public Functions
  *****************************************************************************/
 
-void Collector_init()
+void Collector_init(PIN_Handle pinHandl)
 {
     sem = ApiMac_init();
     /* initialize association table */
@@ -119,7 +119,7 @@ void Collector_init()
     //    AGCinit(sem);
     DigInit(sem);
     Tdd_initSem(sem);
-    CRS_init();
+    CRS_init(pinHandl);
     Agc_init();
     Csf_crsInitScript();
 //       Agc_init();
@@ -332,9 +332,12 @@ void Cllc_getFfdShortAddr(uint16_t *shortAddr)
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+    if (Fpga_isOpen() == CRS_SUCCESS)
+    {
+        CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
 
-    if (retStatus == CRS_FAILURE)
+    }
+    else
     {
         CLI_cliPrintf("\r\nUnable to run flat file");
         FPGA_cbArgs_t cbArgs;

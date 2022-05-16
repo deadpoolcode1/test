@@ -643,24 +643,6 @@ void Config_process(void)
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
         }
-//        int i = 0;
-//        int j = 0;
-//        for (i = 0; i < FILEINFO_SZ; ++i)
-//        {
-//            for (j = 0; j < NAME_VALUES_SZ; ++j)
-//            {
-//                if (memcmp(packageLineStruct.fileInfos[i].nameValues[j].name,
-//                           gFileInfos[i].nameValues[j].name, NAMEVALUE_NAME_SZ)
-//                        == 0)
-//                {
-//                    packageLineStruct.fileInfos[i].nameValues[j].value =
-//                            gFileInfos[i].nameValues[j].value;
-//                }else{
-//                    //TODO: add this param
-//                }
-//            }
-//
-//        }
 
         gInvLineNumber++;
         if (gIsSingleLine == true)
@@ -1067,6 +1049,7 @@ static CRS_retVal_t insertParam(char *paramValue,
             respStructFileInfo[index].nameValues[idx].value = valueInt;
             break;
         }
+
         idx++;
     }
 }

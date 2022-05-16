@@ -28,6 +28,7 @@
 /******************************************************************************
  Local variables
  *****************************************************************************/
+PIN_Handle Crs_pinHandle;
 
 static Watchdog_Handle gWatchdogHandle;
 static Watchdog_Params gParams;
@@ -47,8 +48,9 @@ static void watchdogClearTimeoutCb(xdc_UArg arg);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-void CRS_init()
+void CRS_init(PIN_Handle pinHandle)
 {
+    Crs_pinHandle = pinHandle;
     Watchdog_init();
     /* Open a Watchdog driver instance */
     Watchdog_Params_init(&gParams);

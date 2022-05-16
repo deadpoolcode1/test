@@ -12,6 +12,10 @@
  *****************************************************************************/
 #include <stdint.h>
 #include <ti/drivers/Temperature.h>
+#include <ti/drivers/PIN.h>
+#include "ti_drivers_config.h"
+
+#include "crs_global_defines.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -61,11 +65,14 @@ typedef struct CRS_nameValue
     int32_t value;
 } CRS_nameValue_t;
 
+extern PIN_Handle Crs_pinHandle;
+
+
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
 void* CRS_malloc(uint16_t size);
 void CRS_free(void *ptr);
-void CRS_init();
+void CRS_init(PIN_Handle pinHandle);
 
 #endif /* APPLICATION_CRS_CRS_H_ */

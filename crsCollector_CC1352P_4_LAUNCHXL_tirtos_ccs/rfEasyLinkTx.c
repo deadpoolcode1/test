@@ -78,7 +78,7 @@
 #define RFEASYLINKTX_BURST_SIZE         10
 #define RFEASYLINKTXPAYLOAD_LENGTH      30
 
-#define APP_TASK_STACK_SIZE 22000
+#define APP_TASK_STACK_SIZE 18000
 
 #define APP_TASK_PRIORITY   1
 
@@ -250,7 +250,7 @@ static void rfEasyLinkTxFnx(UArg arg0, UArg arg1)
 
 void appTaskFxn(UArg a0, UArg a1)
 {
-    Collector_init();
+    Collector_init(pinHandle);
 
     /* Kick off application - Forever loop */
        while(1)
@@ -269,6 +269,7 @@ void appTask_init()
        taskParams.stack = appTaskStack;
        taskParams.stackSize = APP_TASK_STACK_SIZE;
        taskParams.priority = APP_TASK_PRIORITY;
+
        Task_construct(&appTask, appTaskFxn, &taskParams, NULL);
 
 
