@@ -2354,7 +2354,7 @@ static CRS_retVal_t CLI_fsReadFileParsing(char *line)
     uint32_t readSize = strtoul(&(token[2]), NULL, 16);
 //    Fs_readFile(filename);
     if(token){
-        if(readSize<1024 && fileIndex<4096){
+        if(readSize<650 && fileIndex<4096){
             Nvs_catSegment(filename, fileIndex, readSize);
         }
         else{
