@@ -131,6 +131,9 @@ CRS_retVal_t Nvs_ls()
                      (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
                      (void*) strlenStr, STRLEN_BYTES);
             sscanf(strlenStr, "%x", &strlen);
+            if(strlen){
+                strlen -= 1;
+            }
             CLI_cliPrintf("\r\nName=%s Size=0x%x", fat[i].filename, strlen);
             numfiles++;
             strlen = 0;
@@ -744,26 +747,33 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
              (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
              (void*) strlenStr, STRLEN_BYTES);
 
-    uint32_t strlen;
-    sscanf(strlenStr, "%x", &strlen);
+    uint32_t stringlen;
+    sscanf(strlenStr, "%x", &stringlen);
     size_t startFile = ((fat[i].index + gFAT_sector_sz)
             * gRegionAttrs.sectorSize) + (STRLEN_BYTES + 1);
-    NVS_read(gNvsHandle, startFile, (void*) fileContent, strlen);
+    NVS_read(gNvsHandle, startFile, (void*) fileContent, stringlen);
 //    char line[50] = { 0 };
     const char s[2] = "\n";
     char *token;
-    char fileSegment[1024] = { 0 };
+    char fileSegment[650] = { 0 };
     if((fileIndex+readSize)>4096){
         readSize = 4096 - fileIndex;
     }
     memcpy(fileSegment, &fileContent[fileIndex], readSize);
-    token = strtok((fileSegment), s);
-    while (token != NULL)
+    if(strlen(fileContent) <= (fileIndex+readSize))
     {
-        CLI_cliPrintf("\r\n%s", token);
-        Task_sleep(100);
-        token = strtok(NULL, s);
+        // nvs_write puts newline at end of file, so we remove it before printing
+        fileSegment[strlen(fileSegment)-1] = 0;
     }
+    CLI_cliPrintf("\r\n%s", fileSegment);
+   //if()
+//    token = strtok((fileSegment), s);
+//    while (token != NULL)
+//    {
+//        CLI_cliPrintf("\r\n%s", token);
+//        Task_sleep(100);
+//        token = strtok(NULL, s);
+//    }
     return CRS_SUCCESS;
 }
 
