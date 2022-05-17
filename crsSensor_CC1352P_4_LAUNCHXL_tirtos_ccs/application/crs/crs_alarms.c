@@ -240,6 +240,13 @@ CRS_retVal_t Alarms_process(void)
             //check if fpga is busy
 
             //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
+        }else{
+            //set event
+             Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+
+             /* Wake up the application thread when it waits for clock event */
+             Semaphore_post(collectorSem);
+
         }
         /* Clear the event */
         Util_clearEvent(&Alarms_events,
@@ -266,10 +273,6 @@ CRS_retVal_t Alarms_process(void)
                 {
 
                 }
-
-            }
-            else
-            {
 
             }
             //check if fpga is busy
