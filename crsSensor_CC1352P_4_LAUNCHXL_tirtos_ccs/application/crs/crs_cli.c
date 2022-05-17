@@ -4200,6 +4200,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 
     CLI_cliPrintf("\r\n");
 
+    CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
 
     CLI_printCommInfo(CLI_CRS_FPGA_OPEN, strlen(CLI_CRS_FPGA_OPEN), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FPGA_CLOSE, strlen(CLI_CRS_FPGA_CLOSE), "[shortAddr]");
@@ -4220,16 +4221,23 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_RF, strlen(CLI_CRS_FS_UPLOAD_RF), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [rf address] [lut line number] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_DIG, strlen(CLI_CRS_FS_UPLOAD_DIG), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [chip number] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_FPGA, strlen(CLI_CRS_FS_UPLOAD_DIG), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [param=value]");
+    CLI_printCommInfo(CLI_CRS_FS_FORMAT, strlen(CLI_CRS_FS_FORMAT), "[shortAddr]");
+
+
 
     CLI_printCommInfo(CLI_CRS_ENV_LS, strlen(CLI_CRS_ENV_LS), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_ENV_UPDATE, strlen(CLI_CRS_ENV_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
     CLI_printCommInfo(CLI_CRS_ENV_RM, strlen(CLI_CRS_ENV_RM), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_ENV_FORMAT, strlen(CLI_CRS_ENV_FORMAT), "[shortAddr] ");
+    CLI_printCommInfo(CLI_CRS_ENV_RESTORE, strlen(CLI_CRS_ENV_RESTORE), "[shortAddr] ");
+
 
     CLI_printCommInfo(CLI_CRS_TRSH_LS, strlen(CLI_CRS_TRSH_LS), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_TRSH_UPDATE, strlen(CLI_CRS_TRSH_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
     CLI_printCommInfo(CLI_CRS_TRSH_RM, strlen(CLI_CRS_TRSH_RM), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_TRSH_FORMAT, strlen(CLI_CRS_TRSH_FORMAT), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TRSH_RESTORE, strlen(CLI_CRS_TRSH_RESTORE), "[shortAddr]");
+
 
     CLI_printCommInfo(CLI_CRS_CONFIG_LINE, strlen(CLI_CRS_CONFIG_LINE), "[shortAddr] [flat filename] [INV lineNumber] [scriptName:name=val]");
     CLI_printCommInfo(CLI_CRS_CONFIG_FILE, strlen(CLI_CRS_CONFIG_FILE), "[shortAddr] [flat filename]");
@@ -4256,6 +4264,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
     CLI_printCommInfo(CLI_LIST_ALARMS_LIST, strlen(CLI_LIST_ALARMS_LIST), "[shortAddr]");
     CLI_printCommInfo(CLI_LIST_ALARMS_SET, strlen(CLI_LIST_ALARMS_SET), "[shortAddr] [id] [state]");
+    CLI_printCommInfo(CLI_LIST_ALARMS_STOP, strlen(CLI_LIST_ALARMS_STOP), "");
+    CLI_printCommInfo(CLI_LIST_ALARMS_START, strlen(CLI_LIST_ALARMS_START), "");
 
 
 #ifndef CLI_SENSOR
