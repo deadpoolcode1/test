@@ -74,5 +74,6 @@ extern PIN_Handle Crs_pinHandle;
 void* CRS_malloc(uint16_t size);
 void CRS_free(void *ptr);
 void CRS_init(PIN_Handle pinHandle);
+CRS_retVal_t CRS_watchdogDisable();
 
 #endif /* APPLICATION_CRS_CRS_H_ */

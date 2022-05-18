@@ -102,6 +102,15 @@ void CRS_free(void *ptr)
     }
 }
 
+
+CRS_retVal_t CRS_watchdogDisable()
+{
+
+    Clock_stop(gClkHandle);
+    Watchdog_clear(gWatchdogHandle);
+
+}
+
 /******************************************************************************
  Local Functions
  *****************************************************************************/

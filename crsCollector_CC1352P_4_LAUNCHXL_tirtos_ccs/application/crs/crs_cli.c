@@ -166,6 +166,9 @@
 #define CLI_CRS_TRSH_FORMAT "thrsh erase all"
 #define CLI_CRS_TRSH_RESTORE "thrsh restore"
 
+#define CLI_CRS_WATCHDOG_DISABLE "watchdog disable"
+
+
 #define CLI_CRS_DEBUG "fs debug"
 
 #define CLI_CRS_TMP "tmp"
@@ -267,6 +270,9 @@ static const char* getTime_str();
 static CRS_retVal_t CLI_config_direct(char *line);
 static CRS_retVal_t CLI_config_file(char *line);
 static CRS_retVal_t CLI_config_line(char *line);
+
+
+static CRS_retVal_t CLI_watchdogDisableParsing(char *line);
 
 static CRS_retVal_t CLI_tmpParsing(char *line);
 
@@ -1057,6 +1063,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
           CLI_rssiParsing(line);
                       inputBad = false;
       }
+
+      if (memcmp(CLI_CRS_WATCHDOG_DISABLE, line, sizeof(CLI_CRS_WATCHDOG_DISABLE) - 1) == 0)
+           {
+
+          CLI_watchdogDisableParsing(line);
+                           inputBad = false;
+           }
 
 
 
@@ -4192,6 +4205,39 @@ static CRS_retVal_t CLI_rssiParsing(char *line)
                CLI_startREAD();
                return CRS_SUCCESS;
 
+}
+
+
+static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
+{
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_WATCHDOG_DISABLE) + 2]), NULL,
+                                            16);
+           #ifndef CLI_SENSOR
+
+               uint16_t addr = 0;
+               Cllc_getFfdShortAddr(&addr);
+               if (addr != shortAddr)
+               {
+                   //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                   ApiMac_sAddr_t dstAddr;
+                   dstAddr.addr.shortAddr = shortAddr;
+                   dstAddr.addrMode = ApiMac_addrType_short;
+                   Collector_status_t stat;
+                   stat = Collector_sendCrsMsg(&dstAddr, line);
+                   if (stat != Collector_status_success)
+                   {
+                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                       CLI_startREAD();
+                   }
+
+           //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                   return CRS_SUCCESS;
+               }
+           #endif
+               CRS_watchdogDisable();
+               CLI_cliPrintf("\r\nStatus 0x%x", CRS_SUCCESS);
+               CLI_startREAD();
+               return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_helpParsing(char *line)
