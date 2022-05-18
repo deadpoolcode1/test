@@ -21,6 +21,7 @@
 #include "mac/mac_util.h"
 #include <ti/drivers/GPIO.h>
 #include <ti/sysbios/knl/Clock.h>
+#include "crs_global_defines.h"
 
 /******************************************************************************
  Constants and definitions
@@ -315,7 +316,9 @@ CRS_retVal_t Alarms_init(void *sem)
 {
     collectorSem = sem;
     Alarms_temp_Init();
+#ifndef CLI_SENSOR
     Alarms_TDDLock_Init();
+#endif
     Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
 }
 
