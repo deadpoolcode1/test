@@ -28,6 +28,8 @@
 #include "application/crs/crs_alarms.h"
 #include "crs/crs_thresholds.h"
 #include "agc/agc.h"
+#include "application/crs/crs_management.h"
+
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -67,6 +69,7 @@ static uint8_t deviceTxMsduHandle = 0;
 static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
                     uint8_t *pData);
 static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType);
+static void processCliUpdateCb( Manage__cbArgs_t *_cbArgs);
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf);
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
@@ -121,6 +124,7 @@ void Collector_init(PIN_Handle pinHandl)
     Tdd_initSem(sem);
     CRS_init(pinHandl);
     Agc_init();
+    Manage_initSem(sem);
     Csf_crsInitScript();
 //       Agc_init();
 
@@ -181,6 +185,15 @@ void Csf_processCliSendMsgUpdate()
 }
 
 void Csf_processCliUpdate()
+{
+//    Manage_addTask(processCliUpdateCb, NULL);
+    Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(sem);
+}
+
+static void processCliUpdateCb( Manage__cbArgs_t *_cbArgs)
 {
     Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
 

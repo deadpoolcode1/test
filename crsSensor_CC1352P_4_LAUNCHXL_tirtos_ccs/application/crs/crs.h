@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <ti/drivers/Temperature.h>
 #include <ti/drivers/PIN.h>
+#include "mac/mac_util.h"
+
 #include "ti_drivers_config.h"
 
 #include "crs_global_defines.h"

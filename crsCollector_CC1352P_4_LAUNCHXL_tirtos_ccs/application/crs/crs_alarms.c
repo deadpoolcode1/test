@@ -38,6 +38,20 @@
 #define EXPECTEDVAL_SZ 20
 
 /******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
+#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
+#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
+#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0004
+#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
+#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
+#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
+
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+#define TEMP_SZ 200
+#define EXPECTEDVAL_SZ 20
+
+/******************************************************************************
  Local variables
  *****************************************************************************/
 static uint8_t gAlarmArr[ALARMS_NUM];
@@ -63,7 +77,7 @@ static void Alarms_PLLPrimaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static void Alarms_PLLSecondaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
                                     uint32_t *rspUint32);
-static CRS_retVal_t Alarms_cmpDiscRsp();
+static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
@@ -177,7 +191,7 @@ CRS_retVal_t Alarms_process(void)
 
     if (Alarms_events & ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT)
     {
-        if (Alarms_cmpDiscRsp() == CRS_SUCCESS)
+        if (Alarms_cmpDiscRsp(gDiscRdRespLine, gDiscExpectVal) == CRS_SUCCESS)
         {
             gIsPllPrimaryDiscoverd = true;
             Util_setEvent(&Alarms_events,
@@ -199,7 +213,7 @@ CRS_retVal_t Alarms_process(void)
 
     if (Alarms_events & ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT)
     {
-        if (Alarms_cmpDiscRsp() == CRS_SUCCESS)
+        if (Alarms_cmpDiscRsp(gDiscRdRespLine, gDiscExpectVal) == CRS_SUCCESS)
         {
             gIsPllsecondaryDiscoverd = true;
         }
@@ -274,6 +288,10 @@ CRS_retVal_t Alarms_process(void)
                 {
 
                 }
+
+            }
+            else
+            {
 
             }
             //check if fpga is busy
@@ -551,15 +569,90 @@ static void Alarms_PLL_Check(void *arg)
 
 }
 
-static CRS_retVal_t Alarms_cmpDiscRsp()
+static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal)
 {
-    uint32_t expValUint = strtoul(gDiscExpectVal, NULL, 16);
-       uint32_t rdValUint = strtoul(&gDiscRdRespLine[16], NULL, 16);
-       if (expValUint == rdValUint)
-       {
-           return CRS_SUCCESS;
-       }
+    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[6],
+               strlen(&gDiscExpectVal[2])) != 0)
+    {
+        if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+        {
+            return CRS_FAILURE;
+        }
 
-       return CRS_FAILURE;
+    }
+
+    if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+    {
+        return CRS_SUCCESS;
+    }
+    int i = 0;
+    char tokenValue[CRS_NVS_LINE_BYTES] = { 0 };
+    memcpy(tokenValue, &expVal[4], CRS_NVS_LINE_BYTES - 4);
+
+    if (memcmp(expVal, "16b", 3) == 0)
+    {
+
+        for (i = 0; i < 16; i++)
+        {
+            uint16_t val = CLI_convertStrUint(&rsp[6]);
+            uint16_t valPrev = val;
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val &= ~(1 << (15 - i));
+                if (val != (~(0)))
+                {
+                    return CRS_FAILURE;
+                }
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= (1 << (15 - i));
+                if (val != 0)
+                {
+                    return CRS_FAILURE;
+                }
+            }
+
+        }
+
+    }
+    else if (memcmp(expVal, "32b", 3) == 0)
+    {
+
+        for (i = 0; i < 32; i++)
+        {
+            uint32_t val = CLI_convertStrUint(&rsp[6]);
+            uint32_t valPrev = val;
+
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val |= (1 << (31 - i));
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= ~(1 << (31 - i));
+            }
+
+            if (val != valPrev)
+            {
+                return CRS_FAILURE;
+            }
+        }
+
+//        int2hex(val, valStr);
+
+    }
+
+    return CRS_SUCCESS;
 
 }
+
+
