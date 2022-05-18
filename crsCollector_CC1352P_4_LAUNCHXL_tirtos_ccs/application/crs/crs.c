@@ -107,7 +107,7 @@ CRS_retVal_t CRS_watchdogDisable()
 {
 
     Clock_stop(gClkHandle);
-    Watchdog_clear(gWatchdogHandle);
+    Watchdog_close(gWatchdogHandle);
 
 }
 
