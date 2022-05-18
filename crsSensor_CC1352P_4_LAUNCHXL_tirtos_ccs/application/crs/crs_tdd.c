@@ -285,11 +285,11 @@ CRS_retVal_t Tdd_isOpen()
 
 CRS_retVal_t Tdd_isLocked()
 {
-//    GPIO_init();
-//    if(GPIO_read(CONFIG_GPIO_BTN1)){
-//        return CRS_TDD_NOT_LOCKED;
-//    }
-//    return CRS_SUCCESS;
+    GPIO_init();
+    if(GPIO_read(CONFIG_GPIO_BTN1)){
+        return CRS_TDD_NOT_LOCKED;
+    }
+    return CRS_SUCCESS;
 //    if(gIsLocked){
 //        return CRS_SUCCESS;
 //    }

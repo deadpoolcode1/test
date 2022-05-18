@@ -128,6 +128,7 @@
 #define CLI_CRS_TDD_TTG "tdd set ttg"
 #define CLI_CRS_TDD_RTG "tdd set rtg"
 #define CLI_CRS_TDD_CMD "tdd restart"
+#define CLI_CRS_TDD_GET_LOCK "tdd get lock"
 
 #define CLI_CRS_FS_INSERT "fs insert"
 #define CLI_CRS_FS_LS "fs ls"
@@ -230,6 +231,7 @@ static CRS_retVal_t CLI_tddSetAllocParsing(char *line);
 static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
 static CRS_retVal_t CLI_tddCommandParsing(char *line);
+static CRS_retVal_t CLI_tddGetLockParsing(char *line);
 
 static CRS_retVal_t CLI_fsInsertParsing(char *line);
 static CRS_retVal_t CLI_fsLsParsing(char *line);
@@ -800,6 +802,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
           {
 
               CLI_tddCommandParsing(line);
+
+              inputBad = false;
+          }
+          if (memcmp(CLI_CRS_TDD_GET_LOCK, line, sizeof(CLI_CRS_TDD_GET_LOCK) - 1) == 0)
+          {
+
+              CLI_tddGetLockParsing(line);
 
               inputBad = false;
           }
@@ -2032,6 +2041,56 @@ static CRS_retVal_t CLI_tddCommandParsing(char *line)
          return retStatus;
 }
 
+
+static CRS_retVal_t CLI_tddGetLockParsing(char *line)
+{
+    const char s[2] = " ";
+         char *token;
+         char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+         memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+         /* get the first token */
+         //0xaabb shortAddr
+         token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_GET_LOCK)]), s);
+         //token = strtok(NULL, s);
+         uint32_t commSize = sizeof(CLI_CRS_TDD_GET_LOCK);
+         uint32_t addrSize = strlen(token);
+         //shortAddr in decimal
+         uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+     #ifndef CLI_SENSOR
+
+         uint16_t addr = 0;
+         Cllc_getFfdShortAddr(&addr);
+         if (addr != shortAddr)
+         {
+             //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+             ApiMac_sAddr_t dstAddr;
+             dstAddr.addr.shortAddr = shortAddr;
+             dstAddr.addrMode = ApiMac_addrType_short;
+             Collector_status_t stat;
+             stat = Collector_sendCrsMsg(&dstAddr, line);
+             if (stat != Collector_status_success)
+                    {
+                        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                        CLI_startREAD();
+                    }
+     //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+             return CRS_SUCCESS;
+         }
+     #endif
+
+         CRS_retVal_t retStatus = Tdd_isLocked();
+         if(retStatus == CRS_SUCCESS){
+             CLI_cliPrintf("\r\nLOCKED");
+         }
+         else{
+             CLI_cliPrintf("\r\nNOT_LOCKED");
+         }
+         CLI_startREAD();
+         return retStatus;
+}
 
 
 static CRS_retVal_t CLI_tddSetFrameParsing(char *line)
