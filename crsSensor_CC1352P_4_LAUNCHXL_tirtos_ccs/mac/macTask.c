@@ -741,13 +741,13 @@ static void updateRssiStrct(int8_t rssi)
     for (x = 0; x < RSSI_ARR_SIZE; x++)
     {
         if (gRssiStrct.rssiArr[x] != 0
-                && gRssiStrct.rssiMax > gRssiStrct.rssiArr[x])
+                && gRssiStrct.rssiMax < gRssiStrct.rssiArr[x])
         {
             gRssiStrct.rssiMax = gRssiStrct.rssiArr[x];
         }
 
         if (gRssiStrct.rssiArr[x] != 0
-                && gRssiStrct.rssiMin < gRssiStrct.rssiArr[x])
+                && gRssiStrct.rssiMin > gRssiStrct.rssiArr[x])
         {
             gRssiStrct.rssiMin = gRssiStrct.rssiArr[x];
         }

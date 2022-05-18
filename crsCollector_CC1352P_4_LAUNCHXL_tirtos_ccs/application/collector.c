@@ -651,7 +651,7 @@ static void updateCduRssiStrct(int8_t rssi, int idx)
     {
         if (Cllc_associatedDevList[idx].rssiArr[x] != -1
                 && Cllc_associatedDevList[idx].rssiMaxCdu
-                        > Cllc_associatedDevList[idx].rssiArr[x])
+                        < Cllc_associatedDevList[idx].rssiArr[x])
         {
             Cllc_associatedDevList[idx].rssiMaxCdu =
                     Cllc_associatedDevList[idx].rssiArr[x];
@@ -659,7 +659,7 @@ static void updateCduRssiStrct(int8_t rssi, int idx)
 
         if (Cllc_associatedDevList[idx].rssiArr[x] != -1
                 && Cllc_associatedDevList[idx].rssiMinCdu
-                        < Cllc_associatedDevList[idx].rssiArr[x])
+                        > Cllc_associatedDevList[idx].rssiArr[x])
         {
             Cllc_associatedDevList[idx].rssiMinCdu =
                     Cllc_associatedDevList[idx].rssiArr[x];
