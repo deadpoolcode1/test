@@ -175,13 +175,13 @@ CRS_retVal_t Alarms_process(void)
         //if rising edge-->tdd is not locked!
         if (GPIO_read(CONFIG_GPIO_BTN1))
         {
-                PIN_setOutputValue(Crs_pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+//                PIN_setOutputValue(Crs_pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
 
             Alarms_setAlarm(TDDLock);
         }
         else
         {
-                PIN_setOutputValue(Crs_pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
+//                PIN_setOutputValue(Crs_pinHandle, CONFIG_PIN_GLED,!PIN_getOutputValue(CONFIG_PIN_GLED));
 
             Alarms_clearAlarm(TDDLock, ALARM_INACTIVE);
         }

@@ -192,6 +192,82 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="Pin/0030"></uattr>
                 <uattr name="Pin/0031"></uattr>
             </io_usage>
+            <io_usage name="RED_LED" label="Controls the red LED">
+                <uattr name="Configuration on uninitialization">-1</uattr>
+                <uattr name="Output drive strength">0</uattr>
+                <uattr name="Output value on initialization">0</uattr>
+                <uattr name="Pin count">0</uattr>
+                <uattr name="Pin/0000">DIO6</uattr>
+                <uattr name="Pin/0001"></uattr>
+                <uattr name="Pin/0002"></uattr>
+                <uattr name="Pin/0003"></uattr>
+                <uattr name="Pin/0004"></uattr>
+                <uattr name="Pin/0005"></uattr>
+                <uattr name="Pin/0006"></uattr>
+                <uattr name="Pin/0007"></uattr>
+                <uattr name="Pin/0008"></uattr>
+                <uattr name="Pin/0009"></uattr>
+                <uattr name="Pin/0010"></uattr>
+                <uattr name="Pin/0011"></uattr>
+                <uattr name="Pin/0012"></uattr>
+                <uattr name="Pin/0013"></uattr>
+                <uattr name="Pin/0014"></uattr>
+                <uattr name="Pin/0015"></uattr>
+                <uattr name="Pin/0016"></uattr>
+                <uattr name="Pin/0017"></uattr>
+                <uattr name="Pin/0018"></uattr>
+                <uattr name="Pin/0019"></uattr>
+                <uattr name="Pin/0020"></uattr>
+                <uattr name="Pin/0021"></uattr>
+                <uattr name="Pin/0022"></uattr>
+                <uattr name="Pin/0023"></uattr>
+                <uattr name="Pin/0024"></uattr>
+                <uattr name="Pin/0025"></uattr>
+                <uattr name="Pin/0026"></uattr>
+                <uattr name="Pin/0027"></uattr>
+                <uattr name="Pin/0028"></uattr>
+                <uattr name="Pin/0029"></uattr>
+                <uattr name="Pin/0030"></uattr>
+                <uattr name="Pin/0031"></uattr>
+            </io_usage>
+            <io_usage name="GREEN_LED" label="Controls the green LED">
+                <uattr name="Configuration on uninitialization">-1</uattr>
+                <uattr name="Output drive strength">0</uattr>
+                <uattr name="Output value on initialization">0</uattr>
+                <uattr name="Pin count">0</uattr>
+                <uattr name="Pin/0000">DIO7</uattr>
+                <uattr name="Pin/0001"></uattr>
+                <uattr name="Pin/0002"></uattr>
+                <uattr name="Pin/0003"></uattr>
+                <uattr name="Pin/0004"></uattr>
+                <uattr name="Pin/0005"></uattr>
+                <uattr name="Pin/0006"></uattr>
+                <uattr name="Pin/0007"></uattr>
+                <uattr name="Pin/0008"></uattr>
+                <uattr name="Pin/0009"></uattr>
+                <uattr name="Pin/0010"></uattr>
+                <uattr name="Pin/0011"></uattr>
+                <uattr name="Pin/0012"></uattr>
+                <uattr name="Pin/0013"></uattr>
+                <uattr name="Pin/0014"></uattr>
+                <uattr name="Pin/0015"></uattr>
+                <uattr name="Pin/0016"></uattr>
+                <uattr name="Pin/0017"></uattr>
+                <uattr name="Pin/0018"></uattr>
+                <uattr name="Pin/0019"></uattr>
+                <uattr name="Pin/0020"></uattr>
+                <uattr name="Pin/0021"></uattr>
+                <uattr name="Pin/0022"></uattr>
+                <uattr name="Pin/0023"></uattr>
+                <uattr name="Pin/0024"></uattr>
+                <uattr name="Pin/0025"></uattr>
+                <uattr name="Pin/0026"></uattr>
+                <uattr name="Pin/0027"></uattr>
+                <uattr name="Pin/0028"></uattr>
+                <uattr name="Pin/0029"></uattr>
+                <uattr name="Pin/0030"></uattr>
+                <uattr name="Pin/0031"></uattr>
+            </io_usage>
         </resource_ref>
         <resource_ref name="Dynamic Power Control" enabled="0"/>
         <resource_ref name="GPIO Event Trigger" enabled="1"/>
@@ -305,6 +381,8 @@ if(state.tddMode == 2){
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
+    gpioClearOutput(AUXIO_O_RED_LED);
+    gpioSetOutput(AUXIO_O_GREEN_LED);
     U16 n = 0;
     n = cfg.samplesCount;
     fwDelayUs(input.randomDelayRX[n]);
@@ -536,6 +614,8 @@ if(state.tddMode == 2){
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[if(state.tddMode > 0){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
+    gpioClearOutput(AUXIO_O_GREEN_LED);
+    gpioSetOutput(AUXIO_O_RED_LED);
     U16 n = 0;
     n = cfg.samplesCount;
     fwDelayUs(input.randomDelayTX[n]);
