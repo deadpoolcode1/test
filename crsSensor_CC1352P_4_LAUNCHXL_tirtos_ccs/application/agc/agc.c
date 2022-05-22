@@ -14,6 +14,8 @@
 #include "application/crs/crs_cli.h"
 #include <ti/drivers/utils/Random.h>
 #include <ti/devices/DeviceFamily.h>
+#include <math.h>
+#include <float.h>
 #include DeviceFamily_constructPath(driverlib/aux_adc.h)
 
 /******************************************************************************
@@ -519,47 +521,42 @@ int Agc_isReady()
     return gAgcReady;
 }
 
-int Agc_convert(uint32_t voltage, int tx_rx, int rf_if)
+int Agc_convert(float voltage, int tx_rx, int rf_if)
 {
     // tx_rx: 0 - RX, 1 - TX
     // rf_if: 0 - RF, 1 - IF
     int result;
     if (rf_if == 0)
     {
+
         if (tx_rx == 0)
         {
-            result = (voltage / 100000) - 60;
-            if (result > -30)
-            {
-                result = -30;
-            }
+            voltage = voltage - 500000;
+            voltage = voltage / -23400;
+            result = (int)(voltage);
         }
         else
         {
-            result = 10 + (voltage / 100000);
-            if (result > 23)
-            {
-                result = 23;
-            }
+            voltage = voltage/1000000;
+            voltage = log(voltage) * 10.285 + 15.952;
+            result = (int)(voltage);
         }
+
     }
     else
     {
         if (tx_rx == 0)
         {
-            result = (voltage / 100000) - 35;
-            if (result > 0)
-            {
-                result = 0;
-            }
+
+            voltage = voltage - 230772;
+            voltage = voltage / -6933.7;
+            result = (int)(voltage);
         }
         else
         {
-            result = (voltage / 100000) - 45;
-            if (result > -5)
-            {
-                result = -5;
-            }
+            voltage = voltage - 511778;
+            voltage = voltage/ -11474;
+            result = (int)(voltage);
         }
     }
     return result;

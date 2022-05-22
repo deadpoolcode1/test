@@ -39,7 +39,7 @@ void scTaskAlertCallback(void);
 void scCtrlReadyCallback(void);
 int Agc_isInitialized();
 int Agc_isReady();
-int Agc_convert(uint32_t voltage, int tx_rx, int rf_if);
+int Agc_convert(float voltage, int tx_rx, int rf_if);
 AGC_results_t Agc_getResults();
 AGC_max_results_t Agc_getMaxResults();
 CRS_retVal_t Agc_setMode(int mode);
