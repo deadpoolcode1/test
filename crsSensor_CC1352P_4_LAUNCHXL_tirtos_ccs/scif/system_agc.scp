@@ -373,7 +373,7 @@ if(state.tddMode == 2){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
-    if(state.ledCounter >= 100){
+    if(state.ledCounter >= 50){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
         state.ledCounter = 0;
@@ -393,7 +393,7 @@ if(state.tddMode == 2){
         <sccode name="event1" init_power_mode="0"><![CDATA[if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 2){
-        if(state.ledCounter < 50){
+        if(state.ledCounter < 25){
             gpioClearOutput(AUXIO_O_RED_LED);
             gpioSetOutput(AUXIO_O_GREEN_LED);
         }
@@ -633,7 +633,7 @@ if(state.tddMode == 2){
         <sccode name="event2" init_power_mode="0"><![CDATA[if(state.tddMode > 0){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 2){
-        if(state.ledCounter > 50){
+        if(state.ledCounter > 25){
             gpioClearOutput(AUXIO_O_GREEN_LED);
             gpioSetOutput(AUXIO_O_RED_LED);
         }

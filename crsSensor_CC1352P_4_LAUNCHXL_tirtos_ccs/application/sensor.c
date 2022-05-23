@@ -360,6 +360,7 @@ extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
     }
     memcpy(pDevInfo, &gDevInfo, sizeof(ApiMac_deviceDescriptor_t));
     memcpy(pParentInfo, &gParentInfo, sizeof(Llc_netInfo_t));
+    gParentInfo.devInfo.panID = CRS_GLOBAL_PAN_ID;
     return true;
 
 //    pDevInfo->extAddress
