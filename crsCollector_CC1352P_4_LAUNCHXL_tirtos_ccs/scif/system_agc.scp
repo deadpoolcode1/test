@@ -49,6 +49,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
         <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.head" desc="ADC sample buffer (input) head index" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.ledCounter" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tail" desc="ADC sample buffer (output) tail index" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tddMode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <resource_ref name="ADC" enabled="1"/>
@@ -368,6 +369,16 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         </resource_ref>
         <sccode name="event0" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
 if(state.tddMode == 2){
+    if(state.ledCounter == 0){
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+    }
+    if(state.ledCounter >= 100){
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+        state.ledCounter = 0;
+    }
+    state.ledCounter += 1;
     evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
     evhSetupTimer0Trigger(0, 100, 2);
 }else{
@@ -381,8 +392,15 @@ if(state.tddMode == 2){
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
-    gpioClearOutput(AUXIO_O_RED_LED);
-    gpioSetOutput(AUXIO_O_GREEN_LED);
+    if(state.tddMode == 2){
+        if(state.ledCounter < 50){
+            gpioClearOutput(AUXIO_O_RED_LED);
+            gpioSetOutput(AUXIO_O_GREEN_LED);
+        }
+    }else{
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioSetOutput(AUXIO_O_GREEN_LED);
+    }
     U16 n = 0;
     n = cfg.samplesCount;
     fwDelayUs(input.randomDelayRX[n]);
@@ -614,8 +632,16 @@ if(state.tddMode == 2){
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[if(state.tddMode > 0){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
-    gpioClearOutput(AUXIO_O_GREEN_LED);
-    gpioSetOutput(AUXIO_O_RED_LED);
+    if(state.tddMode == 2){
+        if(state.ledCounter > 50){
+            gpioClearOutput(AUXIO_O_GREEN_LED);
+            gpioSetOutput(AUXIO_O_RED_LED);
+        }
+    }else{
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+        gpioSetOutput(AUXIO_O_RED_LED);
+    }
+
     U16 n = 0;
     n = cfg.samplesCount;
     fwDelayUs(input.randomDelayTX[n]);
