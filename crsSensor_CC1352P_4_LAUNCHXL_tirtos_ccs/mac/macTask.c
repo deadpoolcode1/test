@@ -417,6 +417,8 @@ void MAC_updateDiscoveryTime(uint32_t discoveryTime)
 
 void MAC_startDiscoveryClock()
 {
+    Clock_stop(gClkHandle);
+
     Clock_setFunc(gClkHandle, discoveryTimeoutCb, 0);
     Clock_setTimeout(gClkHandle, gDiscoveryTime * 100000);
     Clock_start(gClkHandle);

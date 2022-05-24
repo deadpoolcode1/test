@@ -120,11 +120,13 @@ void Smas_process()
 //    SMAC_RECIVE_CONTENT_TIMEOUT_EVT SMAC_RECIVED_ACK SMAC_RECIVED_CONTENT_EVT
     if (smasEvents & SMAS_JOINED_NETWORK_EVT)
     {
+
         macMlmeAssociateInd_t rsp = { 0 };
         MAC_createAssocInd(&rsp, gSmAsocInfo.nodeMac, gSmAsocInfo.shortAddr,
                            ApiMac_status_success);
-        MAC_moveToSmriState();
+        MAC_startDiscoveryClock();
 
+        MAC_moveToSmriState();
         MAC_sendAssocIndToApp(&rsp);
 
         CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
