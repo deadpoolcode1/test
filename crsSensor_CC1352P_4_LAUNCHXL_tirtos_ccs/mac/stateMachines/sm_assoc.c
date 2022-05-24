@@ -91,6 +91,7 @@ static void finishedSendingAssocRspAckCb(EasyLink_Status status);
 static void buildAssocRspPktFromBuf(MAC_crsAssocRspPacket_t * beaconPkt, uint8_t* beaconBuff);
 
 static void assocReqTimeoutCb(xdc_UArg arg);
+static void assocReqTimeout2Cb(xdc_UArg arg);
 
 /******************************************************************************
  Public Functions
@@ -229,8 +230,8 @@ static void finishedSendingAssocReqCb(EasyLink_Status status)
         CollectorLink_collectorLinkInfo_t collectorLink = {0};
             CollectorLink_getCollector(&collectorLink);
 
-            CollectorLink_setTimeout(assocReqTimeoutCb, 100000);
-//            CollectorLink_startTimer();
+            CollectorLink_setTimeout(assocReqTimeout2Cb, 100000);
+            CollectorLink_startTimer();
             RX_enterRx(recivedAsocRspCb, sensorPib.mac);
 
 //        Util_setEvent(&smasEvents, MAC_TASK_RX_DONE_EVT);
@@ -348,6 +349,11 @@ static void assocReqTimeoutCb(xdc_UArg arg)
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(macSem);
+}
+
+static void assocReqTimeout2Cb(xdc_UArg arg)
+{
+   EasyLink_abort();
 }
 
 
