@@ -2,7 +2,7 @@
  * crs_alarms.c
  *
  *  Created on: 3 ???? 2022
- *      Author: cellium
+ *      Author: nizan
  */
 
 /******************************************************************************
@@ -65,7 +65,6 @@ static bool gIsPllPrimaryDiscoverd = false;
 static bool gIsPllsecondaryDiscoverd = false;
 static char gDiscRdRespLine[TEMP_SZ] = { 0 };
 static char gDiscExpectVal[EXPECTEDVAL_SZ] = { 0 };
-
 
 /******************************************************************************
  Local Function Prototypes
@@ -255,12 +254,15 @@ CRS_retVal_t Alarms_process(void)
             //check if fpga is busy
 
             //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
-        }else{
+        }
+        else
+        {
             //set event
-             Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+            Util_setEvent(&Alarms_events,
+                          ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
 
-             /* Wake up the application thread when it waits for clock event */
-             Semaphore_post(collectorSem);
+            /* Wake up the application thread when it waits for clock event */
+            Semaphore_post(collectorSem);
 
         }
         /* Clear the event */
@@ -571,88 +573,14 @@ static void Alarms_PLL_Check(void *arg)
 
 static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal)
 {
-    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[6],
-               strlen(&gDiscExpectVal[2])) != 0)
-    {
-        if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
-        {
-            return CRS_FAILURE;
-        }
-
-    }
-
-    if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+    uint32_t expValUint = strtoul(gDiscExpectVal, NULL, 16);
+    uint32_t rdValUint = strtoul(&gDiscRdRespLine[16], NULL, 16);
+    if (expValUint == rdValUint)
     {
         return CRS_SUCCESS;
     }
-    int i = 0;
-    char tokenValue[CRS_NVS_LINE_BYTES] = { 0 };
-    memcpy(tokenValue, &expVal[4], CRS_NVS_LINE_BYTES - 4);
 
-    if (memcmp(expVal, "16b", 3) == 0)
-    {
-
-        for (i = 0; i < 16; i++)
-        {
-            uint16_t val = CLI_convertStrUint(&rsp[6]);
-            uint16_t valPrev = val;
-            if (tokenValue[i] == '*')
-            {
-                continue;
-            }
-            else if (tokenValue[i] == '1')
-            {
-                val &= ~(1 << (15 - i));
-                if (val != (~(0)))
-                {
-                    return CRS_FAILURE;
-                }
-            }
-            else if (tokenValue[i] == '0')
-            {
-                val &= (1 << (15 - i));
-                if (val != 0)
-                {
-                    return CRS_FAILURE;
-                }
-            }
-
-        }
-
-    }
-    else if (memcmp(expVal, "32b", 3) == 0)
-    {
-
-        for (i = 0; i < 32; i++)
-        {
-            uint32_t val = CLI_convertStrUint(&rsp[6]);
-            uint32_t valPrev = val;
-
-            if (tokenValue[i] == '*')
-            {
-                continue;
-            }
-            else if (tokenValue[i] == '1')
-            {
-                val |= (1 << (31 - i));
-            }
-            else if (tokenValue[i] == '0')
-            {
-                val &= ~(1 << (31 - i));
-            }
-
-            if (val != valPrev)
-            {
-                return CRS_FAILURE;
-            }
-        }
-
-//        int2hex(val, valStr);
-
-    }
-
-    return CRS_SUCCESS;
+    return CRS_FAILURE;
 
 }
-
 
