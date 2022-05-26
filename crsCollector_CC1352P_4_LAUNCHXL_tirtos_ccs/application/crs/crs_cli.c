@@ -1281,8 +1281,9 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                   Alarms_checkRssi(rssiAvg);
                  }
         Alarms_printAlarms();
+                CLI_startREAD();
         return CRS_SUCCESS;
-//        CLI_startREAD();
+
 
 
 }
