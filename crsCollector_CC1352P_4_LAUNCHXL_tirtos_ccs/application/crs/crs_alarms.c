@@ -22,7 +22,9 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/sysbios/knl/Clock.h>
 #include "crs_global_defines.h"
-
+#ifndef CLI_SENSOR
+#include "application/collector.h"
+#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
