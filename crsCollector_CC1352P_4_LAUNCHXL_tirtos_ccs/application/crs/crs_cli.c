@@ -1261,8 +1261,9 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
+
         }
+        CLI_startREAD();
         return CRS_SUCCESS;
     }
 #endif
