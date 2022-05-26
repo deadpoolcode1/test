@@ -156,6 +156,23 @@ void Collector_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
+
+    int x = 0;
+    /* Clear any timed out transactions */
+    for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
+    {
+        if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                && (Cllc_associatedDevList[x].status == 0x2201))
+        {
+            ApiMac_sAddr_t dstAddr;
+                dstAddr.addr.shortAddr = Cllc_associatedDevList[x].shortAddr;
+                dstAddr.addrMode = ApiMac_addrType_short;
+                char rssiAvgStr[100]={0};
+                sprintf(rssiAvgStr,"check rssi %d",Cllc_associatedDevList[x].rssiAvgCru);
+                Collector_sendCrsMsg(&dstAddr, rssiAvgStr);
+        }
+    }
+
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
