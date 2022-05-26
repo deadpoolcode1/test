@@ -885,8 +885,17 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
       if (memcmp(CLI_LIST_ALARMS_LIST, line, sizeof(CLI_LIST_ALARMS_LIST) - 1) == 0)
         {
 
-          CLI_AlarmsListParsing(line);
-            inputBad = false;
+         CRS_retVal_t retStatus= CLI_AlarmsListParsing(line);
+
+          if (retStatus == CRS_SUCCESS)
+          {
+              is_async_command = true;
+          }
+          else
+          {
+              CLI_startREAD();
+          }
+          inputBad = false;
 
         }
       if (memcmp(CLI_LIST_ALARMS_SET, line, sizeof(CLI_LIST_ALARMS_SET) - 1) == 0)
@@ -1239,19 +1248,21 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
             {
                 char tempLine2[512]={0};
                 memcpy(tempLine2,line,strlen(line));
+                if (Cllc_associatedDevList[x].rssiAvgCru) {
+
+
                 char rssiAvgStr[100]={0};
                 sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
                 strcat(tempLine2,rssiAvgStr);
-
+                }
                 stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
             }
         }
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-
+            CLI_startREAD();
         }
-        CLI_startREAD();
         return CRS_SUCCESS;
     }
 #endif
@@ -1270,7 +1281,8 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                   Alarms_checkRssi(rssiAvg);
                  }
         Alarms_printAlarms();
-        CLI_startREAD();
+        return CRS_SUCCESS;
+//        CLI_startREAD();
 
 
 }
