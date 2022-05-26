@@ -1262,7 +1262,7 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                  token = strtok(NULL, s);//rssiAvgValue
                  if (token!=NULL) {
                      int8_t rssiAvg=0;
-                  rssiAvg=strtoul(token+2,NULL,10);
+                  rssiAvg=strtol(token,NULL,10);
                   Alarms_checkRssi(rssiAvg);
                  }
         Alarms_printAlarms();
