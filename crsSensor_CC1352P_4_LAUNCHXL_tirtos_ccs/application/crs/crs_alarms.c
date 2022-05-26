@@ -259,7 +259,7 @@ CRS_retVal_t Alarms_process(void)
         {
             //set event
             Util_setEvent(&Alarms_events,
-                          ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+            ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
 
             /* Wake up the application thread when it waits for clock event */
             Semaphore_post(collectorSem);
@@ -399,27 +399,36 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
 
 }
 
-CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
+CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg, uint16_t shortAddr)
 {
 
     char envFile[1024] = { 0 };
     //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
 //    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
     Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 10);
-    memset(envFile,0,1024);
+    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="),
+    NULL,
+                                      10);
+    memset(envFile, 0, 1024);
     Thresh_readVarsFile("ModemTxPwr", envFile, 1);
-    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
-    memset(envFile,0,1024);
+    uint32_t ModemTxPwr = strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
+    memset(envFile, 0, 1024);
     Thresh_readVarsFile("CblCompFctr", envFile, 1);
-    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    if((ModemTxPwr-(rssiAvg)-CblCompFctr)>MaxCableLossThr)
+    uint32_t CblCompFctr = strtol(envFile + strlen("CblCompFctr="), NULL, 10);
+    ApiMac_sAddr_t dstAddr;
+    dstAddr.addr.shortAddr = shortAddr;
+    dstAddr.addrMode = ApiMac_addrType_short;
+    if ((ModemTxPwr - (rssiAvg) - CblCompFctr) > MaxCableLossThr)
     {
-        Alarms_setAlarm(MaxCableLoss);
+        //alarm set 0xshortAddr 0xid 0xstate
+        Collector_sendCrsMsg(&dstAddr, "alarms set 0xaabb 0x3 0x3");
+//        Alarms_setAlarm(MaxCableLoss);
     }
     else
     {
-        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+        //alarm set 0xshortAddr 0xid 0xstate
+       Collector_sendCrsMsg(&dstAddr, "alarms set 0xaabb 0x3 0x0");
+//        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }
