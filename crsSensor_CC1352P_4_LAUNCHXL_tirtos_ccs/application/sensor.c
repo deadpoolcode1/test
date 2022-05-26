@@ -186,6 +186,9 @@ void Sensor_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
+
+    Alarms_checkRssi(gRssiStrct.rssiAvg);
+
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
@@ -482,27 +485,6 @@ static void updateRssiStrct(int8_t rssi)
         }
     }
 
-
-
-
-    //check for alarm
-    char envFile[1024] = { 0 };
-    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
-//    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
-    Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 10);
-    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
-    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
-    Thresh_readVarsFile("CblCompFctr", envFile, 1);
-    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    if((ModemTxPwr-(gRssiStrct.rssiAvg)-CblCompFctr)>MaxCableLossThr)
-    {
-        Alarms_setAlarm(MaxCableLoss);
-    }
-    else
-    {
-        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
-    }
 }
 
 

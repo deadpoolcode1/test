@@ -69,7 +69,7 @@ static uint8_t deviceTxMsduHandle = 0;
 static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
                     uint8_t *pData);
 static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType);
-static void processCliUpdateCb( Manage__cbArgs_t *_cbArgs);
+static void processCliUpdateCb(Manage__cbArgs_t *_cbArgs);
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf);
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
@@ -156,7 +156,6 @@ void Collector_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
-
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
@@ -193,7 +192,7 @@ void Csf_processCliUpdate()
     Semaphore_post(sem);
 }
 
-static void processCliUpdateCb( Manage__cbArgs_t *_cbArgs)
+static void processCliUpdateCb(Manage__cbArgs_t *_cbArgs)
 {
     Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
 
@@ -347,7 +346,8 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
     if (Fpga_isOpen() == CRS_SUCCESS)
     {
-        CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+        CRS_retVal_t retStatus = Config_runConfigFile("flat",
+                                                      fpgaCrsDoneCallback);
 
     }
     else
@@ -678,24 +678,4 @@ static void updateCduRssiStrct(int8_t rssi, int idx)
                     Cllc_associatedDevList[idx].rssiArr[x];
         }
     }
-
-    //check for alarm
-    char envFile[1024] = { 0 };
-    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
-//    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
-    Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 10);
-    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
-    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
-    Thresh_readVarsFile("CblCompFctr", envFile, 1);
-    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    if((ModemTxPwr-(Cllc_associatedDevList[idx].rssiAvgCdu)-CblCompFctr)>MaxCableLossThr)
-    {
-        Alarms_setAlarm(MaxCableLoss);
-    }
-    else
-    {
-        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
-    }
-
 }
