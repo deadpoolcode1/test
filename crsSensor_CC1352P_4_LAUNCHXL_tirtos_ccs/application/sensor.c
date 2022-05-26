@@ -41,7 +41,6 @@
 #define APP_MARKER_MSDU_HANDLE 0x80
 #define RSSI_ARR_SIZE 10
 
-
 typedef struct _Sensor_rssi_t
 {
     int8_t rssiArr[RSSI_ARR_SIZE];
@@ -67,7 +66,6 @@ static void *sem;
 
 static Sensor_rssi_t gRssiStrct = { 0 };
 
-
 static Llc_netInfo_t parentInfo = { 0 };
 
 static bool isConnected = false;
@@ -79,8 +77,8 @@ static uint16_t gDeviceShortAddr = 0xaabb;
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
 
-static ApiMac_deviceDescriptor_t gDevInfo = {0};
-static Llc_netInfo_t gParentInfo = {0};
+static ApiMac_deviceDescriptor_t gDevInfo = { 0 };
+static Llc_netInfo_t gParentInfo = { 0 };
 
 /******************************************************************************
  Local Function Prototypes
@@ -97,8 +95,8 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
 
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd);
-static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16_t len,
-                    uint8_t *pData);
+static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr,
+                           uint16_t len, uint8_t *pData);
 
 static void updateRssiStrct(int8_t rssi);
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
@@ -110,10 +108,11 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
 
 //TODO: add assoc ind cb.
 /*! API MAC Callback table */
-static ApiMac_callbacks_t Sensor_macCallbacks = {assocIndCB, disassocIndCB, discoveryIndCB,
+static ApiMac_callbacks_t Sensor_macCallbacks = { assocIndCB, disassocIndCB,
+                                                  discoveryIndCB,
 
-/*! Start Confirmation callback */
-NULL,
+                                                  /*! Start Confirmation callback */
+                                                  NULL,
 
                                                   /*! Data Confirmation callback */
                                                   dataCnfCB,
@@ -155,8 +154,8 @@ void Sensor_init(PIN_Handle pinHandl)
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init(pinHandl);
-       Agc_init();
-       Ssf_crsInitScript();
+    Agc_init();
+    Ssf_crsInitScript();
 }
 
 void Sensor_process(void)
@@ -186,15 +185,16 @@ void Sensor_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
-
-    Alarms_checkRssi(gRssiStrct.rssiAvg);
+    if (gRssiStrct.rssiAvg)
+    {
+        Alarms_checkRssi(gRssiStrct.rssiAvg);
+    }
 
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
     }
 }
-
 
 void Ssf_crsInitScript()
 {
@@ -215,7 +215,8 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
     if (Fpga_isOpen() == CRS_SUCCESS)
     {
-        CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+        CRS_retVal_t retStatus = Config_runConfigFile("flat",
+                                                      fpgaCrsDoneCallback);
 
     }
     else
@@ -287,8 +288,8 @@ Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg)
 
 }
 
-static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr, uint16_t len,
-                    uint8_t *pData)
+static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr,
+                           uint16_t len, uint8_t *pData)
 {
     bool ret = false;
     /* information about the network */
@@ -368,7 +369,6 @@ extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
 //    pDevInfo->extAddress
 }
 
-
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
 //        CLI_cliPrintf("\r\nassocIndCB");
@@ -395,13 +395,10 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 //    updateRssiStrct(pDiscoveryInd->rssi);
 }
 
-
-
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {
 
 }
-
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
@@ -413,10 +410,10 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
         switch (cmdId)
         {
         case Smsgs_cmdIds_crsReq:
-        //                CRS_LOG(CRS_DEBUG,"got Smsgs_cmdIds_crsReq");
+            //                CRS_LOG(CRS_DEBUG,"got Smsgs_cmdIds_crsReq");
 
-                    processCrsRequest(pDataInd);
-                    break;
+            processCrsRequest(pDataInd);
+            break;
 
         default:
             /* Should not receive other messages */
@@ -486,5 +483,4 @@ static void updateRssiStrct(int8_t rssi)
     }
 
 }
-
 
