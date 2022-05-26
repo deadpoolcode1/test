@@ -1238,7 +1238,8 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                     && (Cllc_associatedDevList[x].status == 0x2201))
             {
                 char rssiAvgStr[100]={0};
-                sprintf(line," %d",Cllc_associatedDevList[x].rssiAvgCru);
+                sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
+                strcat(line,rssiAvgStr);
                 stat = Collector_sendCrsMsg(&dstAddr, line);
             }
         }
