@@ -2,7 +2,7 @@
  * crs_alarms.c
  *
  *  Created on: 3 ???? 2022
- *      Author: nizan
+ *      Author: cellium
  */
 
 /******************************************************************************
@@ -22,9 +22,7 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/sysbios/knl/Clock.h>
 #include "crs_global_defines.h"
-#ifndef CLI_SENSOR
-#include "application/collector.h"
-#endif
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -67,6 +65,7 @@ static bool gIsPllPrimaryDiscoverd = false;
 static bool gIsPllsecondaryDiscoverd = false;
 static char gDiscRdRespLine[TEMP_SZ] = { 0 };
 static char gDiscExpectVal[EXPECTEDVAL_SZ] = { 0 };
+
 
 /******************************************************************************
  Local Function Prototypes
@@ -144,11 +143,14 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
         {
             char envFile[1024] = { 0 };
             //System Temperature : ID=4, thrshenv= tmp
-            Thresh_readVarsFile("TmpThr", envFile, 1);
-            int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
-            NULL,
-                                           10);
-            CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh);
+            Thresh_readVarsFile("UpperTempThr", envFile, 1);
+            int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
+            NULL,10);
+            memset(envFile, 0, 1024);
+            Thresh_readVarsFile("TempOffset", envFile, 1);
+            int16_t temp_offset = strtol(envFile + strlen("TempOffset="),
+            NULL,10);
+            CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh+temp_offset);
 
         }
         return CRS_SUCCESS;
@@ -256,15 +258,12 @@ CRS_retVal_t Alarms_process(void)
             //check if fpga is busy
 
             //if open&&not busy- write to fpga 'wr 0x51 0x510000'\n'rd 0x51' and parse the reso with a callback
-        }
-        else
-        {
+        }else{
             //set event
-            Util_setEvent(&Alarms_events,
-            ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+             Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
 
-            /* Wake up the application thread when it waits for clock event */
-            Semaphore_post(collectorSem);
+             /* Wake up the application thread when it waits for clock event */
+             Semaphore_post(collectorSem);
 
         }
         /* Clear the event */
@@ -353,8 +352,8 @@ CRS_retVal_t Alarms_temp_Init()
     Temperature_init();
     char envFile[1024] = { 0 };
     //System Temperature : ID=4, thrshenv= tmp
-    Thresh_readVarsFile("TmpThr", envFile, 1);
-    int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
+    Thresh_readVarsFile("UpperTempThr", envFile, 1);
+    int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
     NULL,
                                    10);
     CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh);
@@ -405,25 +404,14 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
 {
 
     char envFile[1024] = { 0 };
-    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
-//    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
+    //MaxCableLoss : ID=3, thrshenv= MaxCableLossThr
     Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="),
+    int8_t highRssiThrsh = strtol(envFile + strlen("MaxCableLossThr="),
     NULL,
-                                      10);
-    memset(envFile, 0, 1024);
-    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
-    uint32_t ModemTxPwr = strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
-    memset(envFile, 0, 1024);
-    Thresh_readVarsFile("CblCompFctr", envFile, 1);
-    uint32_t CblCompFctr = strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    if ((ModemTxPwr - (rssiAvg) - CblCompFctr) > MaxCableLossThr)
+                                  10);
+    if (rssiAvg > highRssiThrsh)
     {
         Alarms_setAlarm(MaxCableLoss);
-    }
-    else
-    {
-        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }
@@ -586,14 +574,88 @@ static void Alarms_PLL_Check(void *arg)
 
 static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal)
 {
-    uint32_t expValUint = strtoul(gDiscExpectVal, NULL, 16);
-    uint32_t rdValUint = strtoul(&gDiscRdRespLine[16], NULL, 16);
-    if (expValUint == rdValUint)
+    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[6],
+               strlen(&gDiscExpectVal[2])) != 0)
+    {
+        if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
+        {
+            return CRS_FAILURE;
+        }
+
+    }
+
+    if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
     {
         return CRS_SUCCESS;
     }
+    int i = 0;
+    char tokenValue[CRS_NVS_LINE_BYTES] = { 0 };
+    memcpy(tokenValue, &expVal[4], CRS_NVS_LINE_BYTES - 4);
 
-    return CRS_FAILURE;
+    if (memcmp(expVal, "16b", 3) == 0)
+    {
+
+        for (i = 0; i < 16; i++)
+        {
+            uint16_t val = CLI_convertStrUint(&rsp[6]);
+            uint16_t valPrev = val;
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val &= ~(1 << (15 - i));
+                if (val != (~(0)))
+                {
+                    return CRS_FAILURE;
+                }
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= (1 << (15 - i));
+                if (val != 0)
+                {
+                    return CRS_FAILURE;
+                }
+            }
+
+        }
+
+    }
+    else if (memcmp(expVal, "32b", 3) == 0)
+    {
+
+        for (i = 0; i < 32; i++)
+        {
+            uint32_t val = CLI_convertStrUint(&rsp[6]);
+            uint32_t valPrev = val;
+
+            if (tokenValue[i] == '*')
+            {
+                continue;
+            }
+            else if (tokenValue[i] == '1')
+            {
+                val |= (1 << (31 - i));
+            }
+            else if (tokenValue[i] == '0')
+            {
+                val &= ~(1 << (31 - i));
+            }
+
+            if (val != valPrev)
+            {
+                return CRS_FAILURE;
+            }
+        }
+
+//        int2hex(val, valStr);
+
+    }
+
+    return CRS_SUCCESS;
 
 }
+
 
