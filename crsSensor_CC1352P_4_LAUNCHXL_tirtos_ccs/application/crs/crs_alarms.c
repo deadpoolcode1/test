@@ -403,14 +403,21 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
 {
 
     char envFile[1024] = { 0 };
-    //MaxCableLoss : ID=3, thrshenv= MaxCableLossThr
+    //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
+//    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
     Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    int8_t highRssiThrsh = strtol(envFile + strlen("MaxCableLossThr="),
-    NULL,
-                                  10);
-    if (rssiAvg > highRssiThrsh)
+    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 16);
+    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
+    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 16);
+    Thresh_readVarsFile("CblCompFctr", envFile, 1);
+    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 16);
+    if((ModemTxPwr-(rssiAvg)-CblCompFctr)>MaxCableLossThr)
     {
         Alarms_setAlarm(MaxCableLoss);
+    }
+    else
+    {
+        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }

@@ -683,10 +683,13 @@ static void updateCduRssiStrct(int8_t rssi, int idx)
     char envFile[1024] = { 0 };
     //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
 //    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
-    Thresh_readVarsFile("MaxCableLoss", envFile, 1);
-    uint32_t maxCableLoss = strtol(envFile + strlen("MaxCableLoss="), NULL, 16);
-
-    if (Cllc_associatedDevList[idx].rssiAvgCdu > maxCableLoss)
+    Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
+    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 16);
+    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
+    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 16);
+    Thresh_readVarsFile("CblCompFctr", envFile, 1);
+    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 16);
+    if((ModemTxPwr-(Cllc_associatedDevList[idx].rssiAvgCdu)-CblCompFctr)>MaxCableLossThr)
     {
         Alarms_setAlarm(MaxCableLoss);
     }
