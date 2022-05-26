@@ -63,7 +63,7 @@ CRS_retVal_t Alarms_setTemperatureLow(int16_t temperature);
 CRS_retVal_t Alarms_temp_Init();
 CRS_retVal_t Alarms_TDDLock_Init();
 CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn);
-CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg, uint16_t shortAddr);
+CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg);
 void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
                                    int16_t thresholdTemperature,
                                    uintptr_t clientArg,

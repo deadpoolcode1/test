@@ -164,7 +164,12 @@ void Collector_process(void)
         if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
                 && (Cllc_associatedDevList[x].status == 0x2201))
         {
-            Alarms_checkRssi(Cllc_associatedDevList[x].rssiAvgCru,Cllc_associatedDevList[x].shortAddr);
+            ApiMac_sAddr_t dstAddr;
+                dstAddr.addr.shortAddr = Cllc_associatedDevList[x].shortAddr;
+                dstAddr.addrMode = ApiMac_addrType_short;
+                char rssiAvgStr[100]={0};
+                sprintf(rssiAvgStr,"check rssi %d",Cllc_associatedDevList[x].rssiAvgCru);
+                Collector_sendCrsMsg(&dstAddr, rssiAvgStr);
         }
     }
 

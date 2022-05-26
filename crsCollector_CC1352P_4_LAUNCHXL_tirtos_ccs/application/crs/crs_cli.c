@@ -174,6 +174,7 @@
 
 #define CLI_CRS_TMP "tmp"
 #define CLI_CRS_RSSI "rssi"
+#define CLI_CRS_RSSI_CHECK "rssi check"
 
 
 /******************************************************************************
@@ -907,6 +908,24 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
                {
 
                    Alarms_startPooling();
+                   inputBad = false;
+                   CLI_startREAD();
+               }
+
+
+      if (memcmp(CLI_CRS_RSSI_CHECK, line, sizeof(CLI_CRS_RSSI_CHECK) - 1) == 0)
+               {
+          int8_t rssiAvg=0;
+          char tempLine[512]={0};
+             memcpy(tempLine,line,strlen(line));
+             const char s[2] = " ";
+                   char *token;
+                   /* get the first token */
+                      token = strtok(tempLine, s);//rssi
+                      token = strtok(NULL, s);//check
+                      token = strtok(NULL, s);//rssiAvg value
+                      rssiAvg= strtoul(token+2,NULL,10);
+                   Alarms_checkRssi(rssiAvg);
                    inputBad = false;
                    CLI_startREAD();
                }

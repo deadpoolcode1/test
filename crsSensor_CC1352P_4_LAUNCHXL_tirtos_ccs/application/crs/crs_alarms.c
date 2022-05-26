@@ -401,7 +401,7 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
 
 }
 
-CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg, uint16_t shortAddr)
+CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
 {
 
     char envFile[1024] = { 0 };
@@ -417,20 +417,13 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg, uint16_t shortAddr)
     memset(envFile, 0, 1024);
     Thresh_readVarsFile("CblCompFctr", envFile, 1);
     uint32_t CblCompFctr = strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    ApiMac_sAddr_t dstAddr;
-    dstAddr.addr.shortAddr = shortAddr;
-    dstAddr.addrMode = ApiMac_addrType_short;
     if ((ModemTxPwr - (rssiAvg) - CblCompFctr) > MaxCableLossThr)
     {
-        //alarm set 0xshortAddr 0xid 0xstate
-        Collector_sendCrsMsg(&dstAddr, "alarms set 0xaabb 0x3 0x3");
-//        Alarms_setAlarm(MaxCableLoss);
+        Alarms_setAlarm(MaxCableLoss);
     }
     else
     {
-        //alarm set 0xshortAddr 0xid 0xstate
-       Collector_sendCrsMsg(&dstAddr, "alarms set 0xaabb 0x3 0x0");
-//        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
+        Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
 
 }
