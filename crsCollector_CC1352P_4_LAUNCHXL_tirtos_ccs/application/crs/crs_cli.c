@@ -1229,8 +1229,19 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
 
+        int x = 0;
+        /* Clear any timed out transactions */
+        for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
+        {
+            if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                    && (Cllc_associatedDevList[x].status == 0x2201))
+            {
+                char rssiAvgStr[100]={0};
+                sprintf(line," %d",Cllc_associatedDevList[x].rssiAvgCru);
+                stat = Collector_sendCrsMsg(&dstAddr, line);
+            }
+        }
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1240,7 +1251,20 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-
+    char tempLine[512]={0};
+        memcpy(tempLine,line,strlen(line));
+        const char s[2] = " ";
+              char *token;
+              /* get the first token */
+                 token = strtok(tempLine, s);//alarms
+                 token = strtok(NULL, s);//list
+                 token = strtok(NULL, s);//0xshortAddr
+                 token = strtok(NULL, s);//rssiAvgValue
+                 if (token!=NULL) {
+                     int8_t rssiAvg=0;
+                  rssiAvg=strtoul(token+2,NULL,10);
+                  Alarms_checkRssi(rssiAvg);
+                 }
         Alarms_printAlarms();
         CLI_startREAD();
 
