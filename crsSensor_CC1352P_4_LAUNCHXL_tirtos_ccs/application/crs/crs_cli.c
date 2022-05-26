@@ -182,7 +182,7 @@
  *****************************************************************************/
 
 static uint8_t *gTmp = CLI_ESC_UP;
-
+static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
 #ifndef CLI_SENSOR
 /******************************************************************************
  Local Function Prototypes
@@ -1238,13 +1238,14 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-
+        memset(gCllc_associatedDevListLocal,0,sizeof(Cllc_associated_devices_t)*4);
+        memcpy(gCllc_associatedDevListLocal,Cllc_associatedDevList,sizeof(Cllc_associated_devices_t)*4);
         int x = 0;
         /* Clear any timed out transactions */
         for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
         {
-            if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
-                    && (Cllc_associatedDevList[x].status == 0x2201))
+            if ((gCllc_associatedDevListLocal[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                    && (gCllc_associatedDevListLocal[x].status == 0x2201))
             {
                 char tempLine2[512]={0};
                 memcpy(tempLine2,line,strlen(line));
@@ -1252,7 +1253,7 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
 
 
                 char rssiAvgStr[100]={0};
-                sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
+                sprintf(rssiAvgStr," %d",gCllc_associatedDevListLocal[x].rssiAvgCru);
                 strcat(tempLine2,rssiAvgStr);
                 }
                 stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
