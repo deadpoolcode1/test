@@ -407,8 +407,10 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
 //    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
     Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
     uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 10);
+    memset(envFile,0,1024);
     Thresh_readVarsFile("ModemTxPwr", envFile, 1);
     uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
+    memset(envFile,0,1024);
     Thresh_readVarsFile("CblCompFctr", envFile, 1);
     uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 10);
     if((ModemTxPwr-(rssiAvg)-CblCompFctr)>MaxCableLossThr)
