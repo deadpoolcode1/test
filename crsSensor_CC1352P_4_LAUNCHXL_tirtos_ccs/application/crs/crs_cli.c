@@ -1286,10 +1286,10 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                  if (token!=NULL) {
                      int8_t rssiAvg=0;
                   rssiAvg=strtol(token,NULL,10);
-                  if (gRssiAvg!=rssiAvg) {
+
                       gRssiAvg=rssiAvg;
                      Alarms_checkRssi(rssiAvg);
-                }
+
                  }
         Alarms_printAlarms();
                 CLI_startREAD();
