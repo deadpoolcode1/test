@@ -3847,10 +3847,15 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            uint32_t command_len = commSize + addrSize+ 1;
            char vars[CUI_NUM_UART_CHARS] = {0};
            memcpy(vars, line + command_len, strlen(line + command_len));
-           int tmpFlag=0;
-           if(memcmp(vars,"TmpThr",strlen("TmpThr"))==0){
-               tmpFlag=1;
+           bool highTmpFlag=false;
+           bool lowTmpFlag=false;
+
+           if(memcmp(vars,"UpperTempThr",strlen("UpperTempThr"))==0){
+               highTmpFlag=true;
            }
+           if(memcmp(vars,"LowerTempThr",strlen("LowerTempThr"))==0){
+               lowTmpFlag=true;
+                      }
            CRS_retVal_t rspStatus = Thresh_setVarsFile(vars, 1);
            if (rspStatus != CRS_SUCCESS)
                       {
@@ -3860,19 +3865,42 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
                           return CRS_FAILURE;
 
                       }
-           if(tmpFlag){
+           if(highTmpFlag){
                char envFile[1024]={0};
                //System Temperature : ID=4, thrshenv= tmp
-               Thresh_readVarsFile("TmpThr", envFile, 1);
-               int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
+               Thresh_readVarsFile("UpperTempThr", envFile, 1);
+               int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
                NULL, 10);
-               Alarms_setTemperatureHigh(highTempThrsh);
+               memset(envFile,0,1024);
+               Thresh_readVarsFile("TempOffset", envFile, 1);
+               int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+               NULL, 10);
+               Alarms_setTemperatureHigh(highTempThrsh+tempOffset);
                int16_t currentTemperature=0;
                Alarms_getTemperature(&currentTemperature);
-               if (currentTemperature<=highTempThrsh) {
-                   Alarms_clearAlarm(SystemTemperature, ALARM_INACTIVE);
+               if (currentTemperature<=(highTempThrsh+tempOffset)) {
+                   Alarms_clearAlarm(SystemTemperatureHigh, ALARM_INACTIVE);
             }
            }
+           if(lowTmpFlag){
+                      char envFile[1024]={0};
+                      //System Temperature : ID=4, thrshenv= tmp
+                      Thresh_readVarsFile("LowerTempThr", envFile, 1);
+                      int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
+                      NULL, 10);
+                      memset(envFile,0,1024);
+                      Thresh_readVarsFile("TempOffset", envFile, 1);
+                      int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+                                 NULL, 10);
+                      Alarms_setTemperatureLow(lowTempThrsh+tempOffset);
+                      int16_t currentTemperature=0;
+                      Alarms_getTemperature(&currentTemperature);
+                      if (currentTemperature>=(lowTempThrsh+tempOffset)) {
+                          Alarms_clearAlarm(SystemTemperatureLow, ALARM_INACTIVE);
+                   }
+                  }
+
+
            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
 
            CLI_startREAD();

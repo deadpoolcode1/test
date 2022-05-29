@@ -26,7 +26,8 @@ typedef enum Alarms_alarmType
     DLMaxInputPower,
     ULMaxOutputPower,
     MaxCableLoss,
-    SystemTemperature,
+    SystemTemperatureHigh,
+    SystemTemperatureLow,
     ULMaxInputPower,
     DLMaxOutputPower,
     TDDLock,
@@ -35,7 +36,7 @@ typedef enum Alarms_alarmType
     SyncPLLLock,
     NumberOfAlarms
 } Alarms_alarmType_t;
-#define ALARMS_NUM 10
+#define ALARMS_NUM 11
 typedef enum Alarms_alarmMode
 {
     ALARM_INACTIVE,
@@ -64,10 +65,16 @@ CRS_retVal_t Alarms_temp_Init();
 CRS_retVal_t Alarms_TDDLock_Init();
 CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn);
 CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg);
-void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
+void Alarms_tempThresholdHighNotifyFxn(int16_t currentTemperature,
                                    int16_t thresholdTemperature,
                                    uintptr_t clientArg,
                                    Temperature_NotifyObj *notifyObject);
+
+void Alarms_tempThresholdLowNotifyFxn(int16_t currentTemperature,
+                                   int16_t thresholdTemperature,
+                                   uintptr_t clientArg,
+                                   Temperature_NotifyObj *notifyObject);
+
 void Alarms_TDDLockNotifyFxn(uint_least8_t index);
 CRS_retVal_t Alarms_stopPooling();
 CRS_retVal_t Alarms_startPooling();

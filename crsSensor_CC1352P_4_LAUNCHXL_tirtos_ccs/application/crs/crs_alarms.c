@@ -28,27 +28,13 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
-#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
-#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0004
-#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
-#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
-#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
-#define ALARMS_SET_RSSI_ALARM_EVT 0x0040
-
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
-#define TEMP_SZ 200
-#define EXPECTEDVAL_SZ 20
-
-/******************************************************************************
- Constants and definitions
- *****************************************************************************/
-#define ALARMS_SET_TEMP_ALARM_EVT 0x0001
-#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0002
-#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0004
-#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
-#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
-#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
+#define ALARMS_SET_TEMP_HIGH_ALARM_EVT 0x0001
+#define ALARMS_SET_TEMP_LOW_ALARM_EVT 0x0002
+#define ALARMS_SET_TDDLOCK_ALARM_EVT 0x0004
+#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0008
+#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x00010
+#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0020
+#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0040
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define TEMP_SZ 200
@@ -89,13 +75,16 @@ CRS_retVal_t Alarms_printAlarms()
     CLI_cliPrintf("\r\n1 DLMaxInputPower 0x%x", gAlarmArr[DLMaxInputPower]);
     CLI_cliPrintf("\r\n2 ULMaxOutputPower 0x%x", gAlarmArr[ULMaxOutputPower]);
     CLI_cliPrintf("\r\n3 MaxCableLoss 0x%x", gAlarmArr[MaxCableLoss]);
-    CLI_cliPrintf("\r\n4 SystemTemperature 0x%x", gAlarmArr[SystemTemperature]);
-    CLI_cliPrintf("\r\n5 ULMaxInputPower 0x%x", gAlarmArr[ULMaxInputPower]);
-    CLI_cliPrintf("\r\n6 DLMaxOutputPower 0x%x", gAlarmArr[DLMaxOutputPower]);
-    CLI_cliPrintf("\r\n7 TDDLock 0x%x", gAlarmArr[TDDLock]);
-    CLI_cliPrintf("\r\n8 PLLLockPrimary 0x%x", gAlarmArr[PLLLockPrimary]);
-    CLI_cliPrintf("\r\n9 PLLLockSecondary 0x%x", gAlarmArr[PLLLockSecondary]);
-    CLI_cliPrintf("\r\n10 SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
+    CLI_cliPrintf("\r\n4 SystemTemperatureHigh 0x%x",
+                  gAlarmArr[SystemTemperatureHigh]);
+    CLI_cliPrintf("\r\n5 SystemTemperatureLow 0x%x",
+                  gAlarmArr[SystemTemperatureLow]);
+    CLI_cliPrintf("\r\n6 ULMaxInputPower 0x%x", gAlarmArr[ULMaxInputPower]);
+    CLI_cliPrintf("\r\n7 DLMaxOutputPower 0x%x", gAlarmArr[DLMaxOutputPower]);
+    CLI_cliPrintf("\r\n8 TDDLock 0x%x", gAlarmArr[TDDLock]);
+    CLI_cliPrintf("\r\n9 PLLLockPrimary 0x%x", gAlarmArr[PLLLockPrimary]);
+    CLI_cliPrintf("\r\n10 PLLLockSecondary 0x%x", gAlarmArr[PLLLockSecondary]);
+    CLI_cliPrintf("\r\n11 SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
 
 }
 /**
@@ -141,16 +130,36 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
             gAlarmArr[alarmType] |= 1UL << ALARM_STICKY_BIT_LOCATION; //turn on the alarm sticky bit
         }
         gAlarmArr[alarmType] &= ~(1UL << ALARM_ACTIVE_BIT_LOCATION); //turn off the alarm active bit
-        if (alarmType == SystemTemperature)
+        if (alarmType == SystemTemperatureHigh)
         {
             char envFile[1024] = { 0 };
-            //System Temperature : ID=4, thrshenv= tmp
-            Thresh_readVarsFile("TmpThr", envFile, 1);
-            int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
+            Thresh_readVarsFile("UpperTempThr", envFile, 1);
+            int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
             NULL,
                                            10);
-            CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh);
+            memset(envFile, 0, 1024);
+            Thresh_readVarsFile("TempOffset", envFile, 1);
+            int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+            NULL,
+                                        10);
+            CRS_retVal_t status = Alarms_setTemperatureHigh(
+                    highTempThrsh + tempOffset);
 
+        }
+        else if (alarmType == SystemTemperatureLow)
+        {
+            char envFile[1024] = { 0 };
+            Thresh_readVarsFile("LowerTempThr", envFile, 1);
+            int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
+            NULL,
+                                           10);
+            memset(envFile, 0, 1024);
+            Thresh_readVarsFile("TempOffset", envFile, 1);
+            int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+            NULL,
+                                        10);
+            CRS_retVal_t status = Alarms_setTemperatureLow(
+                    lowTempThrsh + tempOffset);
         }
         return CRS_SUCCESS;
     }
@@ -165,11 +174,18 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
 
 CRS_retVal_t Alarms_process(void)
 {
-    if (Alarms_events & ALARMS_SET_TEMP_ALARM_EVT)
+    if (Alarms_events & ALARMS_SET_TEMP_HIGH_ALARM_EVT)
     {
-        Alarms_setAlarm(SystemTemperature);
+        Alarms_setAlarm(SystemTemperatureHigh);
         /* Clear the event */
-        Util_clearEvent(&Alarms_events, ALARMS_SET_TEMP_ALARM_EVT);
+        Util_clearEvent(&Alarms_events, ALARMS_SET_TEMP_HIGH_ALARM_EVT);
+    }
+
+    if (Alarms_events & ALARMS_SET_TEMP_LOW_ALARM_EVT)
+    {
+        Alarms_setAlarm(SystemTemperatureLow);
+        /* Clear the event */
+        Util_clearEvent(&Alarms_events, ALARMS_SET_TEMP_LOW_ALARM_EVT);
     }
     if (Alarms_events & ALARMS_SET_TDDLOCK_ALARM_EVT)
     {
@@ -308,7 +324,6 @@ CRS_retVal_t Alarms_process(void)
         ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
     }
 
-
 }
 
 CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
@@ -319,7 +334,8 @@ CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
 CRS_retVal_t Alarms_setTemperatureHigh(int16_t temperature)
 {
     int_fast16_t status = Temperature_registerNotifyHigh(
-            &gNotifyObject, temperature, Alarms_tempThresholdNotifyFxn, NULL);
+            &gNotifyObject, temperature, Alarms_tempThresholdHighNotifyFxn,
+            NULL);
     if (status != Temperature_STATUS_SUCCESS)
     {
         return CRS_FAILURE;
@@ -329,7 +345,14 @@ CRS_retVal_t Alarms_setTemperatureHigh(int16_t temperature)
 
 CRS_retVal_t Alarms_setTemperatureLow(int16_t temperature)
 {
-    temperature = Temperature_getTemperature();
+    int_fast16_t status = Temperature_registerNotifyLow(
+            &gNotifyObject, temperature, Alarms_tempThresholdLowNotifyFxn,
+            NULL);
+    if (status != Temperature_STATUS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
+    return CRS_SUCCESS;
 }
 
 /*!
@@ -355,11 +378,26 @@ CRS_retVal_t Alarms_temp_Init()
     Temperature_init();
     char envFile[1024] = { 0 };
     //System Temperature : ID=4, thrshenv= tmp
-    Thresh_readVarsFile("TmpThr", envFile, 1);
-    int16_t highTempThrsh = strtol(envFile + strlen("TmpThr="),
+    Thresh_readVarsFile("UpperTempThr", envFile, 1);
+    int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
     NULL,
                                    10);
-    CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh);
+    memset(envFile, 0, 1024);
+    Thresh_readVarsFile("TempOffset", envFile, 1);
+    int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+    NULL,
+                                10);
+    CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh + tempOffset);
+    if (status == CRS_FAILURE)
+    {
+        return status;
+    }
+    memset(envFile, 0, 1024);
+    int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
+    NULL,
+                                  10);
+    status = Alarms_setTemperatureLow(lowTempThrsh + tempOffset);
+
     return status;
 
 }
@@ -430,12 +468,23 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
 
 }
 
-void Alarms_tempThresholdNotifyFxn(int16_t currentTemperature,
-                                   int16_t thresholdTemperature,
-                                   uintptr_t clientArg,
-                                   Temperature_NotifyObj *notifyObject)
+void Alarms_tempThresholdHighNotifyFxn(int16_t currentTemperature,
+                                       int16_t thresholdTemperature,
+                                       uintptr_t clientArg,
+                                       Temperature_NotifyObj *notifyObject)
 {
-    Util_setEvent(&Alarms_events, ALARMS_SET_TEMP_ALARM_EVT);
+    Util_setEvent(&Alarms_events, ALARMS_SET_TEMP_HIGH_ALARM_EVT);
+
+    /* Wake up the application thread when it waits for clock event */
+    Semaphore_post(collectorSem);
+}
+
+void Alarms_tempThresholdLowNotifyFxn(int16_t currentTemperature,
+                                      int16_t thresholdTemperature,
+                                      uintptr_t clientArg,
+                                      Temperature_NotifyObj *notifyObject)
+{
+    Util_setEvent(&Alarms_events, ALARMS_SET_TEMP_LOW_ALARM_EVT);
 
     /* Wake up the application thread when it waits for clock event */
     Semaphore_post(collectorSem);
