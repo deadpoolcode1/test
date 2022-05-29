@@ -393,7 +393,7 @@ CRS_retVal_t Alarms_temp_Init()
         return status;
     }
     memset(envFile, 0, 1024);
-    Thresh_readVarsFile("UpperTempThr", envFile, 1);
+    Thresh_readVarsFile("LowerTempThr", envFile, 1);
     int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
     NULL,
                                   10);
