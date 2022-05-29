@@ -182,8 +182,12 @@
  *****************************************************************************/
 
 static uint8_t *gTmp = CLI_ESC_UP;
-static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
 #ifndef CLI_SENSOR
+static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
+#endif
+int8_t gRssiAvg=0;
+#ifndef CLI_SENSOR
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -887,15 +891,15 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
 
          CRS_retVal_t retStatus= CLI_AlarmsListParsing(line);
 
-          if (retStatus == CRS_SUCCESS)
-          {
-              is_async_command = true;
-          }
-          else
-          {
-              CLI_startREAD();
-          }
-          inputBad = false;
+         if (retStatus == CRS_SUCCESS)
+             {
+                 is_async_command = true;
+             }
+             else
+             {
+                 CLI_startREAD();
+             }
+             inputBad = false;
 
         }
       if (memcmp(CLI_LIST_ALARMS_SET, line, sizeof(CLI_LIST_ALARMS_SET) - 1) == 0)
@@ -924,7 +928,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
 
       if (memcmp(CLI_CRS_RSSI_CHECK, line, sizeof(CLI_CRS_RSSI_CHECK) - 1) == 0)
                {
-          int8_t rssiAvg=0;
+          int32_t rssiAvg=0;
           char tempLine[512]={0};
              memcpy(tempLine,line,strlen(line));
              const char s[2] = " ";
@@ -1237,34 +1241,36 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         ApiMac_sAddr_t dstAddr;
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        memset(gCllc_associatedDevListLocal,0,sizeof(Cllc_associated_devices_t)*4);
-        memcpy(gCllc_associatedDevListLocal,Cllc_associatedDevList,sizeof(Cllc_associated_devices_t)*4);
+        Collector_status_t stat=CRS_FAILURE;
+//        memset(gCllc_associatedDevListLocal,0,sizeof(Cllc_associated_devices_t)*4);
+//        memcpy(gCllc_associatedDevListLocal,Cllc_associatedDevList,sizeof(Cllc_associated_devices_t)*4);
         int x = 0;
         /* Clear any timed out transactions */
         for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
         {
-            if ((gCllc_associatedDevListLocal[x].shortAddr != CSF_INVALID_SHORT_ADDR)
-                    && (gCllc_associatedDevListLocal[x].status == 0x2201))
+            if (shortAddr==Cllc_associatedDevList[x].shortAddr) {
+
+
+            if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                    && (Cllc_associatedDevList[x].status == 0x2201))
             {
-                char tempLine2[512]={0};
+                char tempLine2[100]={0};
                 memcpy(tempLine2,line,strlen(line));
                 if (Cllc_associatedDevList[x].rssiAvgCru) {
-
-
                 char rssiAvgStr[100]={0};
-                sprintf(rssiAvgStr," %d",gCllc_associatedDevListLocal[x].rssiAvgCru);
+                sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
                 strcat(tempLine2,rssiAvgStr);
                 }
                 stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
+                break;
             }
+        }
         }
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-
+            CLI_startREAD();
         }
-        CLI_startREAD();
         return CRS_SUCCESS;
     }
 #endif
@@ -1280,14 +1286,14 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                  if (token!=NULL) {
                      int8_t rssiAvg=0;
                   rssiAvg=strtol(token,NULL,10);
-                  Alarms_checkRssi(rssiAvg);
+                  if (gRssiAvg!=rssiAvg) {
+                      gRssiAvg=rssiAvg;
+                     Alarms_checkRssi(rssiAvg);
+                }
                  }
         Alarms_printAlarms();
                 CLI_startREAD();
         return CRS_SUCCESS;
-
-
-
 }
 //alarm set 0xshortAddr 0xid 0xstate
 static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
