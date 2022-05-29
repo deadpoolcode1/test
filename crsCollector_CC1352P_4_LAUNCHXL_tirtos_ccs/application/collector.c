@@ -156,6 +156,7 @@ void Collector_process(void)
     DIG_process();
     Tdd_process();
     Alarms_process();
+
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();

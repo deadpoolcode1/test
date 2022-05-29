@@ -22,7 +22,9 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/sysbios/knl/Clock.h>
 #include "crs_global_defines.h"
-
+#ifndef CLI_SENSOR
+#include "application/collector.h"
+#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -32,6 +34,7 @@
 #define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
 #define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
 #define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
+#define ALARMS_SET_RSSI_ALARM_EVT 0x0040
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define TEMP_SZ 200
@@ -259,7 +262,7 @@ CRS_retVal_t Alarms_process(void)
         {
             //set event
             Util_setEvent(&Alarms_events,
-                          ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
+            ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
 
             /* Wake up the application thread when it waits for clock event */
             Semaphore_post(collectorSem);
@@ -304,6 +307,7 @@ CRS_retVal_t Alarms_process(void)
         Util_clearEvent(&Alarms_events,
         ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
     }
+
 
 }
 
@@ -406,14 +410,16 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
     //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
 //    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
     Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
-    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="), NULL, 10);
-    memset(envFile,0,1024);
+    uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="),
+    NULL,
+                                      10);
+    memset(envFile, 0, 1024);
     Thresh_readVarsFile("ModemTxPwr", envFile, 1);
-    uint32_t ModemTxPwr =strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
-    memset(envFile,0,1024);
+    uint32_t ModemTxPwr = strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
+    memset(envFile, 0, 1024);
     Thresh_readVarsFile("CblCompFctr", envFile, 1);
-    uint32_t CblCompFctr =strtol(envFile + strlen("CblCompFctr="), NULL, 10);
-    if((ModemTxPwr-(rssiAvg)-CblCompFctr)>MaxCableLossThr)
+    uint32_t CblCompFctr = strtol(envFile + strlen("CblCompFctr="), NULL, 10);
+    if ((ModemTxPwr - (rssiAvg) - CblCompFctr) > MaxCableLossThr)
     {
         Alarms_setAlarm(MaxCableLoss);
     }

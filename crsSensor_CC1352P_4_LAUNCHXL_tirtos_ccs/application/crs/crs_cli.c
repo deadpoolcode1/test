@@ -174,6 +174,7 @@
 
 #define CLI_CRS_TMP "tmp"
 #define CLI_CRS_RSSI "rssi"
+#define CLI_CRS_RSSI_CHECK "rssi check"
 
 
 /******************************************************************************
@@ -181,8 +182,12 @@
  *****************************************************************************/
 
 static uint8_t *gTmp = CLI_ESC_UP;
-
 #ifndef CLI_SENSOR
+static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
+#endif
+int8_t gRssiAvg=0;
+#ifndef CLI_SENSOR
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -884,8 +889,17 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
       if (memcmp(CLI_LIST_ALARMS_LIST, line, sizeof(CLI_LIST_ALARMS_LIST) - 1) == 0)
         {
 
-          CLI_AlarmsListParsing(line);
-            inputBad = false;
+         CRS_retVal_t retStatus= CLI_AlarmsListParsing(line);
+
+         if (retStatus == CRS_SUCCESS)
+             {
+                 is_async_command = true;
+             }
+             else
+             {
+                 CLI_startREAD();
+             }
+             inputBad = false;
 
         }
       if (memcmp(CLI_LIST_ALARMS_SET, line, sizeof(CLI_LIST_ALARMS_SET) - 1) == 0)
@@ -907,6 +921,24 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
                {
 
                    Alarms_startPooling();
+                   inputBad = false;
+                   CLI_startREAD();
+               }
+
+
+      if (memcmp(CLI_CRS_RSSI_CHECK, line, sizeof(CLI_CRS_RSSI_CHECK) - 1) == 0)
+               {
+          int32_t rssiAvg=0;
+          char tempLine[512]={0};
+             memcpy(tempLine,line,strlen(line));
+             const char s[2] = " ";
+                   char *token;
+                   /* get the first token */
+                      token = strtok(tempLine, s);//rssi
+                      token = strtok(NULL, s);//check
+                      token = strtok(NULL, s);//rssiAvg value
+                      rssiAvg= strtoul(token+2,NULL,10);
+                   Alarms_checkRssi(rssiAvg);
                    inputBad = false;
                    CLI_startREAD();
                }
@@ -1209,23 +1241,59 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         ApiMac_sAddr_t dstAddr;
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        Collector_status_t stat=CRS_FAILURE;
+//        memset(gCllc_associatedDevListLocal,0,sizeof(Cllc_associated_devices_t)*4);
+//        memcpy(gCllc_associatedDevListLocal,Cllc_associatedDevList,sizeof(Cllc_associated_devices_t)*4);
+        int x = 0;
+        /* Clear any timed out transactions */
+        for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
+        {
+            if (shortAddr==Cllc_associatedDevList[x].shortAddr) {
 
+
+            if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
+                    && (Cllc_associatedDevList[x].status == 0x2201))
+            {
+                char tempLine2[100]={0};
+                memcpy(tempLine2,line,strlen(line));
+                if (Cllc_associatedDevList[x].rssiAvgCru) {
+                char rssiAvgStr[100]={0};
+                sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
+                strcat(tempLine2,rssiAvgStr);
+                }
+                stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
+                break;
+            }
+        }
+        }
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             CLI_startREAD();
         }
-
         return CRS_SUCCESS;
     }
 #endif
+    char tempLine[512]={0};
+        memcpy(tempLine,line,strlen(line));
+        const char s[2] = " ";
+              char *token;
+              /* get the first token */
+                 token = strtok(tempLine, s);//alarms
+                 token = strtok(NULL, s);//list
+                 token = strtok(NULL, s);//0xshortAddr
+                 token = strtok(NULL, s);//rssiAvgValue
+                 if (token!=NULL) {
+                     int8_t rssiAvg=0;
+                  rssiAvg=strtol(token,NULL,10);
 
+                      gRssiAvg=rssiAvg;
+                     Alarms_checkRssi(rssiAvg);
+
+                 }
         Alarms_printAlarms();
-        CLI_startREAD();
-
-
+                CLI_startREAD();
+        return CRS_SUCCESS;
 }
 //alarm set 0xshortAddr 0xid 0xstate
 static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
