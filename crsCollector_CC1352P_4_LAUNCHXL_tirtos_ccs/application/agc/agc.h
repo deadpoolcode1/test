@@ -19,6 +19,7 @@ typedef struct
     char RfMaxTx[10];
     char IfMaxRx[10];
     char IfMaxTx[10];
+    uint32_t adcValues[4];
 } AGC_max_results_t;
 
 typedef struct
