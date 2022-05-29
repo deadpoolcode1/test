@@ -34,6 +34,7 @@
 #define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x0008
 #define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0010
 #define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0020
+#define ALARMS_SET_RSSI_ALARM_EVT 0x0040
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define TEMP_SZ 200
@@ -306,6 +307,7 @@ CRS_retVal_t Alarms_process(void)
         Util_clearEvent(&Alarms_events,
         ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
     }
+
 
 }
 
