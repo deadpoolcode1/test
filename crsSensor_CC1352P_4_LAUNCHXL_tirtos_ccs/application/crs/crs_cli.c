@@ -1254,14 +1254,6 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
             if ((Cllc_associatedDevList[x].shortAddr != CSF_INVALID_SHORT_ADDR)
                     && (Cllc_associatedDevList[x].status == 0x2201))
             {
-<<<<<<< HEAD
-                char tempLine2[512]={0};
-                memcpy(tempLine2,line,strlen(line));
-                char rssiAvgStr[100]={0};
-                sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
-                strcat(tempLine2,rssiAvgStr);
-                stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
-=======
                 char tempLine2[100]={0};
                 memcpy(tempLine2,line,strlen(line));
                 if (Cllc_associatedDevList[x].rssiAvgCru) {
@@ -1271,7 +1263,6 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                 }
                 stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
                 break;
->>>>>>> CB-smac
             }
         }
         }
