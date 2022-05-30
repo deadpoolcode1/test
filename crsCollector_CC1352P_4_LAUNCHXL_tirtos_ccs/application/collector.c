@@ -571,7 +571,7 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 
     if (pDataCnf->status != ApiMac_status_success)
     {
-        CLI_cliPrintf("\r\nStatus 0x14");
+        CLI_cliPrintf("\r\nStatus: 0x14");
         CLI_startREAD();
 
     }

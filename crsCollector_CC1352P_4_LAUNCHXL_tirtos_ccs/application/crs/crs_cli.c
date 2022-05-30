@@ -4413,7 +4413,7 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
                }
            #endif
                CRS_watchdogDisable();
-               CLI_cliPrintf("\r\nStatus 0x%x", CRS_SUCCESS);
+               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
                CLI_startREAD();
                return CRS_SUCCESS;
 }
