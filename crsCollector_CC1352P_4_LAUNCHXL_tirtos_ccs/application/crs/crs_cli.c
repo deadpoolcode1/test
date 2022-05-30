@@ -4362,7 +4362,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
                 Thresh_readVarsFile("TempOffset", envFile, 1);
                 int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                 NULL, 10);
-                temp = temp + tempOffset;
+                temp = temp - tempOffset;
             }
             CLI_cliPrintf("\r\n%d", (int)temp);
             CLI_startREAD();
