@@ -380,13 +380,11 @@ CRS_retVal_t Alarms_temp_Init()
     //System Temperature : ID=4, thrshenv= tmp
     Thresh_readVarsFile("UpperTempThr", envFile, 1);
     int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
-    NULL,
-                                   10);
+    NULL, 10);
     memset(envFile, 0, 1024);
     Thresh_readVarsFile("TempOffset", envFile, 1);
     int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
-    NULL,
-                                10);
+    NULL, 10);
     CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh + tempOffset);
     if (status == CRS_FAILURE)
     {
@@ -395,8 +393,7 @@ CRS_retVal_t Alarms_temp_Init()
     memset(envFile, 0, 1024);
     Thresh_readVarsFile("LowerTempThr", envFile, 1);
     int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
-    NULL,
-                                  10);
+    NULL, 10);
     status = Alarms_setTemperatureLow(lowTempThrsh + tempOffset);
 
     return status;

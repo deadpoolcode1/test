@@ -3849,23 +3849,26 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            memcpy(vars, line + command_len, strlen(line + command_len));
            bool highTmpFlag=false;
            bool lowTmpFlag=false;
+           bool tempOffsetFlag=false;
 
-           if(memcmp(vars,"UpperTempThr",strlen("UpperTempThr"))==0){
+           if(strstr(vars,"UpperTempThr") != NULL){
                highTmpFlag=true;
            }
-           if(memcmp(vars,"LowerTempThr",strlen("LowerTempThr"))==0){
+           if(strstr(vars,"LowerTempThr") != NULL){
                lowTmpFlag=true;
                       }
+           if(strstr(vars, "TempOffset") != NULL){
+               tempOffsetFlag=true;
+           }
            CRS_retVal_t rspStatus = Thresh_setVarsFile(vars, 1);
            if (rspStatus != CRS_SUCCESS)
-                      {
+           {
                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+               CLI_startREAD();
+               return CRS_FAILURE;
 
-                          CLI_startREAD();
-                          return CRS_FAILURE;
-
-                      }
-           if(highTmpFlag){
+           }
+           if(highTmpFlag||tempOffsetFlag){
                char envFile[1024]={0};
                //System Temperature : ID=4, thrshenv= tmp
                Thresh_readVarsFile("UpperTempThr", envFile, 1);
@@ -3882,7 +3885,7 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
                    Alarms_clearAlarm(SystemTemperatureHigh, ALARM_INACTIVE);
             }
            }
-           if(lowTmpFlag){
+           if(lowTmpFlag||tempOffsetFlag){
                       char envFile[1024]={0};
                       //System Temperature : ID=4, thrshenv= tmp
                       Thresh_readVarsFile("LowerTempThr", envFile, 1);
@@ -4315,8 +4318,20 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
 
 static CRS_retVal_t CLI_tmpParsing(char *line)
 {
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_TMP) + 2]), NULL,
-                                         16);
+//    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_TMP) + 2]), NULL,
+//                                         16);
+        const char s[2] = " ";
+        char *token;
+        char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+        memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+        /* get the first token */
+        //0xaabb shortAddr
+        token = strtok(&(tmpBuff[sizeof(CLI_CRS_TMP)]), s);
+        //token = strtok(NULL, s);
+        uint32_t addrSize = strlen(token);
+        //shortAddr in decimal
+        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
         #ifndef CLI_SENSOR
 
             uint16_t addr = 0;
@@ -4341,6 +4356,14 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
         #endif
             int16_t temp = 0;
             Alarms_getTemperature(&temp);
+            token = strtok(NULL, s);
+            if(memcmp(token, "offset", strlen("offset"))==0){
+                char envFile[1024] = { 0 };
+                Thresh_readVarsFile("TempOffset", envFile, 1);
+                int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
+                NULL, 10);
+                temp = temp + tempOffset;
+            }
             CLI_cliPrintf("\r\n%d", (int)temp);
             CLI_startREAD();
             return CRS_SUCCESS;
