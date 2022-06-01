@@ -2715,24 +2715,8 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
             CLI_cliPrintf("\r\nSensorStatus=INIT");
         }
         else{
-//            if(retStatus == CRS_TDD_NOT_OPEN){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
-//            }
-//            else{
-                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//            }
+             CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
         }
-//#ifndef CLI_SENSOR
-//        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMinPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
-//#else
-//        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
-//#endif
         CLI_startREAD();
         return retStatus;
     }
@@ -2746,25 +2730,12 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         }
         else{
             CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//            if(retStatus == CRS_TDD_NOT_OPEN){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
-//            }
-//            else if(retStatus == CRS_TDD_NOT_LOCKED){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
-//            }
-//            else{
-//                CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//            }
 #ifndef CLI_SENSOR
             CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
             CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
 #else
             CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
             CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
 #endif
             CLI_startREAD();
             return retStatus;
@@ -2772,104 +2743,45 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         int i;
         int j;
         CLI_cliPrintf("\r\nSensorStatus=OK");
-#ifndef CLI_SENSOR
         if(!channel){
             for(i=0;i<4;i++){
                     if(mode == 0 || mode ==2){
-                        CLI_cliPrintf("\r\nRF RX Channel %i: %u microVolts", i+1, agcResults.adcResults[i]);
-                        CLI_cliPrintf("\r\nIF RX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+8]);
+                        CLI_cliPrintf("\r\nRF RX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i]);
+                        CLI_cliPrintf("\r\nRF RX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i]);
+                        CLI_cliPrintf("\r\nIF RX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+8]);
+                        CLI_cliPrintf("\r\nIF RX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+8]);
                     }
                     if (mode == 1 || mode ==2){
-                        CLI_cliPrintf("\r\nRF TX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+4]);
-                        CLI_cliPrintf("\r\nIF TX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+12]);
+                        CLI_cliPrintf("\r\nRF TX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+4]);
+                        CLI_cliPrintf("\r\nRF TX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+4]);
+                        CLI_cliPrintf("\r\nIF TX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+12]);
+                        CLI_cliPrintf("\r\nIF TX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+12]);
                     }
             }
         }
         else{
             if(mode == 0 || mode ==2){
-                CLI_cliPrintf("\r\nRF RX Channel %i: %u microVolts", channel, agcResults.adcResults[channel-1]);
-                CLI_cliPrintf("\r\nIF RX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+8]);
+                CLI_cliPrintf("\r\nRF RX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[channel-1]);
+                CLI_cliPrintf("\r\nRF RX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[channel-1]);
+                CLI_cliPrintf("\r\nIF RX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+8]);
+                CLI_cliPrintf("\r\nIF RX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+8]);
             }
             if (mode == 1 || mode ==2){
-                CLI_cliPrintf("\r\nRF TX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nIF TX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+12]);
+                CLI_cliPrintf("\r\nRF TX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+4]);
+                CLI_cliPrintf("\r\nRF TX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+4]);
+                CLI_cliPrintf("\r\nIF TX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+12]);
+                CLI_cliPrintf("\r\nIF TX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+12]);
             }
         }
-//            if(i==0){
-//                if(mode !=0){
-//                    for(j=0;j<4;j++){
-//                        CLI_cliPrintf("\r\nChannel=%i", agcResults.channels[j]);
-//                        CLI_cliPrintf("\r\nVolt=%u", agcResults.adcResults[j]);
-//                    }
-//                }
-//                else{
-//                    CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-//                }
-//            }
-////            else if (i==1){
-////                CLI_cliPrintf("\r\nULDetMinPwr=%u",Agc_convert(agcResults.adcResults[i], 0));
-////            }
-//            else if (i==2){
-//                if(mode !=1){
-//                    CLI_cliPrintf("\r\nDLDetMaxInPwr=%i",agcResults.adcResults[i]);
-//                    CLI_cliPrintf("\r\nChannel=%i",agcResults.channels[i]);
-//                }
-//                else{
-//                    CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-//                }
-//            }
-//            else{
-//                CLI_cliPrintf("\r\nDLDetMinInPwr=%i", Agc_convert(agcResults.adcResults[i], 1));
-//            }
-        #else
-        if(!channel){
-            for(i=0;i<4;i++){
-                    if(mode == 0 || mode ==2){
-                        CLI_cliPrintf("\r\nRF TX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+4]);
-                        CLI_cliPrintf("\r\nIF TX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+12]);
-                    }
-                    if (mode == 1 || mode ==2){
-                        CLI_cliPrintf("\r\nRF RX Channel %i: %u microVolts", i+1, agcResults.adcResults[i]);
-                        CLI_cliPrintf("\r\nIF RX Channel %i: %u microVolts", i+1, agcResults.adcResults[i+8]);
-                    }
-            }
-        }
-        else{
-            if(mode == 0 || mode ==2){
-                CLI_cliPrintf("\r\nRF TX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nIF TX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+12]);
-            }
-            if (mode == 1 || mode ==2){
-                CLI_cliPrintf("\r\nRF RX Channel %i: %u microVolts", channel, agcResults.adcResults[channel-1]);
-                CLI_cliPrintf("\r\nIF RX Channel %i: %u microVolts", channel, agcResults.adcResults[(channel-1)+8]);
-            }
-        }
-        #endif
     }
     else{
-//        retStatus = Tdd_isOpen();
-//        if(retStatus == CRS_TDD_NOT_OPEN){
-//            CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_OPEN");
-//        }
-//        else{
-//            retStatus = Tdd_isLocked();
-//            if (retStatus == CRS_TDD_NOT_LOCKED){
-//                CLI_cliPrintf("\r\nSensorStatus=TDD_NOT_LOCKED");
-//            }
-//            else{
-                CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//            }
-//        }
+         CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
 #ifndef CLI_SENSOR
             CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinPwr=N/A");
             CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinInPwr=N/A");
 #else
             CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            //CLI_cliPrintf("\r\nDLDetMinOutPwr=N/A");
             CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-            //CLI_cliPrintf("\r\nULDetMinInPwr=N/A");
 #endif
     }
 

@@ -10,7 +10,8 @@
 typedef struct
 {
     // 0-4 RfmaxRx, 5-8 RfmaxTx, 9-12 IfRx, 13-16 IfTx
-    uint32_t adcResults[16];
+    uint32_t adcMaxResults[16];
+    uint32_t adcMinResults[16];
 } AGC_results_t;
 
 typedef struct

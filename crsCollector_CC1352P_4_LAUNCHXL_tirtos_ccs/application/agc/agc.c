@@ -38,7 +38,9 @@
 /******************************************************************************
  Local variables
  *****************************************************************************/
-static AGC_results_t gAgcResults;
+static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+                                                                        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+                                                                        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}};
 static AGC_max_results_t gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
@@ -241,7 +243,7 @@ CRS_retVal_t Agc_sample_debug(){
 //        gAgcResults.adcResults[i] = 0;
 //    }
     AGC_results_t newAgcResults = {0};
-    // for each channel, calculate average
+    // for each channel, calculate max average
     for(i=0;i<channelsNum;i++){
         adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
         adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
@@ -253,11 +255,31 @@ CRS_retVal_t Agc_sample_debug(){
 
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            if(gAgcTimeout || gAgcResults.adcResults[i+(j*4)] < adcValueMicroVolt){
-                newAgcResults.adcResults[i+(j*4)] = adcValueMicroVolt;
+            if(gAgcTimeout || gAgcResults.adcMaxResults[i+(j*4)] < adcValueMicroVolt){
+                newAgcResults.adcMaxResults[i+(j*4)] = adcValueMicroVolt;
             }
             else{
-                newAgcResults.adcResults[i+(j*4)] = gAgcResults.adcResults[i+(j*4)];
+                newAgcResults.adcMaxResults[i+(j*4)] = gAgcResults.adcMaxResults[i+(j*4)];
+            }
+        }
+    }
+    // for each channel, calculate min average
+    for(i=0;i<channelsNum;i++){
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFRX[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMinRFTX[i];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFRX[i];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFTX[i];
+        for(j=0;j<4;j++){
+            // modesChannel = number of results in top 20% and bottom 20% for each channel
+            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
+
+            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+            if(gAgcTimeout || gAgcResults.adcMinResults[i+(j*4)] > adcValueMicroVolt){
+                newAgcResults.adcMinResults[i+(j*4)] = adcValueMicroVolt;
+            }
+            else{
+                newAgcResults.adcMinResults[i+(j*4)] = gAgcResults.adcMinResults[i+(j*4)];
             }
         }
     }
