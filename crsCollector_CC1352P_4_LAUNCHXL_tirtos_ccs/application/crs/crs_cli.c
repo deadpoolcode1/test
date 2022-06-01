@@ -2746,31 +2746,31 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         if(!channel){
             for(i=0;i<4;i++){
                     if(mode == 0 || mode ==2){
-                        CLI_cliPrintf("\r\nRF RX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i]);
-                        CLI_cliPrintf("\r\nRF RX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i]);
-                        CLI_cliPrintf("\r\nIF RX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+8]);
-                        CLI_cliPrintf("\r\nIF RX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+8]);
+                        CLI_cliPrintf("\r\nRF RX max %i: %u", i+1, agcResults.adcMaxResults[i]);
+                        CLI_cliPrintf("\r\nRF RX min %i: %u", i+1, agcResults.adcMinResults[i]);
+                        CLI_cliPrintf("\r\nIF RX max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
+                        CLI_cliPrintf("\r\nIF RX min %i: %u", i+1, agcResults.adcMinResults[i+8]);
                     }
                     if (mode == 1 || mode ==2){
-                        CLI_cliPrintf("\r\nRF TX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+4]);
-                        CLI_cliPrintf("\r\nRF TX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+4]);
-                        CLI_cliPrintf("\r\nIF TX Channel %i: %u max average in microVolts", i+1, agcResults.adcMaxResults[i+12]);
-                        CLI_cliPrintf("\r\nIF TX Channel %i: %u min average in microVolts", i+1, agcResults.adcMinResults[i+12]);
+                        CLI_cliPrintf("\r\nRF TX max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
+                        CLI_cliPrintf("\r\nRF TX min %i: %u", i+1, agcResults.adcMinResults[i+4]);
+                        CLI_cliPrintf("\r\nIF TX max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
+                        CLI_cliPrintf("\r\nIF TX min %i: %u", i+1, agcResults.adcMinResults[i+12]);
                     }
             }
         }
         else{
             if(mode == 0 || mode ==2){
-                CLI_cliPrintf("\r\nRF RX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[channel-1]);
-                CLI_cliPrintf("\r\nRF RX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[channel-1]);
-                CLI_cliPrintf("\r\nIF RX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+8]);
-                CLI_cliPrintf("\r\nIF RX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+8]);
+                CLI_cliPrintf("\r\nRF RX max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
+                CLI_cliPrintf("\r\nRF RX min %i: %u", channel, agcResults.adcMinResults[channel-1]);
+                CLI_cliPrintf("\r\nIF RX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
+                CLI_cliPrintf("\r\nIF RX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
             }
             if (mode == 1 || mode ==2){
-                CLI_cliPrintf("\r\nRF TX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nRF TX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nIF TX Channel %i: %u max average in microVolts", channel, agcResults.adcMaxResults[(channel-1)+12]);
-                CLI_cliPrintf("\r\nIF TX Channel %i: %u min average in microVolts", channel, agcResults.adcMinResults[(channel-1)+12]);
+                CLI_cliPrintf("\r\nRF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
+                CLI_cliPrintf("\r\nRF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
+                CLI_cliPrintf("\r\nIF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
+                CLI_cliPrintf("\r\nIF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
             }
         }
     }

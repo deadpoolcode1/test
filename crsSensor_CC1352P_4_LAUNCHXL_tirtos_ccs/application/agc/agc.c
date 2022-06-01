@@ -196,10 +196,25 @@ CRS_retVal_t Agc_setMode(int mode){
     //scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
     scifTaskData.systemAgc.cfg.samplesCount = scifTaskData.systemAgc.cfg.samplesNum;
+//    int i;
+//    for(i=0;i<48;i++){
+//        scifTaskData.systemAgc.output.minSamplesIFRX[i] = 0xffff;
+//        scifTaskData.systemAgc.output.minSamplesIFTX[i] = 0xffff;
+//        scifTaskData.systemAgc.output.minSamplesRFRX[i] = 0xffff;
+//        scifTaskData.systemAgc.output.minSamplesRFTX[i] = 0xffff;
+//    }
     //scifExecuteTasksOnceNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
 
     //scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
-
+    int i;
+    for(i=0;i<16;i++){
+        gAgcResults.adcMinResults[i] = 0xffffffff;
+        gAgcResults.adcMaxResults[i] = 0;
+    }
+    for(i=0;i<4;i++){
+        gAgcMaxResults.adcValues[i] = 0;
+    }
+    //gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0}};
     if(scifTaskData.systemAgc.cfg.tddMode == mode){
         return CRS_SUCCESS;
     }
