@@ -434,23 +434,35 @@ if(state.tddMode == 2){
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-        // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-        if(cfg.channelsSwitch == 2){
-            // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+        if(cfg.unitType == 1){
             gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+        }else{
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+        }
+        if(cfg.channelsSwitch == 2){
+            if(cfg.unitType == 1){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+            }
         }
         if(cfg.channelsSwitch == 3){
-            // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            if(cfg.unitType == 1){
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
         }
         if(cfg.channelsSwitch == 4){
-            // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            if(cfg.unitType == 1){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
         }
         while(a < cfg.channelsNum){
             // Select channel
@@ -469,22 +481,31 @@ if(state.tddMode == 2){
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
                 if(a == 1){
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 1){
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
                 if (a == 2){
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 1){
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
                 if (a == 3){
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 1){
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
             }
 
@@ -729,23 +750,35 @@ if(state.tddMode == 2){
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-        // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-        // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-        if(cfg.channelsSwitch == 2){
+        if(cfg.unitType == 0){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+        }else{
             gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+        }
+        if(cfg.channelsSwitch == 2){
+            if(cfg.unitType == 0){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+            }
         }
         if(cfg.channelsSwitch == 3){
-            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            if(cfg.unitType == 0){
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
         }
         if(cfg.channelsSwitch == 4){
-            gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            if(cfg.unitType == 0){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }else{
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
         }
         while(a < cfg.channelsNum){
             // Select channel
@@ -764,22 +797,31 @@ if(state.tddMode == 2){
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
                 if(a == 1){
-                    gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 0){
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
                 if (a == 2){
-                    gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    // gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 0){
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
                 if (a == 3){
-                    gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                    gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                    // gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    if(cfg.unitType == 0){
+                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+                    }else{
+                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+                    }
                 }
             }
 
@@ -1005,7 +1047,7 @@ if(state.tddMode == 2){
         <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
-        <tt_struct></tt_struct>
+        <tt_struct>output.channelsMinRFRX.[3],output.channelsMinRFTX.[0],output.channelsMinRFTX.[3]</tt_struct>
         <rtl_struct>cfg.tddMode</rtl_struct>
         <rtl_task_sel en="1" struct_log_list="output,cfg"/>
     </task>
