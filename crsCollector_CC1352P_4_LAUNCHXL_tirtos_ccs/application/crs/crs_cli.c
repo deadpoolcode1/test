@@ -4574,6 +4574,7 @@ CRS_retVal_t CLI_startREAD()
     gIsRemoteCommand = false;
     if (gReadNextCommand == false)
     {
+        while(gIsDoneWriting == false){};
         gReadNextCommand = true;
 //        UART_read(gUartHandle, gUartRxBuffer, 1);
 
@@ -4734,10 +4735,12 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
             UART_read(gUartHandle, gUartRxBuffer, 1);
             return;
         }
-        if (gUartTxBufferIdx == CUI_NUM_UART_CHARS-1)
+        if (gUartTxBufferIdx == CUI_NUM_UART_CHARS-10)
         {
             if ( ((uint8_t*) _buf)[0] != '\r')
             {
+                UART_read(gUartHandle, gUartRxBuffer, 1);
+
                 return;
             }
 
