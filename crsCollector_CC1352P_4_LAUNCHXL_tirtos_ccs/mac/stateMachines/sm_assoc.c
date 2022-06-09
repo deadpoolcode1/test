@@ -32,6 +32,7 @@
  Constants and definitions
  *****************************************************************************/
 #define SMAS_ADDED_NEW_NODE_EVT 0x0001
+#define SMAS_ERASE_NODE_EVT 0x0002
 #define SMAS_DEBUG_EVT 0x0004
 
 //SMAS_DEBUG_EVT
@@ -97,6 +98,7 @@ static void finishedSendingAssocRspCb(EasyLink_Status status);
 
 static void smasRecivedAssocRspAckCb(EasyLink_RxPacket *rxPacket,
                                      EasyLink_Status status);
+static void timeoutCb(void *arg);
 
 /******************************************************************************
  Public Functions
@@ -138,10 +140,17 @@ void Smas_process()
         Util_clearEvent(&smasEvents, SMAS_DEBUG_EVT);
     }
 
+    if (smasEvents & SMAS_ERASE_NODE_EVT)
+    {
+        Node_eraseNode(&gSmAsocInfo.nodeMac);
+        MAC_moveToRxIdleState();
+
+//        CP_CLI_cliPrintf("\r\nrecived assoc req 0x%x", gNumReq);
+        Util_clearEvent(&smasEvents, SMAS_ERASE_NODE_EVT);
+    }
+
 
 }
-
-
 
 static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 {
@@ -190,6 +199,7 @@ void Smac_recivedAssocReqCb(EasyLink_RxPacket *rxPacket, EasyLink_Status status)
 
             if (rsp != -1)
             {
+
                 gSmAsocInfo.shortAddr = rsp;
 
                 pktRsp.commandId = MAC_COMMAND_ASSOC_RSP;
@@ -213,12 +223,20 @@ void Smac_recivedAssocReqCb(EasyLink_RxPacket *rxPacket, EasyLink_Status status)
         }
         else
         {
+            Util_setEvent(&smasEvents, SMAS_ERASE_NODE_EVT);
+
+            /* Wake up the application thread when it waits for clock event */
+            Semaphore_post(macSem);
 //            RX_enterRx(smacRecivedAssocReqCb, collectorPib.mac);
         }
 
     }
     else
     {
+        Util_setEvent(&smasEvents, SMAS_ERASE_NODE_EVT);
+
+        /* Wake up the application thread when it waits for clock event */
+        Semaphore_post(macSem);
 //        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
 //        gSmacStateArrayIdx++;
     }
@@ -230,11 +248,18 @@ static void finishedSendingAssocRspCb(EasyLink_Status status)
     if (status == EasyLink_Status_Success)
     {
 
+        Node_setTimeout(gSmAsocInfo.nodeMac, timeoutCb, 5000);
+                       Node_startTimer(gSmAsocInfo.nodeMac);
+
         RX_enterRx(smasRecivedAssocRspAckCb, collectorPib.mac);
     }
 
     else
     {
+        Util_setEvent(&smasEvents, SMAS_ERASE_NODE_EVT);
+
+                   /* Wake up the application thread when it waits for clock event */
+                   Semaphore_post(macSem);
 //        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
 //        gSmacStateArrayIdx++;
         //        gCbCcaFailed();
@@ -245,6 +270,8 @@ static void finishedSendingAssocRspCb(EasyLink_Status status)
 static void smasRecivedAssocRspAckCb(EasyLink_RxPacket *rxPacket,
                                      EasyLink_Status status)
 {
+    Node_stopTimer(gSmAsocInfo.nodeMac);
+
     //content sent so wait for ack
     if (status == EasyLink_Status_Success)
     {
@@ -256,6 +283,10 @@ static void smasRecivedAssocRspAckCb(EasyLink_RxPacket *rxPacket,
     }
     else
     {
+        Util_setEvent(&smasEvents, SMAS_ERASE_NODE_EVT);
+
+                   /* Wake up the application thread when it waits for clock event */
+                   Semaphore_post(macSem);
         //        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
         //        gSmacStateArrayIdx++;
         //        gCbCcaFailed();
@@ -277,8 +308,12 @@ static void buildAssocReqPktFromBuf(MAC_crsAssocReqPacket_t *beaconPkt,
 //    beaconPkt = (MAC_crsAssocReqPacket_t*) beaconBuff;
 }
 
+static void timeoutCb(void *arg)
+{
+    EasyLink_abort();
+
+}
+
 //xdc_UArg
 //TODO: CB OF BEACON TIMER: RAISE SMAS_SEND_BEACON_EVT. only if the state now is rx_idle. so change to BEACON state.
-
-
 
