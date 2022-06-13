@@ -1022,30 +1022,28 @@ if(state.tddMode == 2){
     // for testing
     //fwScheduleTask(1);
     adcDisable();
-//    if(state.tddMode == 2){
-//        evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-//        //evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
-//        evhSetupTimer0Trigger(0, 100, 2);
-//    }else{
-//        evhSetupTimer0Trigger(0, 1, 2);
-//    }
-    evhSetupTimer0Trigger(0, 1, 2);
+    if(state.tddMode == 2){
+        evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
+        //evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
+        evhSetupTimer0Trigger(0, 100, 2);
+    }else{
+        evhSetupTimer0Trigger(0, 1, 2);
+    }
 }else{
     evhSetupTimer0Trigger(0, 1, 2);
 }]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="initialize" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
-//if(state.tddMode == 2){
-//    evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-//    evhSetupTimer0Trigger(0, 100, 2);
-//}else {
-//    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
-//    //evhSetupTimer0CustomTrigger(1);
-//    evhSetupTimer0Trigger(0, 1, 2);
-//}
-////evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
-evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
+if(state.tddMode == 2){
+    evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
+    evhSetupTimer0Trigger(0, 100, 2);
+}else {
+    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
+    //evhSetupTimer0CustomTrigger(1);
+    evhSetupTimer0Trigger(0, 1, 2);
+}
+//evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);]]></sccode>
         <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
