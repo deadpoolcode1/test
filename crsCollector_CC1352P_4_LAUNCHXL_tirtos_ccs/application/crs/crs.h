@@ -74,6 +74,8 @@ extern PIN_Handle Crs_pinHandle;
  Function Prototypes
  *****************************************************************************/
 void* CRS_malloc(uint16_t size);
+void* CRS_calloc(uint16_t num , size_t size);
+void* CRS_realloc(void *ptr ,uint16_t size);
 void CRS_free(void *ptr);
 void CRS_init(PIN_Handle pinHandle);
 CRS_retVal_t CRS_watchdogDisable();

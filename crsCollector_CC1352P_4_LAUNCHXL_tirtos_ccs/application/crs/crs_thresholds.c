@@ -105,7 +105,7 @@ CRS_retVal_t Thresh_init()
     NVS_Params nvsParams;
     NVS_init();
     NVS_Params_init(&nvsParams);
-    gNvsHandle = NVS_open(CONFIG_NVS_0, &nvsParams);
+    gNvsHandle = NVS_open(THRESH_NVS, &nvsParams);
 
     if (gNvsHandle == NULL)
     {

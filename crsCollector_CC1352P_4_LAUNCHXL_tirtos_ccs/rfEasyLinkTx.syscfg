@@ -22,6 +22,7 @@ const GPIO6       = GPIO.addInstance();
 const NVS         = scripting.addModule("/ti/drivers/NVS", {}, false);
 const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
+const NVS3        = NVS.addInstance();
 const RF          = scripting.addModule("/ti/drivers/RF");
 const RTOS        = scripting.addModule("/ti/drivers/RTOS");
 const Temperature = scripting.addModule("/ti/drivers/Temperature");
@@ -80,12 +81,17 @@ NVS1.$name                    = "CONFIG_NVSEXTERNAL";
 NVS1.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X0";
 NVS1.externalFlash.regionSize = 0x80000;
 
-NVS2.$name                          = "CONFIG_NVS_0";
-NVS2.$hardware                      = system.deviceData.board.components.MX25R8035F;
-NVS2.externalFlash.$name            = "ti_drivers_nvs_NVSSPI25X1";
-NVS2.externalFlash.regionBase       = 0x80000;
-NVS2.externalFlash.regionSize       = 0x2000;
-NVS2.externalFlash.verifyBufferSize = 200;
+NVS2.$hardware                = system.deviceData.board.components.MX25R8035F;
+NVS2.$name                    = "ENV_NVS";
+NVS2.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X1";
+NVS2.externalFlash.regionBase = 0x80000;
+NVS2.externalFlash.regionSize = 0x1000;
+
+NVS3.$name                    = "THRESH_NVS";
+NVS3.$hardware                = system.deviceData.board.components.MX25R8035F;
+NVS3.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X2";
+NVS3.externalFlash.regionBase = 0x81000;
+NVS3.externalFlash.regionSize = 0x1000;
 
 scripting.suppress("The board 'CC1352P-4 LaunchPad' requires the 'RF Antenna Switch' to be selected\.",RF,"$hardware");
 scripting.suppress("EasyLink stack requires the use of the RF Antenna Switch hardware",RF,"$hardware");
@@ -106,6 +112,7 @@ Watchdog1.period = 5000;
 
 const NVSSPI25XDevice                                      = scripting.addModule("/ti/drivers/nvs/NVSSPI25XDevice", {}, false);
 const NVSSPI25XDevice1                                     = NVSSPI25XDevice.addInstance({}, false);
+NVS3.externalFlash.spiFlashDevice                          = NVSSPI25XDevice1;
 NVSSPI25XDevice1.$name                                     = "CONFIG_NVS_SPI_0";
 NVS1.externalFlash.spiFlashDevice                          = NVSSPI25XDevice1;
 NVS2.externalFlash.spiFlashDevice                          = NVSSPI25XDevice1;

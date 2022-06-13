@@ -87,6 +87,18 @@ void* CRS_malloc(uint16_t size)
 
 }
 
+void* CRS_calloc(uint16_t num ,size_t size)
+{
+    return calloc(num, size);
+
+}
+
+void* CRS_realloc(void* ptr, uint16_t size)
+{
+    return realloc(ptr, size);
+
+}
+
 /*!
  Csf implementation for memory de-allocation
 
