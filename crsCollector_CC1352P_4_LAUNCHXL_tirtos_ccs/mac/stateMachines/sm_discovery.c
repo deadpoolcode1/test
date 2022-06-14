@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ti/sysbios/knl/Semaphore.h>
+#include <ti/drivers/GPIO.h>
 
 #include "sm_discovery.h"
 #include "mac/node.h"
@@ -221,7 +222,9 @@ static bool sendNextDiscovery()
     pkt.seqRcv = node.seqRcv;
 
     pkt.isNeedAck = 1;
-
+    GPIO_init();
+    pkt.payload[0] = !(GPIO_read(CONFIG_GPIO_BTN1));
+    pkt.len = 1;
 //    int i = 0;
 //
 //    for (i = 0; i < 50; i++)

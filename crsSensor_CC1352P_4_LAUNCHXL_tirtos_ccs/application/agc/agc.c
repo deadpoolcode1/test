@@ -523,3 +523,10 @@ static void processAgcTimeoutCallback(UArg a0)
 {
     gAgcTimeout = true;
 }
+
+
+CRS_retVal_t Agc_setLock(bool lock){
+
+    scifTaskData.systemAgc.input.tddLock = lock;
+    return CRS_SUCCESS;
+}

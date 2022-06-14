@@ -4831,7 +4831,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
     else
     {
         // Handle error or call to UART_readCancel()
-        UART_readCancel(gUartHandle);
+//        UART_readCancel(gUartHandle);
     }
 }
 

@@ -385,7 +385,9 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 {
-//        CLI_cliPrintf("\r\ndiscoveryIndCB");
+        //CLI_cliPrintf("\r\ndiscoveryIndCB: 0x%x", pDiscoveryInd->isLocked);
+
+        Agc_setLock(pDiscoveryInd->isLocked);
 
 //    updateRssiStrct(pDiscoveryInd->rssi);
 }
