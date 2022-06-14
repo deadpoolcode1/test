@@ -47,5 +47,6 @@ AGC_max_results_t Agc_getMaxResults();
 CRS_retVal_t Agc_setMode(int mode);
 uint16_t Agc_getMode();
 uint16_t Agc_getChannel();
+CRS_retVal_t Agc_setLock(bool lock);
 
 #endif /* APPLICATION_AGC_AGC_H_ */

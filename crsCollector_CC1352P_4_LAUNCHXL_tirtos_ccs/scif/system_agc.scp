@@ -36,6 +36,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.randomDelayRX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.randomDelayTX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.tddLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -387,14 +388,20 @@ if(state.tddMode == 2){
         state.ledCounter = 0;
     }
     state.ledCounter += 1;
-    evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
+    U16 lock;
+    if(cfg.unitType == 0){
+        gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
+        lock ^= 1;
+    }else{
+        lock = input.tddLock;
+    }
+
+    if(lock == 1){
+        evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
+    }
     evhSetupTimer0Trigger(0, 100, 2);
+
 }else{
-    //if(state.tddMode == 0){
-    //    state.tddMode = 1;
-    //}else{
-    //    state.tddMode = 0;
-    //}
     evhSetupTimer0Trigger(1, 1, 2);
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
@@ -1022,32 +1029,37 @@ if(state.tddMode == 2){
     // for testing
     //fwScheduleTask(1);
     adcDisable();
-    if(state.tddMode == 2){
-        evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-        //evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
-        evhSetupTimer0Trigger(0, 100, 2);
-    }else{
-        evhSetupTimer0Trigger(0, 1, 2);
-    }
-}else{
-    evhSetupTimer0Trigger(0, 1, 2);
-}]]></sccode>
+    //if(state.tddMode == 2){
+    //    evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
+    //    //evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
+    //    evhSetupTimer0Trigger(0, 100, 2);
+    //}else{
+    //    evhSetupTimer0Trigger(0, 1, 2);
+    //}
+//}else{
+//    evhSetupTimer0Trigger(0, 1, 2);
+//}
+}
+evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="initialize" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
-if(state.tddMode == 2){
-    evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-    evhSetupTimer0Trigger(0, 100, 2);
-}else {
-    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
-    //evhSetupTimer0CustomTrigger(1);
-    evhSetupTimer0Trigger(0, 1, 2);
-}
-//evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);]]></sccode>
+evhSetupTimer0Trigger(0, 1, 2);
+
+
+// if(state.tddMode == 2){
+//     evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
+//    }
+// }else {
+//    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
+//    //evhSetupTimer0CustomTrigger(1);
+//    evhSetupTimer0Trigger(0, 1, 2);
+// }
+// evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);]]></sccode>
         <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
-        <tt_struct>output.channelsMinRFRX.[3],output.channelsMinRFTX.[0],output.channelsMinRFTX.[3]</tt_struct>
+        <tt_struct>output.channelsMinRFRX.[3],output.channelsMinRFTX.[0],output.channelsMinRFTX.[3],state.ledCounter</tt_struct>
         <rtl_struct>cfg.tddMode</rtl_struct>
         <rtl_task_sel en="1" struct_log_list="output,cfg"/>
     </task>

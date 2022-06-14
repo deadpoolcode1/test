@@ -348,8 +348,8 @@ static void discoveryCb(EasyLink_RxPacket *rxPacket,
         updateRssiStrct(rxPacket->rssi);
 
         MAC_crsPacket_t pktRec = { 0 };
-        uint8_t buff[1200] = {0};
-        RX_buildStructPacket(&pktRec, buff);
+//        uint8_t buff[1200] = {0};
+        RX_buildStructPacket(&pktRec, rxPacket->payload);
 
         gIsLocked = pktRec.payload[0];
 
