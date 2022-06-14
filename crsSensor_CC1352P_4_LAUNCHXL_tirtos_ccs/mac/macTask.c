@@ -58,6 +58,7 @@ typedef struct _Sensor_rssi_t
 /*! Storage for Events flags */
 uint16_t macEvents = 0;
 MAC_sensorInfo_t sensorPib = { 0 };
+static uint8_t gIsLocked = 0;
 
 
 /******************************************************************************
@@ -336,7 +337,6 @@ void Smri_recivedPcktCb(EasyLink_RxPacket *rxPacket,
 }
 
 
-
 static void discoveryCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status)
 {
@@ -347,7 +347,11 @@ static void discoveryCb(EasyLink_RxPacket *rxPacket,
 
         updateRssiStrct(rxPacket->rssi);
 
+        MAC_crsPacket_t pktRec = { 0 };
+        uint8_t buff[1200] = {0};
+        RX_buildStructPacket(&pktRec, buff);
 
+        gIsLocked = pktRec.payload[0];
 
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -494,6 +498,7 @@ bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, sAddrExt_t deviceAddress)
 {
     rsp->hdr.event = MAC_MLME_DISCOVERY_IND;
     memcpy(rsp->deviceAddress, deviceAddress, 8);
+    rsp->isLocked = gIsLocked;
     return true;
 }
 

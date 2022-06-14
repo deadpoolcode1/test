@@ -178,8 +178,9 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
                 memcpy(ind.deviceAddress, pMsg->msg->discoveryInd.deviceAddress,
                        sizeof(ApiMac_sAddrExt_t));
                 ind.shortAddr = pMsg->msg->discoveryInd.shortAddr;
-                ind.rssi = pMsg->msg->discoveryInd.rssi;
+                ind.isLocked = pMsg->msg->discoveryInd.isLocked;
 
+                ind.rssi = pMsg->msg->discoveryInd.rssi;
                 ind.rssiRemote.rssiAvg = pMsg->msg->discoveryInd.rssiRemote.rssiAvg;
                 ind.rssiRemote.rssiLast = pMsg->msg->discoveryInd.rssiRemote.rssiLast;
                 ind.rssiRemote.rssiMax = pMsg->msg->discoveryInd.rssiRemote.rssiMax;

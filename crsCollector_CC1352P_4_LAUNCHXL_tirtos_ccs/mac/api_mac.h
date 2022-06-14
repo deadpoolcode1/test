@@ -327,6 +327,7 @@ typedef struct _apimac_mlmediscoveryind
     /*! The address of the device requesting association */
     ApiMac_sAddrExt_t deviceAddress;
     uint16_t shortAddr;
+    bool isLocked;
     int8_t rssi;
     struct
     {
@@ -460,6 +461,7 @@ typedef struct
     macEventHdr_t hdr; /* The event header */
     sAddrExt_t deviceAddress; /* The address of the device sending the disassociate command */
     uint16_t shortAddr;
+    bool isLocked;
     int8_t rssi; /* The received RF power in units dBm */
     struct
     {
