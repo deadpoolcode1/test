@@ -21,6 +21,7 @@
  *****************************************************************************/
 #define STRLEN_BYTES 32
 #define MAX_LINE_CHARS 1024
+#define VAR_HEADER "TZKAM"
 
 /******************************************************************************
  Local variables
@@ -668,15 +669,55 @@ void Vars_removeVars(char *file, char *keys){
     return;
 }
 
-uint32_t Vars_getLength(NVS_Handle * fileHandle){
+//bool Vars_isFile(NVS_Handle * fileHandle){
+//    // NVS_Attrs fileRegionAttrs;
+//    // NVS_getAttrs(fileHandle, &fileRegionAttrs);
+//    char fileHeader[STRLEN_BYTES] = { 0 };
+//    NVS_read(*fileHandle, 0,
+//            (void*) fileHeader, STRLEN_BYTES);
+//
+//    if(memcmp(fileHeader[4], VAR_HEADER, sizeof(VAR_HEADER)) == 0 ){
+//        return true;
+//    }
+//
+//    //uint32_t length = strtoul(strlenStr, NULL, 16);
+//    return false;
+//}
+
+bool Vars_createFile(NVS_Handle * fileHandle){
+    NVS_Attrs fileRegionAttrs;
+    NVS_getAttrs(*fileHandle, &fileRegionAttrs);
+    int_fast16_t retStatus = NVS_erase(*fileHandle, 0, fileRegionAttrs.sectorSize);
+    if(retStatus != NVS_STATUS_SUCCESS){
+        return false;
+    }
+    char * header = CRS_calloc(sizeof(VAR_HEADER), sizeof(char));
+    memcpy(header, VAR_HEADER, sizeof(VAR_HEADER));
+
+    retStatus = NVS_write(*fileHandle, 4, (void*) header, sizeof(VAR_HEADER), NVS_WRITE_ERASE);
+    CRS_free(header);
+    if(retStatus != NVS_STATUS_SUCCESS){
+        return false;
+    }
+    return true;
+}
+
+
+int Vars_getLength(NVS_Handle * fileHandle){
+
     // NVS_Attrs fileRegionAttrs;
     // NVS_getAttrs(fileHandle, &fileRegionAttrs);
-    char strlenStr[STRLEN_BYTES] = { 0 };
-    NVS_read(*fileHandle, 0,
-            (void*) strlenStr, STRLEN_BYTES);
 
-    uint32_t length = strtoul(strlenStr, NULL, 16);
-    return length;
+    char fileHeader[STRLEN_BYTES] = { 0 };
+    NVS_read(*fileHandle, 0,
+            (void*) fileHeader, STRLEN_BYTES);
+
+    uint32_t length = strtoul(fileHeader, NULL, 16);
+    if(memcmp(&fileHeader[4], VAR_HEADER, sizeof(VAR_HEADER)) != 0 ){
+        return -1;
+    }
+
+    return length + 1;
 }
 
 CRS_retVal_t Vars_getFile(NVS_Handle * fileHandle, char * file){
@@ -699,26 +740,41 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     NVS_Attrs fileRegionAttrs;
     NVS_getAttrs(*fileHandle, &fileRegionAttrs);
     uint16_t length = strlen(file);
+
     // get new file string
-    Vars_setVars(file, vars, "\n");
+    char copyFile[MAX_LINE_CHARS] = { 0 };
+    const char s[2] = " ";
+    Vars_setVars(copyFile, vars, s);
+
+    const char d[2] = "\n";
+
+    Vars_setVars(copyFile, file, d);
+
 
     // get new file length and write it to flash
-    uint16_t newLength = strlen(file);
+    uint16_t newLength = strlen(copyFile);
+    memcpy(file, copyFile, newLength);
+
     char fileLength [4] = {0};
     sprintf(fileLength, "%x", newLength);
-    NVS_write(*fileHandle, 0, fileLength, strlen(fileLength), NVS_WRITE_ERASE);
-
+    //strcat(&fileLength[4], VAR_HEADER);
     // write new file to flash
     if (newLength < length){
         NVS_erase(*fileHandle, STRLEN_BYTES+newLength, length - newLength);
+        NVS_erase(*fileHandle, 0, 4);
     }
+    NVS_write(*fileHandle, 0, fileLength, sizeof(fileLength), NVS_WRITE_ERASE);
 
-    NVS_write(*fileHandle, STRLEN_BYTES, file, newLength, NVS_WRITE_ERASE);
+    char fileHeader [STRLEN_BYTES] = {0};
+    NVS_read(*fileHandle, 0, (void*) fileHeader, STRLEN_BYTES);
 
-    return newLength;
+    char filecopy [1024] = {0};
+    NVS_write(*fileHandle, STRLEN_BYTES, file, newLength+1, NVS_WRITE_ERASE);
+    NVS_read(*fileHandle, STRLEN_BYTES, (void*) filecopy, newLength+1);
+    return newLength+1;
 }
 
-uint16_t Vars_removeFromFile(NVS_Handle * fileHandle, char * file, char * vars){
+uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
     // char * fileCopy = CRS_malloc(maxFileSize);
     // memcpy(file, fileCopy, strlen(file));
@@ -742,7 +798,7 @@ uint16_t Vars_removeFromFile(NVS_Handle * fileHandle, char * file, char * vars){
 
     NVS_write(*fileHandle, STRLEN_BYTES, file, newLength, NVS_WRITE_ERASE);
 
-    return newLength;
+    return newLength+1;
 
 }
 
