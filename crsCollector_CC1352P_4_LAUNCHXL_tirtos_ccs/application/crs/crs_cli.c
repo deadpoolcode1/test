@@ -3529,7 +3529,7 @@ static CRS_retVal_t CLI_envRm(char *line)
 
            char vars[CUI_NUM_UART_CHARS] = {0};
              memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
-             CRS_retVal_t rspStatus = Thresh_rmVarsFile(vars, 0);
+             CRS_retVal_t rspStatus = Env_delete(vars);
              if (rspStatus != CRS_SUCCESS)
                         {
                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3650,7 +3650,7 @@ static CRS_retVal_t CLI_envFormat(char *line)
               #endif
                   char envFile[1024] = {0};
 
-                  CRS_retVal_t rsp = Thresh_format(0);
+                  CRS_retVal_t rsp = Env_format();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();

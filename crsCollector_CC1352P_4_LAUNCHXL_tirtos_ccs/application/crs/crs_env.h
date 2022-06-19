@@ -17,5 +17,6 @@
 CRS_retVal_t Env_read(char *vars, char *returnedVars);
 CRS_retVal_t Env_write(char *vars);
 CRS_retVal_t Env_delete(char *vars);
+CRS_retVal_t Env_format();
 
 #endif /* APPLICATION_CRS_CRS_ENV_H_ */

@@ -10,7 +10,6 @@
 
 static char * envCache  = NULL;
 static NVS_Handle envHandle;
-static void getEnv();
 
 static CRS_retVal_t Env_init(){
     NVS_Params nvsParams;
@@ -40,21 +39,22 @@ static CRS_retVal_t Env_init(){
     return CRS_SUCCESS;
 }
 
-static void getEnv(){
-    uint32_t length = Vars_getLength(&envHandle);
-    envCache = CRS_calloc(length, sizeof(char));
-    Vars_getFile(&envHandle, envCache);
-
-}
 
 CRS_retVal_t Env_read(char *vars, char *returnedVars){
 
     if(envCache == NULL){
         Env_init();
     }
-
-    Vars_getVars(envCache, vars, returnedVars);
-    CLI_cliPrintf("\r\n%s", envCache);
+    if(strlen(vars)){
+        Vars_getVars(envCache, vars, returnedVars);
+    }
+    else{
+        if(strlen(envCache)){
+            strcpy(returnedVars, envCache);
+            returnedVars[strlen(envCache)-1] = 0;
+        }
+        //CLI_cliPrintf("\r\n%s", envCache);
+    }
     char testbuf [1024] = {0};
     NVS_read(envHandle, 0, (void*) testbuf, 1024);
 
@@ -98,4 +98,23 @@ CRS_retVal_t Env_delete(char *vars){
     return CRS_SUCCESS;
 }
 
-
+CRS_retVal_t Env_format(){
+    uint32_t length;
+//    if(envCache == NULL){
+//        Env_init();
+//    }
+    if (envHandle == NULL)
+    {
+        NVS_Params nvsParams;
+        NVS_init();
+        NVS_Params_init(&nvsParams);
+        envHandle = NVS_open(ENV_NVS, &nvsParams);
+    }
+    //CRS_free(envCache);
+    //envCache = NULL;
+    //Vars_format(&envHandle);
+    bool ret = Vars_createFile(&envHandle);
+    CRS_free(envCache);
+    envCache = CRS_calloc(1, sizeof(char));
+    return CRS_SUCCESS;
+}
