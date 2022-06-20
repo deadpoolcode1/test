@@ -502,6 +502,7 @@ void Vars_setVars(char *file, char *vars, const char *d)
         while (key)
         {
             delim = strstr(token, "=");
+            //space = strstr(token, " ");
             keyDelim = strstr(key, "=");
             if (delim && keyDelim)
             {
@@ -516,7 +517,7 @@ void Vars_setVars(char *file, char *vars, const char *d)
             }
             key = strtok(NULL, " ");
         }
-        if(!isAfter){
+        if(!isAfter && strstr(token, "=")){
             strcat(fileContent, token);
             strcat(fileContent, s);
         }
@@ -726,6 +727,27 @@ CRS_retVal_t Vars_getFile(NVS_Handle * fileHandle, char * file){
     return CRS_SUCCESS;
 }
 
+CRS_retVal_t Vars_setFile(NVS_Handle * fileHandle, char * file){
+
+    uint32_t fileLength = strlen(file);
+//    NVS_Attrs fileRegionAttrs;
+//    NVS_getAttrs(fileHandle, &fileRegionAttrs);
+
+    char * fileCopy = CRS_calloc(fileLength+STRLEN_BYTES+1, sizeof(char));
+
+    sprintf(fileCopy, "%x", fileLength);
+    // add the header signature to fifth byte location
+    strcat(&fileCopy[4], VAR_HEADER);
+    memcpy(&fileCopy[STRLEN_BYTES], file, fileLength+1);
+
+    int_fast16_t retStatus = NVS_write(*fileHandle, 0, (void*) fileCopy, fileLength+STRLEN_BYTES+1, NVS_WRITE_ERASE);
+    CRS_free(fileCopy);
+    if(retStatus == NVS_STATUS_SUCCESS){
+        return CRS_SUCCESS;
+    }
+    return CRS_FAILURE;
+}
+
 uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
     // char * fileCopy = CRS_malloc(maxFileSize);
@@ -736,7 +758,7 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     uint16_t length = strlen(file);
 
     // get new file string
-    char copyFile[MAX_LINE_CHARS] = { 0 };
+//    char copyFile[MAX_LINE_CHARS] = { 0 };
     const char s[2] = " ";
     Vars_setVars(file, vars, s);
 //
@@ -794,7 +816,7 @@ uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 //        NVS_erase(*fileHandle, STRLEN_BYTES+newLength, length - newLength);
 //    }
 
-    NVS_write(*fileHandle, STRLEN_BYTES, file, newLength, NVS_WRITE_POST_VERIFY);
+    NVS_write(*fileHandle, STRLEN_BYTES, file, newLength+1, NVS_WRITE_POST_VERIFY);
 
     return newLength+1;
 

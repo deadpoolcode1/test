@@ -20,17 +20,11 @@
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-//CRS_retVal_t Vars_init();
-//CRS_retVal_t Vars_readVarsFile(char *vars, char *returnedVars, NVS_Handle fileHandle, char * fileCache);
-//CRS_retVal_t Vars_setVarsFile(char *vars, NVS_Handle fileHandle, char * fileCache);
-//CRS_retVal_t Vars_rmVarsFile(char *vars, NVS_Handle fileHandle, char * fileCache);
-
-//CRS_retVal_t Vars_format(NVS_Handle fileHandle, char * file);
-//CRS_retVal_t Vars_restore(NVS_Handle fileHandle, char * file);
 
 int Vars_getLength(NVS_Handle * fileHandle);
 bool Vars_createFile(NVS_Handle * fileHandle);
 CRS_retVal_t Vars_getFile(NVS_Handle * fileHandle, char * file);
+CRS_retVal_t Vars_setFile(NVS_Handle * fileHandle, char * file);
 uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars);
 uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars);
 void Vars_getVars(char *file, char *keys, char *values);

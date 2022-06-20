@@ -133,12 +133,12 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
         if (alarmType == SystemTemperatureHigh)
         {
             char envFile[1024] = { 0 };
-            Thresh_readVarsFile("UpperTempThr", envFile, 1);
+            Thresh_read("UpperTempThr", envFile);
             int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
             NULL,
                                            10);
             memset(envFile, 0, 1024);
-            Thresh_readVarsFile("TempOffset", envFile, 1);
+            Thresh_read("TempOffset", envFile);
             int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
             NULL,
                                         10);
@@ -149,12 +149,12 @@ CRS_retVal_t Alarms_clearAlarm(Alarms_alarmType_t alarmType,
         else if (alarmType == SystemTemperatureLow)
         {
             char envFile[1024] = { 0 };
-            Thresh_readVarsFile("LowerTempThr", envFile, 1);
+            Thresh_read("LowerTempThr", envFile);
             int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
             NULL,
                                            10);
             memset(envFile, 0, 1024);
-            Thresh_readVarsFile("TempOffset", envFile, 1);
+            Thresh_read("TempOffset", envFile);
             int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
             NULL,
                                         10);
@@ -378,11 +378,11 @@ CRS_retVal_t Alarms_temp_Init()
     Temperature_init();
     char envFile[1024] = { 0 };
     //System Temperature : ID=4, thrshenv= tmp
-    Thresh_readVarsFile("UpperTempThr", envFile, 1);
+    Thresh_read("UpperTempThr", envFile);
     int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
     NULL, 10);
     memset(envFile, 0, 1024);
-    Thresh_readVarsFile("TempOffset", envFile, 1);
+    Thresh_read("TempOffset", envFile);
     int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
     NULL, 10);
     CRS_retVal_t status = Alarms_setTemperatureHigh(highTempThrsh + tempOffset);
@@ -391,7 +391,7 @@ CRS_retVal_t Alarms_temp_Init()
         return status;
     }
     memset(envFile, 0, 1024);
-    Thresh_readVarsFile("LowerTempThr", envFile, 1);
+    Thresh_read("LowerTempThr", envFile);
     int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
     NULL, 10);
     status = Alarms_setTemperatureLow(lowTempThrsh + tempOffset);
@@ -445,15 +445,15 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
     char envFile[1024] = { 0 };
     //Max Cable Loss: ID=3, thrshenv= MaxCableLoss
 //    memcpy(envFile, "MaxCableLoss", strlen("MaxCableLoss"));
-    Thresh_readVarsFile("MaxCableLossThr", envFile, 1);
+    Thresh_read("MaxCableLossThr", envFile);
     uint32_t MaxCableLossThr = strtol(envFile + strlen("MaxCableLossThr="),
     NULL,
                                       10);
     memset(envFile, 0, 1024);
-    Thresh_readVarsFile("ModemTxPwr", envFile, 1);
+    Thresh_read("ModemTxPwr", envFile);
     uint32_t ModemTxPwr = strtol(envFile + strlen("ModemTxPwr="), NULL, 10);
     memset(envFile, 0, 1024);
-    Thresh_readVarsFile("CblCompFctr", envFile, 1);
+    Thresh_read("CblCompFctr", envFile);
     uint32_t CblCompFctr = strtol(envFile + strlen("CblCompFctr="), NULL, 10);
     if ((ModemTxPwr - (rssiAvg) - CblCompFctr) > MaxCableLossThr)
     {

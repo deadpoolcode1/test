@@ -184,7 +184,7 @@ CRS_retVal_t Agc_setMode(int mode){
     // change tdd_mode in thrsh file.
     char envFile[1024] = { 0 };
     sprintf(envFile, "SensorMode=%x\n", mode);
-    Thresh_setVarsFile(envFile, 1);
+    Thresh_write(envFile);
     //  clear the interrupt flag, reset results struct and rerun task.
     scifClearAlertIntSource();
     if(gAgcReady){
@@ -223,7 +223,7 @@ CRS_retVal_t Agc_setMode(int mode){
 
 uint16_t Agc_getMode(){
     char envFile[1024] = { 0 };
-    Thresh_readVarsFile("SensorMode", envFile, 1);
+    Thresh_read("SensorMode", envFile);
     uint16_t mode = strtol(envFile + strlen("SensorMode="), NULL, 16);
     //return scifTaskData.systemAgc.cfg.tddMode;
     return mode;

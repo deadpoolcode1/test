@@ -1364,7 +1364,7 @@ static CRS_retVal_t CLI_unit(char *line)
         CLI_cliPrintf("\r\ncollector");
         char envFile[1024] = {0};
 
-        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
                   char* token;
                   const char d[2] = "\n";
@@ -1399,7 +1399,7 @@ static CRS_retVal_t CLI_unit(char *line)
         CLI_cliPrintf("\r\nsensor");
         char envFile[1024] = {0};
 
-        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+        CRS_retVal_t rspStatus = Env_readVarsFile("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
                   char* token;
                   const char d[2] = "\n";
@@ -3701,7 +3701,7 @@ static CRS_retVal_t CLI_envRestore(char *line)
                   }
               #endif
                   char envFile[1024] = {0};
-                  CRS_retVal_t rsp = Thresh_restore(0);
+                  CRS_retVal_t rsp = Env_restore();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -3768,7 +3768,7 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            if(strstr(vars, "TempOffset") != NULL){
                tempOffsetFlag=true;
            }
-           CRS_retVal_t rspStatus = Thresh_setVarsFile(vars, 1);
+           CRS_retVal_t rspStatus = Thresh_write(vars);
            if (rspStatus != CRS_SUCCESS)
            {
                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3779,11 +3779,11 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            if(highTmpFlag||tempOffsetFlag){
                char envFile[1024]={0};
                //System Temperature : ID=4, thrshenv= tmp
-               Thresh_readVarsFile("UpperTempThr", envFile, 1);
+               Thresh_read("UpperTempThr", envFile);
                int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
                NULL, 10);
                memset(envFile,0,1024);
-               Thresh_readVarsFile("TempOffset", envFile, 1);
+               Thresh_read("TempOffset", envFile);
                int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                NULL, 10);
                Alarms_setTemperatureHigh(highTempThrsh+tempOffset);
@@ -3796,11 +3796,11 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            if(lowTmpFlag||tempOffsetFlag){
                       char envFile[1024]={0};
                       //System Temperature : ID=4, thrshenv= tmp
-                      Thresh_readVarsFile("LowerTempThr", envFile, 1);
+                      Thresh_read("LowerTempThr", envFile);
                       int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
                       NULL, 10);
                       memset(envFile,0,1024);
-                      Thresh_readVarsFile("TempOffset", envFile, 1);
+                      Thresh_read("TempOffset", envFile);
                       int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                                  NULL, 10);
                       Alarms_setTemperatureLow(lowTempThrsh+tempOffset);
@@ -3862,7 +3862,7 @@ static CRS_retVal_t CLI_trshRm(char *line)
 
            char vars[CUI_NUM_UART_CHARS] = {0};
              memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
-             CRS_retVal_t rspStatus = Thresh_rmVarsFile(vars, 1);
+             CRS_retVal_t rspStatus = Thresh_delete(vars);
              if (rspStatus != CRS_SUCCESS)
                         {
                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3923,7 +3923,7 @@ static CRS_retVal_t CLI_trshLs(char *line)
                   char envFile[CUI_NUM_UART_CHARS] = {0};
                   char envTmp[1000] = {0};
                   memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
-                  CRS_retVal_t rsp = Thresh_readVarsFile( envFile, envTmp, 1);
+                  CRS_retVal_t rsp = Thresh_read(envFile, envTmp);
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -3993,7 +3993,7 @@ static CRS_retVal_t CLI_trshFormat(char *line)
 
                   char envFile[1024] = {0};
 
-                  CRS_retVal_t rsp = Thresh_format( 1);
+                  CRS_retVal_t rsp = Thresh_format();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -4048,7 +4048,7 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                   }
               #endif
                   char envFile[1024] = {0};
-                  CRS_retVal_t rsp = Thresh_restore(1);
+                  CRS_retVal_t rsp = Thresh_restore();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -4267,7 +4267,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
             token = strtok(NULL, s);
             if(memcmp(token, "offset", strlen("offset"))==0){
                 char envFile[1024] = { 0 };
-                Thresh_readVarsFile("TempOffset", envFile, 1);
+                Thresh_read("TempOffset", envFile);
                 int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                 NULL, 10);
                 temp = temp - tempOffset;
