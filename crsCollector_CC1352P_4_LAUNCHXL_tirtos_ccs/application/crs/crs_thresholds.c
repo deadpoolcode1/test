@@ -24,12 +24,12 @@
     #define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
         MaxCableLossThr=35\nDLMaxInputPower=-35\nDLRxMaxGainThr=45\nULTxMaxGainThr=55\nULMaxOutputPower=20\n\
         SyncMode=Manual\nCPType=Normal\nSensorMode=0\nDLRxGain=28\nULTxGain=28\nCblCompFctr=22\nModemTxPwr=13\n\
-        UpperTempThr=40\nLowerTempThr=-5\nTempOffset=15\n"
+        UpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
 #else
     #define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
         MaxCableLossThr=35\nULMaxInputPower=-35\nULRxMaxGainThr=60\nDLTxMaxGainThr=55\nDLMaxOutputPower=20\n\
         DLSystemMaxGainThr=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\nULRxGain=30\nDLTxGain=28\n\
-        DLSystemGain=20\nCblCompFctr=9\nModemTxPwr=13\nUpperTempThr=40\nLowerTempThr=-5\nTempOffset=15\n"
+        DLSystemGain=20\nCblCompFctr=9\nModemTxPwr=13\nUpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
 #endif
 
 /******************************************************************************
@@ -59,7 +59,9 @@ CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
     else{
         if(strlen(threshCache)){
             strcpy(returnedVars, threshCache);
-            returnedVars[strlen(threshCache)-1] = 0;
+            if(returnedVars[strlen(threshCache)-1] == '\n'){
+                returnedVars[strlen(threshCache)-1] = 0;
+            }
         }
         //CLI_cliPrintf("\r\n%s", threshCache);
     }
@@ -130,6 +132,10 @@ CRS_retVal_t Thresh_format(){
 CRS_retVal_t Thresh_restore(int fileIndex)
 {
     //    Env_format();
+    if(threshCache == NULL){
+        Thresh_init();
+    }
+
     if (Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS)
     {
         CRS_free(threshCache);
@@ -141,7 +147,7 @@ CRS_retVal_t Thresh_restore(int fileIndex)
     }
     else
     {
-        CRS_realloc(threshCache, sizeof(THRSH_FILE));
+        threshCache = CRS_realloc(threshCache, sizeof(THRSH_FILE));
         memcpy(threshCache, THRSH_FILE, sizeof(THRSH_FILE));
 
     }
@@ -157,15 +163,19 @@ CRS_retVal_t Thresh_restore(int fileIndex)
 
 
 static CRS_retVal_t Thresh_init(){
-    NVS_Params nvsParams;
-    NVS_init();
-    NVS_Params_init(&nvsParams);
-    threshHandle = NVS_open(THRESH_NVS, &nvsParams);
 
     if (threshHandle == NULL)
     {
-        // CLI_cliPrintf("NVS_open() failed.\r\n");
-        return CRS_FAILURE;
+        NVS_Params nvsParams;
+        NVS_init();
+        NVS_Params_init(&nvsParams);
+        threshHandle = NVS_open(THRESH_NVS, &nvsParams);
+
+        if (threshHandle == NULL)
+        {
+            // CLI_cliPrintf("NVS_open() failed.\r\n");
+            return CRS_FAILURE;
+        }
     }
 
     int length = Vars_getLength(&threshHandle);

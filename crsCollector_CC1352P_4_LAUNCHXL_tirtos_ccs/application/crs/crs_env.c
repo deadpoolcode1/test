@@ -22,9 +22,9 @@
 
 #define ENV_FILENAME "env"
 #ifndef CLI_SENSOR
-    #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0\n"
+    #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0"
 #else
-    #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0\n"
+    #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0"
 #endif
 
 /******************************************************************************
@@ -54,7 +54,9 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
     else{
         if(strlen(envCache)){
             strcpy(returnedVars, envCache);
-            returnedVars[strlen(envCache)-1] = 0;
+            if(returnedVars[strlen(envCache)-1] == '\n'){
+                returnedVars[strlen(envCache)-1] = 0;
+            }
         }
         //CLI_cliPrintf("\r\n%s", envCache);
     }
@@ -125,6 +127,11 @@ CRS_retVal_t Env_format(){
 CRS_retVal_t Env_restore(int fileIndex)
 {
 //    Env_format();
+
+    if(envCache == NULL){
+        Env_init();
+    }
+
     if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
     {
         CRS_free(envCache);
@@ -136,7 +143,7 @@ CRS_retVal_t Env_restore(int fileIndex)
     }
     else
     {
-        CRS_realloc(envCache, sizeof(ENV_FILE));
+        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
         memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
 
     }
@@ -150,15 +157,19 @@ CRS_retVal_t Env_restore(int fileIndex)
 
 
 static CRS_retVal_t Env_init(){
-    NVS_Params nvsParams;
-    NVS_init();
-    NVS_Params_init(&nvsParams);
-    envHandle = NVS_open(ENV_NVS, &nvsParams);
 
     if (envHandle == NULL)
     {
-        // CLI_cliPrintf("NVS_open() failed.\r\n");
-        return CRS_FAILURE;
+        NVS_Params nvsParams;
+        NVS_init();
+        NVS_Params_init(&nvsParams);
+        envHandle = NVS_open(ENV_NVS, &nvsParams);
+
+        if (envHandle == NULL)
+        {
+            // CLI_cliPrintf("NVS_open() failed.\r\n");
+            return CRS_FAILURE;
+        }
     }
 
     int length = Vars_getLength(&envHandle);
