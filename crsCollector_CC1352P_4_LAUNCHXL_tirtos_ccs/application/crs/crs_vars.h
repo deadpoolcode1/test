@@ -28,8 +28,8 @@ CRS_retVal_t Vars_setFile(NVS_Handle * fileHandle, char * file);
 uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars);
 uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars);
 void Vars_getVars(char *file, char *keys, char *values);
-void Vars_setVars(char *file, char *vars, const char *d);
-void Vars_removeVars(char *file, char *keys);
+void Vars_setVars(char *file, char *vars, const char *d, char * returnedFile);
+void Vars_removeVars(char *file, char *keys, char * returnedFile);
 CRS_retVal_t Vars_format(NVS_Handle *fileHandle);
 
 #endif /* APPLICATION_CRS_CRS_VARS_H_ */
