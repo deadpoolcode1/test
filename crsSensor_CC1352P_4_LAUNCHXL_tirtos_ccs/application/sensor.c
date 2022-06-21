@@ -143,7 +143,6 @@ void Sensor_init(PIN_Handle pinHandl)
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
 
     Nvs_init(sem);
-    Thresh_init();
     SnapInit(sem);
     //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);

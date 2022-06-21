@@ -1399,7 +1399,7 @@ static CRS_retVal_t CLI_unit(char *line)
         CLI_cliPrintf("\r\nsensor");
         char envFile[4096] = {0};
 
-        CRS_retVal_t rspStatus = Env_readVarsFile("name ver config img", envFile);
+        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
                   char* token;
                   const char d[2] = "\n";

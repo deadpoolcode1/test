@@ -42,6 +42,7 @@
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
+#include "crs_env.h"
 #include "application/agc/agc.h"
 
 /******************************************************************************
@@ -1361,9 +1362,9 @@ static CRS_retVal_t CLI_unit(char *line)
 #ifndef CLI_SENSOR
 //        CRS_LOG(CRS_DEBUG,"Collector");
         CLI_cliPrintf("\r\ncollector");
-        char envFile[1024] = {0};
+        char envFile[4096] = {0};
 
-        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
                   char* token;
                   const char d[2] = "\n";
@@ -1396,9 +1397,9 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #else
         CLI_cliPrintf("\r\nsensor");
-        char envFile[1024] = {0};
+        char envFile[4096] = {0};
 
-        CRS_retVal_t rspStatus = Thresh_readVarsFile("name ver config img", envFile, 0);
+        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
                   char* token;
                   const char d[2] = "\n";
@@ -3432,56 +3433,56 @@ static CRS_retVal_t CLI_fsFormat(char *line)
 static CRS_retVal_t CLI_envUpdate(char *line)
 {
     const char s[2] = " ";
-           char *token;
-           char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
 
-           memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-           /* get the first token */
-           //0xaabb shortAddr
-           token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_UPDATE)]), s);
-           //token = strtok(NULL, s);
-           uint32_t commSize = sizeof(CLI_CRS_ENV_UPDATE);
-           uint32_t addrSize = strlen(token);
-           //shortAddr in decimal
-           uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_UPDATE)]), s);
+    //token = strtok(NULL, s);
+    uint32_t commSize = sizeof(CLI_CRS_ENV_UPDATE);
+    uint32_t addrSize = strlen(token);
+    //shortAddr in decimal
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
-       #ifndef CLI_SENSOR
+    #ifndef CLI_SENSOR
 
-           uint16_t addr = 0;
-           Cllc_getFfdShortAddr(&addr);
-           if (addr != shortAddr)
-           {
-               //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-               ApiMac_sAddr_t dstAddr;
-               dstAddr.addr.shortAddr = shortAddr;
-               dstAddr.addrMode = ApiMac_addrType_short;
-               Collector_status_t stat;
-               stat = Collector_sendCrsMsg(&dstAddr, line);
-               if (stat != Collector_status_success)
-                      {
-                          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                          CLI_startREAD();
-                      }
-    //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+       uint16_t addr = 0;
+       Cllc_getFfdShortAddr(&addr);
+       if (addr != shortAddr)
+       {
+           // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+           ApiMac_sAddr_t dstAddr;
+           dstAddr.addr.shortAddr = shortAddr;
+           dstAddr.addrMode = ApiMac_addrType_short;
+           Collector_status_t stat;
+           stat = Collector_sendCrsMsg(&dstAddr, line);
+           if (stat != Collector_status_success)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                  }
+           // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
-               return CRS_SUCCESS;
-           }
-       #endif
-           uint32_t command_len = commSize + addrSize+ 1;
-           char vars[CUI_NUM_UART_CHARS] = {0};
-           memcpy(vars, line + command_len, strlen(line + command_len));
-           CRS_retVal_t rspStatus = Thresh_setVarsFile(vars, 0);
-           if (rspStatus != CRS_SUCCESS)
-           {
-               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-              CLI_startREAD();
-              return CRS_FAILURE;
-          }
-
-           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
-
-           CLI_startREAD();
            return CRS_SUCCESS;
+       }
+    #endif
+    uint32_t command_len = commSize + addrSize+ 1;
+    char vars[CUI_NUM_UART_CHARS] = {0};
+    memcpy(vars, line + command_len, strlen(line + command_len));
+    CRS_retVal_t rspStatus = Env_write(vars);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+        return CRS_FAILURE;
+    }
+
+    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+
+    CLI_startREAD();
+    return CRS_SUCCESS;
 
 
 
@@ -3528,7 +3529,7 @@ static CRS_retVal_t CLI_envRm(char *line)
 
            char vars[CUI_NUM_UART_CHARS] = {0};
              memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
-             CRS_retVal_t rspStatus = Thresh_rmVarsFile(vars, 0);
+             CRS_retVal_t rspStatus = Env_delete(vars);
              if (rspStatus != CRS_SUCCESS)
                         {
                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3546,71 +3547,66 @@ static CRS_retVal_t CLI_envRm(char *line)
 static CRS_retVal_t CLI_envLs(char *line)
 {
     const char s[2] = " ";
-                  char *token;
-                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
 
-                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-                  /* get the first token */
-                  //0xaabb shortAddr
-                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_LS)]), s);
-                  //token = strtok(NULL, s);
-                  uint32_t commSize = sizeof(CLI_CRS_ENV_LS);
-                  uint32_t addrSize = strlen(token);
-                  //shortAddr in decimal
-                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_LS)]), s);
+    //token = strtok(NULL, s);
+    uint32_t commSize = sizeof(CLI_CRS_ENV_LS);
+    uint32_t addrSize = strlen(token);
+    //shortAddr in decimal
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
-              #ifndef CLI_SENSOR
+    #ifndef CLI_SENSOR
 
-                  uint16_t addr = 0;
-                  Cllc_getFfdShortAddr(&addr);
-                  if (addr != shortAddr)
-                  {
-                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-                      ApiMac_sAddr_t dstAddr;
-                      dstAddr.addr.shortAddr = shortAddr;
-                      dstAddr.addrMode = ApiMac_addrType_short;
-                      Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
-                      if (stat != Collector_status_success)
-                             {
-                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                                 CLI_startREAD();
-                             }
-           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr, line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+            // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
-                      return CRS_SUCCESS;
-                  }
-              #endif
-
-
-
-                  char envFile[CUI_NUM_UART_CHARS] = {0};
-                  char envTmp[1000] = {0};
-                  memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
-                  CRS_retVal_t rsp = Thresh_readVarsFile( envFile, envTmp, 0);
-                  if (rsp != CRS_SUCCESS)
-                  {
-                      CLI_startREAD();
-                      return CRS_FAILURE;
-
-                  }
+            return CRS_SUCCESS;
+        }
+    #endif
 
 
 
-                  const char d[2] = "\n";
-                  token = strtok(envTmp, d);
+    char envFile[CUI_NUM_UART_CHARS] = {0};
+    char envTmp[4096] = {0};
+    memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
+    CRS_retVal_t rsp = Env_read(envFile, envTmp);
+    if (rsp != CRS_SUCCESS)
+    {
+        CLI_startREAD();
+        return CRS_FAILURE;
 
-                  while (token != NULL)
-                  {
-                      CLI_cliPrintf("\r\n%s",token );
-                      token = strtok(NULL, d);
-                  }
+    }
 
+    const char d[2] = "\n";
+    token = strtok(envTmp, d);
 
-                  //filename
+    while (token != NULL)
+    {
+        CLI_cliPrintf("\r\n%s",token );
+        token = strtok(NULL, d);
+    }
 
-                  CLI_startREAD();
-                  return CRS_SUCCESS;
+    CLI_startREAD();
+    return CRS_SUCCESS;
 
 }
 
@@ -3652,9 +3648,7 @@ static CRS_retVal_t CLI_envFormat(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
-
-                  CRS_retVal_t rsp = Thresh_format(0);
+                  CRS_retVal_t rsp = Env_format();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -3704,8 +3698,7 @@ static CRS_retVal_t CLI_envRestore(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
-                  CRS_retVal_t rsp = Thresh_restore(0);
+                  CRS_retVal_t rsp = Env_restore();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -3772,7 +3765,7 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
            if(strstr(vars, "TempOffset") != NULL){
                tempOffsetFlag=true;
            }
-           CRS_retVal_t rspStatus = Thresh_setVarsFile(vars, 1);
+           CRS_retVal_t rspStatus = Thresh_write(vars);
            if (rspStatus != CRS_SUCCESS)
            {
                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3781,13 +3774,13 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
 
            }
            if(highTmpFlag||tempOffsetFlag){
-               char envFile[1024]={0};
+               char envFile[4096]={0};
                //System Temperature : ID=4, thrshenv= tmp
-               Thresh_readVarsFile("UpperTempThr", envFile, 1);
+               Thresh_read("UpperTempThr", envFile);
                int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
                NULL, 10);
-               memset(envFile,0,1024);
-               Thresh_readVarsFile("TempOffset", envFile, 1);
+               memset(envFile,0,4096);
+               Thresh_read("TempOffset", envFile);
                int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                NULL, 10);
                Alarms_setTemperatureHigh(highTempThrsh+tempOffset);
@@ -3798,13 +3791,13 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
             }
            }
            if(lowTmpFlag||tempOffsetFlag){
-                      char envFile[1024]={0};
+                      char envFile[4096]={0};
                       //System Temperature : ID=4, thrshenv= tmp
-                      Thresh_readVarsFile("LowerTempThr", envFile, 1);
+                      Thresh_read("LowerTempThr", envFile);
                       int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
                       NULL, 10);
-                      memset(envFile,0,1024);
-                      Thresh_readVarsFile("TempOffset", envFile, 1);
+                      memset(envFile,0,4096);
+                      Thresh_read("TempOffset", envFile);
                       int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                                  NULL, 10);
                       Alarms_setTemperatureLow(lowTempThrsh+tempOffset);
@@ -3866,7 +3859,7 @@ static CRS_retVal_t CLI_trshRm(char *line)
 
            char vars[CUI_NUM_UART_CHARS] = {0};
              memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
-             CRS_retVal_t rspStatus = Thresh_rmVarsFile(vars, 1);
+             CRS_retVal_t rspStatus = Thresh_delete(vars);
              if (rspStatus != CRS_SUCCESS)
                         {
                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3925,9 +3918,9 @@ static CRS_retVal_t CLI_trshLs(char *line)
 
 
                   char envFile[CUI_NUM_UART_CHARS] = {0};
-                  char envTmp[1000] = {0};
+                  char envTmp[4096] = {0};
                   memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
-                  CRS_retVal_t rsp = Thresh_readVarsFile( envFile, envTmp, 1);
+                  CRS_retVal_t rsp = Thresh_read(envFile, envTmp);
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -3994,10 +3987,7 @@ static CRS_retVal_t CLI_trshFormat(char *line)
               #endif
 
 
-
-                  char envFile[1024] = {0};
-
-                  CRS_retVal_t rsp = Thresh_format( 1);
+                  CRS_retVal_t rsp = Thresh_format();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -4051,8 +4041,7 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
-                  CRS_retVal_t rsp = Thresh_restore(1);
+                  CRS_retVal_t rsp = Thresh_restore();
                   if (rsp != CRS_SUCCESS)
                   {
                       CLI_startREAD();
@@ -4270,8 +4259,8 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
             Alarms_getTemperature(&temp);
             token = strtok(NULL, s);
             if(memcmp(token, "offset", strlen("offset"))==0){
-                char envFile[1024] = { 0 };
-                Thresh_readVarsFile("TempOffset", envFile, 1);
+                char envFile[4096] = { 0 };
+                Thresh_read("TempOffset", envFile);
                 int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                 NULL, 10);
                 temp = temp - tempOffset;
@@ -4830,6 +4819,8 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
     }
     else
     {
+        UART_read(gUartHandle, gUartRxBuffer, 1);
+
         // Handle error or call to UART_readCancel()
 //        UART_readCancel(gUartHandle);
     }

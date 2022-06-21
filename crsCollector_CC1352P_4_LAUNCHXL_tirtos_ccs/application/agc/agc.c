@@ -523,3 +523,11 @@ static void processAgcTimeoutCallback(UArg a0)
 {
     gAgcTimeout = true;
 }
+
+#ifdef CLI_SENSOR
+CRS_retVal_t Agc_setLock(bool lock){
+
+    scifTaskData.systemAgc.input.tddLock = lock;
+    return CRS_SUCCESS;
+}
+#endif
