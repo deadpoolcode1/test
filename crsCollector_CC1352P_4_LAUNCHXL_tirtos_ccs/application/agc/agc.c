@@ -222,7 +222,7 @@ CRS_retVal_t Agc_setMode(int mode){
 }
 
 uint16_t Agc_getMode(){
-    char envFile[1024] = { 0 };
+    char envFile[4096] = { 0 };
     Thresh_read("SensorMode", envFile);
     uint16_t mode = strtol(envFile + strlen("SensorMode="), NULL, 16);
     //return scifTaskData.systemAgc.cfg.tddMode;

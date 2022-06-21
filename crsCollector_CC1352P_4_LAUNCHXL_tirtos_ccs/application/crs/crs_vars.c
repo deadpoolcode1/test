@@ -21,6 +21,7 @@
  *****************************************************************************/
 #define STRLEN_BYTES 32
 #define MAX_LINE_CHARS 1024
+#define MAX_FILE_CHARS 4096
 #define VAR_HEADER "TZKAM"
 
 /******************************************************************************
@@ -38,7 +39,6 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
     // values: values [MAX_LINE_CHARS];
     // return key=value to values array
 
-    const char s[2] = "\n";
     char *key;
     char *delim;
 
@@ -73,8 +73,10 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
             key = strtok(NULL, " ");
         }
         if(!isAfter && strstr(token, "=")){
-            strcat(returnedFile, token);
-            strcat(returnedFile, s);
+            if(strlen(returnedFile) + strlen(token) + 1 < MAX_FILE_CHARS - STRLEN_BYTES){
+                strcat(returnedFile, token);
+                strcat(returnedFile, "\n");
+            }
         }
         isAfter = false;
         strcpy(copyVars, vars);
@@ -88,7 +90,7 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
     }
 
     strcpy(copyVars, vars);
-    token = strtok(copyFile, s);
+    token = strtok(copyFile, "\n");
     while (token != NULL)
     {
         key = strtok(copyVars, " ");
@@ -110,22 +112,23 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
             key = strtok(NULL, " ");
         }
         if(!isBefore){
-            strcat(returnedFile, token);
-            strcat(returnedFile, s);
+            if(strlen(returnedFile) + strlen(token)  + 1 < MAX_FILE_CHARS - STRLEN_BYTES){
+                strcat(returnedFile, token);
+                strcat(returnedFile, "\n");
+            }
         }
         isBefore = false;
         strcpy(copyFile, file);
         strcpy(copyVars, vars);
-        key = strtok(copyFile, s);
+        key = strtok(copyFile, "\n");
         while (strcmp(key, token) != 0)
         {
-            key = strtok(NULL, s);
+            key = strtok(NULL, "\n");
         }
-        token = strtok(NULL, s);
+        token = strtok(NULL, "\n");
 
     }
 
-//    memcpy(file, fileContent, 2048);
     CRS_free(copyFile);
     CRS_free(copyVars);
 }
@@ -136,18 +139,16 @@ void Vars_getVars(char *file, char *keys, char *values)
     // keys: key1 key2 key3
     // values: values [MAX_LINE_CHARS];
     // return key=value to values array
-    const char s[2] = " ";
 
-//    memset(values, 0, MAX_LINE_CHARS);
+    char * copyFile = CRS_calloc(strlen(file)+1, sizeof(char));
+    strcpy(copyFile, file);
+
+    char * copyKeys = CRS_calloc(strlen(keys)+1, sizeof(char) );
+    strcpy(copyKeys, keys);
+
     char *key;
     char *delim;
-    //char copyFile[strlen(file)+1];
-    char copyFile[2048];
-    strcpy(copyFile, file);
-    //char copyKeys[strlen(keys)+1];
-    char copyKeys[2048];
-    strcpy(copyKeys, keys);
-    char *token = strtok(copyKeys, s);
+    char *token = strtok(copyKeys, " ");
 
     while (token != NULL)
     {
@@ -171,15 +172,16 @@ void Vars_getVars(char *file, char *keys, char *values)
         }
         strcpy(copyFile, file);
         strcpy(copyKeys, keys);
-        key = strtok(copyKeys, s);
+        key = strtok(copyKeys, " ");
         while (strcmp(key, token) != 0)
         {
-            key = strtok(NULL, s);
+            key = strtok(NULL, " ");
         }
-        token = strtok(NULL, s);
+        token = strtok(NULL, " ");
 
     }
-
+    CRS_free(copyFile);
+    CRS_free(copyKeys);
 }
 
 void Vars_removeVars(char *file, char *keys, char * returnedFile){
@@ -232,7 +234,6 @@ void Vars_removeVars(char *file, char *keys, char * returnedFile){
     }
     CRS_free(copyFile);
     CRS_free(copyKeys);
-//    memcpy(file, fileContent, 2048);
 }
 
 bool Vars_createFile(NVS_Handle * fileHandle){
@@ -260,9 +261,6 @@ bool Vars_createFile(NVS_Handle * fileHandle){
 
 int Vars_getLength(NVS_Handle * fileHandle){
 
-    // NVS_Attrs fileRegionAttrs;
-    // NVS_getAttrs(fileHandle, &fileRegionAttrs);
-
     char fileHeader[STRLEN_BYTES] = { 0 };
     NVS_read(*fileHandle, 0,
             (void*) fileHeader, STRLEN_BYTES);
@@ -278,8 +276,6 @@ int Vars_getLength(NVS_Handle * fileHandle){
 CRS_retVal_t Vars_getFile(NVS_Handle * fileHandle, char * file){
 
     uint32_t fileLength = Vars_getLength(fileHandle);
-    // NVS_Attrs fileRegionAttrs;
-    // NVS_getAttrs(fileHandle, &fileRegionAttrs);
 
     NVS_read(*fileHandle, STRLEN_BYTES,
              file, fileLength);
@@ -290,9 +286,10 @@ CRS_retVal_t Vars_getFile(NVS_Handle * fileHandle, char * file){
 CRS_retVal_t Vars_setFile(NVS_Handle * fileHandle, char * file){
 
     uint32_t fileLength = strlen(file);
-//    NVS_Attrs fileRegionAttrs;
-//    NVS_getAttrs(fileHandle, &fileRegionAttrs);
-
+    if(fileLength + 1 > MAX_FILE_CHARS-STRLEN_BYTES){
+        // file too big
+        return CRS_FAILURE;
+    }
     char * fileCopy = CRS_calloc(fileLength+STRLEN_BYTES+1, sizeof(char));
 
     sprintf(fileCopy, "%x", fileLength);
@@ -314,8 +311,7 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     NVS_getAttrs(*fileHandle, &fileRegionAttrs);
     uint16_t length = strlen(file);
 
-    char * returnedFile = CRS_calloc(fileRegionAttrs.regionSize, sizeof(char));
-//    memcpy(returnedFile, file, strlen(file)+1);
+    char * returnedFile = CRS_calloc(fileRegionAttrs.regionSize-STRLEN_BYTES, sizeof(char));
 
     // get new file string
     const char s[2] = " ";
@@ -335,8 +331,9 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
     NVS_read(*fileHandle, 0, (void*) fileHeader, STRLEN_BYTES);
 
-//    char fileCopy [1024] = {0};
     NVS_write(*fileHandle, STRLEN_BYTES, file, newLength+1, NVS_WRITE_POST_VERIFY);
+
+//    char fileCopy [1024] = {0};
 //    NVS_read(*fileHandle, 0, (void*) fileCopy, 1024);
 
     CRS_free(returnedFile);
@@ -345,15 +342,11 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
 uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
-    // char * fileCopy = CRS_malloc(maxFileSize);
-    // memcpy(file, fileCopy, strlen(file));
-
     NVS_Attrs fileRegionAttrs;
     NVS_getAttrs(*fileHandle, &fileRegionAttrs);
     uint16_t length = strlen(file);
 
-    char * returnedFile = CRS_calloc(fileRegionAttrs.regionSize, sizeof(char));
-//    memcpy(returnedFile, file, strlen(file)+1);
+    char * returnedFile = CRS_calloc(fileRegionAttrs.regionSize-STRLEN_BYTES, sizeof(char));
 
     // get new file string
     Vars_removeVars(file, vars, returnedFile);
@@ -363,17 +356,12 @@ uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
     memcpy(file, returnedFile, newLength+1);
 
-
     char fileHeader [STRLEN_BYTES] = {0};
     sprintf(fileHeader, "%x", newLength);
     strcat(&fileHeader[4], VAR_HEADER);
     NVS_write(*fileHandle, 0, fileHeader, STRLEN_BYTES, NVS_WRITE_ERASE);
 
 //    // write new file to flash
-//    if (newLength < length){
-//        NVS_erase(*fileHandle, STRLEN_BYTES+newLength, length - newLength);
-//    }
-
     NVS_write(*fileHandle, STRLEN_BYTES, file, newLength+1, NVS_WRITE_POST_VERIFY);
     CRS_free(returnedFile);
     return newLength+1;

@@ -1362,7 +1362,7 @@ static CRS_retVal_t CLI_unit(char *line)
 #ifndef CLI_SENSOR
 //        CRS_LOG(CRS_DEBUG,"Collector");
         CLI_cliPrintf("\r\ncollector");
-        char envFile[1024] = {0};
+        char envFile[4096] = {0};
 
         CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
@@ -1397,7 +1397,7 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #else
         CLI_cliPrintf("\r\nsensor");
-        char envFile[1024] = {0};
+        char envFile[4096] = {0};
 
         CRS_retVal_t rspStatus = Env_readVarsFile("name ver config img", envFile);
               if (rspStatus == CRS_SUCCESS){
@@ -3586,7 +3586,7 @@ static CRS_retVal_t CLI_envLs(char *line)
 
 
     char envFile[CUI_NUM_UART_CHARS] = {0};
-    char envTmp[1000] = {0};
+    char envTmp[4096] = {0};
     memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
     CRS_retVal_t rsp = Env_read(envFile, envTmp);
     if (rsp != CRS_SUCCESS)
@@ -3648,8 +3648,6 @@ static CRS_retVal_t CLI_envFormat(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
-
                   CRS_retVal_t rsp = Env_format();
                   if (rsp != CRS_SUCCESS)
                   {
@@ -3700,7 +3698,6 @@ static CRS_retVal_t CLI_envRestore(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
                   CRS_retVal_t rsp = Env_restore();
                   if (rsp != CRS_SUCCESS)
                   {
@@ -3777,12 +3774,12 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
 
            }
            if(highTmpFlag||tempOffsetFlag){
-               char envFile[1024]={0};
+               char envFile[4096]={0};
                //System Temperature : ID=4, thrshenv= tmp
                Thresh_read("UpperTempThr", envFile);
                int16_t highTempThrsh = strtol(envFile + strlen("UpperTempThr="),
                NULL, 10);
-               memset(envFile,0,1024);
+               memset(envFile,0,4096);
                Thresh_read("TempOffset", envFile);
                int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                NULL, 10);
@@ -3794,12 +3791,12 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
             }
            }
            if(lowTmpFlag||tempOffsetFlag){
-                      char envFile[1024]={0};
+                      char envFile[4096]={0};
                       //System Temperature : ID=4, thrshenv= tmp
                       Thresh_read("LowerTempThr", envFile);
                       int16_t lowTempThrsh = strtol(envFile + strlen("LowerTempThr="),
                       NULL, 10);
-                      memset(envFile,0,1024);
+                      memset(envFile,0,4096);
                       Thresh_read("TempOffset", envFile);
                       int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                                  NULL, 10);
@@ -3921,7 +3918,7 @@ static CRS_retVal_t CLI_trshLs(char *line)
 
 
                   char envFile[CUI_NUM_UART_CHARS] = {0};
-                  char envTmp[1000] = {0};
+                  char envTmp[4096] = {0};
                   memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
                   CRS_retVal_t rsp = Thresh_read(envFile, envTmp);
                   if (rsp != CRS_SUCCESS)
@@ -3990,9 +3987,6 @@ static CRS_retVal_t CLI_trshFormat(char *line)
               #endif
 
 
-
-                  char envFile[1024] = {0};
-
                   CRS_retVal_t rsp = Thresh_format();
                   if (rsp != CRS_SUCCESS)
                   {
@@ -4047,7 +4041,6 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                       return CRS_SUCCESS;
                   }
               #endif
-                  char envFile[1024] = {0};
                   CRS_retVal_t rsp = Thresh_restore();
                   if (rsp != CRS_SUCCESS)
                   {
@@ -4266,7 +4259,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
             Alarms_getTemperature(&temp);
             token = strtok(NULL, s);
             if(memcmp(token, "offset", strlen("offset"))==0){
-                char envFile[1024] = { 0 };
+                char envFile[4096] = { 0 };
                 Thresh_read("TempOffset", envFile);
                 int16_t tempOffset = strtol(envFile + strlen("TempOffset="),
                 NULL, 10);

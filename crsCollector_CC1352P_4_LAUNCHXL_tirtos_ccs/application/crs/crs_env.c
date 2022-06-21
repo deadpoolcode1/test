@@ -58,11 +58,7 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
                 returnedVars[strlen(envCache)-1] = 0;
             }
         }
-        //CLI_cliPrintf("\r\n%s", envCache);
     }
-//    char testbuf [1024] = {0};
-//    NVS_read(envHandle, 0, (void*) testbuf, 1024);
-
     return CRS_SUCCESS;
 }
 
@@ -76,12 +72,11 @@ CRS_retVal_t Env_write(char *vars){
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
 
-    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize);
+    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
     length = Vars_setFileVars(&envHandle, envCache, vars);
 
     envCache = CRS_realloc(envCache, length);
-//    char filecopy [1024] = {0};
-//    NVS_read(envHandle, 0, (void*) filecopy, 1024);
+
     return CRS_SUCCESS;
 }
 
@@ -95,7 +90,7 @@ CRS_retVal_t Env_delete(char *vars){
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
 
-    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize);
+    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
     length = Vars_removeFileVars(&envHandle, envCache, vars);
 
     envCache = CRS_realloc(envCache, length);
@@ -104,10 +99,7 @@ CRS_retVal_t Env_delete(char *vars){
 }
 
 CRS_retVal_t Env_format(){
-//    uint32_t length;
-//    if(envCache == NULL){
-//        Env_init();
-//    }
+
     if (envHandle == NULL)
     {
         NVS_Params nvsParams;
@@ -115,9 +107,7 @@ CRS_retVal_t Env_format(){
         NVS_Params_init(&nvsParams);
         envHandle = NVS_open(ENV_NVS, &nvsParams);
     }
-    //CRS_free(envCache);
-    //envCache = NULL;
-    //Vars_format(&envHandle);
+
     bool ret = Vars_createFile(&envHandle);
     CRS_free(envCache);
     envCache = CRS_calloc(1, sizeof(char));
@@ -126,7 +116,6 @@ CRS_retVal_t Env_format(){
 
 CRS_retVal_t Env_restore(int fileIndex)
 {
-//    Env_format();
 
     if(envCache == NULL){
         Env_init();

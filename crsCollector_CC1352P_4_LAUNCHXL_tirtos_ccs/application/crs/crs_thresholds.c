@@ -63,10 +63,7 @@ CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
                 returnedVars[strlen(threshCache)-1] = 0;
             }
         }
-        //CLI_cliPrintf("\r\n%s", threshCache);
     }
-//    char testbuf [1024] = {0};
-//    NVS_read(threshHandle, 0, (void*) testbuf, 1024);
 
     return CRS_SUCCESS;
 }
@@ -109,10 +106,7 @@ CRS_retVal_t Thresh_delete(char *vars){
 }
 
 CRS_retVal_t Thresh_format(){
-//    uint32_t length;
-//    if(threshCache == NULL){
-//        Thresh_init();
-//    }
+
     if (threshHandle == NULL)
     {
         NVS_Params nvsParams;
@@ -120,9 +114,7 @@ CRS_retVal_t Thresh_format(){
         NVS_Params_init(&nvsParams);
         threshHandle = NVS_open(THRESH_NVS, &nvsParams);
     }
-    //CRS_free(threshCache);
-    //threshCache = NULL;
-    //Vars_format(&threshHandle);
+
     bool ret = Vars_createFile(&threshHandle);
     CRS_free(threshCache);
     threshCache = CRS_calloc(1, sizeof(char));
@@ -131,7 +123,6 @@ CRS_retVal_t Thresh_format(){
 
 CRS_retVal_t Thresh_restore(int fileIndex)
 {
-    //    Env_format();
     if(threshCache == NULL){
         Thresh_init();
     }
