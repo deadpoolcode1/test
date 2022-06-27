@@ -222,8 +222,12 @@ CRS_retVal_t Alarms_process(void)
         memset(gDiscRdRespLine, 0, TEMP_SZ);
         char discoveryPllSecondary[70] =
                 "wr 0xff 0x8001\nwr 0x50 0x071234\nwr 0x51 0x070000\nrd 0x51";
-        Fpga_writeMultiLineNoPrint(discoveryPllSecondary,
-                                   Alarms_PLLSecondaryDiscoveryFpgaRsp);
+        if (Fpga_isOpen() == CRS_SUCCESS)
+        {
+            Fpga_writeMultiLineNoPrint(discoveryPllSecondary,
+                                       Alarms_PLLSecondaryDiscoveryFpgaRsp);
+        }
+
         /* Clear the event */
         Util_clearEvent(&Alarms_events,
         ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT);
@@ -367,6 +371,7 @@ CRS_retVal_t Alarms_init(void *sem)
     Alarms_TDDLock_Init();
 #endif
     Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
+    return CRS_SUCCESS;
 }
 
 /*!
@@ -416,6 +421,8 @@ CRS_retVal_t Alarms_TDDLock_Init()
     {
         Alarms_setAlarm(TDDLock);
     }
+    return CRS_SUCCESS;
+
 }
 
 CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
@@ -423,7 +430,12 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
     memcpy(gDiscExpectVal, "0x1234", sizeof("0x1234"));
     char discoveryPllPrimary[70] =
             "wr 0xff 0x8000\nwr 0x50 0x071234\nwr 0x51 0x070000\nrd 0x51";
-    Fpga_writeMultiLine(discoveryPllPrimary, Alarms_PLLPrimaryDiscoveryFpgaRsp);
+    if (Fpga_isOpen() == CRS_SUCCESS)
+    {
+        Fpga_writeMultiLine(discoveryPllPrimary,
+                            Alarms_PLLPrimaryDiscoveryFpgaRsp);
+
+    }
     memset(&gClkStruct, 0, sizeof(gClkStruct));
     memset(&gClkHandle, 0, sizeof(gClkHandle));
     Clock_Params_init(&gClkParams);
@@ -433,9 +445,10 @@ CRS_retVal_t Alarms_PLL_Check_Clock_Init(Clock_FuncPtr clockFxn)
                     &gClkParams);
 //    Clock_setFunc(gClkHandle,clockFxn,NULL);
     gClkHandle = Clock_handle(&gClkStruct);
-    Clock_start(gClkHandle);
+//    Clock_start(gClkHandle);
     //for cnc to work, by defult would stop pooling until a user writes in the cli 'alarms start'
-    Alarms_stopPooling();
+//    Alarms_stopPooling();
+    return CRS_SUCCESS;
 
 }
 

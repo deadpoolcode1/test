@@ -15,7 +15,7 @@
 #include "mac/api_mac.h"
 
 CRS_retVal_t CLI_init();
-CRS_retVal_t CLI_processCliUpdate(char* line, ApiMac_sAddr_t *pDstAddr );
+CRS_retVal_t CLI_processCliUpdate(char* line, uint16_t shortAddr );
 CRS_retVal_t CLI_processCliSendMsgUpdate(void);
 CRS_retVal_t CLI_startREAD();
 CRS_retVal_t CLI_cliPrintf( const char *_format, ...);

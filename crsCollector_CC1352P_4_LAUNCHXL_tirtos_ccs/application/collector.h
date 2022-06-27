@@ -22,12 +22,13 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define MAX_DEVICES_IN_NETWORK 4
+#define MAX_DEVICES_IN_NETWORK CRS_GLOBAL_MAX_SENSORS
 #define CSF_INVALID_SHORT_ADDR 0xffff
 /*! Event ID - Start the device in the network */
 #define COLLECTOR_START_EVT               0x0001
 #define COLLECTOR_UI_INPUT_EVT               0x0002
 #define COLLECTOR_SEND_MSG_EVT 0x0004
+
 
 #define RSSI_ARR_SIZE 10
 /*! Building block for association table */

@@ -350,7 +350,7 @@ static volatile bool gIsAsyncCommand = false;
 
 static uint8_t gRspBuff[RSP_BUFFER_SIZE] = { 0 };
 static uint32_t gRspBuffIdx = 0;
-static ApiMac_sAddr_t gDstAddr;
+static uint16_t gDstAddr;
 
 static volatile bool gIsRemoteCommand = false;
 static volatile bool gIsRemoteTransparentBridge = false;
@@ -471,7 +471,7 @@ CRS_retVal_t CLI_processCliSendMsgUpdate(void)
 }
 #endif
 
-CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
+CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 {
 
     if (!gModuleInitialized)
@@ -488,10 +488,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, ApiMac_sAddr_t *pDstAddr)
     else
     {
         gIsRemoteCommand = true;
-        memset(&gDstAddr, 0, sizeof(ApiMac_sAddr_t));
-        gDstAddr.addrMode = pDstAddr->addrMode;
-        memcpy(gDstAddr.addr.extAddr, (pDstAddr->addr).extAddr, 8);
-        gDstAddr.addr.shortAddr = (pDstAddr->addr).shortAddr;
+        gDstAddr = pDstAddr;
+
     }
 
     if (gIsTransparentBridge == true && line[0] != CONTROL_CH_STOP_TRANS)
@@ -4447,7 +4445,7 @@ CRS_retVal_t CLI_startREAD()
     if (gIsRemoteCommand == true || (gIsRemoteTransparentBridge == true && gRspBuff != 0))
     {
         gIsRemoteCommand = false;
-        Sensor_sendCrsRsp(&gDstAddr, gRspBuff);
+        Sensor_sendCrsRsp(gDstAddr, gRspBuff);
         memset(gRspBuff, 0, RSP_BUFFER_SIZE);
         gRspBuffIdx = 0;
 

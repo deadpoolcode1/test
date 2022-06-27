@@ -96,7 +96,6 @@ static void smacRecivedContentAgainCb(EasyLink_RxPacket *rxPacket,
                                       EasyLink_Status status);
 static void smacEraseNode();
 
-static void smacNotifyFailCb();
 
 static void smacNotifySuccessCb(EasyLink_Status status);
 
@@ -219,31 +218,7 @@ static void smacFinishedSendingContentCb(EasyLink_Status status)
     }
 }
 
-static void smacFinishedSendingContentAgainCb(EasyLink_Status status)
-{
-    //content sent so wait for ack
-    if (status == EasyLink_Status_Success)
-    {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_SENT_CONTENT_AGAIN;
-//        gSmacStateArrayIdx++;
-        Node_nodeInfo_t node = { 0 };
-        Node_getNode(gSmAckContentInfo.nodeMac, &node);
-//        Node_setSeqSend(gSmAckContentInfo.nodeMac, node.seqSend);
-        //10us per tick so for 5ms we need 500 ticks
-        Node_setTimeout(gSmAckContentInfo.nodeMac, ackTimeoutCb, 100 * 20);
-        Node_startTimer(gSmAckContentInfo.nodeMac);
 
-        RX_enterRx(smacReceivedContentAckCb, collectorPib.mac);
-    }
-
-    else
-    {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-//        gSmacStateArrayIdx++;
-        //        gCbCcaFailed();
-
-    }
-}
 
 static void timeoutCb(void *arg)
 {
@@ -253,31 +228,6 @@ static void timeoutCb(void *arg)
 
 }
 
-static void ackTimeoutCb(void *arg)
-{
-    //abort the rx
-    //send the content again from pending with cb of
-    Node_nodeInfo_t node = { 0 };
-    Node_getNode(gSmAckContentInfo.nodeMac, &node);
-    if (node.numRetry == CRS_MAX_PKT_RETRY)
-    {
-        Util_setEvent(&smacEvents, SMAC_RECIVE_ACK_MAX_RETRY_EVT);
-        EasyLink_abort();
-
-        /* Wake up the application thread when it waits for clock event */
-        Semaphore_post(macSem);
-        return;
-    }
-    Node_setNumRetry(gSmAckContentInfo.nodeMac, node.numRetry + 1);
-
-    MAC_crsPacket_t pkt = { 0 };
-
-    RX_buildStructPacket(&pkt, node.pendingPacket.content);
-
-    TX_sendPacket(&pkt, smacFinishedSendingContentAgainCb);
-
-    EasyLink_abort();
-}
 
 static void waitForSensorContentTimeoutCb(void *arg)
 {

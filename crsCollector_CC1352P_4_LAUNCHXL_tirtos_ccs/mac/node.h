@@ -13,8 +13,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include "crs_global_defines.h"
 
-#define NUM_NODES 4
+#define NUM_NODES CRS_GLOBAL_MAX_SENSORS
 
 typedef struct nodeClocks{
     uint8_t mac[MAC_SIZE];
@@ -52,6 +53,7 @@ uint16_t shortAddr;
 void Node_init();
 
 bool Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
+bool Node_getNodeByShortAddr(uint16_t shortAddr,Node_nodeInfo_t* rspNode);
 
 void Node_updateNode(Node_nodeInfo_t* node);
 

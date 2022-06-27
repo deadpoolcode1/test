@@ -47,7 +47,7 @@
  *****************************************************************************/
 /* Task pending events */
 uint16_t Collector_events = 0;
-Cllc_associated_devices_t Cllc_associatedDevList[4];
+Cllc_associated_devices_t Cllc_associatedDevList[CRS_GLOBAL_MAX_SENSORS];
 
 /******************************************************************************
  Local variables
@@ -80,9 +80,11 @@ static void updateCduRssiStrct(int8_t rssi, int idx);
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
+
 /******************************************************************************
  Callback tables
  *****************************************************************************/
+
 //TODO: add assoc ind cb.
 /*! API MAC Callback table */
 ApiMac_callbacks_t Collector_macCallbacks = { assocIndCB, disassocIndCB,
@@ -107,7 +109,7 @@ void Collector_init(PIN_Handle pinHandl)
     sem = ApiMac_init();
     /* initialize association table */
     memset(Cllc_associatedDevList, 0xFF,
-           (sizeof(Cllc_associated_devices_t) * 4));
+           (sizeof(Cllc_associated_devices_t) * CRS_GLOBAL_MAX_SENSORS));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
 
@@ -175,6 +177,7 @@ void Csf_crsInitScript()
         fpgaCrsDoneCallback(cbArgs);
     }
 }
+
 void Csf_processCliSendMsgUpdate()
 {
     Util_setEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
@@ -186,14 +189,6 @@ void Csf_processCliSendMsgUpdate()
 void Csf_processCliUpdate()
 {
 //    Manage_addTask(processCliUpdateCb, NULL);
-    Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
-
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(sem);
-}
-
-static void processCliUpdateCb(Manage__cbArgs_t *_cbArgs)
-{
     Util_setEvent(&Collector_events, COLLECTOR_UI_INPUT_EVT);
 
     /* Wake up the application thread when it waits for clock event */
@@ -394,7 +389,6 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
                     uint8_t *pData)
 {
-    static uint8_t map_index = 0;
     ApiMac_mcpsDataReq_t dataReq;
 
     /* Fill the data request field */
@@ -442,12 +436,7 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
     }
     else
     {
-//        /* Structure is used to track data request handles to help remove unresponsive devices from macSecurity table in FH mode */
-//        dataRequestMsduMappingTable[map_index % MAX_DATA_REQ_MSDU_MAP_TABLE_SIZE].dstAddr =
-//                dataReq.dstAddr;
-//        dataRequestMsduMappingTable[map_index % MAX_DATA_REQ_MSDU_MAP_TABLE_SIZE].msduHandle =
-//                dataReq.msduHandle;
-//        map_index++;
+
         return (true);
     }
 }
@@ -576,6 +565,7 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
     }
 
 }
+
 static uint16_t gTotalSmacPackts = 0;
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)

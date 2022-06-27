@@ -69,10 +69,7 @@ static Sensor_rssi_t gRssiStrct = { 0 };
 static Llc_netInfo_t parentInfo = { 0 };
 
 static bool isConnected = false;
-/*! Device's PAN ID */
-static uint16_t devicePanId = 0xFFFF;
 
-static uint16_t gDeviceShortAddr = 0xaabb;
 
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
@@ -84,8 +81,8 @@ static Llc_netInfo_t gParentInfo = { 0 };
  Local Function Prototypes
  *****************************************************************************/
 
-static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
-                    uint8_t *pData);
+static bool Sensor_sendMsg(Smsgs_cmdIds_t type, uint16_t shortAddr,
+                           uint16_t len, uint8_t *pData);
 static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType);
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf);
@@ -95,8 +92,7 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
 
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd);
-static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr,
-                           uint16_t len, uint8_t *pData);
+
 
 static void updateRssiStrct(int8_t rssi);
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
@@ -261,7 +257,7 @@ void Ssf_processCliUpdate()
     Semaphore_post(sem);
 }
 
-Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg)
+Sensor_status_t Sensor_sendCrsRsp(uint16_t shortAddr, uint8_t *pMsg)
 {
     Smsgs_statusValues_t stat = Smsgs_statusValues_invalid;
     uint8_t crsRsp[SMSGS_CRS_MSG_LENGTH] = { 0 };
@@ -273,7 +269,7 @@ Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg)
         /* send the response message directly */
         crsRsp[0] = (uint8_t) Smsgs_cmdIds_crsRsp;
 
-        Sensor_sendMsg(Smsgs_cmdIds_crsRsp, pDstAddr, strlen(crsRsp) + 2,
+        Sensor_sendMsg(Smsgs_cmdIds_crsRsp, shortAddr, strlen(crsRsp) + 2,
                        crsRsp);
 
     }
@@ -282,7 +278,7 @@ Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg)
 
 }
 
-static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr,
+static bool Sensor_sendMsg(Smsgs_cmdIds_t type, uint16_t shortAddr,
                            uint16_t len, uint8_t *pData)
 {
     bool ret = false;
@@ -291,17 +287,12 @@ static bool Sensor_sendMsg(Smsgs_cmdIds_t type, ApiMac_sAddr_t *pDstAddr,
 
     /* Construct the data request field */
     memset(&dataReq, 0, sizeof(ApiMac_mcpsDataReq_t));
-    memcpy(&dataReq.dstAddr, pDstAddr, sizeof(ApiMac_sAddr_t));
+
+    dataReq.dstAddr.addrMode = ApiMac_addrType_extended;
+    memcpy(dataReq.dstAddr.addr.extAddr, gParentInfo.devInfo.extAddress, 8);
 
     /* set the correct address mode. */
-    if (pDstAddr->addrMode == ApiMac_addrType_extended)
-    {
-        dataReq.srcAddrMode = ApiMac_addrType_extended;
-    }
-    else
-    {
-        dataReq.srcAddrMode = ApiMac_addrType_short;
-    }
+
 
     dataReq.msduHandle = getMsduHandle(type);
 
@@ -420,7 +411,7 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd)
 {
-    CLI_processCliUpdate((pDataInd->msdu.p) + 1, &pDataInd->srcAddr);
+    CLI_processCliUpdate((pDataInd->msdu.p) + 1, pDataInd->srcShortAddr);
 }
 
 static void updateRssiStrct(int8_t rssi)

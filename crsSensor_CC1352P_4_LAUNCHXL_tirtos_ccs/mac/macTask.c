@@ -436,11 +436,20 @@ void MAC_stopDiscoveryClock()
 
 static void discoveryTimeoutCb(xdc_UArg arg)
 {
-    EasyLink_abort();
-    Util_setEvent(&macEvents, MAC_ENTER_BEACON_STATE_EVT);
+    if (gState == MAC_SM_RX_IDLE)
+       {
+           EasyLink_abort();
+           Util_setEvent(&macEvents, MAC_ENTER_BEACON_STATE_EVT);
 
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(macSemHandle);
+           /* Wake up the application thread when it waits for clock event */
+           Semaphore_post(macSemHandle);
+       }
+       else
+       {
+           Clock_setFunc(gClkHandle, discoveryTimeoutCb, 0);
+           Clock_setTimeout(gClkHandle, gDiscoveryTime * 100000);
+           Clock_start(gClkHandle);
+       }
 
 
 }
@@ -608,13 +617,17 @@ bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
     memcpy(tmp, pkt->payload, pkt->len);
     rsp->msdu.p = tmp;
 
-    memcpy(rsp->mac.dstAddr.addr.extAddr, pkt->dstAddr, 8);
-    memcpy(rsp->mac.srcAddr.addr.extAddr, pkt->srcAddr, 8);
+    memcpy(rsp->mac.dstDeviceAddressLong, pkt->dstAddr, 8);
+    memcpy(rsp->mac.srcDeviceAddressLong, pkt->srcAddr, 8);
+
+    rsp->mac.srcShortAddr = CRS_GLOBAL_COLLECTOR_SHORT_ADDR;
+    rsp->mac.dstShortAddr = sensorPib.shortAddr;
 
 //    rsp->mac.rssi =
 
     return true;
 }
+
 
 bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf)
 {

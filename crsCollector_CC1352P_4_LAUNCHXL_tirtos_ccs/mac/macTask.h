@@ -130,6 +130,9 @@ bool MAC_sendDiscoveryIndToApp(macMlmeDiscoveryInd_t *dataCnf);
 bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, int8_t rssi, int8_t rssiMaxRemote, int8_t rssiMinRemote,
                            int8_t rssiAvgRemote,  int8_t rssiLastRemote, sAddrExt_t deviceAddress);
 
+bool MAC_getDeviceShortAddr(uint8_t * mac, uint16_t* shortAddr);
+
+bool MAC_getDeviceLongAddr(uint16_t shortAddr, uint8_t* mac);
 
 
 

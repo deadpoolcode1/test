@@ -58,6 +58,21 @@ bool Node_getNode(uint8_t mac[MAC_SIZE], Node_nodeInfo_t *rspNode)
 
 }
 
+bool Node_getNodeByShortAddr(uint16_t shortAddr,Node_nodeInfo_t* rspNode)
+{
+    int i = 0;
+    for (i = 0; i < NUM_NODES; ++i)
+    {
+        if (shortAddr == gNodes[i].shortAddr)
+        {
+            memcpy(rspNode, &(gNodes[i]), sizeof(Node_nodeInfo_t));
+            return true;
+        }
+    }
+    return false;
+
+}
+
 bool Node_getNodeByIdx(uint16_t idx, Node_nodeInfo_t *rspNode)
 {
     if (idx >= NUM_NODES )

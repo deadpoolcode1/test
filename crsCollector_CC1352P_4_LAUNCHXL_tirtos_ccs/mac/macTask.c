@@ -576,10 +576,14 @@ bool MAC_createDataInd(macMcpsDataInd_t *rsp, MAC_crsPacket_t *pkt,
     memcpy(tmp, pkt->payload, pkt->len);
     rsp->msdu.p = tmp;
 
-    memcpy(rsp->mac.dstAddr.addr.extAddr, pkt->dstAddr, 8);
-    memcpy(rsp->mac.srcAddr.addr.extAddr, pkt->srcAddr, 8);
+    memcpy(rsp->mac.dstDeviceAddressLong, pkt->dstAddr, 8);
+    memcpy(rsp->mac.srcDeviceAddressLong, pkt->srcAddr, 8);
+    uint16_t srcShortAddr;
+    MAC_getDeviceShortAddr(rsp->mac.srcDeviceAddressLong, &srcShortAddr);
 
-//    rsp->mac.rssi =
+    rsp->mac.srcShortAddr = srcShortAddr;
+    rsp->mac.dstShortAddr = CRS_GLOBAL_COLLECTOR_SHORT_ADDR;
+
 
     return true;
 }
@@ -597,6 +601,23 @@ bool MAC_sendDataIndToApp(macMcpsDataInd_t *dataCnf)
     msg.msg = cbEvent;
 
     Mediator_sendMsgToApp(&msg);
+
+}
+
+bool MAC_getDeviceShortAddr(uint8_t * mac, uint16_t* shortAddr)
+{
+    Node_nodeInfo_t node = { 0 };
+    bool rsp = Node_getNode(mac, &node);
+    *shortAddr = node.shortAddr;
+    return rsp;
+}
+
+bool MAC_getDeviceLongAddr(uint16_t shortAddr, uint8_t* mac)
+{
+    Node_nodeInfo_t node = { 0 };
+    bool rsp = Node_getNodeByShortAddr(shortAddr, &node);
+    memcpy(mac, node.mac, 8);
+    return rsp;
 
 }
 

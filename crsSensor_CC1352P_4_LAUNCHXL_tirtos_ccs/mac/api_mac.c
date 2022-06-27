@@ -257,8 +257,10 @@ static void copyDataInd(ApiMac_mcpsDataInd_t *pDst, macMcpsDataInd_t *pSrc)
     memset(pDst, 0, sizeof(ApiMac_mcpsDataInd_t));
 
     /* copy the message to the indication structure */
-    copyMacAddrToApiMacAddr(&(pDst->srcAddr), &(pSrc->mac.srcAddr));
-    copyMacAddrToApiMacAddr(&(pDst->dstAddr), &(pSrc->mac.dstAddr));
+    memcpy((pDst->srcDeviceAddress), (pSrc->mac.srcDeviceAddressLong), 8);
+    memcpy((pDst->dstDeviceAddress), (pSrc->mac.dstDeviceAddressLong), 8);
+    pDst->srcShortAddr = pSrc->mac.srcShortAddr;
+    pDst->dstShortAddr = pSrc->mac.dstShortAddr;
     pDst->timestamp = pSrc->mac.timestamp;
     pDst->timestamp2 = pSrc->mac.timestamp2;
     pDst->srcPanId = pSrc->mac.srcPanId;

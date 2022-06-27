@@ -272,9 +272,10 @@ typedef struct _apimac_mcpsdatacnf
 typedef struct _apimac_mcpsdataind
 {
     /*! The address of the sending device */
-    ApiMac_sAddr_t srcAddr;
-    /*! The address of the destination device */
-    ApiMac_sAddr_t dstAddr;
+    ApiMac_sAddrExt_t srcDeviceAddress;
+    uint16_t srcShortAddr; /*! The address of the destination device */
+    ApiMac_sAddrExt_t dstDeviceAddress;
+    uint16_t dstShortAddr;
     /*! The time, in backoffs, at which the data were received */
     uint32_t timestamp;
     /*!
@@ -416,6 +417,10 @@ typedef struct
 {
     sAddr_t srcAddr; /* The address of the sending device */
     sAddr_t dstAddr; /* The address of the destination device */
+    sAddrExt_t srcDeviceAddressLong; /* The address of the device requesting association */
+    uint16_t srcShortAddr;
+    sAddrExt_t dstDeviceAddressLong; /* The address of the device requesting association */
+    uint16_t dstShortAddr;
     uint32_t timestamp; /* The time, in backoffs, at which the data were received */
     uint16_t timestamp2; /* The time, in internal MAC timer units, at which the
      data were received */

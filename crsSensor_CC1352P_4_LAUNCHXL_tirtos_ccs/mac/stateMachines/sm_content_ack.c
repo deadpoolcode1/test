@@ -223,34 +223,7 @@ void Smac_recviedCollectorContentCb(EasyLink_RxPacket *rxPacket,
 }
 
 //rxdonecb of finishedSendingAckCb
-static void recviedCollectorContentAgainCb(EasyLink_RxPacket *rxPacket,
-                                           EasyLink_Status status)
-{
-    if (status == EasyLink_Status_Success)
-    {
 
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_RECIEVED_CONTENT_AGAIN;
-//        gSmacStateArrayIdx++;
-//check seqRecived num- if it is the smaller by 1 from the seqSent in the struct of CollectorLink_collectorLinkInfo_t then:
-        //send ack from  Node_pendingPckts_t strcut in the field 'content'
-        CollectorLink_collectorLinkInfo_t collectorLink;
-        CollectorLink_getCollector(&collectorLink);
-        MAC_crsPacket_t pkt = { 0 };
-        RX_buildStructPacket(&pkt, rxPacket->payload);
-        if ((collectorLink.seqRcv - 1) == pkt.seqSent)
-        {
-            TX_sendPacket(&collectorLink.pendingPacket.content,
-                        finishedSendingAckCb); //check which cb
-        }
-
-//else- ???(shouldnt happen)
-    }
-    else
-    {
-//        gSmacStateArray[gSmacStateArrayIdx] = SMAC_ERROR;
-//        gSmacStateArrayIdx++;
-    }
-}
 
 //txdonecb of sending ack
 static void finishedSendingAckCb(EasyLink_Status status)

@@ -64,7 +64,7 @@ extern void Sensor_process(void);
 
 void Ssf_processCliUpdate();
 
-extern Sensor_status_t Sensor_sendCrsRsp(ApiMac_sAddr_t *pDstAddr, uint8_t *pMsg);
+Sensor_status_t Sensor_sendCrsRsp(uint16_t shortAddr, uint8_t *pMsg);
 
 void Ssf_crsInitScript();
 
