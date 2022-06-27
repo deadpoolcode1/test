@@ -558,6 +558,8 @@ bool MAC_createAssocInd(macMlmeAssociateInd_t *rsp, sAddrExt_t deviceAddress,
     rsp->hdr.status = status;
 
     rsp->shortAddr = shortAddr;
+    rsp->givenShortAddr = sensorPib.shortAddr;
+
     memcpy(rsp->deviceAddress, deviceAddress, 8);
 
     return true;

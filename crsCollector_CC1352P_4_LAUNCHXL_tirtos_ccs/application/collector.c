@@ -25,6 +25,8 @@
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
+#include "crs/crs_env.h"
+#include "crs/crs_thresholds.h"
 #include "application/crs/crs_alarms.h"
 #include "crs/crs_thresholds.h"
 #include "agc/agc.h"
@@ -114,6 +116,8 @@ void Collector_init(PIN_Handle pinHandl)
     ApiMac_registerCallbacks(&Collector_macCallbacks);
 
     Nvs_init(sem);
+    Env_init();
+    Thresh_init();
     SnapInit(sem);
     //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);

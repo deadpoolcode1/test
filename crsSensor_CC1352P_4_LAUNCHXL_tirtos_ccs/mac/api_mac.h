@@ -312,6 +312,7 @@ typedef struct _apimac_mlmeassociateind
     /*! The address of the device requesting association */
     ApiMac_sAddrExt_t deviceAddress;
     uint16_t shortAddr;
+    uint16_t givenShortAddr;
 } ApiMac_mlmeAssociateInd_t;
 
 /*! MAC_MLME_DISASSOCIATE_IND type */
@@ -450,6 +451,7 @@ typedef struct
     macEventHdr_t hdr; /* The event header */
     sAddrExt_t deviceAddress; /* The address of the device requesting association */
     uint16_t shortAddr;
+    uint16_t givenShortAddr;
 } macMlmeAssociateInd_t;
 
 /* MAC_MLME_DISASSOCIATE_IND type */

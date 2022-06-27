@@ -18,6 +18,7 @@
  Function Prototypes
  *****************************************************************************/
 
+CRS_retVal_t Env_init();
 CRS_retVal_t Env_read(char *vars, char *returnedVars);
 CRS_retVal_t Env_write(char *vars);
 CRS_retVal_t Env_delete(char *vars);

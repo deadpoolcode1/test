@@ -20,6 +20,7 @@
 
 //CRS_retVal_t Thresh_restore(int fileIndex);
 
+CRS_retVal_t Thresh_init();
 CRS_retVal_t Thresh_read(char *vars, char *returnedVars);
 CRS_retVal_t Thresh_write(char *vars);
 CRS_retVal_t Thresh_delete(char *vars);

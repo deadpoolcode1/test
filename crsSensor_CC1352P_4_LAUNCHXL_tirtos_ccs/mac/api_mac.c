@@ -138,6 +138,8 @@ static void processIncomingMsg(Mediator_msgObjSentToApp_t *pMsg)
                 memcpy(ind.deviceAddress, pMsg->msg->associateInd.deviceAddress,
                        sizeof(ApiMac_sAddrExt_t));
                 ind.shortAddr = pMsg->msg->associateInd.shortAddr;
+                ind.givenShortAddr = pMsg->msg->associateInd.givenShortAddr;
+
                 free(pMsg->msg);
 
                 /* Initiate the callback */

@@ -25,6 +25,8 @@
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
+#include "crs/crs_env.h"
+#include "crs/crs_thresholds.h"
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "easylink/EasyLink.h"
@@ -139,6 +141,8 @@ void Sensor_init(PIN_Handle pinHandl)
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
 
     Nvs_init(sem);
+    Thresh_init();
+    Env_init();
     SnapInit(sem);
     //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);
@@ -359,6 +363,7 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 //        CLI_cliPrintf("\r\nassocIndCB");
 
     isConnected = true;
+    gDevInfo.shortAddress = pAssocInd->givenShortAddr;
     memcpy(gParentInfo.devInfo.extAddress, pAssocInd->deviceAddress, 8);
     gParentInfo.devInfo.shortAddress = pAssocInd->shortAddr;
     gParentInfo.devInfo.panID = CRS_GLOBAL_PAN_ID;

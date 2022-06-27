@@ -21,15 +21,15 @@
 #define MAX_LINE_CHARS 1024
 #define THRSH_FILENAME "thrsh"
 #ifndef CLI_SENSOR
-    #define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
-        MaxCableLossThr=35\nDLMaxInputPower=-35\nDLRxMaxGainThr=45\nULTxMaxGainThr=55\nULMaxOutputPower=20\n\
-        SyncMode=Manual\nCPType=Normal\nSensorMode=0\nDLRxGain=28\nULTxGain=28\nCblCompFctr=22\nModemTxPwr=13\n\
-        UpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
+#define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
+MaxCableLossThr=35\nDLMaxInputPower=-35\nDLRxMaxGainThr=45\nULTxMaxGainThr=55\nULMaxOutputPower=20\n\
+SyncMode=Manual\nCPType=Normal\nSensorMode=0\nDLRxGain=28\nULTxGain=28\nCblCompFctr=22\nModemTxPwr=13\n\
+UpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
 #else
-    #define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
-        MaxCableLossThr=35\nULMaxInputPower=-35\nULRxMaxGainThr=60\nDLTxMaxGainThr=55\nDLMaxOutputPower=20\n\
-        DLSystemMaxGainThr=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\nULRxGain=30\nDLTxGain=28\n\
-        DLSystemGain=20\nCblCompFctr=9\nModemTxPwr=13\nUpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
+#define THRSH_FILE "Technology=5G\nBand=n78\nBandwidth=20\nEARFCN=650000\nCentralFreq=3750\nMIMO=2x2\n\
+MaxCableLossThr=35\nULMaxInputPower=-35\nULRxMaxGainThr=60\nDLTxMaxGainThr=55\nDLMaxOutputPower=20\n\
+DLSystemMaxGainThr=20\nSyncMode=Manual\nCPType=Normal\nSensorMode=0\nULRxGain=30\nDLTxGain=28\n\
+DLSystemGain=20\nCblCompFctr=9\nModemTxPwr=13\nUpperTempThr=40\nLowerTempThr=-5\nTempOffset=15"
 #endif
 
 /******************************************************************************
@@ -40,13 +40,67 @@ static char * threshCache  = NULL;
 static NVS_Handle threshHandle;
 
 /******************************************************************************
- Local Function Prototypes
- *****************************************************************************/
-static CRS_retVal_t Thresh_init();
-
-/******************************************************************************
  Public Functions
  *****************************************************************************/
+
+CRS_retVal_t Thresh_restore()
+{
+    if(threshCache == NULL){
+        return CRS_FAILURE;
+        //Thresh_init();
+    }
+
+    if (Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS)
+    {
+        CRS_free(threshCache);
+        threshCache = Nvs_readFileWithMalloc(THRSH_FILENAME);
+        if (!threshCache)
+        {
+            threshCache = CRS_calloc(1, sizeof(char));
+        }
+    }
+    else
+    {
+        threshCache = CRS_realloc(threshCache, sizeof(THRSH_FILE));
+        memcpy(threshCache, THRSH_FILE, sizeof(THRSH_FILE));
+
+    }
+   return Vars_setFile(&threshHandle, threshCache);
+
+}
+
+CRS_retVal_t Thresh_init(){
+    if (threshHandle == NULL)
+    {
+        NVS_Params nvsParams;
+        NVS_init();
+        NVS_Params_init(&nvsParams);
+        threshHandle = NVS_open(THRESH_NVS, &nvsParams);
+
+        if (threshHandle == NULL)
+        {
+            // CLI_cliPrintf("NVS_open() failed.\r\n");
+            return CRS_FAILURE;
+        }
+    }
+
+    CRS_retVal_t status;
+    int length = Vars_getLength(&threshHandle);
+    if(length == -1){
+        bool ret = Vars_createFile(&threshHandle);
+        if(!ret){
+            return CRS_FAILURE;
+        }
+        length = 1;
+        threshCache = CRS_calloc(length, sizeof(char));
+        status = Thresh_restore();
+    }else{
+        threshCache = CRS_calloc(length, sizeof(char));
+        status = Vars_getFile(&threshHandle, threshCache);
+    }
+
+    return status;
+}
 
 CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
 
@@ -121,66 +175,3 @@ CRS_retVal_t Thresh_format(){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Thresh_restore(int fileIndex)
-{
-    if(threshCache == NULL){
-        Thresh_init();
-    }
-
-    if (Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS)
-    {
-        CRS_free(threshCache);
-        threshCache = Nvs_readFileWithMalloc(THRSH_FILENAME);
-        if (!threshCache)
-        {
-            threshCache = CRS_calloc(1, sizeof(char));
-        }
-    }
-    else
-    {
-        threshCache = CRS_realloc(threshCache, sizeof(THRSH_FILE));
-        memcpy(threshCache, THRSH_FILE, sizeof(THRSH_FILE));
-
-    }
-   return Vars_setFile(&threshHandle, threshCache);
-
-}
-
-
-
-/******************************************************************************
- Local Functions
- *****************************************************************************/
-
-
-static CRS_retVal_t Thresh_init(){
-
-    if (threshHandle == NULL)
-    {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        threshHandle = NVS_open(THRESH_NVS, &nvsParams);
-
-        if (threshHandle == NULL)
-        {
-            // CLI_cliPrintf("NVS_open() failed.\r\n");
-            return CRS_FAILURE;
-        }
-    }
-
-    int length = Vars_getLength(&threshHandle);
-    if(length == -1){
-        bool ret = Vars_createFile(&threshHandle);
-        if(!ret){
-            return CRS_FAILURE;
-        }
-        length = 1;
-        threshCache = CRS_calloc(length, sizeof(char));
-    }else{
-        threshCache = CRS_calloc(length, sizeof(char));
-        Vars_getFile(&threshHandle, threshCache);
-    }
-
-    return CRS_SUCCESS;
-}

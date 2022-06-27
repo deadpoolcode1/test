@@ -34,14 +34,71 @@
 static char * envCache  = NULL;
 static NVS_Handle envHandle;
 
-/******************************************************************************
- Local Function Prototypes
- *****************************************************************************/
-static CRS_retVal_t Env_init();
 
 /******************************************************************************
  Public Functions
  *****************************************************************************/
+
+CRS_retVal_t Env_restore()
+{
+
+    if(envCache == NULL){
+        return CRS_FAILURE;
+        //Env_init();
+    }
+
+    if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
+    {
+        CRS_free(envCache);
+        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
+        if (!envCache)
+        {
+            envCache = CRS_calloc(1, sizeof(char));
+        }
+    }
+    else
+    {
+        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
+        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
+
+    }
+   return Vars_setFile(&envHandle, envCache);
+
+}
+
+CRS_retVal_t Env_init(){
+
+    if (envHandle == NULL)
+    {
+        NVS_Params nvsParams;
+        NVS_init();
+        NVS_Params_init(&nvsParams);
+        envHandle = NVS_open(ENV_NVS, &nvsParams);
+
+        if (envHandle == NULL)
+        {
+            // CLI_cliPrintf("NVS_open() failed.\r\n");
+            return CRS_FAILURE;
+        }
+    }
+
+    CRS_retVal_t status;
+    int length = Vars_getLength(&envHandle);
+    if(length == -1){
+        bool ret = Vars_createFile(&envHandle);
+        if(!ret){
+            return CRS_FAILURE;
+        }
+        length = 1;
+        envCache = CRS_calloc(length, sizeof(char));
+        status = Env_restore();
+    }else{
+        envCache = CRS_calloc(length, sizeof(char));
+        status = Vars_getFile(&envHandle, envCache);
+    }
+
+    return status;
+}
 
 CRS_retVal_t Env_read(char *vars, char *returnedVars){
 
@@ -114,65 +171,3 @@ CRS_retVal_t Env_format(){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Env_restore(int fileIndex)
-{
-
-    if(envCache == NULL){
-        Env_init();
-    }
-
-    if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
-    {
-        CRS_free(envCache);
-        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
-        if (!envCache)
-        {
-            envCache = CRS_calloc(1, sizeof(char));
-        }
-    }
-    else
-    {
-        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
-        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
-
-    }
-   return Vars_setFile(&envHandle, envCache);
-
-}
-
-/******************************************************************************
- Local Functions
- *****************************************************************************/
-
-
-static CRS_retVal_t Env_init(){
-
-    if (envHandle == NULL)
-    {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        envHandle = NVS_open(ENV_NVS, &nvsParams);
-
-        if (envHandle == NULL)
-        {
-            // CLI_cliPrintf("NVS_open() failed.\r\n");
-            return CRS_FAILURE;
-        }
-    }
-
-    int length = Vars_getLength(&envHandle);
-    if(length == -1){
-        bool ret = Vars_createFile(&envHandle);
-        if(!ret){
-            return CRS_FAILURE;
-        }
-        length = 1;
-        envCache = CRS_calloc(length, sizeof(char));
-    }else{
-        envCache = CRS_calloc(length, sizeof(char));
-        Vars_getFile(&envHandle, envCache);
-    }
-
-    return CRS_SUCCESS;
-}
