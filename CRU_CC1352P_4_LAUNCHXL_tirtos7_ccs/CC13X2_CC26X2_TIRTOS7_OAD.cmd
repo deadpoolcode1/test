@@ -45,9 +45,9 @@
  *****************************************************************************/
 
 
---stack_size=1024   /* C stack is also used for ISR stack */
+--stack_size=5192   /* C stack is also used for ISR stack */
 
-HEAPSIZE = 0x1000;  /* Size of heap buffer used by HeapMem */
+HEAPSIZE = 0x4000;  /* Size of heap buffer used by HeapMem */
 
 /* Retain interrupt vector table variable                                    */
 --retain=g_pfnVectors
