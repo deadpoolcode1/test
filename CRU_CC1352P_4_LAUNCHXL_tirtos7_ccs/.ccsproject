@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<ccsVersion value="11.0.0"/>
+	<deviceVariant value="Cortex M.CC1352P1F3"/>
+	<deviceFamily value="TMS470"/>
+	<deviceEndianness value="little"/>
+	<codegenToolVersion value="20.2.5.LTS"/>
+	<isElfFormat value="true"/>
+	<connection value="common/targetdb/connections/TIXDS110_Connection.xml"/>
+	<rts value=""/>
+	<createSlaveProjects value=""/>
+	<ignoreDefaultDeviceSettings value="true"/>
+	<ignoreDefaultCCSSettings value="true"/>
+	<templateProperties value="id=rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs.projectspec.rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs,buildProfile=release,isHybrid=true"/>
+	<origin value="/home/epc_4/ti/simplelink_cc13xx_cc26xx_sdk_6_10_00_29/examples/rtos/CC1352P_4_LAUNCHXL/easylink/rfWsnNodeExtFlashOadClient/tirtos7/ccs/rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs.projectspec"/>
+	<filesToOpen value=""/>
+</projectOptions>

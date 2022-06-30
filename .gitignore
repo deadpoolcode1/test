@@ -26,3 +26,7 @@ crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.ccsproject
 crsCollector_CC1352P_4_LAUNCHXL_tirtos_ccs/.project
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.project
 crsSensor_CC1352P_4_LAUNCHXL_tirtos_ccs/.settings/org.eclipse.core.resources.prefs
+*/Debug/*
+.xdchelp
+.launches/*
+config/*
