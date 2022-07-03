@@ -347,5 +347,6 @@ extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData)
     msg.msg = p;
 //    msg.msg->msdu.p = p;
     Mediator_sendMsgToMac(&msg);
+    return ApiMac_status_success;
 }
 
