@@ -75,7 +75,7 @@
 #include "application/sensor.h"
 #include "application/smsgs.h"
 #include <ti/sysbios/knl/Task.h>
-#include "application/crs/crs_thresholds.h"
+#include "application/crs/crs_env.h"
 
 /******************************************************************************
  Constants and definitions
@@ -185,7 +185,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
     //if this is a sensor img - update the img env var
     if( _imgHdr.fixedHdr.softVer[0]=='S'){
         char envFile[1024] = { 0 };
-        Thresh_read("img", envFile);
+        Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
         char ver[4]={0};
         memcpy(ver,&_imgHdr.fixedHdr.softVer[1],3);
@@ -193,7 +193,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
         if ((imgExtFlash>imgPrev)) {
             char currImg[500]={0};
             sprintf(currImg,"img=%s",ver);
-            Thresh_write(currImg);
+            Env_write(currImg);
         }
     }
 //    OADStorage_close();

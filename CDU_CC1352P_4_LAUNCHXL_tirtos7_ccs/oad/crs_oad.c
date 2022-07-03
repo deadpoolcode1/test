@@ -25,7 +25,7 @@
 #include "oad/native_oad/oad_protocol.h"
 #include "oad/RadioProtocol.h"
 #include DeviceFamily_constructPath(driverlib/sys_ctrl.h)
-#include "application/crs/crs_thresholds.h"
+#include "application/crs/crs_env.h"
 
 /******************************************************************************
  Constants and definitions
@@ -147,7 +147,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
     OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteAppImageId);
     if(remoteAppImageId.softVer[0]=='C'){
         char envFile[1024] = { 0 };
-        Thresh_read("img", envFile);
+        Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
         char ver[4]={0};
         memcpy(ver,&remoteAppImageId.softVer[1],3);
@@ -156,7 +156,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
         if ((imgExtFlash>imgPrev)) {
             char currImg[500]={0};
             sprintf(currImg,"img=%s",ver);
-            Thresh_write(currImg);
+            Env_write(currImg);
         }
     }
     OADStorage_close();
