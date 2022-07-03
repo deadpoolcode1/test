@@ -196,7 +196,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
             Thresh_write(currImg);
         }
     }
-    OADStorage_close();
+//    OADStorage_close();
     return CRS_SUCCESS;
 }
 
@@ -246,7 +246,7 @@ CRS_retVal_t OadClient_process(void)
         oadInProgress=false;
         oadBNumBlocks=0;
         OADStorage_Status_t status = OADStorage_imgFinalise();
-        OADStorage_close();
+//        OADStorage_close();
         if (status == OADStorage_Status_Success) {
             CLI_cliPrintf("\r\nOAD completed successfully");
 //            SysCtrlSystemReset();
@@ -281,7 +281,7 @@ void OADClient_invalidateHeader(void)
 CRS_retVal_t Oad_flashFormat(){
     OADStorage_init();
     OADStorage_flashErase();
-    OADStorage_close();
+//    OADStorage_close();
 }
 
 /******************************************************************************
