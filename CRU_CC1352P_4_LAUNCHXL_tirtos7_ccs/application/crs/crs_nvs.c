@@ -13,11 +13,7 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define ENV_FILENAME "env.txt"
-#define ENV_FILE_IDX (MAX_FILES - 50)
 
-#define TRSH_FILENAME "trsh.txt"
-#define TRSH_FILE_IDX (MAX_FILES - 10)
 
 /******************************************************************************
  Global variables
@@ -93,7 +89,7 @@ CRS_retVal_t Nvs_ls()
     /* Display the NVS region attributes. */
     CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
     CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
-    CRS_FAT_t fat[MAX_FILES];
+    CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     char strlenStr[STRLEN_BYTES] = { 0 };
     uint32_t strlen;
@@ -169,7 +165,7 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
     //if no file already exist with the same name
     if (isAppend == false)
     {
-        CRS_FAT_t fat[MAX_FILES];
+        CRS_FAT_t fat[MAX_FILES] = {0};
         Nvs_readFAT((fat));
         i = 0;
         while (fat[i].isExist == true)
@@ -242,7 +238,7 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 CRS_retVal_t Nvs_cat(char *filename)
 {
     char strlenStr[STRLEN_BYTES] = { 0 };
-    CRS_FAT_t fat[MAX_FILES];
+    CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
     while (i < MAX_FILES)
@@ -284,7 +280,7 @@ CRS_retVal_t Nvs_cat(char *filename)
 CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize)
 {
     char strlenStr[STRLEN_BYTES] = { 0 };
-    CRS_FAT_t fat[MAX_FILES];
+    CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
     while (i < MAX_FILES)
@@ -337,7 +333,7 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
 
 CRS_retVal_t Nvs_rm(char *filename)
 {
-    CRS_FAT_t fat[MAX_FILES];
+    CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
     while (i < gNumFiles)
