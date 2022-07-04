@@ -14,7 +14,7 @@
 //#include <time.h>
 #include "mac/api_mac.h"
 
-CRS_retVal_t CLI_init();
+CRS_retVal_t CLI_init(bool restartMsg);
 CRS_retVal_t CLI_close();
 CRS_retVal_t CLI_processCliUpdate(char* line, uint16_t shortAddr );
 CRS_retVal_t CLI_processCliSendMsgUpdate(void);

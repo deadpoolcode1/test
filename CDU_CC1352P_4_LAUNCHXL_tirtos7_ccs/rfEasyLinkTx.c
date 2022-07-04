@@ -130,7 +130,7 @@ int main(void)
 
 
 
-    CLI_init();
+    CLI_init(true);
 //    CP_CLI_init();
 
     Mediator_init();

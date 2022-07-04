@@ -416,7 +416,7 @@ CRS_retVal_t CLI_close(){
  *
  * @return      CRS_retVal_t representing success or failure.
  */
-CRS_retVal_t CLI_init()
+CRS_retVal_t CLI_init(bool restartMsg)
 {
     /*
      *  Do nothing if the module has already been initialized or if
@@ -461,11 +461,13 @@ CRS_retVal_t CLI_init()
         }
 
         gModuleInitialized = true;
+if(restartMsg){
 #ifndef CLI_SENSOR
         CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
 #else
         CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
 #endif
+}
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return CRS_SUCCESS;
     }
