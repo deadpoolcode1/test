@@ -158,7 +158,7 @@ static uint8_t gIsLocked;
 static uint32_t gNumReadCh = 0;
 static uint8_t gFrame = 0;
 static uint8_t gAlloc = 0;
-static TDD_tdArgs_t tdArgs = { .period = 5000, .dl1 = 3857 };
+static TDD_tdArgs_t tdArgs = { .period = 5000, .dl1 = 3714 };
 
 /******************************************************************************
  Global variables
