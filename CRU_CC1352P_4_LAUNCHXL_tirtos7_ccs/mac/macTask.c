@@ -213,6 +213,8 @@ static void macFnx(UArg arg0, UArg arg1)
 
             if (macEvents & MAC_ENTER_BEACON_STATE_EVT)
             {
+                memset(&gRssiStrct, 0, sizeof(Sensor_rssi_t));
+
                 CP_CLI_cliPrintf("\r\nMAC_ENTER_BEACON_STATE_EVT");
                 CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
                                 CollectorLink_getCollector(&collectorLink);
@@ -508,6 +510,11 @@ bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, sAddrExt_t deviceAddress)
     rsp->hdr.event = MAC_MLME_DISCOVERY_IND;
     memcpy(rsp->deviceAddress, deviceAddress, 8);
     rsp->isLocked = gIsLocked;
+    rsp->rssiRemote.rssiAvg = gRssiStrct.rssiAvg;
+    rsp->rssiRemote.rssiLast = gRssiStrct.rssiLast;
+    rsp->rssiRemote.rssiMax = gRssiStrct.rssiMax;
+    rsp->rssiRemote.rssiMin = gRssiStrct.rssiMin;
+
     return true;
 }
 

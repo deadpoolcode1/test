@@ -120,6 +120,30 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         const FPGA_cbArgs_t cbArgs = { 0 };
         cbFunc(cbArgs);
         return CRS_FAILURE;
+    }
+
+    if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
+               sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
+    {
+        CRS_cbGaneStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
+                    sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
+    {
+        CRS_cbGaneStates.dc_if_low_freq_tx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
+                    sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
+    {
+        CRS_cbGaneStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
+                    sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
+    {
+        CRS_cbGaneStates.uc_if_low_freq_rx = nameVals[0].value;
 
     }
 

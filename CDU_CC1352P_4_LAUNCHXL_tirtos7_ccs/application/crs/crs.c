@@ -24,6 +24,7 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
+CRS_cb_gane_states_t CRS_cbGaneStates;
 
 /******************************************************************************
  Local variables
@@ -49,6 +50,11 @@ static void watchdogClearTimeoutCb(xdc_UArg arg);
  *****************************************************************************/
 void CRS_init()
 {
+    CRS_cbGaneStates.dc_rf_high_freq_hb_rx = 21;
+    CRS_cbGaneStates.dc_if_low_freq_tx = 21;
+    CRS_cbGaneStates.uc_rf_high_freq_hb_tx = 21;
+    CRS_cbGaneStates.uc_if_low_freq_rx = 21;
+
     Watchdog_init();
     /* Open a Watchdog driver instance */
     Watchdog_Params_init(&gParams);
