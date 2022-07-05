@@ -34,6 +34,11 @@
 #define BV(n)               (1 << (n))
 
 #define AGC_TIMEOUT 30000
+#define DC_RF_HIGH_FREQ_HB_RX 21
+#define DC_IF_LOW_FREQ_TX 21
+#define UC_RF_HIGH_FREQ_HB_TX 21
+#define UC_IF_LOW_FREQ_RX 15
+
 
 /******************************************************************************
  Local variables
@@ -131,20 +136,29 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
     // tx_rx: 0 - RX, 1 - TX
     // rf_if: 0 - RF, 1 - IF
     int result;
+    int offset;
     if (rf_if == 0)
     {
 
         if (tx_rx == 0)
         {
+//          RF RX - RX_DET_An (DownLink)
+//          tests the power that enters the RF/IF card (RSSI)
+//          tested
+//          y = -0.023x + 0.2791, R² = 0.9998
+            offset = CRS_cbGainStates.dc_rf_high_freq_hb_rx - DC_RF_HIGH_FREQ_HB_RX;
             voltage = voltage - 279100;
             voltage = voltage / -23000;
-            result = (int)(voltage);
+            result = (int)(voltage) + offset;
         }
         else
         {
+//          RF TX - This is from FEM
+//          not tested yet
+            offset = CRS_cbGainStates.uc_rf_high_freq_hb_tx - UC_RF_HIGH_FREQ_HB_TX;
             voltage = voltage/1000000;
             voltage = log(voltage) * 10.285 + 15.952;
-            result = (int)(voltage);
+            result = (int)(voltage) + offset;
         }
 
     }
@@ -152,16 +166,25 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
     {
         if (tx_rx == 0)
         {
-
-            voltage = voltage - 230772;
-            voltage = voltage / -6933.7;
-            result = (int)(voltage);
+//          tested
+//          IF RX - IF_DET_An_RX (DownLink)
+//          tests the power coming out of the CAT5PA into the cable
+//          y = -0.0187x + 0.5642, R² = 0.9977
+            offset = CRS_cbGainStates.uc_if_low_freq_rx - UC_IF_LOW_FREQ_RX;
+            voltage = voltage - 564200;
+            voltage = voltage / -18700;
+            result = (int)(voltage) + offset;
         }
         else
         {
-            voltage = voltage - 442934;
-            voltage = voltage/ -5737;
-            result = (int)(voltage);
+//          tested
+//          IF TX - IF_DET_An_TX (UpLink)
+//          tests the power coming from the cable
+//          y = -0.0219x + 0.5669 R² = 0.9995
+            offset = CRS_cbGainStates.dc_if_low_freq_tx - DC_IF_LOW_FREQ_TX;
+            voltage = voltage - 566900;
+            voltage = voltage/ -21900;
+            result = (int)(voltage) + offset;
         }
     }
     return result;
@@ -257,61 +280,57 @@ CRS_retVal_t Agc_sample_debug(){
 //        // reset the results array for new results
 //        gAgcResults.adcResults[i] = 0;
 //    }
-    int sum = 0;
+//    int sum = 0;
     AGC_results_t newAgcResults = {0};
 
-
-    for(i=0;i<60;i++){
-        sum += scifTaskData.systemAgc.output.pSamplesMultiChannelRF[i];
-    }
-    adcValue = sum / 60;
-    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-    adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-    newAgcResults.adcMaxResults[0] = adcValueMicroVolt;
-
-
-
+//    for(i=0;i<60;i++){
+//        sum += scifTaskData.systemAgc.output.pSamplesMultiChannelIF[i];
+//    }
+//    adcValue = sum / 60;
+//    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//    adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//    newAgcResults.adcMaxResults[0] = adcValueMicroVolt;
 
     // for each channel, calculate max average
-//    for(i=0;i<channelsNum;i++){
-//        adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
-//        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
-//        adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
-//        adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
-//        for(j=0;j<4;j++){
-//            // modesChannel = number of results in top 20% and bottom 20% for each channel
-//            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
-//
-//            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-//            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-//            if(gAgcTimeout || gAgcResults.adcMaxResults[i+(j*4)] < adcValueMicroVolt){
-//                newAgcResults.adcMaxResults[i+(j*4)] = adcValueMicroVolt;
-//            }
-//            else{
-//                newAgcResults.adcMaxResults[i+(j*4)] = gAgcResults.adcMaxResults[i+(j*4)];
-//            }
-//        }
-//    }
-//    // for each channel, calculate min average
-//    for(i=0;i<channelsNum;i++){
-//        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFRX[i];
-//        adcSums[1] = scifTaskData.systemAgc.output.channelsMinRFTX[i];
-//        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFRX[i];
-//        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFTX[i];
-//        for(j=0;j<4;j++){
-//            // modesChannel = number of results in top 20% and bottom 20% for each channel
-//            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
-//
-//            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-//            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-//            if(gAgcTimeout || gAgcResults.adcMinResults[i+(j*4)] > adcValueMicroVolt){
-//                newAgcResults.adcMinResults[i+(j*4)] = adcValueMicroVolt;
-//            }
-//            else{
-//                newAgcResults.adcMinResults[i+(j*4)] = gAgcResults.adcMinResults[i+(j*4)];
-//            }
-//        }
-//    }
+    for(i=0;i<channelsNum;i++){
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
+        for(j=0;j<4;j++){
+            // modesChannel = number of results in top 20% and bottom 20% for each channel
+            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
+
+            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+            if(gAgcTimeout || gAgcResults.adcMaxResults[i+(j*4)] < adcValueMicroVolt){
+                newAgcResults.adcMaxResults[i+(j*4)] = adcValueMicroVolt;
+            }
+            else{
+                newAgcResults.adcMaxResults[i+(j*4)] = gAgcResults.adcMaxResults[i+(j*4)];
+            }
+        }
+    }
+    // for each channel, calculate min average
+    for(i=0;i<channelsNum;i++){
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFRX[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMinRFTX[i];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFRX[i];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFTX[i];
+        for(j=0;j<4;j++){
+            // modesChannel = number of results in top 20% and bottom 20% for each channel
+            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
+
+            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+            if(gAgcTimeout || gAgcResults.adcMinResults[i+(j*4)] > adcValueMicroVolt){
+                newAgcResults.adcMinResults[i+(j*4)] = adcValueMicroVolt;
+            }
+            else{
+                newAgcResults.adcMinResults[i+(j*4)] = gAgcResults.adcMinResults[i+(j*4)];
+            }
+        }
+    }
     gAgcResults = newAgcResults;
     uint32_t randomNumber;
     TDD_tdArgs_t tdArgs = Tdd_getTdArgs();

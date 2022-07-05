@@ -11,7 +11,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <pattr name="Code prefix"></pattr>
     <pattr name="Default power mode">0</pattr>
     <pattr name="Operating system">TI-RTOS</pattr>
-    <pattr name="Output directory">C:/Users/epc_5/workspace/crs_tirtos_test/crsCollector_CC1352P_4_LAUNCHXL_tirtos_ccs/scif</pattr>
+    <pattr name="Output directory">C:/Users/epc_5/workspace/crs_tirtos_test/CDU_CC1352P_4_LAUNCHXL_tirtos7_ccs/scif</pattr>
     <pattr name="RTC tick interval (16.16 format)">2000</pattr>
     <pattr name="Run-time logging UART RX pin"></pattr>
     <pattr name="Run-time logging UART TX pin"></pattr>
@@ -482,8 +482,16 @@ if(state.tddMode == 2){
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
+            if(cfg.unitType == 1){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
+            if(cfg.unitType == 1){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
             n += 1;
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
@@ -798,8 +806,17 @@ if(state.tddMode == 2){
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
+            // select correct IF channel
+            if(cfg.unitType == 0){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
+            if(cfg.unitType == 0){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
             n += 1;
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
@@ -1036,9 +1053,9 @@ if(state.tddMode == 2){
     //}else{
     //    evhSetupTimer0Trigger(0, 1, 2);
     //}
-//}else{
-//    evhSetupTimer0Trigger(0, 1, 2);
-//}
+    //}else{
+    //    evhSetupTimer0Trigger(0, 1, 2);
+    //}
 }
 evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
@@ -1059,7 +1076,7 @@ evhSetupTimer0Trigger(0, 1, 2);
         <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
-        <tt_struct>output.channelsMinRFRX.[3],output.channelsMinRFTX.[0],output.channelsMinRFTX.[3],state.ledCounter</tt_struct>
+        <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39],output.pSamplesMultiChannelIF.[40],output.pSamplesMultiChannelIF.[41],output.pSamplesMultiChannelIF.[42],output.pSamplesMultiChannelIF.[43],output.pSamplesMultiChannelIF.[44],output.pSamplesMultiChannelIF.[45],output.pSamplesMultiChannelIF.[46],output.pSamplesMultiChannelIF.[47],output.pSamplesMultiChannelIF.[48],output.pSamplesMultiChannelIF.[49],output.pSamplesMultiChannelIF.[50],output.pSamplesMultiChannelIF.[51],output.pSamplesMultiChannelIF.[52],output.pSamplesMultiChannelIF.[53],output.pSamplesMultiChannelIF.[54],output.pSamplesMultiChannelIF.[55],output.pSamplesMultiChannelIF.[56],output.pSamplesMultiChannelIF.[57],output.pSamplesMultiChannelIF.[58],output.pSamplesMultiChannelIF.[59],output.pSamplesMultiChannelIF.[60],output.pSamplesMultiChannelIF.[61],output.pSamplesMultiChannelIF.[62],output.pSamplesMultiChannelIF.[63],output.pSamplesMultiChannelIF.[64],output.pSamplesMultiChannelIF.[65],output.pSamplesMultiChannelIF.[66],output.pSamplesMultiChannelIF.[67],output.pSamplesMultiChannelIF.[68],output.pSamplesMultiChannelIF.[69],output.pSamplesMultiChannelIF.[70],output.pSamplesMultiChannelIF.[71],output.pSamplesMultiChannelIF.[72],output.pSamplesMultiChannelIF.[73],output.pSamplesMultiChannelIF.[74],output.pSamplesMultiChannelIF.[75],output.pSamplesMultiChannelIF.[76],output.pSamplesMultiChannelIF.[77],output.pSamplesMultiChannelIF.[78],output.pSamplesMultiChannelIF.[79]</tt_struct>
         <rtl_struct>cfg.tddMode</rtl_struct>
         <rtl_task_sel en="1" struct_log_list="output,cfg"/>
     </task>

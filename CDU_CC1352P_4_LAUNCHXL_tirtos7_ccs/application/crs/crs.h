@@ -77,9 +77,9 @@ typedef struct
     int uc_rf_high_freq_hb_tx;
     int uc_if_low_freq_rx;
 
-} CRS_cb_gane_states_t;
+} CRS_cb_gain_states_t;
 
-extern CRS_cb_gane_states_t CRS_cbGaneStates;
+extern CRS_cb_gain_states_t CRS_cbGainStates;
 
 /******************************************************************************
  Function Prototypes

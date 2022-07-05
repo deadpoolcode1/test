@@ -2862,6 +2862,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
                 CLI_cliPrintf("\r\nRF RX min %i: %u", channel, agcResults.adcMinResults[channel-1]);
                 CLI_cliPrintf("\r\nIF RX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
                 CLI_cliPrintf("\r\nIF RX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
+//                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
             }
             if (mode == 1 || mode ==2){
                 CLI_cliPrintf("\r\nRF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
