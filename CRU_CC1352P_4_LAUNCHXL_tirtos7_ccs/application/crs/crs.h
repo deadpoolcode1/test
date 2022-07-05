@@ -70,6 +70,17 @@ typedef struct CRS_nameValue
 extern PIN_Handle Crs_pinHandle;
 
 
+typedef struct
+{
+    int dc_rf_high_freq_hb_rx;
+    int dc_if_low_freq_tx;
+    int uc_rf_high_freq_hb_tx;
+    int uc_if_low_freq_rx;
+
+} CRS_cb_gane_states_t;
+
+extern CRS_cb_gane_states_t CRS_cbGaneStates;
+
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/

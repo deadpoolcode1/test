@@ -24,7 +24,7 @@
  Constants and definitions
  *****************************************************************************/
 #define FILENAME_SZ 57
-#define MAX_FILES 125
+#define MAX_FILES 62
 #define CRS_NVS_LINE_BYTES 50
 #define FAT_CACHE_SZ 10
 #define STRLEN_BYTES 32

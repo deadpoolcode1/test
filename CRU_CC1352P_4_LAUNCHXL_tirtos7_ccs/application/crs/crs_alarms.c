@@ -370,7 +370,7 @@ CRS_retVal_t Alarms_init(void *sem)
 #ifndef CLI_SENSOR
     Alarms_TDDLock_Init();
 #endif
-    Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
+//    Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
     return CRS_SUCCESS;
 }
 
