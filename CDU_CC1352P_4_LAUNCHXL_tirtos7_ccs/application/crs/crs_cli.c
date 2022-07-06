@@ -2771,14 +2771,13 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
 
     const char s[2] = " ";
     char *token;
+    uint16_t mode = Agc_getMode();
     char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
     /* get the first token */
     //0xaabb shortAddr
     token = strtok(&(tmpBuff[sizeof(CLI_AGC_DEBUG)]), s);
     uint32_t addrSize = strlen(token);
-
-    //token = strtok(NULL, s);
 
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2804,8 +2803,35 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
            return CRS_SUCCESS;
        }
     #endif
-    //token = strtok(NULL, s);
-    uint32_t channel = Agc_getChannel();
+
+    uint16_t channel = Agc_getChannel();
+    uint16_t rfIf = 0;
+    uint16_t maxMinAvg = 0;
+
+    token = strtok(NULL, s);
+    if(token){
+        if(!channel){
+            channel = strtoul(&(token[2]), NULL, 16);
+        }
+        token = strtok(NULL, s);
+        if(token){
+            if(mode==2){
+                mode = strtoul(&(token[2]), NULL, 16);
+            }
+            token = strtok(NULL, s);
+            if(token){
+                rfIf = strtoul(&(token[2]), NULL, 16);
+                token = strtok(NULL, s);
+                if(token){
+                    maxMinAvg = strtoul(&(token[2]), NULL, 16);
+                    token = strtok(NULL, s);
+                }
+            }
+        }
+    }
+
+
+
     if(!Agc_isInitialized()){
         CRS_retVal_t retStatus = Agc_init();
         if(retStatus == CRS_SUCCESS){
@@ -2821,7 +2847,6 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
     if(Agc_isReady()){
         retStatus = Agc_sample_debug();
         AGC_results_t agcResults;
-        uint16_t mode = Agc_getMode(); // tdd mode
         if(retStatus == CRS_SUCCESS){
             agcResults = Agc_getResults();
         }
@@ -2843,40 +2868,104 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         if(!channel){
             for(i=0;i<4;i++){
                     if(mode == 0 || mode ==2){
-                        CLI_cliPrintf("\r\nRF RX max %i: %u", i+1, agcResults.adcMaxResults[i]);
-                        CLI_cliPrintf("\r\nRF RX avg %i: %u", i+1, agcResults.adcAvgResults[i]);
-                        CLI_cliPrintf("\r\nRF RX min %i: %u", i+1, agcResults.adcMinResults[i]);
-                        CLI_cliPrintf("\r\nIF RX max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
-                        CLI_cliPrintf("\r\nIF RX avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
-                        CLI_cliPrintf("\r\nIF RX min %i: %u", i+1, agcResults.adcMinResults[i+8]);
+                        if(rfIf == 0 || rfIf == 1){
+                            if(maxMinAvg == 0 || maxMinAvg == 1){
+                                CLI_cliPrintf("\r\nRF RX max %i: %u", i+1, agcResults.adcMaxResults[i]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 2){
+                                CLI_cliPrintf("\r\nRF RX avg %i: %u", i+1, agcResults.adcAvgResults[i]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 3){
+                                CLI_cliPrintf("\r\nRF RX min %i: %u", i+1, agcResults.adcMinResults[i]);
+                            }
+                        }
+                        if(rfIf == 0 || rfIf == 2){
+                            if(maxMinAvg == 0 || maxMinAvg == 1){
+                                CLI_cliPrintf("\r\nIF RX max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 2){
+                                CLI_cliPrintf("\r\nIF RX avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 3){
+                                CLI_cliPrintf("\r\nIF RX min %i: %u", i+1, agcResults.adcMinResults[i+8]);
+                            }
+                        }
                     }
                     if (mode == 1 || mode ==2){
-                        CLI_cliPrintf("\r\nRF TX max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
-                        CLI_cliPrintf("\r\nRF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
-                        CLI_cliPrintf("\r\nRF TX min %i: %u", i+1, agcResults.adcMinResults[i+4]);
-                        CLI_cliPrintf("\r\nIF TX max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
-                        CLI_cliPrintf("\r\nIF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
-                        CLI_cliPrintf("\r\nIF TX min %i: %u", i+1, agcResults.adcMinResults[i+12]);
+                        if(rfIf == 0 || rfIf == 1){
+                            if(maxMinAvg == 0 || maxMinAvg == 1){
+                                CLI_cliPrintf("\r\nRF TX max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 2){
+                                CLI_cliPrintf("\r\nRF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 3){
+                                CLI_cliPrintf("\r\nRF TX min %i: %u", i+1, agcResults.adcMinResults[i+4]);
+                            }
+                        }
+                        if(rfIf == 0 || rfIf == 2){
+                            if(maxMinAvg == 0 || maxMinAvg == 1){
+                                CLI_cliPrintf("\r\nIF TX max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 2){
+                                CLI_cliPrintf("\r\nIF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
+                            }
+                            if(maxMinAvg == 0 || maxMinAvg == 3){
+                                CLI_cliPrintf("\r\nIF TX min %i: %u", i+1, agcResults.adcMinResults[i+12]);
+                            }
+                        }
                     }
             }
         }
         else{
             if(mode == 0 || mode ==2){
-                CLI_cliPrintf("\r\nRF RX max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
-                CLI_cliPrintf("\r\nRF RX avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
-                CLI_cliPrintf("\r\nRF RX min %i: %u", channel, agcResults.adcMinResults[channel-1]);
-                CLI_cliPrintf("\r\nIF RX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
-                CLI_cliPrintf("\r\nIF RX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
-                CLI_cliPrintf("\r\nIF RX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
+                if(rfIf == 0 || rfIf == 1){
+                    if(maxMinAvg == 0 || maxMinAvg == 1){
+                        CLI_cliPrintf("\r\nRF RX max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 2){
+                        CLI_cliPrintf("\r\nRF RX avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 3){
+                        CLI_cliPrintf("\r\nRF RX min %i: %u", channel, agcResults.adcMinResults[channel-1]);
+                    }
+                }
+                if(rfIf == 0 || rfIf == 2){
+                    if(maxMinAvg == 0 || maxMinAvg == 1){
+                        CLI_cliPrintf("\r\nIF RX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 2){
+                        CLI_cliPrintf("\r\nIF RX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 3){
+                        CLI_cliPrintf("\r\nIF RX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
+                    }
+                }
 //                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
             }
             if (mode == 1 || mode ==2){
-                CLI_cliPrintf("\r\nRF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nRF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nRF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
-                CLI_cliPrintf("\r\nIF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
-                CLI_cliPrintf("\r\nIF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
-                CLI_cliPrintf("\r\nIF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
+                if(rfIf == 0 || rfIf == 1){
+                    if(maxMinAvg == 0 || maxMinAvg == 1){
+                        CLI_cliPrintf("\r\nRF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 2){
+                        CLI_cliPrintf("\r\nRF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 3){
+                        CLI_cliPrintf("\r\nRF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
+                    }
+                }
+                if(rfIf == 0 || rfIf == 2){
+                    if(maxMinAvg == 0 || maxMinAvg == 1){
+                        CLI_cliPrintf("\r\nIF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 2){
+                        CLI_cliPrintf("\r\nIF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
+                    }
+                    if(maxMinAvg == 0 || maxMinAvg == 3){
+                        CLI_cliPrintf("\r\nIF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
+                    }
+                }
             }
         }
     }
