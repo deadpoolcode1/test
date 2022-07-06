@@ -2844,14 +2844,18 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
             for(i=0;i<4;i++){
                     if(mode == 0 || mode ==2){
                         CLI_cliPrintf("\r\nRF RX max %i: %u", i+1, agcResults.adcMaxResults[i]);
+                        CLI_cliPrintf("\r\nRF RX avg %i: %u", i+1, agcResults.adcAvgResults[i]);
                         CLI_cliPrintf("\r\nRF RX min %i: %u", i+1, agcResults.adcMinResults[i]);
                         CLI_cliPrintf("\r\nIF RX max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
+                        CLI_cliPrintf("\r\nIF RX avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
                         CLI_cliPrintf("\r\nIF RX min %i: %u", i+1, agcResults.adcMinResults[i+8]);
                     }
                     if (mode == 1 || mode ==2){
                         CLI_cliPrintf("\r\nRF TX max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
+                        CLI_cliPrintf("\r\nRF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
                         CLI_cliPrintf("\r\nRF TX min %i: %u", i+1, agcResults.adcMinResults[i+4]);
                         CLI_cliPrintf("\r\nIF TX max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
+                        CLI_cliPrintf("\r\nIF TX avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
                         CLI_cliPrintf("\r\nIF TX min %i: %u", i+1, agcResults.adcMinResults[i+12]);
                     }
             }
@@ -2859,15 +2863,19 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         else{
             if(mode == 0 || mode ==2){
                 CLI_cliPrintf("\r\nRF RX max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
+                CLI_cliPrintf("\r\nRF RX avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
                 CLI_cliPrintf("\r\nRF RX min %i: %u", channel, agcResults.adcMinResults[channel-1]);
                 CLI_cliPrintf("\r\nIF RX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
+                CLI_cliPrintf("\r\nIF RX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
                 CLI_cliPrintf("\r\nIF RX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
 //                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
             }
             if (mode == 1 || mode ==2){
                 CLI_cliPrintf("\r\nRF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
+                CLI_cliPrintf("\r\nRF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
                 CLI_cliPrintf("\r\nRF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
                 CLI_cliPrintf("\r\nIF TX max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
+                CLI_cliPrintf("\r\nIF TX avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
                 CLI_cliPrintf("\r\nIF TX min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
             }
         }

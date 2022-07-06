@@ -45,7 +45,7 @@
  *****************************************************************************/
 static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-                                                                        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}};
+                                                                        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, .adcAvgResults={0}};
 static AGC_max_results_t gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
@@ -283,10 +283,10 @@ CRS_retVal_t Agc_sample_debug(){
 //    int sum = 0;
     AGC_results_t newAgcResults = {0};
 
-//    for(i=0;i<60;i++){
+//    for(i=0;i<40;i++){
 //        sum += scifTaskData.systemAgc.output.pSamplesMultiChannelIF[i];
 //    }
-//    adcValue = sum / 60;
+//    adcValue = sum / 40;
 //    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
 //    adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
 //    newAgcResults.adcMaxResults[0] = adcValueMicroVolt;
@@ -331,6 +331,22 @@ CRS_retVal_t Agc_sample_debug(){
             }
         }
     }
+    // for each channel calculate average
+    for(i=0;i<channelsNum;i++){
+        adcSums[0] = scifTaskData.systemAgc.output.channelsAverage[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsAverage[i+4];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsAverage[i+8];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsAverage[i+12];
+        for(j=0;j<4;j++){
+
+            adcValue = adcSums[j]/ (scifTaskData.systemAgc.cfg.measuresCount*scifTaskData.systemAgc.cfg.samplesNum);
+            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+            newAgcResults.adcAvgResults[i+(j*4)] = adcValueMicroVolt;
+
+        }
+    }
+
     gAgcResults = newAgcResults;
     uint32_t randomNumber;
     TDD_tdArgs_t tdArgs = Tdd_getTdArgs();

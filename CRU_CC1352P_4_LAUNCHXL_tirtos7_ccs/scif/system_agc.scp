@@ -18,7 +18,8 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <task name="System AGC">
         <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
-        <tattr name="BUFFER_SIZE" desc="ADC measures buffer size for each cahnnel" type="expr" content="const" scope="task" min="0" max="65535">20</tattr>
+        <tattr name="AVERAGE_SIZE" type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
+        <tattr name="BUFFER_SIZE" desc="ADC measures buffer size for each cahnnel" type="expr" content="const" scope="task" min="0" max="65535">10</tattr>
         <tattr name="CHANNELS_NUMBER" desc="Number of channels to measure" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="MODES_CHANNEL_SIZE" desc="The number of top 20% results from each channel" type="expr" content="const" scope="task" min="0" max="65535">MODES_SIZE / CHANNELS_NUMBER</tattr>
         <tattr name="MODES_SIZE" desc="Top 20% of results from the samples" type="expr" content="const" scope="task" min="0" max="65535">(MULTI_RESULT_SIZE / 10) * 2</tattr>
@@ -37,6 +38,8 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="input.randomDelayRX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.randomDelayTX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.tddLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsAverage" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsAverageTemp" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -433,8 +436,7 @@ if(state.tddMode == 2){
     S16 b = 0;
     U16 c = 0;
     U16 d = 0;
-    U16 e = 0;
-    U16 f = 0;
+
 
     // 2.7 sample time, 3 pins, 4 channels.
     // 2.7 us for each channel. 2.7 * 4 = 10.8 us sampling rate on PIN.
@@ -492,6 +494,16 @@ if(state.tddMode == 2){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
+
+            b = n;
+            c = output.pSamplesMultiChannelRF[n];
+            d = output.pSamplesMultiChannelIF[n];
+            n = a;
+            output.channelsAverageTemp[n] += c;
+            n = a + 8;
+            output.channelsAverageTemp[n] += d;
+            n = b;
+
             n += 1;
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
@@ -529,12 +541,13 @@ if(state.tddMode == 2){
     }
     // Disable the ADC
     adcDisable();
-
+    U16 e = 0;
+    U16 f = 0;
     a = 0;
     b = 0;
     c = 0;
     n = 0;
-    f = 0;
+
     // get top and bottom 20% of results from samples.
     while(f < cfg.channelsNum){
         while(n<BUFFER_SIZE){
@@ -698,6 +711,15 @@ if(state.tddMode == 2){
             output.minSamplesIFRX[n] = 65535;
             n += 1;
         }
+
+        // clear vaules in average array and transfer them
+        n = 0;
+        while(n<AVERAGE_SIZE){
+            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            output.channelsAverageTemp[n] = 0;
+            n += 1;
+        }
+
         n = 0;
         if(state.tddMode == 0){
             cfg.samplesCount = SAMPLE_SIZE;
@@ -757,8 +779,6 @@ if(state.tddMode == 2){
     S16 b = 0;
     U16 c = 0;
     U16 d = 0;
-    U16 e = 0;
-    U16 f = 0;
 
     // 2.7 sample time, 3 pins, 4 channels.
     // 2.7 us for each channel. 2.7 * 4 = 10.8 us sampling rate on PIN.
@@ -817,6 +837,16 @@ if(state.tddMode == 2){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
+
+            b = n;
+            c = output.pSamplesMultiChannelRF[n];
+            d = output.pSamplesMultiChannelIF[n];
+            n = a + 4;
+            output.channelsAverageTemp[n] += c;
+            n = a + 12;
+            output.channelsAverageTemp[n] += d;
+            n = b;
+
             n += 1;
             a += 1; // select channel with gpio pins
             if(cfg.channelsSwitch == 0){
@@ -854,12 +884,13 @@ if(state.tddMode == 2){
     }
     // Disable the ADC
     adcDisable();
-
+    U16 e = 0;
+    U16 f = 0;
     a = 0;
     b = 0;
     c = 0;
     n = 0;
-    f = 0;
+
     // get top and bottom 20% of results from samples.
     while(f < cfg.channelsNum){
         while(n<BUFFER_SIZE){
@@ -1025,6 +1056,15 @@ if(state.tddMode == 2){
             output.minSamplesIFTX[n] = 65535;
             n += 1;
         }
+
+        // clear vaules in average array and transfer them
+        n = 0;
+        while(n<AVERAGE_SIZE){
+            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            output.channelsAverageTemp[n] = 0;
+            n += 1;
+        }
+
         n = 0;
         cfg.samplesCount = SAMPLE_SIZE;
         rtlLogStructs(BV_RTL_LOG_OUTPUT);
@@ -1076,7 +1116,7 @@ evhSetupTimer0Trigger(0, 1, 2);
         <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
-        <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39],output.pSamplesMultiChannelIF.[40],output.pSamplesMultiChannelIF.[41],output.pSamplesMultiChannelIF.[42],output.pSamplesMultiChannelIF.[43],output.pSamplesMultiChannelIF.[44],output.pSamplesMultiChannelIF.[45],output.pSamplesMultiChannelIF.[46],output.pSamplesMultiChannelIF.[47],output.pSamplesMultiChannelIF.[48],output.pSamplesMultiChannelIF.[49],output.pSamplesMultiChannelIF.[50],output.pSamplesMultiChannelIF.[51],output.pSamplesMultiChannelIF.[52],output.pSamplesMultiChannelIF.[53],output.pSamplesMultiChannelIF.[54],output.pSamplesMultiChannelIF.[55],output.pSamplesMultiChannelIF.[56],output.pSamplesMultiChannelIF.[57],output.pSamplesMultiChannelIF.[58],output.pSamplesMultiChannelIF.[59],output.pSamplesMultiChannelIF.[60],output.pSamplesMultiChannelIF.[61],output.pSamplesMultiChannelIF.[62],output.pSamplesMultiChannelIF.[63],output.pSamplesMultiChannelIF.[64],output.pSamplesMultiChannelIF.[65],output.pSamplesMultiChannelIF.[66],output.pSamplesMultiChannelIF.[67],output.pSamplesMultiChannelIF.[68],output.pSamplesMultiChannelIF.[69],output.pSamplesMultiChannelIF.[70],output.pSamplesMultiChannelIF.[71],output.pSamplesMultiChannelIF.[72],output.pSamplesMultiChannelIF.[73],output.pSamplesMultiChannelIF.[74],output.pSamplesMultiChannelIF.[75],output.pSamplesMultiChannelIF.[76],output.pSamplesMultiChannelIF.[77],output.pSamplesMultiChannelIF.[78],output.pSamplesMultiChannelIF.[79]</tt_struct>
+        <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39]</tt_struct>
         <rtl_struct>cfg.tddMode</rtl_struct>
         <rtl_task_sel en="1" struct_log_list="output,cfg"/>
     </task>
