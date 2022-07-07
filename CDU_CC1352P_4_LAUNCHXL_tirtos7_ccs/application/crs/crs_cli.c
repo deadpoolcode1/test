@@ -4397,11 +4397,13 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
             return CRS_SUCCESS;
         }
     #endif
-
+    uint16_t channel = 0;
     token = strtok(NULL, s);
-    uint16_t channel = strtoul(&(token[2]), NULL, 16);
+    if(token){
+        channel = strtoul(&(token[2]), NULL, 16);
+    }
     CRS_retVal_t retStatus;
-    if (!Agc_isInitialized()){
+    if (!Agc_isInitialized() || channel>4){
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
         return CRS_FAILURE;
