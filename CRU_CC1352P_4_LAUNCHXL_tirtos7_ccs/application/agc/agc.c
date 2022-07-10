@@ -106,7 +106,7 @@ CRS_retVal_t Agc_init(){
 
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
-        dl1 = 1214;
+        dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
     }
@@ -359,7 +359,7 @@ CRS_retVal_t Agc_sample_debug(){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
-        dl1 = 1214;
+        dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
     }
@@ -498,7 +498,7 @@ CRS_retVal_t Agc_sample(){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
-        dl1 = 1214;
+        dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
     }
