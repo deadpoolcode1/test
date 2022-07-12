@@ -46,7 +46,7 @@
 static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, .adcAvgResults={0}};
-static AGC_max_results_t gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0}};
+static AGC_max_results_t gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0xffffffff, 0x0, 0xffffffff,0xffffffff}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
 static int gAgcTimeout=0;
@@ -235,7 +235,12 @@ CRS_retVal_t Agc_setMode(int mode){
         gAgcResults.adcMaxResults[i] = 0;
     }
     for(i=0;i<4;i++){
-        gAgcMaxResults.adcValues[i] = 0;
+        if(i!=1){
+            gAgcMaxResults.adcValues[i] = 0xffffffff;
+        }
+        else{
+            gAgcMaxResults.adcValues[i] = 0x0;
+        }
     }
     //gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0}};
     if(scifTaskData.systemAgc.cfg.tddMode == mode){
@@ -303,12 +308,8 @@ CRS_retVal_t Agc_sample_debug(){
 
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            if(gAgcTimeout || gAgcResults.adcMaxResults[i+(j*4)] < adcValueMicroVolt){
-                newAgcResults.adcMaxResults[i+(j*4)] = adcValueMicroVolt;
-            }
-            else{
-                newAgcResults.adcMaxResults[i+(j*4)] = gAgcResults.adcMaxResults[i+(j*4)];
-            }
+            newAgcResults.adcMaxResults[i+(j*4)] = adcValueMicroVolt;
+
         }
     }
     // for each channel, calculate min average
@@ -323,12 +324,7 @@ CRS_retVal_t Agc_sample_debug(){
 
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            if(gAgcTimeout || gAgcResults.adcMinResults[i+(j*4)] > adcValueMicroVolt){
-                newAgcResults.adcMinResults[i+(j*4)] = adcValueMicroVolt;
-            }
-            else{
-                newAgcResults.adcMinResults[i+(j*4)] = gAgcResults.adcMinResults[i+(j*4)];
-            }
+            newAgcResults.adcMinResults[i+(j*4)] = adcValueMicroVolt;
         }
     }
     // for each channel calculate average
@@ -365,13 +361,15 @@ CRS_retVal_t Agc_sample_debug(){
     }
 
     gAgcReady = 0;
-    if(gAgcTimeout){
-        gAgcTimeout = 0;
-        //CLI_cliPrintf("\r\nTime out");
-        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
-        UtilTimer_start(&agcClkStruct);
 
-    }
+//    if(gAgcTimeout){
+//        gAgcTimeout = 0;
+//        //CLI_cliPrintf("\r\nTime out");
+//        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
+//        UtilTimer_start(&agcClkStruct);
+//
+//    }
+
     // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
     // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
     scifAckAlertEvents();
@@ -390,7 +388,7 @@ CRS_retVal_t Agc_sample(){
         CRS_retVal_t retVal = Tdd_isLocked();
         if( retVal == CRS_TDD_NOT_LOCKED){
             AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A",
-                                                .adcValues={0}};
+                                                .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
             gAgcMaxResults = gAgcNewResults;
             //CLI_cliPrintf("\r\nSC is not locked");
             return retVal;
@@ -398,7 +396,7 @@ CRS_retVal_t Agc_sample(){
     }
     if(!gAgcReady){
         AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A",
-                                            .adcValues={0}};
+                                            .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
         gAgcMaxResults = gAgcNewResults;
         //CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
         return CRS_FAILURE;
@@ -414,30 +412,35 @@ CRS_retVal_t Agc_sample(){
     uint16_t channelsNum = scifTaskData.systemAgc.cfg.channelsNum;
 
     // maxTX , minTX, maxRX, minRX,
-    uint16_t adcSums [4] = {0};
+    //uint16_t adcSums [4] = {0};
+    uint16_t adcSums [4] = {0xffff, 0x0, 0xffff, 0xffff};
 
     // get the highest channel
+    // for some values lower voltage means higher dB
     for(i=0;i<channelsNum;i++){
-        if(adcSums[0] < scifTaskData.systemAgc.output.channelsMaxRFRX[i]){
+        if(adcSums[0] > scifTaskData.systemAgc.output.channelsMaxRFRX[i]){
             adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
         }
         if(adcSums[1] < scifTaskData.systemAgc.output.channelsMaxRFTX[i]){
             adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
         }
-        if(adcSums[2] < scifTaskData.systemAgc.output.channelsMaxIFRX[i]){
+        if(adcSums[2] > scifTaskData.systemAgc.output.channelsMaxIFRX[i]){
             adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
         }
-        if(adcSums[3] < scifTaskData.systemAgc.output.channelsMaxIFTX[i]){
+        if(adcSums[3] > scifTaskData.systemAgc.output.channelsMaxIFTX[i]){
             adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
         }
     }
+
+    adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[0];
+
     if(mode==0 || mode==2){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[0]/ scifTaskData.systemAgc.cfg.modesChannel;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[0] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
         }
@@ -447,7 +450,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[2] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
         }
@@ -455,8 +458,8 @@ CRS_retVal_t Agc_sample(){
     else{
         strcpy(gAgcMaxResults.RfMaxRx, "N/A");
         strcpy(gAgcMaxResults.IfMaxRx, "N/A");
-        gAgcMaxResults.adcValues[0] = 0;
-        gAgcMaxResults.adcValues[2] = 0;
+        gAgcMaxResults.adcValues[0] = 0xffffffff;
+        gAgcMaxResults.adcValues[2] = 0xffffffff;
     }
 
     if(mode==1 || mode==2){
@@ -475,7 +478,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[3] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
         }
@@ -483,8 +486,8 @@ CRS_retVal_t Agc_sample(){
     else{
         strcpy(gAgcMaxResults.RfMaxTx, "N/A");
         strcpy(gAgcMaxResults.IfMaxTx, "N/A");
-        gAgcMaxResults.adcValues[1] = 0;
-        gAgcMaxResults.adcValues[3] = 0;
+        gAgcMaxResults.adcValues[1] = 0x0;
+        gAgcMaxResults.adcValues[3] = 0xffffffff;
     }
 
     uint32_t randomNumber;

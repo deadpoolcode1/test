@@ -417,17 +417,18 @@ CRS_retVal_t Agc_sample(){
     uint16_t adcSums [4] = {0};
 
     // get the highest channel
+    // for some values lower voltage means higher dB
     for(i=0;i<channelsNum;i++){
-        if(adcSums[0] < scifTaskData.systemAgc.output.channelsMaxRFRX[i]){
+        if(adcSums[0] > scifTaskData.systemAgc.output.channelsMaxRFRX[i]){
             adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
         }
         if(adcSums[1] < scifTaskData.systemAgc.output.channelsMaxRFTX[i]){
             adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
         }
-        if(adcSums[2] < scifTaskData.systemAgc.output.channelsMaxIFRX[i]){
+        if(adcSums[2] > scifTaskData.systemAgc.output.channelsMaxIFRX[i]){
             adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
         }
-        if(adcSums[3] < scifTaskData.systemAgc.output.channelsMaxIFTX[i]){
+        if(adcSums[3] > scifTaskData.systemAgc.output.channelsMaxIFTX[i]){
             adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
         }
     }
@@ -437,7 +438,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[0] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
         }
@@ -447,7 +448,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[2] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
         }
@@ -475,7 +476,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[3] < adcValueMicroVolt){
+        if(gAgcTimeout || gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
             sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
         }
