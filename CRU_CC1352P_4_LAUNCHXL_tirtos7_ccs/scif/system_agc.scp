@@ -18,9 +18,9 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <task name="System AGC">
         <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
-        <tattr name="AVERAGE_SIZE" type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
+        <tattr name="AVERAGE_SIZE" desc="The sIze of the array of the sums of the samples results (for each channel sum of samples from downlinkRF, downlinkIF, uplinkRF, uplinkIF)." type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
         <tattr name="BUFFER_SIZE" desc="ADC measures buffer size for each cahnnel" type="expr" content="const" scope="task" min="0" max="65535">10</tattr>
-        <tattr name="CHANNELS_NUMBER" desc="Number of channels to measure" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
+        <tattr name="CHANNELS_NUMBER" desc="Number of channels." type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="MODES_CHANNEL_SIZE" desc="The number of top 20% results from each channel" type="expr" content="const" scope="task" min="0" max="65535">MODES_SIZE / CHANNELS_NUMBER</tattr>
         <tattr name="MODES_SIZE" desc="Top 20% of results from the samples" type="expr" content="const" scope="task" min="0" max="65535">(MULTI_RESULT_SIZE / 10) * 2</tattr>
         <tattr name="MULTI_BUFFER_SIZE" desc="Number of measures from all channels in each  sample cycle" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE * CHANNELS_NUMBER</tattr>
@@ -35,27 +35,27 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="cfg.samplesNum" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="cfg.tddMode" desc="0 - ManualDL 1 - ManualUL 2 - Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayRX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayTX" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayDL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayUL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.tddLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverage" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverageTemp" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFRX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFTX" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFRX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFTX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFRX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFTX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.minSamplesIFRX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesIFTX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFRX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFTX" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.channelsMaxIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesIFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesIFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesRFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesRFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.minSamplesIFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesIFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesRFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesRFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
         <tattr name="output.pSamplesMultiChannelIF" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.pSamplesMultiChannelRF" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
@@ -380,7 +380,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
             </io_usage>
         </resource_ref>
         <sccode name="event0" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
-if(state.tddMode == 2){
+if(state.tddMode == 0){
     if(state.ledCounter == 0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
@@ -408,9 +408,10 @@ if(state.tddMode == 2){
     evhSetupTimer0Trigger(1, 1, 2);
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
-        <sccode name="event1" init_power_mode="0"><![CDATA[if(state.tddMode != 1){
+        <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
+if(state.tddMode != 2){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
-    if(state.tddMode == 2){
+    if(state.tddMode == 0){
         if(state.ledCounter < 25){
             gpioClearOutput(AUXIO_O_RED_LED);
             gpioSetOutput(AUXIO_O_GREEN_LED);
@@ -421,7 +422,7 @@ if(state.tddMode == 2){
     }
     U16 n = 0;
     n = cfg.samplesCount;
-    fwDelayUs(input.randomDelayRX[n]);
+    fwDelayUs(input.randomDelayDL[n]);
 
     // Select ADC input
     //adcSelectGpioInput(AUXIO_A_SENSOR_OUTPUT);
@@ -562,14 +563,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.maxSamplesRFRX[n];
+                d = output.maxSamplesRFDL[n];
                 if(d < a){
-                    output.maxSamplesRFRX[n] = a;
+                    output.maxSamplesRFDL[n] = a;
                     while(0 < b){
                         n -= 1;
                         b -= 1;
-                        e = output.maxSamplesRFRX[n];
-                        output.maxSamplesRFRX[n] = d;
+                        e = output.maxSamplesRFDL[n];
+                        output.maxSamplesRFDL[n] = d;
                         d = e;
                     }
                     b = 0; // so b will be below 0 and loop will break
@@ -583,14 +584,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.minSamplesRFRX[n];
+                d = output.minSamplesRFDL[n];
                 if(d > a){
-                    output.minSamplesRFRX[n] = a;
+                    output.minSamplesRFDL[n] = a;
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
-                        e = output.minSamplesRFRX[n];
-                        output.minSamplesRFRX[n] = d;
+                        e = output.minSamplesRFDL[n];
+                        output.minSamplesRFDL[n] = d;
                         d = e;
                     }
                     b = MODES_CHANNEL_SIZE; // so loop will break
@@ -609,14 +610,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.maxSamplesIFRX[n];
+                d = output.maxSamplesIFDL[n];
                 if(d < a){
-                    output.maxSamplesIFRX[n] = a;
+                    output.maxSamplesIFDL[n] = a;
                     while(0 < b){
                         n -= 1;
                         b -= 1;
-                        e = output.maxSamplesIFRX[n];
-                        output.maxSamplesIFRX[n] = d;
+                        e = output.maxSamplesIFDL[n];
+                        output.maxSamplesIFDL[n] = d;
                         d = e;
                     }
                     b = 0; // so loop will break
@@ -630,14 +631,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.minSamplesIFRX[n];
+                d = output.minSamplesIFDL[n];
                 if(d > a){
-                    output.minSamplesIFRX[n] = a;
+                    output.minSamplesIFDL[n] = a;
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
-                        e = output.minSamplesIFRX[n];
-                        output.minSamplesIFRX[n] = d;
+                        e = output.minSamplesIFDL[n];
+                        output.minSamplesIFDL[n] = d;
                         d = e;
                     }
                     b = MODES_CHANNEL_SIZE; // so loop will break
@@ -670,10 +671,10 @@ if(state.tddMode == 2){
 
         // clear values in Samples arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFRX[n] = 0;
-            output.channelsMaxIFRX[n] = 0;
-            output.channelsMinRFRX[n] = 0;
-            output.channelsMinIFRX[n] = 0;
+            output.channelsMaxRFDL[n] = 0;
+            output.channelsMaxIFDL[n] = 0;
+            output.channelsMinRFDL[n] = 0;
+            output.channelsMinIFDL[n] = 0;
             n +=1;
         }
 
@@ -681,18 +682,18 @@ if(state.tddMode == 2){
         while(f<cfg.channelsNum){
             while(a<MODES_CHANNEL_SIZE){
                 b = n;
-                c = output.maxSamplesRFRX[n];
-                d = output.maxSamplesIFRX[n];
+                c = output.maxSamplesRFDL[n];
+                d = output.maxSamplesIFDL[n];
                 n = f;
-                output.channelsMaxRFRX[n] += c;
-                output.channelsMaxIFRX[n] += d;
+                output.channelsMaxRFDL[n] += c;
+                output.channelsMaxIFDL[n] += d;
 
                 n = b;
-                c = output.minSamplesRFRX[n];
-                d = output.minSamplesIFRX[n];
+                c = output.minSamplesRFDL[n];
+                d = output.minSamplesIFDL[n];
                 n = f;
-                output.channelsMinRFRX[n] += c;
-                output.channelsMinIFRX[n] += d;
+                output.channelsMinRFDL[n] += c;
+                output.channelsMinIFDL[n] += d;
 
                 n = b;
                 a+=1;
@@ -705,10 +706,10 @@ if(state.tddMode == 2){
         // clear values in modes arrays
         n = 0;
         while(n<MODES_SIZE){
-            output.maxSamplesRFRX[n] = 0;
-            output.maxSamplesIFRX[n] = 0;
-            output.minSamplesRFRX[n] = 65535;
-            output.minSamplesIFRX[n] = 65535;
+            output.maxSamplesRFDL[n] = 0;
+            output.maxSamplesIFDL[n] = 0;
+            output.minSamplesRFDL[n] = 65535;
+            output.minSamplesIFDL[n] = 65535;
             n += 1;
         }
 
@@ -721,7 +722,7 @@ if(state.tddMode == 2){
         }
 
         n = 0;
-        if(state.tddMode == 0){
+        if(state.tddMode == 1){
             cfg.samplesCount = SAMPLE_SIZE;
             rtlLogStructs(BV_RTL_LOG_OUTPUT);
             // if interrupt flag is enabled, raises the interrupt for application to process results
@@ -742,7 +743,7 @@ if(state.tddMode == 2){
     //evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
     // for testing
     //fwScheduleTask(1);
-    if(state.tddMode == 2){
+    if(state.tddMode == 0){
         evhSetupGpioTrigger(2, AUXIO_I_TDD_SYNCH, 0, EVH_GPIO_TRIG_ON_EDGE);
         evhSetupTimer0Trigger(0, 100, 2);
     }else{
@@ -751,9 +752,10 @@ if(state.tddMode == 2){
 }else{
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
-        <sccode name="event2" init_power_mode="0"><![CDATA[if(state.tddMode > 0){
+        <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
+if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
-    if(state.tddMode == 2){
+    if(state.tddMode == 0){
         if(state.ledCounter > 25){
             gpioClearOutput(AUXIO_O_GREEN_LED);
             gpioSetOutput(AUXIO_O_RED_LED);
@@ -764,7 +766,7 @@ if(state.tddMode == 2){
     }
     U16 n = 0;
     n = cfg.samplesCount;
-    fwDelayUs(input.randomDelayTX[n]);
+    fwDelayUs(input.randomDelayUL[n]);
 
     // Select ADC input
     //adcSelectGpioInput(AUXIO_A_SENSOR_OUTPUT);
@@ -905,14 +907,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.maxSamplesRFTX[n];
+                d = output.maxSamplesRFUL[n];
                 if(d < a){
-                    output.maxSamplesRFTX[n] = a;
+                    output.maxSamplesRFUL[n] = a;
                     while(0 < b){
                         n -= 1;
                         b -= 1;
-                        e = output.maxSamplesRFTX[n];
-                        output.maxSamplesRFTX[n] = d;
+                        e = output.maxSamplesRFUL[n];
+                        output.maxSamplesRFUL[n] = d;
                         d = e;
                     }
                     b = 0; // so b will be below 0 and loop will break
@@ -926,14 +928,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.minSamplesRFTX[n];
+                d = output.minSamplesRFUL[n];
                 if(d > a){
-                    output.minSamplesRFTX[n] = a;
+                    output.minSamplesRFUL[n] = a;
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
-                        e = output.minSamplesRFTX[n];
-                        output.minSamplesRFTX[n] = d;
+                        e = output.minSamplesRFUL[n];
+                        output.minSamplesRFUL[n] = d;
                         d = e;
                     }
                     b = MODES_CHANNEL_SIZE; // so loop will break
@@ -952,14 +954,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.maxSamplesIFTX[n];
+                d = output.maxSamplesIFUL[n];
                 if(d < a){
-                    output.maxSamplesIFTX[n] = a;
+                    output.maxSamplesIFUL[n] = a;
                     while(0 < b){
                         n -= 1;
                         b -= 1;
-                        e = output.maxSamplesIFTX[n];
-                        output.maxSamplesIFTX[n] = d;
+                        e = output.maxSamplesIFUL[n];
+                        output.maxSamplesIFUL[n] = d;
                         d = e;
                     }
                     b = 0; // so loop will break
@@ -973,14 +975,14 @@ if(state.tddMode == 2){
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
-                d = output.minSamplesIFTX[n];
+                d = output.minSamplesIFUL[n];
                 if(d > a){
-                    output.minSamplesIFTX[n] = a;
+                    output.minSamplesIFUL[n] = a;
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
-                        e = output.minSamplesIFTX[n];
-                        output.minSamplesIFTX[n] = d;
+                        e = output.minSamplesIFUL[n];
+                        output.minSamplesIFUL[n] = d;
                         d = e;
                     }
                     b = MODES_CHANNEL_SIZE; // so loop will break
@@ -996,7 +998,7 @@ if(state.tddMode == 2){
 
     }
 
-    if(state.tddMode == 1){
+    if(state.tddMode == 2){
         cfg.samplesCount -= 1;
     }
 
@@ -1015,10 +1017,10 @@ if(state.tddMode == 2){
 
         // clear values in modes arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFTX[n] = 0;
-            output.channelsMaxIFTX[n] = 0;
-            output.channelsMinRFTX[n] = 0;
-            output.channelsMinIFTX[n] = 0;
+            output.channelsMaxRFUL[n] = 0;
+            output.channelsMaxIFUL[n] = 0;
+            output.channelsMinRFUL[n] = 0;
+            output.channelsMinIFUL[n] = 0;
             n +=1;
         }
 
@@ -1026,18 +1028,18 @@ if(state.tddMode == 2){
         while(f<cfg.channelsNum){
             while(a<MODES_CHANNEL_SIZE){
                 b = n;
-                c = output.maxSamplesRFTX[n];
-                d = output.maxSamplesIFTX[n];
+                c = output.maxSamplesRFUL[n];
+                d = output.maxSamplesIFUL[n];
                 n = f;
-                output.channelsMaxRFTX[n] += c;
-                output.channelsMaxIFTX[n] += d;
+                output.channelsMaxRFUL[n] += c;
+                output.channelsMaxIFUL[n] += d;
 
                 n = b;
-                c = output.minSamplesRFTX[n];
-                d = output.minSamplesIFTX[n];
+                c = output.minSamplesRFUL[n];
+                d = output.minSamplesIFUL[n];
                 n = f;
-                output.channelsMinRFTX[n] += c;
-                output.channelsMinIFTX[n] += d;
+                output.channelsMinRFUL[n] += c;
+                output.channelsMinIFUL[n] += d;
 
                 n = b;
                 a+=1;
@@ -1050,10 +1052,10 @@ if(state.tddMode == 2){
         // clear values in modes arrays
         n = 0;
         while(n<MODES_SIZE){
-            output.maxSamplesRFTX[n] = 0;
-            output.maxSamplesIFTX[n] = 0;
-            output.minSamplesRFTX[n] = 65535;
-            output.minSamplesIFTX[n] = 65535;
+            output.maxSamplesRFUL[n] = 0;
+            output.maxSamplesIFUL[n] = 0;
+            output.minSamplesRFUL[n] = 65535;
+            output.minSamplesIFUL[n] = 65535;
             n += 1;
         }
 

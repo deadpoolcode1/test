@@ -46,7 +46,7 @@
 static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, .adcAvgResults={0}};
-static AGC_max_results_t gAgcMaxResults  = {.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A", .adcValues={0xffffffff, 0x0, 0xffffffff,0xffffffff}};
+static AGC_max_results_t gAgcMaxResults  = {.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A", .adcValues={0xffffffff, 0x0, 0xffffffff,0xffffffff}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
 static int gAgcTimeout=0;
@@ -105,10 +105,10 @@ CRS_retVal_t Agc_init(){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
 
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
         dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
     }
     int16_t mode = Agc_getMode();
     scifTaskData.systemAgc.cfg.tddMode = mode;
@@ -253,6 +253,9 @@ uint16_t Agc_getMode(){
     char envFile[4096] = { 0 };
     Thresh_read("SensorMode", envFile);
     uint16_t mode = strtol(envFile + strlen("SensorMode="), NULL, 16);
+    if (mode > 2){
+        mode = 2;
+    }
     //return scifTaskData.systemAgc.cfg.tddMode;
     return mode;
 }
@@ -260,7 +263,7 @@ uint16_t Agc_getMode(){
 CRS_retVal_t Agc_sample_debug(){
     // Check for TDD open and lock
     int mode = scifTaskData.systemAgc.cfg.tddMode;
-    if(mode == 2){
+    if(mode == 0){
         CRS_retVal_t retVal = Tdd_isLocked();
         if( retVal == CRS_TDD_NOT_LOCKED){
             return retVal;
@@ -298,10 +301,10 @@ CRS_retVal_t Agc_sample_debug(){
 
     // for each channel, calculate max average
     for(i=0;i<channelsNum;i++){
-        adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
-        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
-        adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
-        adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFDL[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFDL[i];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFUL[i];
         for(j=0;j<4;j++){
             // modesChannel = number of results in top 20% and bottom 20% for each channel
             adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
@@ -314,10 +317,10 @@ CRS_retVal_t Agc_sample_debug(){
     }
     // for each channel, calculate min average
     for(i=0;i<channelsNum;i++){
-        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFRX[i];
-        adcSums[1] = scifTaskData.systemAgc.output.channelsMinRFTX[i];
-        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFRX[i];
-        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFTX[i];
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFDL[i];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMinRFUL[i];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFDL[i];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
         for(j=0;j<4;j++){
             // modesChannel = number of results in top 20% and bottom 20% for each channel
             adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
@@ -354,10 +357,10 @@ CRS_retVal_t Agc_sample_debug(){
     for(i=0;i<scifTaskData.systemAgc.cfg.samplesCount;i++){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
         dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
     }
 
     gAgcReady = 0;
@@ -384,10 +387,10 @@ CRS_retVal_t Agc_sample_debug(){
 CRS_retVal_t Agc_sample(){
     // Check for TDD open and lock
     int mode = scifTaskData.systemAgc.cfg.tddMode;
-    if(mode == 2){
+    if(mode == 0){
         CRS_retVal_t retVal = Tdd_isLocked();
         if( retVal == CRS_TDD_NOT_LOCKED){
-            AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A",
+            AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A",
                                                 .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
             gAgcMaxResults = gAgcNewResults;
             //CLI_cliPrintf("\r\nSC is not locked");
@@ -395,7 +398,7 @@ CRS_retVal_t Agc_sample(){
         }
     }
     if(!gAgcReady){
-        AGC_max_results_t gAgcNewResults  ={.IfMaxRx="N/A", .IfMaxTx="N/A", .RfMaxRx="N/A", .RfMaxTx="N/A",
+        AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A",
                                             .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
         gAgcMaxResults = gAgcNewResults;
         //CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
@@ -418,23 +421,23 @@ CRS_retVal_t Agc_sample(){
     // get the highest channel
     // for some values lower voltage means higher dB
     for(i=0;i<channelsNum;i++){
-        if(adcSums[0] > scifTaskData.systemAgc.output.channelsMaxRFRX[i]){
-            adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[i];
+        if(adcSums[0] > scifTaskData.systemAgc.output.channelsMaxRFDL[i]){
+            adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFDL[i];
         }
-        if(adcSums[1] < scifTaskData.systemAgc.output.channelsMaxRFTX[i]){
-            adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFTX[i];
+        if(adcSums[1] < scifTaskData.systemAgc.output.channelsMaxRFUL[i]){
+            adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
         }
-        if(adcSums[2] > scifTaskData.systemAgc.output.channelsMaxIFRX[i]){
-            adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFRX[i];
+        if(adcSums[2] > scifTaskData.systemAgc.output.channelsMaxIFDL[i]){
+            adcSums[2] = scifTaskData.systemAgc.output.channelsMaxIFDL[i];
         }
-        if(adcSums[3] > scifTaskData.systemAgc.output.channelsMaxIFTX[i]){
-            adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFTX[i];
+        if(adcSums[3] > scifTaskData.systemAgc.output.channelsMaxIFUL[i]){
+            adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFUL[i];
         }
     }
 
-    adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFRX[0];
+    adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFDL[0];
 
-    if(mode==0 || mode==2){
+    if(mode==0 || mode==1){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[0]/ scifTaskData.systemAgc.cfg.modesChannel;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
@@ -443,9 +446,9 @@ CRS_retVal_t Agc_sample(){
         if(gAgcTimeout || gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
         gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
-            sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
+            sprintf(gAgcMaxResults.RfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
         #else
-            sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
+            sprintf(gAgcMaxResults.RfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
         #endif
         }
 
@@ -457,20 +460,20 @@ CRS_retVal_t Agc_sample(){
         if(gAgcTimeout || gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
-                sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
+                sprintf(gAgcMaxResults.IfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
             #else
-                sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
+                sprintf(gAgcMaxResults.IfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
             #endif
         }
     }
     else{
-        strcpy(gAgcMaxResults.RfMaxRx, "N/A");
-        strcpy(gAgcMaxResults.IfMaxRx, "N/A");
+        strcpy(gAgcMaxResults.RfMaxDL, "N/A");
+        strcpy(gAgcMaxResults.IfMaxDL, "N/A");
         gAgcMaxResults.adcValues[0] = 0xffffffff;
         gAgcMaxResults.adcValues[2] = 0xffffffff;
     }
 
-    if(mode==1 || mode==2){
+    if(mode==0 || mode==2){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[1]/ scifTaskData.systemAgc.cfg.modesChannel;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
@@ -479,9 +482,9 @@ CRS_retVal_t Agc_sample(){
         if(gAgcTimeout || gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
             gAgcMaxResults.adcValues[1] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
-                sprintf(gAgcMaxResults.RfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
+                sprintf(gAgcMaxResults.RfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
             #else
-                sprintf(gAgcMaxResults.RfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
+                sprintf(gAgcMaxResults.RfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
             #endif
         }
 
@@ -493,15 +496,15 @@ CRS_retVal_t Agc_sample(){
         if(gAgcTimeout || gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
-                sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
+                sprintf(gAgcMaxResults.IfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
             #else
-                sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
+                sprintf(gAgcMaxResults.IfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
             #endif
         }
     }
     else{
-        strcpy(gAgcMaxResults.RfMaxTx, "N/A");
-        strcpy(gAgcMaxResults.IfMaxTx, "N/A");
+        strcpy(gAgcMaxResults.RfMaxUL, "N/A");
+        strcpy(gAgcMaxResults.IfMaxUL, "N/A");
         gAgcMaxResults.adcValues[1] = 0x0;
         gAgcMaxResults.adcValues[3] = 0xffffffff;
     }
@@ -516,10 +519,10 @@ CRS_retVal_t Agc_sample(){
     for(i=0;i<scifTaskData.systemAgc.cfg.samplesCount;i++){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayTX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
         dl1 = 1286;
         randomNumber = (Random_getNumber() % (dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayRX[i] = randomNumber;
+        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
     }
 
     gAgcReady = 0;

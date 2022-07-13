@@ -17,10 +17,10 @@ typedef struct
 
 typedef struct
 {
-    char RfMaxRx[10];
-    char RfMaxTx[10];
-    char IfMaxRx[10];
-    char IfMaxTx[10];
+    char RfMaxDL[10];
+    char RfMaxUL[10];
+    char IfMaxDL[10];
+    char IfMaxUL[10];
     uint32_t adcValues[4];
 } AGC_max_results_t;
 
