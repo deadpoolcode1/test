@@ -334,6 +334,8 @@ CRS_retVal_t Alarms_process(void)
 
         AGC_max_results_t agcResults = Agc_getMaxResults();
         // agcResults.adcValues [] - 0 RfMaxRx, 1 RfMaxTx, 2 IfMaxRx, 3 IfMaxTx
+
+        #ifndef CLI_SENSOR
         Thresh_read("DLMaxInputPower", envFile);
         int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
         NULL, 10);
@@ -349,7 +351,7 @@ CRS_retVal_t Alarms_process(void)
         Thresh_read("ULMaxOutputPower", envFile);
         int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
         NULL, 10);
-        if (dlMaxInputPower < Agc_convert(agcResults.adcValues[1], 1, 0))
+        if (ulMaxOutputPower < Agc_convert(agcResults.adcValues[1], 1, 0))
         {
             Alarms_setAlarm(ULMaxOutputPower);
         }
@@ -357,23 +359,23 @@ CRS_retVal_t Alarms_process(void)
         {
             Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
         }
-
+        #else
         Thresh_read("ULMaxInputPower", envFile);
         int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
         NULL, 10);
-        if (dlMaxInputPower < Agc_convert(agcResults.adcValues[2], 0, 1))
+        if (ulMaxInputPower < Agc_convert(agcResults.adcValues[1], 0, 0))
         {
             Alarms_setAlarm(ULMaxInputPower);
         }
         else
         {
-            Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
+            Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
         }
 
         Thresh_read("DLMaxOutputPower", envFile);
         int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
         NULL, 10);
-        if (dlMaxInputPower < Agc_convert(agcResults.adcValues[1], 1, 1))
+        if (dlMaxOutputPower < Agc_convert(agcResults.adcValues[0], 1, 0))
         {
             Alarms_setAlarm(DLMaxOutputPower);
         }
@@ -381,7 +383,7 @@ CRS_retVal_t Alarms_process(void)
         {
             Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
         }
-
+        #endif
     }
 
 

@@ -413,7 +413,7 @@ CRS_retVal_t Agc_sample(){
 
     // maxTX , minTX, maxRX, minRX,
     //uint16_t adcSums [4] = {0};
-    uint16_t adcSums [4] = {0xffff, 0x0, 0xffff, 0xffff};
+    uint32_t adcSums [4] = {0xffffffff, 0x0, 0xffffffff, 0xffffffff};
 
     // get the highest channel
     // for some values lower voltage means higher dB
@@ -441,8 +441,12 @@ CRS_retVal_t Agc_sample(){
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
         if(gAgcTimeout || gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
-            gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
+        gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
+        #ifndef CLI_SENSOR
             sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
+        #else
+            sprintf(gAgcMaxResults.RfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
+        #endif
         }
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
@@ -452,7 +456,11 @@ CRS_retVal_t Agc_sample(){
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
         if(gAgcTimeout || gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
-            sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
+            #ifndef CLI_SENSOR
+                sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
+            #else
+                sprintf(gAgcMaxResults.IfMaxRx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
+            #endif
         }
     }
     else{
@@ -470,7 +478,11 @@ CRS_retVal_t Agc_sample(){
         //newAgcResults.RfMaxTx = adcValueMicroVolt;
         if(gAgcTimeout || gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
             gAgcMaxResults.adcValues[1] = adcValueMicroVolt;
-            sprintf(gAgcMaxResults.RfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
+            #ifndef CLI_SENSOR
+                sprintf(gAgcMaxResults.RfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
+            #else
+                sprintf(gAgcMaxResults.RfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
+            #endif
         }
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
@@ -480,7 +492,11 @@ CRS_retVal_t Agc_sample(){
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
         if(gAgcTimeout || gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
-            sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
+            #ifndef CLI_SENSOR
+                sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
+            #else
+                sprintf(gAgcMaxResults.IfMaxTx,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
+            #endif
         }
     }
     else{
