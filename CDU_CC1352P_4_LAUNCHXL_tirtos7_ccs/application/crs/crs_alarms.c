@@ -347,7 +347,7 @@ CRS_retVal_t Alarms_process(void)
         {
             Alarms_clearAlarm(DLMaxInputPower, ALARM_INACTIVE);
         }
-
+        memset(envFile, 0, 4096);
         Thresh_read("ULMaxOutputPower", envFile);
         int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
         NULL, 10);
@@ -371,7 +371,7 @@ CRS_retVal_t Alarms_process(void)
         {
             Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
         }
-
+        memset(envFile, 0, 4096);
         Thresh_read("DLMaxOutputPower", envFile);
         int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
         NULL, 10);

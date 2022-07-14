@@ -156,8 +156,8 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
 //          RF TX - This is from FEM
 //          not tested yet
             offset = CRS_cbGainStates.uc_rf_high_freq_hb_tx - UC_RF_HIGH_FREQ_HB_TX;
-            voltage = voltage/1000000;
-            voltage = log(voltage) * 10.285 + 15.952;
+            //voltage = voltage/1000000;
+            voltage = log(voltage) * 10.094 - 121.61;
             result = (int)(voltage) + offset;
         }
 
@@ -435,7 +435,9 @@ CRS_retVal_t Agc_sample(){
         }
     }
 
+    // for now take only for channel 1 for testing
     adcSums[0] = scifTaskData.systemAgc.output.channelsMaxRFDL[0];
+    adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
 
     if(mode==0 || mode==1){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
