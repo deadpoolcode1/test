@@ -334,12 +334,12 @@ CRS_retVal_t Alarms_process(void)
 
         AGC_max_results_t agcResults = Agc_getMaxResults();
         // agcResults.adcValues [] - 0 RfMaxRx, 1 RfMaxTx, 2 IfMaxRx, 3 IfMaxTx
-
+        int mode = Agc_getMode();
         #ifndef CLI_SENSOR
         Thresh_read("DLMaxInputPower", envFile);
         int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
         NULL, 10);
-        if (dlMaxInputPower < Agc_convert(agcResults.adcValues[0], 0, 0))
+        if ((dlMaxInputPower < Agc_convert(agcResults.adcValues[0], 0, 0)) && (mode==1))
         {
             Alarms_setAlarm(DLMaxInputPower);
         }
@@ -351,7 +351,7 @@ CRS_retVal_t Alarms_process(void)
         Thresh_read("ULMaxOutputPower", envFile);
         int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
         NULL, 10);
-        if (ulMaxOutputPower < Agc_convert(agcResults.adcValues[1], 1, 0))
+        if ((ulMaxOutputPower < Agc_convert(agcResults.adcValues[1], 1, 0)) && (mode==2) )
         {
             Alarms_setAlarm(ULMaxOutputPower);
         }
@@ -363,7 +363,7 @@ CRS_retVal_t Alarms_process(void)
         Thresh_read("ULMaxInputPower", envFile);
         int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
         NULL, 10);
-        if (ulMaxInputPower < Agc_convert(agcResults.adcValues[1], 0, 0))
+        if ((ulMaxInputPower < Agc_convert(agcResults.adcValues[1], 0, 0)) && (mode==2) )
         {
             Alarms_setAlarm(ULMaxInputPower);
         }
@@ -375,7 +375,7 @@ CRS_retVal_t Alarms_process(void)
         Thresh_read("DLMaxOutputPower", envFile);
         int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
         NULL, 10);
-        if (dlMaxOutputPower < Agc_convert(agcResults.adcValues[0], 1, 0))
+        if ((dlMaxOutputPower < Agc_convert(agcResults.adcValues[0], 1, 0)) && (mode==1)  )
         {
             Alarms_setAlarm(DLMaxOutputPower);
         }
