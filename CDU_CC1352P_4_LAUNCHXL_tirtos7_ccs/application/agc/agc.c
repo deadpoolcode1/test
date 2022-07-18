@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include "application/crs/crs.h"
 #include "agc.h"
+#include "application/crs/crs_agc_management.h"
+#include "application/crs/crs_alarms.h"
 #include "application/crs/crs_tdd.h"
 #include "application/util_timer.h"
 #include "application/crs/crs_cli.h"
@@ -35,7 +37,7 @@
 
 #define BV(n)               (1 << (n))
 
-#define AGC_TIMEOUT 30000
+#define AGC_TIMEOUT 3000
 #define DC_RF_HIGH_FREQ_HB_RX 21
 #define DC_IF_LOW_FREQ_TX 21
 #define UC_RF_HIGH_FREQ_HB_TX 21
@@ -59,6 +61,7 @@ static void* gSem;
 static uint16_t Agc_events = 0;
 
 static void processAgcTimeoutCallback(UArg a0);
+static void processAgcSample();
 
 void scTaskAlertCallback(void) {
     //Log_info0("callback");
@@ -142,8 +145,66 @@ void Agc_process(void)
     if (Agc_events & AGC_GET_SAMPLE_EVT)
        {
         Agc_sample();
+
+
+        char envFile[4096]={0};
+        AGC_max_results_t agcResults = Agc_getMaxResults();
+        // agcResults.adcValues [] - 0 RfMaxRx, 1 RfMaxTx, 2 IfMaxRx, 3 IfMaxTx
+        int mode = Agc_getMode();
+        #ifndef CLI_SENSOR
+        Thresh_read("DLMaxInputPower", envFile);
+        int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
+        NULL, 10);
+        if ((dlMaxInputPower < Agc_convert(agcResults.adcValues[0], 0, 0)) && (mode==1))
+        {
+            Alarms_setAlarm(DLMaxInputPower);
+        }
+        else
+        {
+            Alarms_clearAlarm(DLMaxInputPower, ALARM_INACTIVE);
+        }
+        memset(envFile, 0, 4096);
+        Thresh_read("ULMaxOutputPower", envFile);
+        int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
+        NULL, 10);
+        if ((ulMaxOutputPower < Agc_convert(agcResults.adcValues[1], 1, 0)) && (mode==2) )
+        {
+            Alarms_setAlarm(ULMaxOutputPower);
+        }
+        else
+        {
+            Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
+        }
+        #else
+        Thresh_read("ULMaxInputPower", envFile);
+        int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
+        NULL, 10);
+        if ((ulMaxInputPower < Agc_convert(agcResults.adcValues[1], 0, 0)) && (mode==2) )
+        {
+            Alarms_setAlarm(ULMaxInputPower);
+        }
+        else
+        {
+            Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
+        }
+        memset(envFile, 0, 4096);
+        Thresh_read("DLMaxOutputPower", envFile);
+        int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
+        NULL, 10);
+        if ((dlMaxOutputPower < Agc_convert(agcResults.adcValues[0], 1, 0)) && (mode==1)  )
+        {
+            Alarms_setAlarm(DLMaxOutputPower);
+        }
+        else
+        {
+            Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
+        }
+        #endif
+
+
         UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
                UtilTimer_start(&agcClkStruct);
+               AGCM_finishedTask();
            /* Clear the event */
            Util_clearEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
        }
@@ -417,11 +478,12 @@ CRS_retVal_t Agc_sample(){
         }
     }
     if(!gAgcReady){
-        AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A",
-                                            .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
-        gAgcMaxResults = gAgcNewResults;
-        //CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
-        return CRS_FAILURE;
+//        AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A",
+//                                            .adcValues={0xffffffff, 0x0, 0xffffffff, 0xffffffff}};
+//        gAgcMaxResults = gAgcNewResults;
+//        //CLI_cliPrintf("\r\nSC is not ready. sample is: %u", scifTaskData.systemAgc.cfg.samplesCount);
+//        return CRS_FAILURE;
+        return CRS_SUCCESS;
     }
     // Clear the ALERT interrupt source
     scifClearAlertIntSource();
@@ -464,28 +526,28 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
-        if(gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
+        //if(gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
         gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
             sprintf(gAgcMaxResults.RfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
         #else
             sprintf(gAgcMaxResults.RfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
         #endif
-        }
+        //}
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[2]/ scifTaskData.systemAgc.cfg.modesChannel;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
-        if(gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
+        //if(gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.IfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
             #else
                 sprintf(gAgcMaxResults.IfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
             #endif
-        }
+        //}
     }
     else{
         strcpy(gAgcMaxResults.RfMaxDL, "N/A");
@@ -500,28 +562,28 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxTx = adcValueMicroVolt;
-        if( gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
+        //if( gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
             gAgcMaxResults.adcValues[1] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.RfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
             #else
                 sprintf(gAgcMaxResults.RfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
             #endif
-        }
+        //}
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[3]/ scifTaskData.systemAgc.cfg.modesChannel;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
-        if( gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
+        //if( gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.IfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
             #else
                 sprintf(gAgcMaxResults.IfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
             #endif
-        }
+        //}
     }
     else{
         strcpy(gAgcMaxResults.RfMaxUL, "N/A");
@@ -613,12 +675,18 @@ CRS_retVal_t Agc_getControlPins(int mode, int channel, AGC_ctrlPins_t* pins){
 
 static void processAgcTimeoutCallback(UArg a0)
 {
+    AGCM_runTask(processAgcSample);
+
+    gAgcTimeout = true;
+}
+
+static void processAgcSample()
+{
     Util_setEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
 
        /* Wake up the application thread when it waits for clock event */
        Semaphore_post(gSem);
 
-    gAgcTimeout = true;
 }
 
 #ifdef CLI_SENSOR

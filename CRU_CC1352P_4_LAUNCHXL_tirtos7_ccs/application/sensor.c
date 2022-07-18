@@ -167,7 +167,6 @@ void Sensor_init( )
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
-    Agc_init(sem);
     OadClient_init(sem);
     Ssf_crsInitScript();
 }
@@ -268,6 +267,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
 //    Alarms_init(sem);
+    Agc_init(sem);
 
 //    if (CONFIG_AUTO_START)
 //    {

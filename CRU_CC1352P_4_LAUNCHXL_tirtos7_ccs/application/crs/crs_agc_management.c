@@ -63,6 +63,8 @@ bool AGCM_finishedTask()
     bool res = isThereNextTask();
     if (res == false)
     {
+        gIsTaskRunnig = false;
+
         return true;
     }
 
