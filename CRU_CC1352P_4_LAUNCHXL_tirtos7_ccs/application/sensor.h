@@ -25,6 +25,7 @@
 /*! Event ID - Start the device in the network */
 #define SENSOR_START_EVT               0x0001
 #define SENSOR_UI_INPUT_EVT               0x0002
+#define SENSOR_CRS_REQUEST_EVT               0x0004
 
 /******************************************************************************
  Structures

@@ -42,6 +42,8 @@
 #include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
+#include "application/crs/crs_agc_management.h"
+
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
 #include "crs_env.h"
@@ -2736,14 +2738,14 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
        }
     #endif
     //token = strtok(NULL, s);
-    if(!Agc_isInitialized()){
-        CRS_retVal_t retStatus = Agc_init();
-        if(retStatus != CRS_SUCCESS){
-            CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-            CLI_startREAD();
-            return retStatus;
-        }
-    }
+//    if(!Agc_isInitialized()){
+//        CRS_retVal_t retStatus = Agc_init();
+//        if(retStatus != CRS_SUCCESS){
+//            CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
+//            CLI_startREAD();
+//            return retStatus;
+//        }
+//    }
     CRS_retVal_t retStatus = Agc_sample();
     if(retStatus != CRS_SUCCESS){
         CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
@@ -2832,17 +2834,17 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
 
 
 
-    if(!Agc_isInitialized()){
-        CRS_retVal_t retStatus = Agc_init();
-        if(retStatus == CRS_SUCCESS){
-            CLI_cliPrintf("\r\nSensorStatus=INIT");
-        }
-        else{
-             CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-        }
-        CLI_startREAD();
-        return retStatus;
-    }
+//    if(!Agc_isInitialized()){
+//        CRS_retVal_t retStatus = Agc_init();
+//        if(retStatus == CRS_SUCCESS){
+//            CLI_cliPrintf("\r\nSensorStatus=INIT");
+//        }
+//        else{
+//             CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
+//        }
+//        CLI_startREAD();
+//        return retStatus;
+//    }
     CRS_retVal_t retStatus =  CRS_SUCCESS;
     if(Agc_isReady()){
         retStatus = Agc_sample_debug();
@@ -4742,7 +4744,6 @@ CRS_retVal_t CLI_startREAD()
         Sensor_sendCrsRsp(gDstAddr, gRspBuff);
         memset(gRspBuff, 0, RSP_BUFFER_SIZE);
         gRspBuffIdx = 0;
-
         return CRS_SUCCESS;
     }
 
@@ -4772,6 +4773,7 @@ CRS_retVal_t CLI_startREAD()
 //        UART_read(gUartHandle, gUartRxBuffer, 1);
 
     }
+    AGCM_finishedTask();
 
     return CRS_SUCCESS;
 
@@ -5101,9 +5103,9 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
             UART_read(gUartHandle, gUartRxBuffer, 1);
 
 #ifndef CLI_SENSOR
-            Csf_processCliUpdate();
+            AGCM_runTask(Csf_processCliUpdate);
 #else
-            Ssf_processCliUpdate();
+            AGCM_runTask(Ssf_processCliUpdate);
 #endif
 
         }

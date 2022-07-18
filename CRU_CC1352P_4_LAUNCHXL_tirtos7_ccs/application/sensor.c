@@ -29,6 +29,7 @@
 #include "crs/crs_thresholds.h"
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
+#include "crs/crs_agc_management.h"
 #include "easylink/EasyLink.h"
 #include "application/crs/crs_alarms.h"
 #include "oad/native_oad/crs_oad_client.h"
@@ -55,6 +56,14 @@ typedef struct _Sensor_rssi_t
 
 } Sensor_rssi_t;
 
+typedef struct
+{
+    uint8_t * msdup;
+
+    uint16_t srcShortAddr;
+
+} Sensor_dataInd_t;
+
 /******************************************************************************
  Global variables
  *****************************************************************************/
@@ -73,6 +82,7 @@ static Llc_netInfo_t parentInfo = { 0 };
 
 static bool isConnected = false;
 
+static Sensor_dataInd_t gDataIndInfo = {0};
 
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
@@ -101,6 +111,9 @@ static void updateRssiStrct(int8_t rssi);
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
+
+static void Sensor_processCrsRequest(void);
+
 /******************************************************************************
  Callback tables
  *****************************************************************************/
@@ -154,7 +167,7 @@ void Sensor_init( )
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
-    Agc_init();
+    Agc_init(sem);
     OadClient_init(sem);
     Ssf_crsInitScript();
 }
@@ -178,6 +191,15 @@ void Sensor_process(void)
         Util_clearEvent(&Sensor_events, SENSOR_START_EVT);
     }
 
+    if (Sensor_events & SENSOR_CRS_REQUEST_EVT)
+    {
+        CLI_processCliUpdate(gDataIndInfo.msdup + 1, gDataIndInfo.srcShortAddr);
+
+        free(gDataIndInfo.msdup);
+        /* Clear the event */
+        Util_clearEvent(&Sensor_events, SENSOR_CRS_REQUEST_EVT);
+    }
+
     Config_process();
     MultiFiles_process();
     RF_process();
@@ -185,6 +207,7 @@ void Sensor_process(void)
     Fpga_process();
     DIG_process();
     Tdd_process();
+    Agc_process();
     Alarms_process();
     OadClient_process();
     if (Sensor_events == 0)
@@ -244,7 +267,7 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
-    Alarms_init(sem);
+//    Alarms_init(sem);
 
 //    if (CONFIG_AUTO_START)
 //    {
@@ -310,6 +333,8 @@ Sensor_status_t Sensor_sendOadRsp(uint16_t *pDstAddr,
     return stat;
 }
 
+static bool gIsSendingCrsMsg = false;
+static uint8_t gCrsMsgMsduHandle = false;
 
 static bool Sensor_sendMsg(Smsgs_cmdIds_t type, uint16_t shortAddr,
                            uint16_t len, uint8_t *pData)
@@ -328,6 +353,11 @@ static bool Sensor_sendMsg(Smsgs_cmdIds_t type, uint16_t shortAddr,
 
 
     dataReq.msduHandle = getMsduHandle(type);
+    if (pData[0] == ((uint8_t) Smsgs_cmdIds_crsRsp))
+    {
+        gIsSendingCrsMsg = true;
+        gCrsMsgMsduHandle = dataReq.msduHandle;
+    }
 
     dataReq.msdu.len = len;
     dataReq.msdu.p = pData;
@@ -402,7 +432,12 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
 //        CLI_cliPrintf("\r\ndisassocIndCB");
+    if (gIsSendingCrsMsg == true)
+    {
+        gIsSendingCrsMsg = false;
+        AGCM_finishedTask();
 
+    }
     isConnected = false;
 
 }
@@ -419,7 +454,12 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {
+    if (gIsSendingCrsMsg == true)
+    {
+        gIsSendingCrsMsg = false;
+        AGCM_finishedTask();
 
+    }
 }
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
@@ -449,8 +489,26 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 
 static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd)
 {
-    CLI_processCliUpdate((pDataInd->msdu.p) + 1, pDataInd->srcShortAddr);
+    uint32_t size = strlen(pDataInd->msdu.p+1) + 100;
+    gDataIndInfo.msdup = malloc(size * sizeof(uint8_t));
+    memset(gDataIndInfo.msdup, 0, size * sizeof(uint8_t));
+
+    memcpy(gDataIndInfo.msdup, pDataInd->msdu.p, size);
+
+    gDataIndInfo.srcShortAddr = pDataInd->srcShortAddr;
+
+    AGCM_runTask(Sensor_processCrsRequest);
 }
+
+static void Sensor_processCrsRequest(void)
+{
+
+    Util_setEvent(&Sensor_events, SENSOR_CRS_REQUEST_EVT);
+
+       /* Wake up the application thread when it waits for clock event */
+       Semaphore_post(sem);
+}
+
 
 static void updateRssiStrct(int8_t rssi)
 {

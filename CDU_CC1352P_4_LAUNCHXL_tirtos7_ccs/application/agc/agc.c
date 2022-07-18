@@ -14,6 +14,8 @@
 #include "application/crs/crs_cli.h"
 #include <ti/drivers/utils/Random.h>
 #include <ti/devices/DeviceFamily.h>
+#include <ti/sysbios/knl/Semaphore.h>
+
 #include <math.h>
 #include <float.h>
 #include DeviceFamily_constructPath(driverlib/aux_adc.h)
@@ -39,6 +41,7 @@
 #define UC_RF_HIGH_FREQ_HB_TX 21
 #define UC_IF_LOW_FREQ_RX 15
 
+#define AGC_GET_SAMPLE_EVT 0x0001
 
 /******************************************************************************
  Local variables
@@ -52,6 +55,9 @@ static int gAgcReady=0;
 static int gAgcTimeout=0;
 static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
+static void* gSem;
+static uint16_t Agc_events = 0;
+
 static void processAgcTimeoutCallback(UArg a0);
 
 void scTaskAlertCallback(void) {
@@ -86,10 +92,11 @@ AGC_max_results_t Agc_getMaxResults(){
  }
 
 
-CRS_retVal_t Agc_init(){
+CRS_retVal_t Agc_init(void * sem){
     if(gAgcInitialized){
         return CRS_SUCCESS;
     }
+    gSem = sem;
     scifOsalInit();
     scifOsalRegisterCtrlReadyCallback(scCtrlReadyCallback);
     scifOsalRegisterTaskAlertCallback(scTaskAlertCallback);
@@ -130,6 +137,18 @@ CRS_retVal_t Agc_init(){
     return CRS_SUCCESS;
 }
 
+void Agc_process(void)
+{
+    if (Agc_events & AGC_GET_SAMPLE_EVT)
+       {
+        Agc_sample();
+        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
+               UtilTimer_start(&agcClkStruct);
+           /* Clear the event */
+           Util_clearEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
+       }
+}
+
 
 int Agc_convert(float voltage, int tx_rx, int rf_if)
 {
@@ -145,7 +164,7 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
 //          RF RX - RX_DET_An (DownLink)
 //          tests the power that enters the RF/IF card (RSSI)
 //          tested
-//          y = -0.023x + 0.2791, R² = 0.9998
+//          y = -0.023x + 0.2791, Rï¿½ = 0.9998
             offset = CRS_cbGainStates.dc_rf_high_freq_hb_rx - DC_RF_HIGH_FREQ_HB_RX;
             voltage = voltage - 279100;
             voltage = voltage / -23000;
@@ -169,7 +188,7 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
 //          tested
 //          IF RX - IF_DET_An_RX (DownLink)
 //          tests the power coming out of the CAT5PA into the cable
-//          y = -0.0187x + 0.5642, R² = 0.9977
+//          y = -0.0187x + 0.5642, Rï¿½ = 0.9977
             offset = CRS_cbGainStates.uc_if_low_freq_rx - UC_IF_LOW_FREQ_RX;
             voltage = voltage - 564200;
             voltage = voltage / -18700;
@@ -180,7 +199,7 @@ int Agc_convert(float voltage, int tx_rx, int rf_if)
 //          tested
 //          IF TX - IF_DET_An_TX (UpLink)
 //          tests the power coming from the cable
-//          y = -0.0219x + 0.5669 R² = 0.9995
+//          y = -0.0219x + 0.5669 Rï¿½ = 0.9995
             offset = CRS_cbGainStates.dc_if_low_freq_tx - DC_IF_LOW_FREQ_TX;
             voltage = voltage - 566900;
             voltage = voltage/ -21900;
@@ -445,7 +464,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
+        if(gAgcMaxResults.adcValues[0] > adcValueMicroVolt){
         gAgcMaxResults.adcValues[0] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
             sprintf(gAgcMaxResults.RfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 0));
@@ -459,7 +478,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
+        if(gAgcMaxResults.adcValues[2] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[2] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.IfMaxDL,"%i" ,Agc_convert(adcValueMicroVolt, 0, 1));
@@ -481,7 +500,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxTx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
+        if( gAgcMaxResults.adcValues[1] < adcValueMicroVolt){
             gAgcMaxResults.adcValues[1] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.RfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 0));
@@ -495,7 +514,7 @@ CRS_retVal_t Agc_sample(){
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
-        if(gAgcTimeout || gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
+        if( gAgcMaxResults.adcValues[3] > adcValueMicroVolt){
             gAgcMaxResults.adcValues[3] = adcValueMicroVolt;
             #ifndef CLI_SENSOR
                 sprintf(gAgcMaxResults.IfMaxUL,"%i" ,Agc_convert(adcValueMicroVolt, 1, 1));
@@ -528,13 +547,13 @@ CRS_retVal_t Agc_sample(){
     }
 
     gAgcReady = 0;
-    if(gAgcTimeout){
-        //CLI_cliPrintf("\r\nTime out");
-        gAgcTimeout = 0;
-        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
-        UtilTimer_start(&agcClkStruct);
-
-    }
+//    if(gAgcTimeout){
+//        //CLI_cliPrintf("\r\nTime out");
+//        gAgcTimeout = false;
+//        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
+//        UtilTimer_start(&agcClkStruct);
+//
+//    }
     // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
     // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
     scifAckAlertEvents();
@@ -594,6 +613,11 @@ CRS_retVal_t Agc_getControlPins(int mode, int channel, AGC_ctrlPins_t* pins){
 
 static void processAgcTimeoutCallback(UArg a0)
 {
+    Util_setEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
+
+       /* Wake up the application thread when it waits for clock event */
+       Semaphore_post(gSem);
+
     gAgcTimeout = true;
 }
 

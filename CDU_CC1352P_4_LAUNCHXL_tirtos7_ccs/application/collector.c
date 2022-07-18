@@ -127,7 +127,7 @@ void Collector_init()
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
-    Agc_init();
+    Agc_init(sem);
     Manage_initSem(sem);
     Oad_init(sem);
     Csf_crsInitScript();
@@ -160,6 +160,8 @@ void Collector_process(void)
     Fpga_process();
     DIG_process();
     Tdd_process();
+    Agc_process();
+
     Alarms_process();
     Oad_process();
     if (Collector_events == 0)
@@ -415,7 +417,7 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
-    Alarms_init(sem);
+//    Alarms_init(sem);
 
 //    if (CONFIG_AUTO_START)
 //    {

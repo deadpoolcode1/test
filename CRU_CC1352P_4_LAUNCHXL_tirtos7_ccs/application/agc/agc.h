@@ -35,7 +35,9 @@ typedef struct
 CRS_retVal_t Agc_getValues(int *tx_value, int *rx_value);
 CRS_retVal_t Agc_getControlPins(int mode, int channel, AGC_ctrlPins_t *pins);
 CRS_retVal_t Agc_setChannel(uint16_t channel);
-CRS_retVal_t Agc_init();
+CRS_retVal_t Agc_init(void * sem);
+void Agc_process(void);
+
 CRS_retVal_t Agc_sample();
 CRS_retVal_t Agc_sample_debug();
 void scTaskAlertCallback(void);
