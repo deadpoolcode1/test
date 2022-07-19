@@ -76,6 +76,7 @@
 #include "application/smsgs.h"
 #include <ti/sysbios/knl/Task.h>
 #include "application/crs/crs_env.h"
+#include <ti/sysbios/knl/Task.h>
 
 /******************************************************************************
  Constants and definitions
@@ -461,7 +462,7 @@ static void oadResetReqCb(void *pSrcAddr)
 #else
     //Send response back
     OADProtocol_sendOadResetRsp(pSrcAddr);
-    Task_sleep(1000)
+    Task_sleep(1000);
     SysCtrlSystemReset();
 #endif
 }
