@@ -4606,6 +4606,8 @@ static CRS_retVal_t CLI_OadResetParsing(char *line)
                    return CRS_SUCCESS;
     }
 #endif
+    CLI_startREAD();
+    Task_sleep(1000);
         SysCtrlSystemReset();
 
 }

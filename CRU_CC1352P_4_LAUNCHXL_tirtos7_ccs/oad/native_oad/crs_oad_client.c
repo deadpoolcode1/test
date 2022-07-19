@@ -461,6 +461,7 @@ static void oadResetReqCb(void *pSrcAddr)
 #else
     //Send response back
     OADProtocol_sendOadResetRsp(pSrcAddr);
+    Task_sleep(1000)
     SysCtrlSystemReset();
 #endif
 }
