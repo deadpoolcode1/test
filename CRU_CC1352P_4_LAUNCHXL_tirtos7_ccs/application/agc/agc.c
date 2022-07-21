@@ -54,7 +54,7 @@ static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffff
 static AGC_max_results_t gAgcMaxResults  = {.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A", .adcValues={0xffffffff, 0x0, 0xffffffff,0xffffffff}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
-static int gAgcTimeout=0;
+//static int gAgcTimeout=0;
 static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
 static void* gSem;
@@ -387,7 +387,7 @@ CRS_retVal_t Agc_sample_debug(){
         adcSums[3] = scifTaskData.systemAgc.output.channelsMaxIFUL[i];
         for(j=0;j<4;j++){
             // modesChannel = number of results in top 20% and bottom 20% for each channel
-            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
+            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.minMaxChannelsSize;
 
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
@@ -403,7 +403,7 @@ CRS_retVal_t Agc_sample_debug(){
         adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
         for(j=0;j<4;j++){
             // modesChannel = number of results in top 20% and bottom 20% for each channel
-            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.modesChannel;
+            adcValue = adcSums[j]/ scifTaskData.systemAgc.cfg.minMaxChannelsSize;
 
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
@@ -417,8 +417,9 @@ CRS_retVal_t Agc_sample_debug(){
         adcSums[2] = scifTaskData.systemAgc.output.channelsAverage[i+8];
         adcSums[3] = scifTaskData.systemAgc.output.channelsAverage[i+12];
         for(j=0;j<4;j++){
-
-            adcValue = adcSums[j]/ (scifTaskData.systemAgc.cfg.measuresCount*scifTaskData.systemAgc.cfg.samplesNum);
+            // divide the sum of the results by 90% of total samples (because we discard the top and bottom 5% of samples)
+            adcValue = adcSums[j]/ ( (scifTaskData.systemAgc.cfg.measuresCount*scifTaskData.systemAgc.cfg.samplesNum) -
+                    ((scifTaskData.systemAgc.cfg.modesChannel - scifTaskData.systemAgc.cfg.minMaxChannelsSize)*2) );
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
             newAgcResults.adcAvgResults[i+(j*4)] = adcValueMicroVolt;
@@ -522,7 +523,7 @@ CRS_retVal_t Agc_sample(){
 
     if(mode==0 || mode==1){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[0]/ scifTaskData.systemAgc.cfg.modesChannel;
+        adcValue = adcSums[0]/  scifTaskData.systemAgc.cfg.minMaxChannelsSize;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxRx = adcValueMicroVolt;
@@ -536,7 +537,7 @@ CRS_retVal_t Agc_sample(){
         //}
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[2]/ scifTaskData.systemAgc.cfg.modesChannel;
+        adcValue = adcSums[2]/  scifTaskData.systemAgc.cfg.minMaxChannelsSize;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxRx = adcValueMicroVolt;
@@ -558,7 +559,7 @@ CRS_retVal_t Agc_sample(){
 
     if(mode==0 || mode==2){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[1]/ scifTaskData.systemAgc.cfg.modesChannel;
+        adcValue = adcSums[1]/ scifTaskData.systemAgc.cfg.minMaxChannelsSize;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.RfMaxTx = adcValueMicroVolt;
@@ -572,7 +573,7 @@ CRS_retVal_t Agc_sample(){
         //}
 
         // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[3]/ scifTaskData.systemAgc.cfg.modesChannel;
+        adcValue = adcSums[3]/ scifTaskData.systemAgc.cfg.minMaxChannelsSize;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         //newAgcResults.IfMaxTx = adcValueMicroVolt;
@@ -677,7 +678,7 @@ static void processAgcTimeoutCallback(UArg a0)
 {
     AGCM_runTask(processAgcSample);
 
-    gAgcTimeout = true;
+    //gAgcTimeout = true;
 }
 
 static void processAgcSample()

@@ -21,15 +21,17 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="AVERAGE_SIZE" desc="The sIze of the array of the sums of the samples results (for each channel sum of samples from downlinkRF, downlinkIF, uplinkRF, uplinkIF)." type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
         <tattr name="BUFFER_SIZE" desc="ADC measures buffer size for each cahnnel" type="expr" content="const" scope="task" min="0" max="65535">10</tattr>
         <tattr name="CHANNELS_NUMBER" desc="Number of channels." type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
+        <tattr name="MIN_MAX_CHANNELS_SIZE" type="expr" content="const" scope="task" min="0" max="65535">(MODES_SIZE - (MODES_SIZE/4))/CHANNELS_NUMBER</tattr>
         <tattr name="MODES_CHANNEL_SIZE" desc="The number of top 20% results from each channel" type="expr" content="const" scope="task" min="0" max="65535">MODES_SIZE / CHANNELS_NUMBER</tattr>
         <tattr name="MODES_SIZE" desc="Top 20% of results from the samples" type="expr" content="const" scope="task" min="0" max="65535">(MULTI_RESULT_SIZE / 10) * 2</tattr>
         <tattr name="MULTI_BUFFER_SIZE" desc="Number of measures from all channels in each  sample cycle" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE * CHANNELS_NUMBER</tattr>
         <tattr name="MULTI_RESULT_SIZE" desc="Total number of measures from all  channels across all samples" type="expr" content="const" scope="task" min="0" max="65535">SAMPLE_SIZE*MULTI_BUFFER_SIZE</tattr>
         <tattr name="RESULTS" desc="Number of measures for a channel in a sample cycle." type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
-        <tattr name="SAMPLE_SIZE" desc="Number of samples cycles." type="expr" content="const" scope="task" min="0" max="65535">3</tattr>
+        <tattr name="SAMPLE_SIZE" desc="Number of samples cycles." type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="cfg.channelsNum" desc="number of channels" type="expr" content="struct" scope="task" min="0" max="65535">CHANNELS_NUMBER</tattr>
         <tattr name="cfg.channelsSwitch" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.measuresCount" type="expr" content="struct" scope="task" min="0" max="65535">BUFFER_SIZE</tattr>
+        <tattr name="cfg.minMaxChannelsSize" type="expr" content="struct" scope="task" min="0" max="65535">MIN_MAX_CHANNELS_SIZE</tattr>
         <tattr name="cfg.modesChannel" type="expr" content="struct" scope="task" min="0" max="65535">MODES_CHANNEL_SIZE</tattr>
         <tattr name="cfg.samplesCount" desc="ALERT interrupt generation threshold" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="cfg.samplesNum" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
@@ -685,16 +687,26 @@ if(state.tddMode != 2){
                 c = output.maxSamplesRFDL[n];
                 d = output.maxSamplesIFDL[n];
                 n = f;
-                output.channelsMaxRFDL[n] += c;
-                output.channelsMaxIFDL[n] += d;
-
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMaxRFDL[n] += c;
+                    output.channelsMaxIFDL[n] += d;
+                }else{
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
                 n = b;
                 c = output.minSamplesRFDL[n];
                 d = output.minSamplesIFDL[n];
                 n = f;
-                output.channelsMinRFDL[n] += c;
-                output.channelsMinIFDL[n] += d;
-
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMinRFDL[n] += c;
+                    output.channelsMinIFDL[n] += d;
+                }else{
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
                 n = b;
                 a+=1;
                 n+=1;
@@ -1026,20 +1038,34 @@ if(state.tddMode != 1){
 
         n = 0;
         while(f<cfg.channelsNum){
-            while(a<MODES_CHANNEL_SIZE){
+            while(a<MIN_MAX_CHANNELS_SIZE){
                 b = n;
                 c = output.maxSamplesRFUL[n];
                 d = output.maxSamplesIFUL[n];
                 n = f;
-                output.channelsMaxRFUL[n] += c;
-                output.channelsMaxIFUL[n] += d;
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMaxRFUL[n] += c;
+                    output.channelsMaxIFUL[n] += d;
+                }else{
+                    n += 4;
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
 
                 n = b;
                 c = output.minSamplesRFUL[n];
                 d = output.minSamplesIFUL[n];
                 n = f;
-                output.channelsMinRFUL[n] += c;
-                output.channelsMinIFUL[n] += d;
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMinRFUL[n] += c;
+                    output.channelsMinIFUL[n] += d;
+                }else{
+                    n += 4;
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
 
                 n = b;
                 a+=1;
