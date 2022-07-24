@@ -2746,13 +2746,13 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
 //            return retStatus;
 //        }
 //    }
-    CRS_retVal_t retStatus = Agc_sample();
-    if(retStatus != CRS_SUCCESS){
-        CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-    }
-    else{
-        CLI_cliPrintf("\r\nSensorStatus=OK");
-    }
+//    CRS_retVal_t retStatus = Agc_sample();
+//    if(retStatus != CRS_SUCCESS){
+//        CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
+//    }
+//    else{
+//        CLI_cliPrintf("\r\nSensorStatus=OK");
+//    }
     AGC_max_results_t agcResults = Agc_getMaxResults();
 #ifndef CLI_SENSOR
             CLI_cliPrintf("\r\nDLDetMaxInPwr=%s",agcResults.RfMaxDL);
@@ -2766,7 +2766,7 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
             CLI_cliPrintf("\r\nULDetectorMaxCableIFPower=%s",agcResults.IfMaxUL);
 #endif
             CLI_startREAD();
-            return retStatus;
+            return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line){

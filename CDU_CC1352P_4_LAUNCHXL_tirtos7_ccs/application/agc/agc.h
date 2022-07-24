@@ -6,6 +6,7 @@
  *****************************************************************************/
 /*! Event ID - Calculate AGC Event */
 #define AGC_EVT   0x0001
+#define STORED_NUM 5
 
 typedef struct
 {
@@ -21,8 +22,14 @@ typedef struct
     char RfMaxUL[10];
     char IfMaxDL[10];
     char IfMaxUL[10];
-    uint32_t adcValues[4];
 } AGC_max_results_t;
+
+typedef struct
+{
+    // rfDL, rfUL, ifDL, ifUL
+    uint32_t adcValues[4][STORED_NUM];
+    uint32_t adcTimes[4][STORED_NUM];
+} AGC_max_stored_t;
 
 typedef struct
 {
