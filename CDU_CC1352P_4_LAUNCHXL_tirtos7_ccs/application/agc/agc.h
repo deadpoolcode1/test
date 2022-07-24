@@ -27,8 +27,9 @@ typedef struct
 typedef struct
 {
     // rfDL, rfUL, ifDL, ifUL
-    uint32_t adcValues[4][STORED_NUM];
-    uint32_t adcTimes[4][STORED_NUM];
+    //uint32_t adcValues[4][STORED_NUM];
+    uint32_t dbValues[4][STORED_NUM];
+    int times[4][STORED_NUM];
 } AGC_max_stored_t;
 
 typedef struct

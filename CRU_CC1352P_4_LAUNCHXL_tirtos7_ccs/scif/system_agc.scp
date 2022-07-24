@@ -43,13 +43,21 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.channelsAverage" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverageTemp" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesRFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -673,10 +681,10 @@ if(state.tddMode != 2){
 
         // clear values in Samples arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFDL[n] = 0;
-            output.channelsMaxIFDL[n] = 0;
-            output.channelsMinRFDL[n] = 0;
-            output.channelsMinIFDL[n] = 0;
+            output.channelsMaxRFDLTemp[n] = 0;
+            output.channelsMaxIFDLTemp[n] = 0;
+            output.channelsMinRFDLTemp[n] = 0;
+            output.channelsMinIFDLTemp[n] = 0;
             n +=1;
         }
 
@@ -688,8 +696,8 @@ if(state.tddMode != 2){
                 d = output.maxSamplesIFDL[n];
                 n = f;
                 if(a<MIN_MAX_CHANNELS_SIZE){
-                    output.channelsMaxRFDL[n] += c;
-                    output.channelsMaxIFDL[n] += d;
+                    output.channelsMaxRFDLTemp[n] += c;
+                    output.channelsMaxIFDLTemp[n] += d;
                 }else{
                     output.channelsAverageTemp[n] -= c;
                     n += 8;
@@ -700,8 +708,8 @@ if(state.tddMode != 2){
                 d = output.minSamplesIFDL[n];
                 n = f;
                 if(a<MIN_MAX_CHANNELS_SIZE){
-                    output.channelsMinRFDL[n] += c;
-                    output.channelsMinIFDL[n] += d;
+                    output.channelsMinRFDLTemp[n] += c;
+                    output.channelsMinIFDLTemp[n] += d;
                 }else{
                     output.channelsAverageTemp[n] -= c;
                     n += 8;
@@ -722,6 +730,15 @@ if(state.tddMode != 2){
             output.maxSamplesIFDL[n] = 0;
             output.minSamplesRFDL[n] = 65535;
             output.minSamplesIFDL[n] = 65535;
+            n += 1;
+        }
+
+        n = 0;
+        while(n<CHANNELS_NUMBER){
+            output.channelsMaxRFDL[n] = output.channelsMaxRFDLTemp[n];
+            output.channelsMaxIFDL[n] = output.channelsMaxIFDLTemp[n];
+            output.channelsMinRFDL[n] = output.channelsMinRFDLTemp[n];
+            output.channelsMinIFDL[n] = output.channelsMinIFDLTemp[n];
             n += 1;
         }
 
@@ -1029,10 +1046,10 @@ if(state.tddMode != 1){
 
         // clear values in modes arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFUL[n] = 0;
-            output.channelsMaxIFUL[n] = 0;
-            output.channelsMinRFUL[n] = 0;
-            output.channelsMinIFUL[n] = 0;
+            output.channelsMaxRFULTemp[n] = 0;
+            output.channelsMaxIFULTemp[n] = 0;
+            output.channelsMinRFULTemp[n] = 0;
+            output.channelsMinIFULTemp[n] = 0;
             n +=1;
         }
 
@@ -1044,8 +1061,8 @@ if(state.tddMode != 1){
                 d = output.maxSamplesIFUL[n];
                 n = f;
                 if(a<MIN_MAX_CHANNELS_SIZE){
-                    output.channelsMaxRFUL[n] += c;
-                    output.channelsMaxIFUL[n] += d;
+                    output.channelsMaxRFULTemp[n] += c;
+                    output.channelsMaxIFULTemp[n] += d;
                 }else{
                     n += 4;
                     output.channelsAverageTemp[n] -= c;
@@ -1058,8 +1075,8 @@ if(state.tddMode != 1){
                 d = output.minSamplesIFUL[n];
                 n = f;
                 if(a<MIN_MAX_CHANNELS_SIZE){
-                    output.channelsMinRFUL[n] += c;
-                    output.channelsMinIFUL[n] += d;
+                    output.channelsMinRFULTemp[n] += c;
+                    output.channelsMinIFULTemp[n] += d;
                 }else{
                     n += 4;
                     output.channelsAverageTemp[n] -= c;
@@ -1082,6 +1099,15 @@ if(state.tddMode != 1){
             output.maxSamplesIFUL[n] = 0;
             output.minSamplesRFUL[n] = 65535;
             output.minSamplesIFUL[n] = 65535;
+            n += 1;
+        }
+
+        n = 0;
+        while(n<CHANNELS_NUMBER){
+            output.channelsMaxRFUL[n] = output.channelsMaxRFULTemp[n];
+            output.channelsMaxIFUL[n] = output.channelsMaxIFULTemp[n];
+            output.channelsMinRFUL[n] = output.channelsMinRFULTemp[n];
+            output.channelsMinIFUL[n] = output.channelsMinIFULTemp[n];
             n += 1;
         }
 
