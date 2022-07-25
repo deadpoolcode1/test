@@ -389,7 +389,10 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
+        <sccode name="event0" init_power_mode="0"><![CDATA[//update state tddMode from app
+if(cfg.samplesCount == SAMPLE_SIZE){
+    state.tddMode = cfg.tddMode;
+}
 if(state.tddMode == 0){
     if(state.ledCounter == 0){
         gpioClearOutput(AUXIO_O_RED_LED);
@@ -401,6 +404,8 @@ if(state.tddMode == 0){
         state.ledCounter = 0;
     }
     state.ledCounter += 1;
+
+    //get the TDD lock
     U16 lock;
     if(cfg.unitType == 0){
         gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
@@ -409,9 +414,13 @@ if(state.tddMode == 0){
         lock = input.tddLock;
     }
 
+    //if locked, activate the rising edge interrupt on event B
     if(lock == 1){
         evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
     }
+    //Activate timer trigger on event A, so if interrupt does not occur or there is no lock then
+    //event runs again from the start
+    //timer of 100 ms
     evhSetupTimer0Trigger(0, 100, 2);
 
 }else{
@@ -419,6 +428,7 @@ if(state.tddMode == 0){
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
+evhCancelTrigger(0);
 if(state.tddMode != 2){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 0){
@@ -447,7 +457,6 @@ if(state.tddMode != 2){
     S16 b = 0;
     U16 c = 0;
     U16 d = 0;
-
 
     // 2.7 sample time, 3 pins, 4 channels.
     // 2.7 us for each channel. 2.7 * 4 = 10.8 us sampling rate on PIN.
@@ -782,6 +791,7 @@ if(state.tddMode != 2){
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
+evhCancelTrigger(0);
 if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 0){
@@ -1055,7 +1065,7 @@ if(state.tddMode != 1){
 
         n = 0;
         while(f<cfg.channelsNum){
-            while(a<MIN_MAX_CHANNELS_SIZE){
+            while(a<MODES_CHANNEL_SIZE){
                 b = n;
                 c = output.maxSamplesRFUL[n];
                 d = output.maxSamplesIFUL[n];
@@ -1154,20 +1164,11 @@ if(state.tddMode != 1){
 evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
-        <sccode name="initialize" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
-evhSetupTimer0Trigger(0, 1, 2);
-
-
-// if(state.tddMode == 2){
-//     evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-//    }
-// }else {
-//    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
-//    //evhSetupTimer0CustomTrigger(1);
-//    evhSetupTimer0Trigger(0, 1, 2);
-// }
-// evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);]]></sccode>
-        <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
+        <sccode name="initialize" init_power_mode="0"><![CDATA[//immediately start event A code
+evhSetupTimer0Trigger(0, 1, 0);]]></sccode>
+        <sccode name="terminate" init_power_mode="0"><![CDATA[evhCancelTrigger(0);
+evhCancelTrigger(1);
+evhCancelTrigger(2);]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
         <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39]</tt_struct>

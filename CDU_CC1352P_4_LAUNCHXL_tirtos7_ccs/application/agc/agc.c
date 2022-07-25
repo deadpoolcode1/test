@@ -313,11 +313,13 @@ CRS_retVal_t Agc_setMode(int mode){
         scifAckAlertEvents();
     }
     gAgcReady = 0;
-    scifStopTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
-    scifResetTaskStructs(BV(SCIF_SYSTEM_AGC_TASK_ID), BV(SCIF_STRUCT_OUTPUT));
-    //scifTaskData.systemAgc.state.alertEnabled = 1;
+    //scifStopTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
+    //scifResetTaskStructs(BV(SCIF_SYSTEM_AGC_TASK_ID), BV(SCIF_STRUCT_OUTPUT));
+
+    scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
-    scifTaskData.systemAgc.cfg.samplesCount = scifTaskData.systemAgc.cfg.samplesNum;
+    //scifTaskData.systemAgc.cfg.samplesCount = scifTaskData.systemAgc.cfg.samplesNum;
+    //scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
 //    int i;
 //    for(i=0;i<48;i++){
 //        scifTaskData.systemAgc.output.minSamplesIFRX[i] = 0xffff;
@@ -327,11 +329,11 @@ CRS_retVal_t Agc_setMode(int mode){
 //    }
     //scifExecuteTasksOnceNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
 
-    //scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
     int i;
     for(i=0;i<16;i++){
         gAgcResults.adcMinResults[i] = 0xffffffff;
         gAgcResults.adcMaxResults[i] = 0;
+        gAgcResults.adcAvgResults[i] = 0;
     }
     for(i=0;i<4;i++){
         if(i!=1){
