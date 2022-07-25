@@ -38,7 +38,7 @@
 
 #define BV(n)               (1 << (n))
 
-#define AGC_TIMEOUT 3000
+#define AGC_INTERVAL 1000
 #define AGC_HOLD 60
 #define DC_RF_HIGH_FREQ_HB_RX 21
 #define DC_IF_LOW_FREQ_TX 21
@@ -136,11 +136,18 @@ CRS_retVal_t Agc_init(void * sem){
     #else
         scifTaskData.systemAgc.cfg.unitType = 1;
     #endif
+    // get agc interval time
+    char thrshFile[4096]={0};
+    Thresh_read("AgcInterval", thrshFile);
+    uint32_t agcInterval = strtol(thrshFile + strlen("AgcInterval="), NULL, 10);
+    if((!agcInterval) || (agcInterval<AGC_INTERVAL)){
+        agcInterval = AGC_INTERVAL;
+    }
     // start task.
     scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
     agcClkHandle = UtilTimer_construct(&agcClkStruct,
                                        processAgcTimeoutCallback,
-                                       AGC_TIMEOUT, 0,
+                                       agcInterval, 0,
                                         true,
                                         0);
 
@@ -208,9 +215,13 @@ void Agc_process(void)
             Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
         }
         #endif
-
-
-        UtilTimer_setTimeout(agcClkHandle, AGC_TIMEOUT);
+        memset(envFile, 0, 4096);
+        Thresh_read("AgcInterval", envFile);
+        uint32_t agcInterval = strtol(envFile + strlen("AgcInterval="), NULL, 10);
+        if((!agcInterval) || (agcInterval<AGC_INTERVAL)){
+            agcInterval = AGC_INTERVAL;
+        }
+        UtilTimer_setTimeout(agcClkHandle, agcInterval);
                UtilTimer_start(&agcClkStruct);
                AGCM_finishedTask();
            /* Clear the event */
