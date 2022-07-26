@@ -2737,22 +2737,7 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
            return CRS_SUCCESS;
        }
     #endif
-    //token = strtok(NULL, s);
-//    if(!Agc_isInitialized()){
-//        CRS_retVal_t retStatus = Agc_init();
-//        if(retStatus != CRS_SUCCESS){
-//            CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//            CLI_startREAD();
-//            return retStatus;
-//        }
-//    }
-//    CRS_retVal_t retStatus = Agc_sample();
-//    if(retStatus != CRS_SUCCESS){
-//        CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//    }
-//    else{
-//        CLI_cliPrintf("\r\nSensorStatus=OK");
-//    }
+
     AGC_max_results_t agcResults = Agc_getMaxResults();
 #ifndef CLI_SENSOR
             CLI_cliPrintf("\r\nDLDetMaxInPwr=%s",agcResults.RfMaxDL);
@@ -2810,6 +2795,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
     uint16_t rfIf = 0;
     uint16_t maxMinAvg = 0;
 
+    // get args for filtering by channel, DL/UL, RF/IF and max/average/min
     token = strtok(NULL, s);
     if(token){
         if(!channel){
@@ -2832,154 +2818,129 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         }
     }
 
-
-
-//    if(!Agc_isInitialized()){
-//        CRS_retVal_t retStatus = Agc_init();
-//        if(retStatus == CRS_SUCCESS){
-//            CLI_cliPrintf("\r\nSensorStatus=INIT");
-//        }
-//        else{
-//             CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
-//        }
-//        CLI_startREAD();
-//        return retStatus;
-//    }
-    CRS_retVal_t retStatus =  CRS_SUCCESS;
-    if(Agc_isReady()){
-        retStatus = Agc_sample_debug();
-        AGC_results_t agcResults;
-        if(retStatus == CRS_SUCCESS){
-            agcResults = Agc_getResults();
-        }
-        else{
-            CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-#ifndef CLI_SENSOR
-            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-#else
-            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-#endif
-            CLI_startREAD();
-            return retStatus;
-        }
-        int i;
-        int j;
-        CLI_cliPrintf("\r\nSensorStatus=OK");
-        if(!channel){
-            for(i=0;i<4;i++){
-                    if(mode == 0 || mode == 1){
-                        if(rfIf == 0 || rfIf == 1){
-                            if(maxMinAvg == 0 || maxMinAvg == 1){
-                                CLI_cliPrintf("\r\nRF DL max %i: %u", i+1, agcResults.adcMaxResults[i]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 2){
-                                CLI_cliPrintf("\r\nRF DL avg %i: %u", i+1, agcResults.adcAvgResults[i]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 3){
-                                CLI_cliPrintf("\r\nRF DL min %i: %u", i+1, agcResults.adcMinResults[i]);
-                            }
+    CRS_retVal_t retStatus =  Agc_sample_debug();
+    AGC_results_t agcResults;
+    if(retStatus == CRS_SUCCESS){
+        agcResults = Agc_getResults();
+    }
+    else{
+        CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
+//#ifndef CLI_SENSOR
+//        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
+//        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
+//#else
+//        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
+//        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
+//#endif
+        CLI_startREAD();
+        return retStatus;
+    }
+    int i;
+    int j;
+    // print all channels results
+    CLI_cliPrintf("\r\nSensorStatus=OK");
+    if(!channel){
+        for(i=0;i<4;i++){
+                if(mode == 0 || mode == 1){
+                    if(rfIf == 0 || rfIf == 1){
+                        if(maxMinAvg == 0 || maxMinAvg == 1){
+                            CLI_cliPrintf("\r\nRF DL max %i: %u", i+1, agcResults.adcMaxResults[i]);
                         }
-                        if(rfIf == 0 || rfIf == 2){
-                            if(maxMinAvg == 0 || maxMinAvg == 1){
-                                CLI_cliPrintf("\r\nIF DL max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 2){
-                                CLI_cliPrintf("\r\nIF DL avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 3){
-                                CLI_cliPrintf("\r\nIF DL min %i: %u", i+1, agcResults.adcMinResults[i+8]);
-                            }
+                        if(maxMinAvg == 0 || maxMinAvg == 2){
+                            CLI_cliPrintf("\r\nRF DL avg %i: %u", i+1, agcResults.adcAvgResults[i]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 3){
+                            CLI_cliPrintf("\r\nRF DL min %i: %u", i+1, agcResults.adcMinResults[i]);
                         }
                     }
-                    if (mode == 0 || mode == 2){
-                        if(rfIf == 0 || rfIf == 1){
-                            if(maxMinAvg == 0 || maxMinAvg == 1){
-                                CLI_cliPrintf("\r\nRF UL max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 2){
-                                CLI_cliPrintf("\r\nRF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 3){
-                                CLI_cliPrintf("\r\nRF UL min %i: %u", i+1, agcResults.adcMinResults[i+4]);
-                            }
+                    if(rfIf == 0 || rfIf == 2){
+                        if(maxMinAvg == 0 || maxMinAvg == 1){
+                            CLI_cliPrintf("\r\nIF DL max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
                         }
-                        if(rfIf == 0 || rfIf == 2){
-                            if(maxMinAvg == 0 || maxMinAvg == 1){
-                                CLI_cliPrintf("\r\nIF UL max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 2){
-                                CLI_cliPrintf("\r\nIF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
-                            }
-                            if(maxMinAvg == 0 || maxMinAvg == 3){
-                                CLI_cliPrintf("\r\nIF UL min %i: %u", i+1, agcResults.adcMinResults[i+12]);
-                            }
+                        if(maxMinAvg == 0 || maxMinAvg == 2){
+                            CLI_cliPrintf("\r\nIF DL avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 3){
+                            CLI_cliPrintf("\r\nIF DL min %i: %u", i+1, agcResults.adcMinResults[i+8]);
                         }
                     }
-            }
-        }
-        else{
-            if(mode == 0 || mode == 1){
-                if(rfIf == 0 || rfIf == 1){
-                    if(maxMinAvg == 0 || maxMinAvg == 1){
-                        CLI_cliPrintf("\r\nRF DL max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
+                }
+                if (mode == 0 || mode == 2){
+                    if(rfIf == 0 || rfIf == 1){
+                        if(maxMinAvg == 0 || maxMinAvg == 1){
+                            CLI_cliPrintf("\r\nRF UL max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 2){
+                            CLI_cliPrintf("\r\nRF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 3){
+                            CLI_cliPrintf("\r\nRF UL min %i: %u", i+1, agcResults.adcMinResults[i+4]);
+                        }
                     }
-                    if(maxMinAvg == 0 || maxMinAvg == 2){
-                        CLI_cliPrintf("\r\nRF DL avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 3){
-                        CLI_cliPrintf("\r\nRF DL min %i: %u", channel, agcResults.adcMinResults[channel-1]);
+                    if(rfIf == 0 || rfIf == 2){
+                        if(maxMinAvg == 0 || maxMinAvg == 1){
+                            CLI_cliPrintf("\r\nIF UL max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 2){
+                            CLI_cliPrintf("\r\nIF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
+                        }
+                        if(maxMinAvg == 0 || maxMinAvg == 3){
+                            CLI_cliPrintf("\r\nIF UL min %i: %u", i+1, agcResults.adcMinResults[i+12]);
+                        }
                     }
                 }
-                if(rfIf == 0 || rfIf == 2){
-                    if(maxMinAvg == 0 || maxMinAvg == 1){
-                        CLI_cliPrintf("\r\nIF DL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 2){
-                        CLI_cliPrintf("\r\nIF DL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 3){
-                        CLI_cliPrintf("\r\nIF DL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
-                    }
-                }
-//                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
-            }
-            if (mode == 0 || mode == 2){
-                if(rfIf == 0 || rfIf == 1){
-                    if(maxMinAvg == 0 || maxMinAvg == 1){
-                        CLI_cliPrintf("\r\nRF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 2){
-                        CLI_cliPrintf("\r\nRF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 3){
-                        CLI_cliPrintf("\r\nRF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
-                    }
-                }
-                if(rfIf == 0 || rfIf == 2){
-                    if(maxMinAvg == 0 || maxMinAvg == 1){
-                        CLI_cliPrintf("\r\nIF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 2){
-                        CLI_cliPrintf("\r\nIF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
-                    }
-                    if(maxMinAvg == 0 || maxMinAvg == 3){
-                        CLI_cliPrintf("\r\nIF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
-                    }
-                }
-            }
         }
     }
     else{
-         CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-#ifndef CLI_SENSOR
-            CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-            CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-#else
-            CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-            CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-#endif
+        if(mode == 0 || mode == 1){
+            if(rfIf == 0 || rfIf == 1){
+                if(maxMinAvg == 0 || maxMinAvg == 1){
+                    CLI_cliPrintf("\r\nRF DL max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 2){
+                    CLI_cliPrintf("\r\nRF DL avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 3){
+                    CLI_cliPrintf("\r\nRF DL min %i: %u", channel, agcResults.adcMinResults[channel-1]);
+                }
+            }
+            if(rfIf == 0 || rfIf == 2){
+                if(maxMinAvg == 0 || maxMinAvg == 1){
+                    CLI_cliPrintf("\r\nIF DL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 2){
+                    CLI_cliPrintf("\r\nIF DL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 3){
+                    CLI_cliPrintf("\r\nIF DL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
+                }
+            }
+//                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
+        }
+        if (mode == 0 || mode == 2){
+            if(rfIf == 0 || rfIf == 1){
+                if(maxMinAvg == 0 || maxMinAvg == 1){
+                    CLI_cliPrintf("\r\nRF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 2){
+                    CLI_cliPrintf("\r\nRF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 3){
+                    CLI_cliPrintf("\r\nRF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
+                }
+            }
+            if(rfIf == 0 || rfIf == 2){
+                if(maxMinAvg == 0 || maxMinAvg == 1){
+                    CLI_cliPrintf("\r\nIF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 2){
+                    CLI_cliPrintf("\r\nIF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
+                }
+                if(maxMinAvg == 0 || maxMinAvg == 3){
+                    CLI_cliPrintf("\r\nIF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
+                }
+            }
+        }
     }
 
     CLI_startREAD();
