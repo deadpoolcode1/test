@@ -550,11 +550,20 @@ CRS_retVal_t Agc_sample(){
         }
     }
 
-    // for now take only from channel 1 for testing
-    adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
-    adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
-    adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
-    adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
+    if(scifTaskData.systemAgc.cfg.channelsSwitch != 0){
+        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+    }
+//    else{
+//        // for now take only from channel 1 for testing
+//        adcSums[0] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
+//        adcSums[1] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
+//        adcSums[2] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
+//        adcSums[3] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
+//    }
+
 
     if(mode==0 || mode==1){
         // modesChannel = number of results in top 20% and bottom 20% for each channel

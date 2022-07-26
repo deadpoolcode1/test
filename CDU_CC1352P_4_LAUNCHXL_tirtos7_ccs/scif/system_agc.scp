@@ -70,6 +70,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="state.samplesCount" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="state.tail" desc="ADC sample buffer (output) tail index" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tddMode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.unitType" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <resource_ref name="ADC" enabled="1"/>
         <resource_ref name="AON Domain Functionality" enabled="0"/>
         <resource_ref name="Accumulator-Based Math" enabled="1"/>
@@ -389,6 +390,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
 if(state.samplesCount == SAMPLE_SIZE){
     state.tddMode = cfg.tddMode;
     state.channelsSwitch = cfg.channelsSwitch;
+    state.unitType = cfg.unitType;
 }
 if(state.tddMode == 0){
     if(state.ledCounter == 0){
@@ -404,7 +406,7 @@ if(state.tddMode == 0){
 
     //get the TDD lock
     U16 lock;
-    if(cfg.unitType == 0){
+    if(state.unitType == 0){
         gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
         lock ^= 1;
     }else{
@@ -460,7 +462,7 @@ if(state.tddMode != 2){
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        if(cfg.unitType == 1){
+        if(state.unitType == 1){
             gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             gpioClearOutput(cfg.pAuxioOChannelControl[1]);
         }else{
@@ -468,21 +470,21 @@ if(state.tddMode != 2){
             gpioSetOutput(cfg.pAuxioOChannelControl[1]);
         }
         if(state.channelsSwitch == 2){
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             }
         }
         if(state.channelsSwitch == 3){
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
         if(state.channelsSwitch == 4){
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
@@ -493,7 +495,7 @@ if(state.tddMode != 2){
         while(a < CHANNELS_NUMBER){
             // Select channel
             // a = channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
@@ -501,13 +503,13 @@ if(state.tddMode != 2){
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
@@ -525,7 +527,7 @@ if(state.tddMode != 2){
             a += 1; // select channel with gpio pins
             if(state.channelsSwitch == 0){
                 if(a == 1){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioClearOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -534,7 +536,7 @@ if(state.tddMode != 2){
                     }
                 }
                 if (a == 2){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioClearOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -543,7 +545,7 @@ if(state.tddMode != 2){
                     }
                 }
                 if (a == 3){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -829,7 +831,7 @@ if(state.tddMode != 1){
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        if(cfg.unitType == 0){
+        if(state.unitType == 0){
             gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             gpioClearOutput(cfg.pAuxioOChannelControl[1]);
         }else{
@@ -837,21 +839,21 @@ if(state.tddMode != 1){
             gpioSetOutput(cfg.pAuxioOChannelControl[1]);
         }
         if(state.channelsSwitch == 2){
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             }
         }
         if(state.channelsSwitch == 3){
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
         if(state.channelsSwitch == 4){
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
@@ -862,7 +864,7 @@ if(state.tddMode != 1){
         while(a < CHANNELS_NUMBER){
             // Select channel
             // a = channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
@@ -871,13 +873,13 @@ if(state.tddMode != 1){
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
             // select correct IF channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
@@ -895,7 +897,7 @@ if(state.tddMode != 1){
             a += 1; // select channel with gpio pins
             if(state.channelsSwitch == 0){
                 if(a == 1){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioClearOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -904,7 +906,7 @@ if(state.tddMode != 1){
                     }
                 }
                 if (a == 2){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioClearOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -913,7 +915,7 @@ if(state.tddMode != 1){
                     }
                 }
                 if (a == 3){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
