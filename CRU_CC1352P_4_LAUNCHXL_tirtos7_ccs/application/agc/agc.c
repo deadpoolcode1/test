@@ -66,10 +66,14 @@ static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
 static void* gSem;
 static uint16_t Agc_events = 0;
+#ifdef CLI_SENSOR
+static bool gIsTDDLocked=0;
+#endif
 
 static void processAgcTimeoutCallback(UArg a0);
 static void processAgcSample();
 static void Agc_updateMaxStored(int db, int type);
+static bool Agc_getLock();
 
 void scTaskAlertCallback(void) {
     //Log_info0("callback");
@@ -364,9 +368,9 @@ CRS_retVal_t Agc_sample_debug(){
     // Check for TDD open and lock
     int mode = scifTaskData.systemAgc.cfg.tddMode;
     if(mode == 0){
-        CRS_retVal_t retVal = Tdd_isLocked();
-        if( retVal == CRS_TDD_NOT_LOCKED){
-            return retVal;
+        bool lock = Agc_getLock();
+        if(!lock){
+            return CRS_FAILURE;
         }
     }
     // Clear the ALERT interrupt source
@@ -489,8 +493,8 @@ CRS_retVal_t Agc_sample(){
     int mode = scifTaskData.systemAgc.cfg.tddMode;
     int i = 0;
     if(mode == 0){
-        CRS_retVal_t retVal = Tdd_isLocked();
-        if( retVal == CRS_TDD_NOT_LOCKED){
+        bool lock = Agc_getLock();
+        if(!lock){
             AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
             gAgcMaxResults = gAgcNewResults;
             for(i=0; i<4; i++){
@@ -503,7 +507,7 @@ CRS_retVal_t Agc_sample(){
             }
 
             //CLI_cliPrintf("\r\nSC is not locked");
-            return retVal;
+            return CRS_FAILURE;
         }
     }
     if(!gAgcReady){
@@ -780,11 +784,23 @@ static void Agc_updateMaxStored(int db, int type){
 
 }
 
+static bool Agc_getLock(){
+#ifndef CLI_SENSOR
+    CRS_retVal_t retVal = Tdd_isLocked();
+    if( retVal == CRS_TDD_NOT_LOCKED){
+        return false;
+    }
+    return true;
+#else
+    return gIsTDDLocked;
+#endif
+}
+
 
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock){
-
     scifTaskData.systemAgc.input.tddLock = lock;
+    gIsTDDLocked = lock;
     return CRS_SUCCESS;
 }
 #endif
