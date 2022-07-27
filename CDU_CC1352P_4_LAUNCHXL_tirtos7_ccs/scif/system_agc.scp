@@ -21,33 +21,37 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="AVERAGE_SIZE" desc="The sIze of the array of the sums of the samples results (for each channel sum of samples from downlinkRF, downlinkIF, uplinkRF, uplinkIF)." type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
         <tattr name="BUFFER_SIZE" desc="ADC measures buffer size for each cahnnel" type="expr" content="const" scope="task" min="0" max="65535">10</tattr>
         <tattr name="CHANNELS_NUMBER" desc="Number of channels." type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
+        <tattr name="MIN_MAX_CHANNELS_SIZE" type="expr" content="const" scope="task" min="0" max="65535">(MODES_SIZE - (MODES_SIZE/4))/CHANNELS_NUMBER</tattr>
         <tattr name="MODES_CHANNEL_SIZE" desc="The number of top 20% results from each channel" type="expr" content="const" scope="task" min="0" max="65535">MODES_SIZE / CHANNELS_NUMBER</tattr>
         <tattr name="MODES_SIZE" desc="Top 20% of results from the samples" type="expr" content="const" scope="task" min="0" max="65535">(MULTI_RESULT_SIZE / 10) * 2</tattr>
         <tattr name="MULTI_BUFFER_SIZE" desc="Number of measures from all channels in each  sample cycle" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE * CHANNELS_NUMBER</tattr>
         <tattr name="MULTI_RESULT_SIZE" desc="Total number of measures from all  channels across all samples" type="expr" content="const" scope="task" min="0" max="65535">SAMPLE_SIZE*MULTI_BUFFER_SIZE</tattr>
         <tattr name="RESULTS" desc="Number of measures for a channel in a sample cycle." type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
-        <tattr name="SAMPLE_SIZE" desc="Number of samples cycles." type="expr" content="const" scope="task" min="0" max="65535">3</tattr>
-        <tattr name="cfg.channelsNum" desc="number of channels" type="expr" content="struct" scope="task" min="0" max="65535">CHANNELS_NUMBER</tattr>
-        <tattr name="cfg.channelsSwitch" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="cfg.measuresCount" type="expr" content="struct" scope="task" min="0" max="65535">BUFFER_SIZE</tattr>
-        <tattr name="cfg.modesChannel" type="expr" content="struct" scope="task" min="0" max="65535">MODES_CHANNEL_SIZE</tattr>
-        <tattr name="cfg.samplesCount" desc="ALERT interrupt generation threshold" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
-        <tattr name="cfg.samplesNum" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
-        <tattr name="cfg.tddMode" desc="0 - ManualDL 1 - ManualUL 2 - Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="SAMPLE_SIZE" desc="Number of samples cycles." type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
+        <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayDL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayUL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.tddLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayUL" desc="Random delay period after interrupt wakeup and before starting to perform measures(UL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.tddLock" desc="TDD lock status" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverage" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverageTemp" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinIFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFDLTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFUL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFULTemp" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFUL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesRFDL" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -59,11 +63,14 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.pSamplesMultiChannelIF" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.pSamplesMultiChannelRF" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
+        <tattr name="state.channelsSwitch" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.head" desc="ADC sample buffer (input) head index" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledCounter" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.samplesCount" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="state.tail" desc="ADC sample buffer (output) tail index" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tddMode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.unitType" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <resource_ref name="ADC" enabled="1"/>
         <resource_ref name="AON Domain Functionality" enabled="0"/>
         <resource_ref name="Accumulator-Based Math" enabled="1"/>
@@ -379,7 +386,12 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
+        <sccode name="event0" init_power_mode="0"><![CDATA[//update state tddMode from app
+if(state.samplesCount == SAMPLE_SIZE){
+    state.tddMode = cfg.tddMode;
+    state.channelsSwitch = cfg.channelsSwitch;
+    state.unitType = cfg.unitType;
+}
 if(state.tddMode == 0){
     if(state.ledCounter == 0){
         gpioClearOutput(AUXIO_O_RED_LED);
@@ -391,17 +403,23 @@ if(state.tddMode == 0){
         state.ledCounter = 0;
     }
     state.ledCounter += 1;
+
+    //get the TDD lock
     U16 lock;
-    if(cfg.unitType == 0){
+    if(state.unitType == 0){
         gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
         lock ^= 1;
     }else{
         lock = input.tddLock;
     }
 
+    //if locked, activate the rising edge interrupt on event B
     if(lock == 1){
         evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); // for tdd lock pin
     }
+    //Activate timer trigger on event A, so if interrupt does not occur or there is no lock then
+    //event runs again from the start
+    //timer of 100 ms
     evhSetupTimer0Trigger(0, 100, 2);
 
 }else{
@@ -409,6 +427,7 @@ if(state.tddMode == 0){
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
+evhCancelTrigger(0);
 if(state.tddMode != 2){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 0){
@@ -421,7 +440,7 @@ if(state.tddMode != 2){
         gpioSetOutput(AUXIO_O_GREEN_LED);
     }
     U16 n = 0;
-    n = cfg.samplesCount;
+    n = state.samplesCount;
     fwDelayUs(input.randomDelayDL[n]);
 
     // Select ADC input
@@ -438,35 +457,34 @@ if(state.tddMode != 2){
     U16 c = 0;
     U16 d = 0;
 
-
     // 2.7 sample time, 3 pins, 4 channels.
     // 2.7 us for each channel. 2.7 * 4 = 10.8 us sampling rate on PIN.
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        if(cfg.unitType == 1){
+        if(state.unitType == 1){
             gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             gpioClearOutput(cfg.pAuxioOChannelControl[1]);
         }else{
             gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             gpioSetOutput(cfg.pAuxioOChannelControl[1]);
         }
-        if(cfg.channelsSwitch == 2){
-            if(cfg.unitType == 1){
+        if(state.channelsSwitch == 2){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             }
         }
-        if(cfg.channelsSwitch == 3){
-            if(cfg.unitType == 1){
+        if(state.channelsSwitch == 3){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
-        if(cfg.channelsSwitch == 4){
-            if(cfg.unitType == 1){
+        if(state.channelsSwitch == 4){
+            if(state.unitType == 1){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
@@ -474,10 +492,10 @@ if(state.tddMode != 2){
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
-        while(a < cfg.channelsNum){
+        while(a < CHANNELS_NUMBER){
             // Select channel
             // a = channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
@@ -485,13 +503,13 @@ if(state.tddMode != 2){
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            if(cfg.unitType == 1){
+            if(state.unitType == 1){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
@@ -507,9 +525,9 @@ if(state.tddMode != 2){
 
             n += 1;
             a += 1; // select channel with gpio pins
-            if(cfg.channelsSwitch == 0){
+            if(state.channelsSwitch == 0){
                 if(a == 1){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioClearOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -518,7 +536,7 @@ if(state.tddMode != 2){
                     }
                 }
                 if (a == 2){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioClearOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -527,7 +545,7 @@ if(state.tddMode != 2){
                     }
                 }
                 if (a == 3){
-                    if(cfg.unitType == 1){
+                    if(state.unitType == 1){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -550,10 +568,10 @@ if(state.tddMode != 2){
     n = 0;
 
     // get top and bottom 20% of results from samples.
-    while(f < cfg.channelsNum){
+    while(f < CHANNELS_NUMBER){
         while(n<BUFFER_SIZE){
             c = n;
-            accMul16s16u(n, cfg.channelsNum);
+            accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelRF[n];
@@ -600,7 +618,7 @@ if(state.tddMode != 2){
             }
 
             n = c;
-            accMul16s16u(n, cfg.channelsNum);
+            accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelIF[n];
@@ -654,7 +672,7 @@ if(state.tddMode != 2){
 
     }
 
-    cfg.samplesCount -= 1;
+    state.samplesCount -= 1;
 
     n = 0;
     a = 0;
@@ -664,37 +682,47 @@ if(state.tddMode != 2){
     e = 0;
     f = 0;
     // after 5 cycles of measures
-    if(cfg.samplesCount == 0){
+    if(state.samplesCount == 0){
 
         // we now have in output.maxSamples array with top 20% of results for each channel. channel0, channel1...
         // from the top 20% results we sort by ranges for each channel to determine which range has most results
 
         // clear values in Samples arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFDL[n] = 0;
-            output.channelsMaxIFDL[n] = 0;
-            output.channelsMinRFDL[n] = 0;
-            output.channelsMinIFDL[n] = 0;
+            output.channelsMaxRFDLTemp[n] = 0;
+            output.channelsMaxIFDLTemp[n] = 0;
+            output.channelsMinRFDLTemp[n] = 0;
+            output.channelsMinIFDLTemp[n] = 0;
             n +=1;
         }
 
         n = 0;
-        while(f<cfg.channelsNum){
+        while(f<CHANNELS_NUMBER){
             while(a<MODES_CHANNEL_SIZE){
                 b = n;
                 c = output.maxSamplesRFDL[n];
                 d = output.maxSamplesIFDL[n];
                 n = f;
-                output.channelsMaxRFDL[n] += c;
-                output.channelsMaxIFDL[n] += d;
-
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMaxRFDLTemp[n] += c;
+                    output.channelsMaxIFDLTemp[n] += d;
+                }else{
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
                 n = b;
                 c = output.minSamplesRFDL[n];
                 d = output.minSamplesIFDL[n];
                 n = f;
-                output.channelsMinRFDL[n] += c;
-                output.channelsMinIFDL[n] += d;
-
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMinRFDLTemp[n] += c;
+                    output.channelsMinIFDLTemp[n] += d;
+                }else{
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
                 n = b;
                 a+=1;
                 n+=1;
@@ -713,17 +741,32 @@ if(state.tddMode != 2){
             n += 1;
         }
 
+        n = 0;
+        while(n<CHANNELS_NUMBER){
+            output.channelsMaxRFDL[n] = output.channelsMaxRFDLTemp[n];
+            output.channelsMaxIFDL[n] = output.channelsMaxIFDLTemp[n];
+            output.channelsMinRFDL[n] = output.channelsMinRFDLTemp[n];
+            output.channelsMinIFDL[n] = output.channelsMinIFDLTemp[n];
+            n += 1;
+        }
+
         // clear vaules in average array and transfer them
         n = 0;
-        while(n<AVERAGE_SIZE){
+        a = 0;
+        while(n<CHANNELS_NUMBER){
+            a = n;
             output.channelsAverage[n] = output.channelsAverageTemp[n];
             output.channelsAverageTemp[n] = 0;
+            n += 8;
+            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            output.channelsAverageTemp[n] = 0;
+            n = a;
             n += 1;
         }
 
         n = 0;
         if(state.tddMode == 1){
-            cfg.samplesCount = SAMPLE_SIZE;
+            state.samplesCount = SAMPLE_SIZE;
             rtlLogStructs(BV_RTL_LOG_OUTPUT);
             // if interrupt flag is enabled, raises the interrupt for application to process results
             if(state.alertEnabled == 1) {
@@ -753,6 +796,7 @@ if(state.tddMode != 2){
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
+evhCancelTrigger(0);
 if(state.tddMode != 1){
     // randomDelay between 0 to 500 microsecond, is delivered by application.
     if(state.tddMode == 0){
@@ -765,7 +809,7 @@ if(state.tddMode != 1){
         gpioSetOutput(AUXIO_O_RED_LED);
     }
     U16 n = 0;
-    n = cfg.samplesCount;
+    n = state.samplesCount;
     fwDelayUs(input.randomDelayUL[n]);
 
     // Select ADC input
@@ -787,29 +831,29 @@ if(state.tddMode != 1){
 
     n = 0;
     while (n < MULTI_BUFFER_SIZE) {
-        if(cfg.unitType == 0){
+        if(state.unitType == 0){
             gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             gpioClearOutput(cfg.pAuxioOChannelControl[1]);
         }else{
             gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             gpioSetOutput(cfg.pAuxioOChannelControl[1]);
         }
-        if(cfg.channelsSwitch == 2){
-            if(cfg.unitType == 0){
+        if(state.channelsSwitch == 2){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[0]);
             }
         }
-        if(cfg.channelsSwitch == 3){
-            if(cfg.unitType == 0){
+        if(state.channelsSwitch == 3){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
-        if(cfg.channelsSwitch == 4){
-            if(cfg.unitType == 0){
+        if(state.channelsSwitch == 4){
+            if(state.unitType == 0){
                 gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                 gpioSetOutput(cfg.pAuxioOChannelControl[1]);
             }else{
@@ -817,10 +861,10 @@ if(state.tddMode != 1){
                 gpioClearOutput(cfg.pAuxioOChannelControl[1]);
             }
         }
-        while(a < cfg.channelsNum){
+        while(a < CHANNELS_NUMBER){
             // Select channel
             // a = channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
@@ -829,13 +873,13 @@ if(state.tddMode != 1){
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
             // select correct IF channel
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            if(cfg.unitType == 0){
+            if(state.unitType == 0){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
                 gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
             }
@@ -851,9 +895,9 @@ if(state.tddMode != 1){
 
             n += 1;
             a += 1; // select channel with gpio pins
-            if(cfg.channelsSwitch == 0){
+            if(state.channelsSwitch == 0){
                 if(a == 1){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioClearOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -862,7 +906,7 @@ if(state.tddMode != 1){
                     }
                 }
                 if (a == 2){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioClearOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -871,7 +915,7 @@ if(state.tddMode != 1){
                     }
                 }
                 if (a == 3){
-                    if(cfg.unitType == 0){
+                    if(state.unitType == 0){
                         gpioSetOutput(cfg.pAuxioOChannelControl[0]);
                         gpioSetOutput(cfg.pAuxioOChannelControl[1]);
                     }else{
@@ -894,10 +938,10 @@ if(state.tddMode != 1){
     n = 0;
 
     // get top and bottom 20% of results from samples.
-    while(f < cfg.channelsNum){
+    while(f < CHANNELS_NUMBER){
         while(n<BUFFER_SIZE){
             c = n;
-            accMul16s16u(n, cfg.channelsNum);
+            accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelRF[n];
@@ -944,7 +988,7 @@ if(state.tddMode != 1){
             }
 
             n = c;
-            accMul16s16u(n, cfg.channelsNum);
+            accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelIF[n];
@@ -999,7 +1043,7 @@ if(state.tddMode != 1){
     }
 
     if(state.tddMode == 2){
-        cfg.samplesCount -= 1;
+        state.samplesCount -= 1;
     }
 
     n = 0;
@@ -1010,36 +1054,50 @@ if(state.tddMode != 1){
     e = 0;
     f = 0;
     // after 5 cycles of measures
-    if(cfg.samplesCount == 0){
+    if(state.samplesCount == 0){
 
         // we now have in output.maxModes array with top 20% of results for each channel. channel0, channel1...
         // from the top 20% results we sort by ranges for each channel to determine which range has most results
 
         // clear values in modes arrays
         while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFUL[n] = 0;
-            output.channelsMaxIFUL[n] = 0;
-            output.channelsMinRFUL[n] = 0;
-            output.channelsMinIFUL[n] = 0;
+            output.channelsMaxRFULTemp[n] = 0;
+            output.channelsMaxIFULTemp[n] = 0;
+            output.channelsMinRFULTemp[n] = 0;
+            output.channelsMinIFULTemp[n] = 0;
             n +=1;
         }
 
         n = 0;
-        while(f<cfg.channelsNum){
+        while(f<CHANNELS_NUMBER){
             while(a<MODES_CHANNEL_SIZE){
                 b = n;
                 c = output.maxSamplesRFUL[n];
                 d = output.maxSamplesIFUL[n];
                 n = f;
-                output.channelsMaxRFUL[n] += c;
-                output.channelsMaxIFUL[n] += d;
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMaxRFULTemp[n] += c;
+                    output.channelsMaxIFULTemp[n] += d;
+                }else{
+                    n += 4;
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
 
                 n = b;
                 c = output.minSamplesRFUL[n];
                 d = output.minSamplesIFUL[n];
                 n = f;
-                output.channelsMinRFUL[n] += c;
-                output.channelsMinIFUL[n] += d;
+                if(a<MIN_MAX_CHANNELS_SIZE){
+                    output.channelsMinRFULTemp[n] += c;
+                    output.channelsMinIFULTemp[n] += d;
+                }else{
+                    n += 4;
+                    output.channelsAverageTemp[n] -= c;
+                    n += 8;
+                    output.channelsAverageTemp[n] -= d;
+                }
 
                 n = b;
                 a+=1;
@@ -1059,16 +1117,32 @@ if(state.tddMode != 1){
             n += 1;
         }
 
+        n = 0;
+        while(n<CHANNELS_NUMBER){
+            output.channelsMaxRFUL[n] = output.channelsMaxRFULTemp[n];
+            output.channelsMaxIFUL[n] = output.channelsMaxIFULTemp[n];
+            output.channelsMinRFUL[n] = output.channelsMinRFULTemp[n];
+            output.channelsMinIFUL[n] = output.channelsMinIFULTemp[n];
+            n += 1;
+        }
+
         // clear vaules in average array and transfer them
         n = 0;
-        while(n<AVERAGE_SIZE){
+        a = 0;
+        while(n<CHANNELS_NUMBER){
+            a = n;
+            n += 4;
             output.channelsAverage[n] = output.channelsAverageTemp[n];
             output.channelsAverageTemp[n] = 0;
+            n += 8;
+            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            output.channelsAverageTemp[n] = 0;
+            n = a;
             n += 1;
         }
 
         n = 0;
-        cfg.samplesCount = SAMPLE_SIZE;
+        state.samplesCount = SAMPLE_SIZE;
         rtlLogStructs(BV_RTL_LOG_OUTPUT);
         // if interrupt flag is enabled, raises the interrupt for application to process results
         if(state.alertEnabled == 1) {
@@ -1102,20 +1176,11 @@ if(state.tddMode != 1){
 evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
-        <sccode name="initialize" init_power_mode="0"><![CDATA[state.tddMode = cfg.tddMode;
-evhSetupTimer0Trigger(0, 1, 2);
-
-
-// if(state.tddMode == 2){
-//     evhSetupGpioTrigger(0, AUXIO_I_TDD_LOCK, 0, EVH_GPIO_TRIG_ON_MATCH);
-//    }
-// }else {
-//    //timer0StartWithTickSrc(TIMER0_TICKSRC_AON_RTC_4KHZ, 1, TIMER0_MODE_PERIODICAL, 4096 / 20, 0);
-//    //evhSetupTimer0CustomTrigger(1);
-//    evhSetupTimer0Trigger(0, 1, 2);
-// }
-// evhSetupGpioTrigger(0, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);]]></sccode>
-        <sccode name="terminate" init_power_mode="0"><![CDATA[]]></sccode>
+        <sccode name="initialize" init_power_mode="0"><![CDATA[//immediately start event A code
+evhSetupTimer0Trigger(0, 1, 0);]]></sccode>
+        <sccode name="terminate" init_power_mode="0"><![CDATA[evhCancelTrigger(0);
+evhCancelTrigger(1);
+evhCancelTrigger(2);]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
         <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39]</tt_struct>

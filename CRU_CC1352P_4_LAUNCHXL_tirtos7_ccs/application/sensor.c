@@ -438,6 +438,8 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
         AGCM_finishedTask();
 
     }
+    Agc_setLock(false);
+
     isConnected = false;
 
 }
