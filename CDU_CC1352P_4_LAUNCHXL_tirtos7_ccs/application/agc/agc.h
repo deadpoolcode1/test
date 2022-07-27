@@ -17,6 +17,17 @@ typedef enum AGC_sampleType{
     UL_IF
 } AGC_sampleType_t;
 
+typedef enum AGC_unitType{
+    TYPE_CDU,
+    TYPE_CRU
+} AGC_unitType_t;
+
+typedef enum AGC_sensorMode{
+    AGC_AUTO,
+    AGC_DL,
+    AGC_UL
+} AGC_sensorMode_t;
+
 typedef struct
 {
     // 0-4 RfRx, 5-8 RfxTx, 9-12 IfRx, 13-16 IfTx
@@ -37,7 +48,7 @@ typedef struct
 {
     // rfDL, rfUL, ifDL, ifUL
     //uint32_t adcValues[4][STORED_NUM];
-    uint32_t dbValues[SAMPLE_TYPES][STORED_NUM];
+    int dbValues[SAMPLE_TYPES][STORED_NUM];
     int times[SAMPLE_TYPES][STORED_NUM];
 } AGC_max_stored_t;
 
@@ -50,7 +61,7 @@ typedef struct
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t Agc_getControlPins(int mode, int channel, AGC_ctrlPins_t *pins);
+CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, int channel, AGC_ctrlPins_t *pins);
 CRS_retVal_t Agc_setChannel(uint16_t channel);
 CRS_retVal_t Agc_init(void * sem);
 void Agc_process(void);
@@ -61,11 +72,11 @@ void scTaskAlertCallback(void);
 void scCtrlReadyCallback(void);
 int Agc_isInitialized();
 int Agc_isReady();
-int Agc_convert(float voltage, int tx_rx, int rf_if);
+int Agc_convert(float voltage, AGC_sampleType_t type, AGC_unitType_t unitType);
 AGC_results_t Agc_getResults();
 AGC_max_results_t Agc_getMaxResults();
-CRS_retVal_t Agc_setMode(int mode);
-uint16_t Agc_getMode();
+CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode);
+AGC_sensorMode_t Agc_getMode();
 uint16_t Agc_getChannel();
 
 #ifdef CLI_SENSOR

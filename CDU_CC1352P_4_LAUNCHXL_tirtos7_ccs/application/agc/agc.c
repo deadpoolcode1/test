@@ -54,7 +54,7 @@ static AGC_results_t gAgcResults = {.adcMaxResults={0}, .adcMinResults={0xffffff
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
                                                                         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, .adcAvgResults={0}};
 static AGC_max_results_t gAgcMaxResults  = {.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
-static AGC_max_stored_t gAgcMaxStored = {.dbValues={{0}, {0}, {0}, {0}}, .times={0}};
+static AGC_max_stored_t gAgcMaxStored = {.dbValues={0}, .times={0}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
 static uint32_t gCurrentMaxResults [SAMPLE_TYPES] = {0xffffffff, 0x0, 0xffffffff, 0xffffffff};
@@ -62,13 +62,14 @@ static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
 static void* gSem;
 static uint16_t Agc_events = 0;
+static AGC_sensorMode_t gAgcMode = AGC_AUTO;
 #ifdef CLI_SENSOR
 static bool gIsTDDLocked=0;
 #endif
 
 static void processAgcTimeoutCallback(UArg a0);
 static void processAgcSample();
-static void Agc_updateMaxStored(int db, int type);
+static void Agc_updateMaxStored(int db, AGC_sampleType_t type);
 static bool Agc_getLock();
 
 void scTaskAlertCallback(void) {
@@ -104,6 +105,7 @@ AGC_max_results_t Agc_getMaxResults(){
 
 
 CRS_retVal_t Agc_init(void * sem){
+    // configure and start SC task
     if(gAgcInitialized){
         return CRS_SUCCESS;
     }
@@ -116,12 +118,15 @@ CRS_retVal_t Agc_init(void * sem){
     int i;
 
     uint32_t randomNumber;
-    uint16_t period = 5000;
-    uint16_t dl1 = 3714;
+    TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
+    uint16_t period = tdArgs.period;
+    uint16_t dl1 = tdArgs.dl1;
+    // uint16_t period = 5000;
+    // uint16_t dl1 = 3714;
     Random_seedAutomatic();
     for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
-        // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow,
-        // the ranges are between 0 to DL/UL time minus 800ms.
+        // generate random delays for both DL and UL to wait on in SC task.
+        // In order to prevent overflow, the ranges are between 0 to DL/UL time minus 800ms.
 
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
@@ -129,14 +134,15 @@ CRS_retVal_t Agc_init(void * sem){
         randomNumber = (Random_getNumber() % (dl1 - 800));
         scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
     }
-    int16_t mode = Agc_getMode();
+    // update cfg struct of sensor controller
+    AGC_sensorMode_t mode = Agc_getMode();
     scifTaskData.systemAgc.cfg.tddMode = mode;
     #ifndef CLI_SENSOR
-        scifTaskData.systemAgc.cfg.unitType = 0;
+        scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
     #else
-        scifTaskData.systemAgc.cfg.unitType = 1;
+        scifTaskData.systemAgc.cfg.unitType = TYPE_CRU;
     #endif
-    // get AGC interval time
+    // get AGC interval time from thresholds file
     char thrshFile[4096]={0};
     Thresh_read("AgcInterval", thrshFile);
     uint32_t agcInterval = strtol(thrshFile + strlen("AgcInterval="), NULL, 10);
@@ -158,14 +164,20 @@ void Agc_process(void)
 
         Agc_sample();
         char envFile[4096]={0};
-        //AGC_max_results_t agcResults = Agc_getMaxResults();
-        // agcResults.adcValues [] - 0 RfMaxRx, 1 RfMaxTx, 2 IfMaxRx, 3 IfMaxTx
-        int mode = Agc_getMode();
+        AGC_sensorMode_t mode = Agc_getMode();
+        // update cfg struct
+        scifTaskData.systemAgc.cfg.tddMode = mode;
+        #ifndef CLI_SENSOR
+            scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
+        #else
+            scifTaskData.systemAgc.cfg.unitType = TYPE_CRU;
+        #endif
+        // check alarms
         #ifndef CLI_SENSOR
             Thresh_read("DLMaxInputPower", envFile);
             int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
             NULL, 10);
-            if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], 0, 0)) && (mode==1))
+            if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CDU)) && (mode==AGC_DL))
             {
                 Alarms_setAlarm(DLMaxInputPower);
             }
@@ -177,7 +189,7 @@ void Agc_process(void)
             Thresh_read("ULMaxOutputPower", envFile);
             int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
             NULL, 10);
-            if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], 1, 0)) && (mode==2) )
+            if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CDU)) && (mode==AGC_UL) )
             {
                 Alarms_setAlarm(ULMaxOutputPower);
             }
@@ -189,7 +201,7 @@ void Agc_process(void)
             Thresh_read("ULMaxInputPower", envFile);
             int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
             NULL, 10);
-            if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], 0, 0)) && (mode==2) )
+            if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CRU)) && (mode==AGC_UL) )
             {
                 Alarms_setAlarm(ULMaxInputPower);
             }
@@ -201,7 +213,7 @@ void Agc_process(void)
             Thresh_read("DLMaxOutputPower", envFile);
             int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
             NULL, 10);
-            if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], 1, 0)) && (mode==1)  )
+            if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CRU)) && (mode==AGC_DL)  )
             {
                 Alarms_setAlarm(DLMaxOutputPower);
             }
@@ -210,6 +222,7 @@ void Agc_process(void)
                 Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
             }
         #endif
+        // update interval
         memset(envFile, 0, 4096);
         Thresh_read("AgcInterval", envFile);
         uint32_t agcInterval = strtol(envFile + strlen("AgcInterval="), NULL, 10);
@@ -225,58 +238,57 @@ void Agc_process(void)
 }
 
 
-int Agc_convert(float voltage, int tx_rx, int rf_if){
+int Agc_convert(float voltage, AGC_sampleType_t type, AGC_unitType_t unitType){
     // voltage- in microVolts.
-    // tx_rx: 0 - RX, 1 - TX
-    // rf_if: 0 - RF, 1 - IF
-    // return: sensor value in dB.
-    int result;
-    int offset;
-    if (rf_if == 0)
-    {
-        if (tx_rx == 0)
-        {
-            // RF RX - RX_DET_An
-            // tests the power that enters the RF/IF card (RSSI)
-            // y = -0.023x + 0.2791 , R^2 = 0.9998
-            offset = CRS_cbGainStates.dc_rf_high_freq_hb_rx - DC_RF_HIGH_FREQ_HB_RX;
-            voltage = voltage - 279100;
-            voltage = voltage / -23000;
-            result = (int)(voltage) + offset;
-        }
-        else
-        {
-            // RF TX - TX_DET_An
-            // power that comes out of FEM card
-            // y = ln(x) * 10.094 - 121.61
-            offset = CRS_cbGainStates.uc_rf_high_freq_hb_tx - UC_RF_HIGH_FREQ_HB_TX;
-            voltage = log(voltage) * 10.094 - 121.61;
-            result = (int)(voltage) + offset;
-        }
-
+    // type: 0 - RX_RF, 1 - TX_RF, 2 - RX_IF, 3 - TX_IF
+    // unitType: 0 - CDU, 1- CRU
+    // return: sensor value in dBm.
+    int result = 0;
+    int offset = 0;
+    if(unitType){
+        uint8_t temp = type;
+        temp ^= 1;
+        type = (AGC_sampleType_t)temp;
     }
-    else
+
+    if (type == DL_RF)
     {
-        if (tx_rx == 0)
-        {
-            // IF RX - IF_DET_An_RX (DownLink)
-            // tests the power coming out of the CAT5PA into the cable
-            // y = -0.0187x + 0.5642 , R^2 = 0.9977
-            offset = CRS_cbGainStates.uc_if_low_freq_rx - UC_IF_LOW_FREQ_RX;
-            voltage = voltage - 564200;
-            voltage = voltage / -18700;
-            result = (int)(voltage) + offset;
-        }
-        else
-        {
-            // IF TX - IF_DET_An_TX (UpLink)
-            // tests the power coming from the cable
-            // y = -0.0219x + 0.5669 , R^2 = 0.9995
-            offset = CRS_cbGainStates.dc_if_low_freq_tx - DC_IF_LOW_FREQ_TX;
-            voltage = voltage - 566900;
-            voltage = voltage/ -21900;
-            result = (int)(voltage) + offset;
-        }
+        // RF RX - RX_DET_An
+        // tests the power that enters the RF/IF card (RSSI)
+        // y = -0.023x + 0.2791 , R^2 = 0.9998
+        offset = CRS_cbGainStates.dc_rf_high_freq_hb_rx - DC_RF_HIGH_FREQ_HB_RX;
+        voltage = voltage - 279100;
+        voltage = voltage / -23000;
+        result = (int)(voltage) + offset;
+    }
+    else if(type == UL_RF)
+    {
+        // RF TX - TX_DET_An
+        // power that comes out of FEM card
+        // y = ln(x) * 10.094 - 121.61
+        offset = CRS_cbGainStates.uc_rf_high_freq_hb_tx - UC_RF_HIGH_FREQ_HB_TX;
+        voltage = log(voltage) * 10.094 - 121.61;
+        result = (int)(voltage) + offset;
+    }
+    else if (type == DL_IF)
+    {
+        // IF RX - IF_DET_An_RX (DownLink)
+        // tests the power coming out of the CAT5PA into the cable
+        // y = -0.0187x + 0.5642 , R^2 = 0.9977
+        offset = CRS_cbGainStates.uc_if_low_freq_rx - UC_IF_LOW_FREQ_RX;
+        voltage = voltage - 564200;
+        voltage = voltage / -18700;
+        result = (int)(voltage) + offset;
+    }
+    else if(type == UL_IF)
+    {
+        // IF TX - IF_DET_An_TX (UpLink)
+        // tests the power coming from the cable
+        // y = -0.0219x + 0.5669 , R^2 = 0.9995
+        offset = CRS_cbGainStates.dc_if_low_freq_tx - DC_IF_LOW_FREQ_TX;
+        voltage = voltage - 566900;
+        voltage = voltage/ -21900;
+        result = (int)(voltage) + offset;
     }
     return result;
 }
@@ -294,8 +306,8 @@ uint16_t Agc_getChannel(){
     return channel;
 }
 
-CRS_retVal_t Agc_setMode(int mode){
-    // change tdd_mode in thrsh file.
+CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
+    // change tdd mode in thrsh file.
     char envFile[1024] = { 0 };
     sprintf(envFile, "SensorMode=%x\n", mode);
     Thresh_write(envFile);
@@ -308,7 +320,7 @@ CRS_retVal_t Agc_setMode(int mode){
 
     scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
-
+    gAgcMode = mode;
     int i;
     for(i=0;i<SCIF_SYSTEM_AGC_AVERAGE_SIZE;i++){
         gAgcResults.adcMinResults[i] = 0xffffffff;
@@ -330,27 +342,22 @@ CRS_retVal_t Agc_setMode(int mode){
     return CRS_FAILURE;
 }
 
-uint16_t Agc_getMode(){
+AGC_sensorMode_t Agc_getMode(){
     char envFile[4096] = { 0 };
     Thresh_read("SensorMode", envFile);
-    uint16_t mode = strtol(envFile + strlen("SensorMode="), NULL, 16);
-    if (mode > 2){
-        mode = 2;
+    uint16_t tempMode = strtol(envFile + strlen("SensorMode="), NULL, 16);
+    if (tempMode > AGC_UL){
+        tempMode = AGC_UL;
     }
+    AGC_sensorMode_t mode = (AGC_sensorMode_t)tempMode;
+    gAgcMode = mode;
     //return scifTaskData.systemAgc.cfg.tddMode;
     return mode;
 }
 
 CRS_retVal_t Agc_sample_debug(){
     // Check for TDD open and lock
-    int mode = scifTaskData.systemAgc.cfg.tddMode;
-    if(mode == 0){
-        bool lock = Agc_getLock();
-        if(!lock){
-            return CRS_FAILURE;
-        }
-    }
-    if(!gAgcReady){
+    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
         return CRS_FAILURE;
     }
     // Clear the ALERT interrupt source
@@ -420,11 +427,10 @@ CRS_retVal_t Agc_sample_debug(){
     gAgcResults = newAgcResults;
     uint32_t randomNumber;
     TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
-    // TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
-    // uint16_t period = tdArgs.period;
-    // uint16_t dl1 = tdArgs.dl1;
-    uint16_t period = 5000;
-    uint16_t dl1 = 3714;
+    uint16_t period = tdArgs.period;
+    uint16_t dl1 = tdArgs.dl1;
+    // uint16_t period = 5000;
+    // uint16_t dl1 = 3714;
     for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
         // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
         randomNumber = (Random_getNumber() % (period - dl1 - 800));
@@ -449,31 +455,12 @@ CRS_retVal_t Agc_sample_debug(){
 
 CRS_retVal_t Agc_sample(){
     // Check for TDD open and lock
-    int mode = scifTaskData.systemAgc.cfg.tddMode;
     int i = 0;
-    if(mode == 0){
-        bool lock = Agc_getLock();
-        if(!lock){
-            AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
-            gAgcMaxResults = gAgcNewResults;
-            for(i=0; i<SAMPLE_TYPES; i++){
-                if(i!=1){
-                    gCurrentMaxResults[i] = 0xffffffff;
-                }
-                else{
-                    gCurrentMaxResults[i] = 0x0;
-                }
-            }
-
-            //CLI_cliPrintf("\r\nSC is not locked");
-            return CRS_FAILURE;
-        }
-    }
-    if(!gAgcReady){
+    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
         AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
         gAgcMaxResults = gAgcNewResults;
-        for(i =0; i<SAMPLE_TYPES; i++){
-            if(i!=UL_RF){
+        for(i=0; i<SAMPLE_TYPES; i++){
+            if(i!=1){
                 gCurrentMaxResults[i] = 0xffffffff;
             }
             else{
@@ -482,6 +469,7 @@ CRS_retVal_t Agc_sample(){
         }
         return CRS_FAILURE;
     }
+
     // Clear the ALERT interrupt source
     scifClearAlertIntSource();
 
@@ -525,16 +513,16 @@ CRS_retVal_t Agc_sample(){
 //    }
 
 
-    if(mode==0 || mode==1){
+    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_DL){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[DL_RF]/  SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         gCurrentMaxResults[DL_RF] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 0, 0), 0);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CDU), DL_RF);
         #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 1, 0), 0);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CRU), DL_RF);
         #endif
         sprintf(gAgcMaxResults.RfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_RF][0]);
 
@@ -544,9 +532,9 @@ CRS_retVal_t Agc_sample(){
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         gCurrentMaxResults[DL_IF] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 0, 1), 2);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CDU), DL_IF);
         #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 1, 1), 2);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CRU), DL_IF);
         #endif
         sprintf(gAgcMaxResults.IfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_IF][0]);
     }
@@ -557,16 +545,16 @@ CRS_retVal_t Agc_sample(){
         gCurrentMaxResults[2] = 0xffffffff;
     }
 
-    if(mode==0 || mode==2){
+    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_UL){
         // modesChannel = number of results in top 20% and bottom 20% for each channel
         adcValue = adcSums[UL_RF]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
         adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         gCurrentMaxResults[UL_RF] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 1, 0), 1);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CDU), UL_RF);
         #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 0, 1), 1);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CRU), UL_RF);
         #endif
         sprintf(gAgcMaxResults.RfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_RF][0]);
 
@@ -576,9 +564,9 @@ CRS_retVal_t Agc_sample(){
         adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
         gCurrentMaxResults[UL_IF] = adcValueMicroVolt;
         #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 1, 1), 3);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CDU), UL_IF);
         #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, 0, 1), 3);
+            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CRU), UL_IF);
         #endif
         sprintf(gAgcMaxResults.IfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_IF][0]);
     }
@@ -591,7 +579,6 @@ CRS_retVal_t Agc_sample(){
 
     uint32_t randomNumber;
     TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
-    // TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
     uint16_t period = tdArgs.period;
     uint16_t dl1 = tdArgs.dl1;
     //uint16_t period = 5000;
@@ -617,28 +604,28 @@ CRS_retVal_t Agc_sample(){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Agc_getControlPins(int mode, int channel, AGC_ctrlPins_t* pins){
+CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, int channel, AGC_ctrlPins_t* pins){
     /*
      * mode: RX - 0, TX - 1.
      * channel(TP number): 1, 2, 3 or 4.
      * pins: ADC_AnaSW_0_DIO26/ADC_AnaSW_1_DIO27 - 0 or 1
     */
-        if((mode == 1 && channel == 1)||(mode == 0 && channel == 4)){
+        if((mode == AGC_UL && channel == 1)||(mode == AGC_DL && channel == 4)){
             (*pins).ADC_AnaSW_0_DIO26 = 0;
             (*pins).ADC_AnaSW_1_DIO27 = 0;
             return CRS_SUCCESS;
         }
-        if ((mode == 1 && channel == 2)||(mode == 0 && channel == 3)){
+        if ((mode == AGC_UL && channel == 2)||(mode == AGC_DL && channel == 3)){
             (*pins).ADC_AnaSW_0_DIO26 = 1;
             (*pins).ADC_AnaSW_1_DIO27 = 0;
             return CRS_SUCCESS;
         }
-        if ((mode == 1 && channel == 3)||(mode == 0 && channel == 2)){
+        if ((mode == AGC_UL && channel == 3)||(mode == AGC_DL && channel == 2)){
             (*pins).ADC_AnaSW_0_DIO26 = 0;
             (*pins).ADC_AnaSW_1_DIO27 = 1;
             return CRS_SUCCESS;
         }
-        if ((mode == 1 && channel == 4)||(mode == 0 && channel == 1)){
+        if ((mode == AGC_UL && channel == 4)||(mode == AGC_DL && channel == 1)){
             (*pins).ADC_AnaSW_0_DIO26 = 1;
             (*pins).ADC_AnaSW_1_DIO27 = 1;
             return CRS_SUCCESS;
@@ -663,40 +650,49 @@ static void processAgcSample()
 
 }
 
-//static uint32_t cmpfunc1(const void * p1, const void * p2){
-//    return (*(uint32_t*)p1 - *(uint32_t*)p2) ;
-//}
-//
-//static uint32_t cmpfunc2(const void * p1, const void * p2){
-//    return (*(uint32_t*)p2 - *(uint32_t*)p1);
-//}
-
-static void Agc_updateMaxStored(int db, int type){
+static void Agc_updateMaxStored(int db, AGC_sampleType_t type){
     // type: 0 - rfDL, 1 - rfUL, 2- ifDL, 3 - ifUL
+    // in the gAgcMaxStored struct we save a number of unique max results we got from the sensors
+    // in the given time frame (in dBm). They are stored in descending order (first is biggest).
+
     // for all stored values of the type check it their time expired, if so then reset them so they will be overwritten
     int i = 0;
     int j = 0;
+    uint32_t time = Seconds_get();
     for(i=0;i<STORED_NUM;i++){
-        if( Seconds_get() - gAgcMaxStored.times[type][i]  > AGC_HOLD){
+        // if the value's time expired
+        if( time - gAgcMaxStored.times[type][i]  > AGC_HOLD){
+            // overwrite this value and increase the position of all other values in the list by one
             for(j=i;j<STORED_NUM-1;j++){
                 gAgcMaxStored.dbValues[type][j] = gAgcMaxStored.dbValues[type][j+1];
                 gAgcMaxStored.times[type][j] = gAgcMaxStored.times[type][j+1];
             }
+            // reset last value so it will be overwritten
             gAgcMaxStored.dbValues[type][STORED_NUM-1] = 0;
             gAgcMaxStored.times[type][STORED_NUM-1] = 0;
         }
     }
-//    // sort the arrays before trying to insert the new value
-//    if( type != 1 ){
-//        qsort(gAgcMaxStored.adcValues[type], STORED_NUM, sizeof(uint32_t), cmpfunc2);
-//    }else{
-//        qsort(gAgcMaxStored.adcValues[type], STORED_NUM, sizeof(uint32_t), cmpfunc1);
-//    }
-
+    // after removing expired elements, check if new value is bigger than any of currently stored value
     for(i=0;i<STORED_NUM;i++){
-        if((gAgcMaxStored.dbValues[type][i]<=db) || (gAgcMaxStored.times[type][i] == 0)){
+        // if new value is equal to another stored value, only update it's time
+        if(gAgcMaxStored.dbValues[type][i]==db){
+            gAgcMaxStored.times[type][i] = time;
+            break;
+        }else if((gAgcMaxStored.dbValues[type][i]<db) || (gAgcMaxStored.times[type][i] == 0)){
+            // if the new value is bigger than a stored value, move all stored values down one position (the smallest is deleted)
+            // and store the  new value and time in the current position
+            for(j=STORED_NUM-1;j>i;j--){
+                gAgcMaxStored.dbValues[type][j] = gAgcMaxStored.dbValues[type][j-1];
+                gAgcMaxStored.times[type][j] = gAgcMaxStored.times[type][j-1];
+            }
+
             gAgcMaxStored.dbValues[type][i] = db;
-            gAgcMaxStored.times[type][i] = Seconds_get();
+            // if current time is 0 seconds, put 1 instead (so it won't be treated as an expired value
+            if(time){
+                gAgcMaxStored.times[type][i] = time;
+            }else{
+                gAgcMaxStored.times[type][i] = 1;
+            }
             break;
         }
     }

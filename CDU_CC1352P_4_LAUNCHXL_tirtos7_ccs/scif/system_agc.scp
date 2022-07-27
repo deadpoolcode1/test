@@ -28,12 +28,12 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="MULTI_RESULT_SIZE" desc="Total number of measures from all  channels across all samples" type="expr" content="const" scope="task" min="0" max="65535">SAMPLE_SIZE*MULTI_BUFFER_SIZE</tattr>
         <tattr name="RESULTS" desc="Number of measures for a channel in a sample cycle." type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
         <tattr name="SAMPLE_SIZE" desc="Number of samples cycles." type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
-        <tattr name="cfg.channelsSwitch" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="cfg.tddMode" desc="0 - ManualDL 1 - ManualUL 2 - Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayDL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayUL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.tddLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayUL" desc="Random delay period after interrupt wakeup and before starting to perform measures(UL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.tddLock" desc="TDD lock status" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverage" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsAverageTemp" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMaxIFDL" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>

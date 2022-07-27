@@ -2986,12 +2986,13 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line)
     #endif
 
     token = strtok(NULL, s);
-    uint32_t mode = strtoul(&(token[2]), NULL, 16);
-    if ((mode>2) ||(!Agc_isInitialized())){
+    uint32_t tempMode = strtoul(&(token[2]), NULL, 16);
+    if ((tempMode>AGC_UL) ||(!Agc_isInitialized())){
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
         return CRS_FAILURE;
     }
+    AGC_sensorMode_t mode = (AGC_sensorMode_t)tempMode;
     CRS_retVal_t retStatus = Agc_setMode(mode);
     if(retStatus == CRS_SUCCESS){
         CLI_cliPrintf("\r\nSensorMode=%x", mode);
