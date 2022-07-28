@@ -63,6 +63,7 @@ static Clock_Handle agcClkHandle;
 static void* gSem;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
+static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
 #ifdef CLI_SENSOR
 static bool gIsTDDLocked=0;
 #endif
@@ -167,6 +168,7 @@ void Agc_process(void)
         AGC_sensorMode_t mode = Agc_getMode();
         // update cfg struct
         scifTaskData.systemAgc.cfg.tddMode = mode;
+        scifTaskData.systemAgc.cfg.channelsSwitch = gAgcChannel;
         #ifndef CLI_SENSOR
             scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
         #else
@@ -293,17 +295,17 @@ int Agc_convert(float voltage, AGC_sampleType_t type, AGC_unitType_t unitType){
     return result;
 }
 
-CRS_retVal_t Agc_setChannel(uint16_t channel){
+CRS_retVal_t Agc_setChannel(AGC_channels_t channel){
     scifTaskData.systemAgc.cfg.channelsSwitch = channel;
+    gAgcChannel = channel;
     if(scifTaskData.systemAgc.cfg.channelsSwitch == channel){
         return CRS_SUCCESS;
     }
     return CRS_FAILURE;
 }
 
-uint16_t Agc_getChannel(){
-    uint16_t channel = scifTaskData.systemAgc.cfg.channelsSwitch;
-    return channel;
+AGC_channels_t Agc_getChannel(){
+    return gAgcChannel;
 }
 
 CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
@@ -328,7 +330,7 @@ CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
         gAgcResults.adcAvgResults[i] = 0;
     }
     for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
-        if(i!=1){
+        if(i!=UL_RF){
             gCurrentMaxResults[i] = 0xffffffff;
         }
         else{
@@ -401,7 +403,6 @@ CRS_retVal_t Agc_sample_debug(){
         for(j=0;j<SAMPLE_TYPES;j++){
             // modesChannel = number of results in top 20% and bottom 20% for each channel
             adcValue = adcSums[j]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-
             adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
             adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
             newAgcResults.adcMinResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
@@ -460,7 +461,7 @@ CRS_retVal_t Agc_sample(){
         AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
         gAgcMaxResults = gAgcNewResults;
         for(i=0; i<SAMPLE_TYPES; i++){
-            if(i!=1){
+            if(i!=UL_RF){
                 gCurrentMaxResults[i] = 0xffffffff;
             }
             else{
@@ -498,7 +499,7 @@ CRS_retVal_t Agc_sample(){
         }
     }
 
-    if(scifTaskData.systemAgc.cfg.channelsSwitch != 0){
+    if(scifTaskData.systemAgc.cfg.channelsSwitch != AGC_ALL_CHANNELS){
         adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
         adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
         adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
@@ -604,28 +605,28 @@ CRS_retVal_t Agc_sample(){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, int channel, AGC_ctrlPins_t* pins){
+CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, AGC_ctrlPins_t* pins){
     /*
-     * mode: RX - 0, TX - 1.
+     * mode: DL - 1, UL - 1.
      * channel(TP number): 1, 2, 3 or 4.
      * pins: ADC_AnaSW_0_DIO26/ADC_AnaSW_1_DIO27 - 0 or 1
     */
-        if((mode == AGC_UL && channel == 1)||(mode == AGC_DL && channel == 4)){
+        if((mode == AGC_UL && channel == AGC_CHANNEL_1)||(mode == AGC_DL && channel == AGC_CHANNEL_4)){
             (*pins).ADC_AnaSW_0_DIO26 = 0;
             (*pins).ADC_AnaSW_1_DIO27 = 0;
             return CRS_SUCCESS;
         }
-        if ((mode == AGC_UL && channel == 2)||(mode == AGC_DL && channel == 3)){
+        if ((mode == AGC_UL && channel == AGC_CHANNEL_2)||(mode == AGC_DL && channel == AGC_CHANNEL_3)){
             (*pins).ADC_AnaSW_0_DIO26 = 1;
             (*pins).ADC_AnaSW_1_DIO27 = 0;
             return CRS_SUCCESS;
         }
-        if ((mode == AGC_UL && channel == 3)||(mode == AGC_DL && channel == 2)){
+        if ((mode == AGC_UL && channel == AGC_CHANNEL_3)||(mode == AGC_DL && channel == AGC_CHANNEL_2)){
             (*pins).ADC_AnaSW_0_DIO26 = 0;
             (*pins).ADC_AnaSW_1_DIO27 = 1;
             return CRS_SUCCESS;
         }
-        if ((mode == AGC_UL && channel == 4)||(mode == AGC_DL && channel == 1)){
+        if ((mode == AGC_UL && channel == AGC_CHANNEL_4)||(mode == AGC_DL && channel == AGC_CHANNEL_1)){
             (*pins).ADC_AnaSW_0_DIO26 = 1;
             (*pins).ADC_AnaSW_1_DIO27 = 1;
             return CRS_SUCCESS;
@@ -667,7 +668,7 @@ static void Agc_updateMaxStored(int db, AGC_sampleType_t type){
                 gAgcMaxStored.dbValues[type][j] = gAgcMaxStored.dbValues[type][j+1];
                 gAgcMaxStored.times[type][j] = gAgcMaxStored.times[type][j+1];
             }
-            // reset last value so it will be overwritten
+            // reset last value and time so it will be overwritten
             gAgcMaxStored.dbValues[type][STORED_NUM-1] = 0;
             gAgcMaxStored.times[type][STORED_NUM-1] = 0;
         }
