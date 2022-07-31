@@ -145,6 +145,12 @@ void Smac_process()
 
     if (smacEvents & SMAC_ERASE_COLLECTOR_EVT)
     {
+        MAC_stopDiscoveryClock();
+        CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
+        CollectorLink_getCollector(&collectorLink);
+        macMlmeDisassociateInd_t rsp2 = { 0 };
+        MAC_createDisssocInd(&rsp2, collectorLink.mac);
+        MAC_sendDisassocIndToApp(&rsp2);
         CollectorLink_eraseCollector();
         MAC_moveToBeaconState();
         Util_clearEvent(&smacEvents, SMAC_ERASE_COLLECTOR_EVT);
