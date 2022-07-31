@@ -10,7 +10,7 @@
   * - <b>Tool version</b>:     2.9.0.208
   * - <b>Tool patches</b>:     1
   * - <b>Target chip</b>:      CC1352P1F3, package QFN48 7x7 RGZ, revision E (2.1) or F (3.0)
-  * - <b>Created</b>:          2022-07-28 17:44:16.180
+  * - <b>Created</b>:          2022-07-31 11:40:57.484
   * - <b>Computer</b>:         LAPTOP-2C67QHF3
   * - <b>User</b>:             epc_5
   *
@@ -171,40 +171,40 @@ typedef struct {
 
 /// System AGC: Task input data structure
 typedef struct {
-    uint16_t randomDelayDL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(DL event)
-    uint16_t randomDelayUL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(UL event)
+    uint16_t randomDelayDL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(DL event). Contains multiple numbers for each sample cylce.
+    uint16_t randomDelayUL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(UL event). Contains multiple numbers for each sample cylce.
     uint16_t tddLock;          ///< TDD lock status
 } SCIF_SYSTEM_AGC_INPUT_T;
 
 
 /// System AGC: Task output data structure
 typedef struct {
-    uint16_t channelsAverage[16];        ///< contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1DLRF, sumsChannel2DLRF, sumsChannel3DLRF,  sumsChannel4DLRF,  sumsChannel1ULRF...]
-    uint16_t channelsAverageTemp[16];    ///< Stores the average results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMaxIFDL[4];         ///< Contains sum of the 15% max results from downlink IF
-    uint16_t channelsMaxIFDLTemp[4];     ///< Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMaxIFUL[4];         ///< Contains sum of the 15% max results from uplink IF
-    uint16_t channelsMaxIFULTemp[4];     ///< Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMaxRFDL[4];         ///< Contains sum of the 15% max results from downlink RF
-    uint16_t channelsMaxRFDLTemp[4];     ///< Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMaxRFUL[4];         ///< Contains sum of the 15% max results from uplink RF
-    uint16_t channelsMaxRFULTemp[4];     ///< Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMinIFDL[4];         ///< Contains sum of the 15% min results from downlink IF
-    uint16_t channelsMinIFDLTemp[4];     ///< Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMinIFUL[4];         ///< Contains sum of the 15% min results from uplink IF
-    uint16_t channelsMinIFULTemp[4];     ///< Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMinRFDL[4];         ///< Contains sum of the 15% min results from downlink RF
-    uint16_t channelsMinRFDLTemp[4];     ///< Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t channelsMinRFUL[4];         ///< Contains sum of the 15% min results from uplink RF
-    uint16_t channelsMinRFULTemp[4];     ///< Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done
-    uint16_t maxSamplesIFDL[16];         ///< Contains to 20% top reasults for each channel from all smaple cycles for IF downlink
-    uint16_t maxSamplesIFUL[16];         ///< Contains to 20% top reasults for each channel from all smaple cycles for IF uplink
-    uint16_t maxSamplesRFDL[16];         ///< Contains to 20% top reasults for each channel from all smaple cycles for RF downlink
-    uint16_t maxSamplesRFUL[16];         ///< Contains to 20% top reasults for each channel from all smaple cycles for RF uplink
-    uint16_t minSamplesIFDL[16];         ///< Contains to 20% bottom reasults for each channel from all smaple cycles for IF downlink
-    uint16_t minSamplesIFUL[16];         ///< Contains to 20% bottom reasults for each channel from all smaple cycles for IF uplink
-    uint16_t minSamplesRFDL[16];         ///< Contains to 20% bottom reasults for each channel from all smaple cycles for RF downlink
-    uint16_t minSamplesRFUL[16];         ///< Contains to 20% bottom reasults for each channel from all smaple cycles for RF uplink
+    uint16_t channelsAverage[16];        ///< Contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1-4DLRF, sumsChannel1-4ULRF, sumsChannel1-4DLIF,  sumsChannel1-4ULIF].
+    uint16_t channelsAverageTemp[16];    ///< Stores the average sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxIFDL[4];         ///< Contains sums of the 15% max results from downlink IF of channels 1-4.
+    uint16_t channelsMaxIFDLTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxIFUL[4];         ///< Contains sums of the 15% max results from uplink IF of channels 1-4.
+    uint16_t channelsMaxIFULTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxRFDL[4];         ///< Contains sums of the 15% max results from downlink RF of channels 1-4.
+    uint16_t channelsMaxRFDLTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxRFUL[4];         ///< Contains sums of the 15% max results from uplink RF of channels 1-4.
+    uint16_t channelsMaxRFULTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinIFDL[4];         ///< Contains sums of the 15% min results from downlink IF of channels 1-4.
+    uint16_t channelsMinIFDLTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinIFUL[4];         ///< Contains sums of the 15% min results from uplink IF of channels 1-4.
+    uint16_t channelsMinIFULTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinRFDL[4];         ///< Contains sums of the 15% min results from downlink RF of channels 1-4.
+    uint16_t channelsMinRFDLTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinRFUL[4];         ///< Contains sums of the 15% min results from uplink RF of channels 1-4.
+    uint16_t channelsMinRFULTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t maxSamplesIFDL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for IF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesIFUL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for IF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesRFDL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for RF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesRFUL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for RF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t minSamplesIFDL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for IF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesIFUL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for IF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesRFDL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for RF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesRFUL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for RF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
     uint16_t pSamplesMultiChannelIF[40]; ///< Stores IF samples of each sample cycle from each channel
     uint16_t pSamplesMultiChannelRF[40]; ///< Stores RF samples of each sample cycle from each channel
 } SCIF_SYSTEM_AGC_OUTPUT_T;
@@ -255,4 +255,4 @@ void scifReinitTaskIo(uint32_t bvTaskIds);
 //@}
 
 
-// Generated by LAPTOP-2C67QHF3 at 2022-07-28 17:44:16.180
+// Generated by LAPTOP-2C67QHF3 at 2022-07-31 11:40:57.484

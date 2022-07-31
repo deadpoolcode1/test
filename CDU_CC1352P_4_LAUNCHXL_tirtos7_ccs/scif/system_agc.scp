@@ -31,35 +31,35 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayUL" desc="Random delay period after interrupt wakeup and before starting to perform measures(UL event)" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event). Contains multiple numbers for each sample cylce." size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayUL" desc="Random delay period after interrupt wakeup and before starting to perform measures(UL event). Contains multiple numbers for each sample cylce." size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.tddLock" desc="TDD lock status" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsAverage" desc="contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1DLRF, sumsChannel2DLRF, sumsChannel3DLRF,  sumsChannel4DLRF,  sumsChannel1ULRF...]" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsAverageTemp" desc="Stores the average results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFDL" desc="Contains sum of the 15% max results from downlink IF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFDLTemp" desc="Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFUL" desc="Contains sum of the 15% max results from uplink IF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFULTemp" desc="Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFDL" desc="Contains sum of the 15% max results from downlink RF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFDLTemp" desc="Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFUL" desc="Contains sum of the 15% max results from uplink RF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFULTemp" desc="Stores the max results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFDL" desc="Contains sum of the 15% min results from downlink IF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFDLTemp" desc="Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFUL" desc="Contains sum of the 15% min results from uplink IF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFULTemp" desc="Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFDL" desc="Contains sum of the 15% min results from downlink RF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFDLTemp" desc="Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFUL" desc="Contains sum of the 15% min results from uplink RF" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFULTemp" desc="Stores the min results between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFDL" desc="Contains to 20% top reasults for each channel from all smaple cycles for IF downlink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFUL" desc="Contains to 20% top reasults for each channel from all smaple cycles for IF uplink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFDL" desc="Contains to 20% top reasults for each channel from all smaple cycles for RF downlink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFUL" desc="Contains to 20% top reasults for each channel from all smaple cycles for RF uplink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.minSamplesIFDL" desc="Contains to 20% bottom reasults for each channel from all smaple cycles for IF downlink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesIFUL" desc="Contains to 20% bottom reasults for each channel from all smaple cycles for IF uplink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFDL" desc="Contains to 20% bottom reasults for each channel from all smaple cycles for RF downlink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFUL" desc="Contains to 20% bottom reasults for each channel from all smaple cycles for RF uplink" size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.channelsAverage" desc="Contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1-4DLRF, sumsChannel1-4ULRF, sumsChannel1-4DLIF,  sumsChannel1-4ULIF]." size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsAverageTemp" desc="Stores the average sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFDL" desc="Contains sums of the 15% max results from downlink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFDLTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFUL" desc="Contains sums of the 15% max results from uplink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxIFULTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFDL" desc="Contains sums of the 15% max results from downlink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFDLTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFUL" desc="Contains sums of the 15% max results from uplink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMaxRFULTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFDL" desc="Contains sums of the 15% min results from downlink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFDLTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFUL" desc="Contains sums of the 15% min results from uplink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinIFULTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFDL" desc="Contains sums of the 15% min results from downlink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFDLTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFUL" desc="Contains sums of the 15% min results from uplink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsMinRFULTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesIFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesIFUL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesRFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for RF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.maxSamplesRFUL" desc="Contains the 20% top reasults for each channel from all smaple cycles for RF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.minSamplesIFDL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for IF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesIFUL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for IF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesRFDL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for RF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.minSamplesRFUL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for RF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
         <tattr name="output.pSamplesMultiChannelIF" desc="Stores IF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.pSamplesMultiChannelRF" desc="Stores RF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
@@ -384,7 +384,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[// update state's TDD mode, channels select and unit Type from the cfg (on a new sampling cycle only)
+        <sccode name="event0" init_power_mode="0"><![CDATA[// update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.samplesCount == SAMPLE_SIZE){
     state.tddMode = cfg.tddMode;
     state.channelsSwitch = cfg.channelsSwitch;
@@ -501,12 +501,12 @@ if(state.tddMode != 2){
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
             }
-            // this triggers the driver to start measure and place the result in the output array
+            // this triggers the driver to start a measure and place the result in the output array
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             // select the IF pin
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            // IF require same PIN setup as RX Detect, so for CRU (who have TX detect selected)
+            // IF requires same PIN setup as RX Detect, so for CRU (who have TX detect selected)
             // we toggle the channel select pins (as for TX Detect they are exact opposites)
             if(state.unitType == 1){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
@@ -526,13 +526,13 @@ if(state.tddMode != 2){
 
             // add IF and RF results to the average arrays for later average calulation
             // the average array is arranged as: 0-3: RFDL, 4-7: RFUL, 8-11: IFDL, 12-15: IFUL (4 of each type for each channel)
-            // so here we add 8 before inserting channels IF results (to get to positions 8-11)
+            // for accessing RFDL sums we don't add anything to n so we get positions 0-3, for IFDL we add 8 to n to get to positions 8-11
             c = output.pSamplesMultiChannelRF[n];
             d = output.pSamplesMultiChannelIF[n];
             n = a;
             output.channelsAverageTemp[n] += c;
             n = a + 8;
-            output.channelsAverageTemp[n] += d
+            output.channelsAverageTemp[n] += d;
             n = b;
 
             n += 1;
@@ -584,30 +584,32 @@ if(state.tddMode != 2){
     // in this loop we get top and bottom 20% of results from samples
     while(f < CHANNELS_NUMBER){
         while(n<BUFFER_SIZE){
-            // samples array is arranged [channel1, channel2, channel3, channel4]
-            // the max/min arrays are arranged by channels [channel1, channel1, channel1, channel2, channel2...]
-            // we iterate on each channel, taking and comparing only this channel results from the samples array
-            // and putting them in the max/min arrays in ascending/descending order.
+            // samples array is arranged as [channelSample1, channelSample2, channelSample3, channelSample4, channelSample1...] (channels alternating)
+            // the max/min arrays are arranged by channels and sorted smallest to biggest/ biggest to smallest:
+            // [channelSample1, channelSampleBigger1, channelSampleBiggest1, channelSample2, channelSampleBigger2...](for min arrays -> bigger to smallest)
+            // we iterate on each channel, taking and comparing the channels samples currently in the buffer to the ones in the max/min arrays.
+            // If any of the samples is bigger/smaller than the ones stored in the max/min array, we move all samples in the array down/up and insert the new sample.
             c = n;
-            // make jumps of CHANNELS_NUMBER on samples array
+            // make jumps of CHANNELS_NUMBER on samples array - multiply n by iterator and add the current channel number
             accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelRF[n];
-            b = MODES_CHANNEL_SIZE - 1;
             // check if this sample is greater/lesser than the ones already stored in the max/min
-            // because these array start with values of 0(for max)/0xffff(for min), first results will get into the array
-            // always.
+            // because these array start with values of 0(for max)/0xffff(for min), first results will always get into the array
+            b = MODES_CHANNEL_SIZE - 1;
             while( b >= 0){
+                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
                 d = output.maxSamplesRFDL[n];
-                // in the case it is, we 'move' all other results down/up the array
-                // this makes it so array will be sorted samller -> bigger in max array and
-                // bigger -> smaller in min.
+                // check if smaple is greater than any of the samples in maxSamples
                 if(d < a){
+                    // insert current sample to new position
                     output.maxSamplesRFDL[n] = a;
+                    // here we 'move' all smaller samples down the array (deleting the first smallest sample)
+                    // this makes it so array will be sorted samller -> biggest
                     while(0 < b){
                         n -= 1;
                         b -= 1;
@@ -623,14 +625,19 @@ if(state.tddMode != 2){
 
             // repeat this for minimum array
             b = 0;
-            // check if smaple is lesser than any of the samples in minSamples
+            b = 0;
             while( b < MODES_CHANNEL_SIZE){
+                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
                 d = output.minSamplesRFDL[n];
+                // check if smaple is lesser than any of the samples in minSamples
                 if(d > a){
+                    // insert current sample to new position
                     output.minSamplesRFDL[n] = a;
+                    // here we 'move' all bigger samples up the array (deleting the last biggest sample)
+                    // this makes it so array will be sorted bigger -> smallest
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
@@ -642,13 +649,11 @@ if(state.tddMode != 2){
                 }
                 b +=1;
             }
-
+            // repeat whole process for the IF samples
             n = c;
             accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
-
-            // repeat whole process for the IF samples
             a = output.pSamplesMultiChannelIF[n];
             b = MODES_CHANNEL_SIZE - 1;
 
@@ -699,6 +704,7 @@ if(state.tddMode != 2){
 
     }
 
+    // decrease the sample cycle counter
     state.samplesCount -= 1;
 
     // reset variables
@@ -722,13 +728,16 @@ if(state.tddMode != 2){
         }
         // we now have in the output.maxSamples array the top 20% of results from each channel (for RF and IF).
         // in output.minSamples we got bottom 20% of results from each channel (for RF and IF).
-        // we want to discard top 5% bottom and top from all results (get rid of the outliers).
-        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin
+        // we want to discard top 5% bottom and top from all sums - min max and average (get rid of the outliers).
+        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin arrays
         // we also subtruct those 5% top/bottom results from the sums in the average arrays.
+
         n = 0;
         while(f<CHANNELS_NUMBER){
+            // we iterate on each channel results
             while(a<MODES_CHANNEL_SIZE){
-                // we iterate on each channel results
+                // for each channel, we sum it's first/last 15% samples (out of total 20% we got in the array),
+                // the remaining 5% we subtract from the average sum array (as they were added to the total sum)
                 b = n;
                 c = output.maxSamplesRFDL[n];
                 d = output.maxSamplesIFDL[n];
@@ -739,20 +748,25 @@ if(state.tddMode != 2){
                     output.channelsMaxIFDLTemp[n] += d;
                 }else{
                     // otherwise subtruct the 5% from the average sum
+                    // RFDL positions 0-3
                     output.channelsAverageTemp[n] -= c;
+                    // to get to IFDL we add 8: positions 8-11
                     n += 8;
                     output.channelsAverageTemp[n] -= d;
                 }
                 n = b;
-                // repeat for IF
+                // repeat for min
                 c = output.minSamplesRFDL[n];
                 d = output.minSamplesIFDL[n];
                 n = f;
                 if(a<MIN_MAX_CHANNELS_SIZE){
+                    // if results are within the 15%, add them to the sums array
                     output.channelsMinRFDLTemp[n] += c;
                     output.channelsMinIFDLTemp[n] += d;
                 }else{
+                    // RFDL positions 0-3
                     output.channelsAverageTemp[n] -= c;
+                    // to get to IFDL we add 8: positions 8-11
                     n += 8;
                     output.channelsAverageTemp[n] -= d;
                 }
@@ -894,12 +908,12 @@ if(state.tddMode != 1){
             }else{
                 adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
             }
-            // this triggers the driver to start measure and place the result in the output array
+            // this triggers the driver to start a measure and place the result in the output array
             adcGenManualTrigger();
             adcReadFifo(output.pSamplesMultiChannelRF[n]);
             // select the IF pin
             adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            // IF require same PIN setup as RX Detect, so for CDU (who have TX detect selected)
+            // IF requires same PIN setup as RX Detect, so for CDU (who have TX detect selected)
             // we toggle the channel select pins (as for TX Detect they are exact opposites)
             if(state.unitType == 0){
                 gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
@@ -919,7 +933,7 @@ if(state.tddMode != 1){
 
             // add IF and RF results to the average arrays for later average calulation
             // the average array is arranged as: 0-3: RFDL, 4-7: RFUL, 8-11: IFDL, 12-15: IFUL (4 of each type for each channel)
-            // here we add 4 for RF and 12 for IF before inserting channels results (to get to positions 4-7 and 13-15)
+            // here we add 4 to n before adding the RF to sums to get to positions 4-7 and 12 to n before adding the IF sums to get 13-15
             c = output.pSamplesMultiChannelRF[n];
             d = output.pSamplesMultiChannelIF[n];
             n = a + 4;
@@ -977,30 +991,32 @@ if(state.tddMode != 1){
     // in this loop we get top and bottom 20% of results from samples
     while(f < CHANNELS_NUMBER){
         while(n<BUFFER_SIZE){
-            // samples array is arranged [channel1, channel2, channel3, channel4]
-            // the max/min arrays are arranged by channels [channel1, channel1, channel1, channel2, channel2...]
-            // we iterate on samples array by each channel, taking and comparing only this channel results from the array
-            // and putting them in the max/min arrays in ascending/descending order.
+            // samples array is arranged as [channelSample1, channelSample2, channelSample3, channelSample4, channelSample1...] (channels alternating)
+            // the max/min arrays are arranged by channels and sorted smallest to biggest/ biggest to smallest:
+            // [channelSample1, channelSampleBigger1, channelSampleBiggest1, channelSample2, channelSampleBigger2...]
+            // we iterate on each channel, taking and comparing the channels samples currently in the buffer to the ones in the max/min arrays.
+            // If any of the samples is bigger/smaller than the ones stored in the max/min array, we move all samples in the array down/up and insert the new sample.
             c = n;
-            // make jumps of CHANNELS_NUMBER on samples array
+            // make jumps of CHANNELS_NUMBER on samples array - multiply n by iterator and add the current channel number
             accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
             a = output.pSamplesMultiChannelRF[n];
-            b = MODES_CHANNEL_SIZE - 1;
             // check if this sample is greater/lesser than the ones already stored in the max/min
-            // because these array start with values of 0(for max)/0xffff(for min), first results will get into the array
-            // always.
+            // because these array start with values of 0(for max)/0xffff(for min), first results will always get into the array
+            b = MODES_CHANNEL_SIZE - 1;
             while( b >= 0){
+                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
                 d = output.maxSamplesRFUL[n];
-                // in the case it is, we 'move' all other results down/up the array
-                // this makes it so array will be sorted samller -> bigger in max array and
-                // bigger -> smaller in min.
+                // check if smaple is greater than any of the samples in maxSamples
                 if(d < a){
+                    // insert current sample to new position
                     output.maxSamplesRFUL[n] = a;
+                    // here we 'move' all smaller samples down the array (deleting the first smallest sample)
+                    // this makes it so array will be sorted samller -> biggest
                     while(0 < b){
                         n -= 1;
                         b -= 1;
@@ -1018,12 +1034,17 @@ if(state.tddMode != 1){
             b = 0;
             // check if smaple is lesser than any of the samples in minmodes
             while( b < MODES_CHANNEL_SIZE){
+                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
                 accMul16s16u(f, MODES_CHANNEL_SIZE);
                 accGet16(0; n);
                 n += b;
                 d = output.minSamplesRFUL[n];
+                // check if smaple is lesser than any of the samples in minSamples
                 if(d > a){
+                    // insert current sample to new position
                     output.minSamplesRFUL[n] = a;
+                    // here we 'move' all bigger samples up the array (deleting the last biggest sample)
+                    // this makes it so array will be sorted bigger -> smallest
                     while(b < (MODES_CHANNEL_SIZE-1)){
                         n += 1;
                         b += 1;
@@ -1036,13 +1057,11 @@ if(state.tddMode != 1){
                 b +=1;
             }
 
-
+            // repeat whole process for the IF samples
             n = c;
             accMul16s16u(n, CHANNELS_NUMBER);
             accGet16(0; n);
             n += f;
-
-            // repeat whole process for the IF samples
             a = output.pSamplesMultiChannelIF[n];
             b = MODES_CHANNEL_SIZE - 1;
             while(b >= 0){
@@ -1093,6 +1112,7 @@ if(state.tddMode != 1){
 
     }
 
+    // decrease the sample cycle counter only if mode is manualUL(if we are in auto the counter was already changed by UL event).
     if(state.tddMode == 2){
         state.samplesCount -= 1;
     }
@@ -1107,7 +1127,6 @@ if(state.tddMode != 1){
     // if this is the last cylce of measures, process the result
     if(state.samplesCount == 0){
         // clear values in temp Samples arrays (there we put the sums of results)
-
         while(n<CHANNELS_NUMBER){
             output.channelsMaxRFULTemp[n] = 0;
             output.channelsMaxIFULTemp[n] = 0;
@@ -1117,14 +1136,16 @@ if(state.tddMode != 1){
         }
         // we now have in the output.maxSamples array the top 20% of results from each channel (for RF and IF).
         // in output.minSamples we got bottom 20% of results from each channel (for RF and IF).
-        // we want to discard top 5% bottom and top from all results (get rid of the outliers).
-        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin
+        // we want to discard top 5% bottom and top from all sums - min max and average (get rid of the outliers).
+        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin arrays
         // we also subtruct those 5% top/bottom results from the sums in the average arrays.
 
         n = 0;
         while(f<CHANNELS_NUMBER){
+            // we iterate on each channel results
             while(a<MODES_CHANNEL_SIZE){
-                // we iterate on each channel results
+                // for each channel, we sum it's first/last 15% samples (out of total 20% we got in the array),
+                // the remaining 5% we subtract from the average sum array (as they were added to the total sum)
                 b = n;
                 c = output.maxSamplesRFUL[n];
                 d = output.maxSamplesIFUL[n];
@@ -1142,16 +1163,19 @@ if(state.tddMode != 1){
                 }
 
                 n = b;
-                // repeat for IF
+                // repeat for min
                 c = output.minSamplesRFUL[n];
                 d = output.minSamplesIFUL[n];
                 n = f;
-                if(a<MIN_MAX_CHANNELS_SIZE){
+                if(a>MIN_MAX_CHANNELS_SIZE){
+                    // if results are within the 15%, add them to the sums array
                     output.channelsMinRFULTemp[n] += c;
                     output.channelsMinIFULTemp[n] += d;
                 }else{
+                    // to get to RFUL we add 4: positions 4-7
                     n += 4;
                     output.channelsAverageTemp[n] -= c;
+                    // to get to IFUL we add 8: positions 12-15
                     n += 8;
                     output.channelsAverageTemp[n] -= d;
                 }
