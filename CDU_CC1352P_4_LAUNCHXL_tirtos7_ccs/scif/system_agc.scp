@@ -1167,7 +1167,7 @@ if(state.tddMode != 1){
                 c = output.minSamplesRFUL[n];
                 d = output.minSamplesIFUL[n];
                 n = f;
-                if(a>MIN_MAX_CHANNELS_SIZE){
+                if(a<MIN_MAX_CHANNELS_SIZE){
                     // if results are within the 15%, add them to the sums array
                     output.channelsMinRFULTemp[n] += c;
                     output.channelsMinIFULTemp[n] += d;
