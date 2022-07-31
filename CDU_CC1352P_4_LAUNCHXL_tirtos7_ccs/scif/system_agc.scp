@@ -462,38 +462,36 @@ if(state.tddMode != 2){
     while (n < MULTI_BUFFER_SIZE) {
         // select the correct channel according to cfg variable.
         // select the first channel in case channelsSwitch is set to all channels
-        if(state.unitType == 1){
-            gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-        }else{
-            gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-        }
-        if(state.channelsSwitch == 2){
-            if(state.unitType == 1){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            }
-        }
-        if(state.channelsSwitch == 3){
-            if(state.unitType == 1){
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-        }
-        if(state.channelsSwitch == 4){
-            if(state.unitType == 1){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-        }
         while(a < CHANNELS_NUMBER){
+            // Select channel
             // a = channel
+            // when channelsSwitch is 0 we switch between all channels using the iterator a
+            if(state.channelsSwitch==0){
+                b = a + 1;
+            } else{
+                // if it is not 0, we measure only the selected channel
+                b = state.channelsSwitch;
+            }
+            // first we set both pin to select the first channel (in cdu both pins 1, in cru both pins 0)
+            if(state.unitType == 0){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }
+            if(state.unitType == 1){
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
+            // then we toggle the correct pins according to the chosen channel
+            c = b ^ 1;
+            c = c & 1;
+            if(c==1){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+            }
+
+            if(b >= 3){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
+
             // select the correct pin according to unit type. For CDU we select
             // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
             if(state.unitType == 0){
@@ -538,36 +536,6 @@ if(state.tddMode != 2){
             n += 1;
             a += 1;
             // Select channel again
-            if(state.channelsSwitch == 0){
-                if(a == 1){
-                    if(state.unitType == 1){
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-                if (a == 2){
-                    if(state.unitType == 1){
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-                if (a == 3){
-                    if(state.unitType == 1){
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-            }
-
         }
         a = 0;
     }
@@ -869,38 +837,36 @@ if(state.tddMode != 1){
     while (n < MULTI_BUFFER_SIZE) {
         // select the correct channel according to cfg variable.
         // select the first channel in case channelsSwitch is set to all channels
-        if(state.unitType == 0){
-            gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-        }else{
-            gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-        }
-        if(state.channelsSwitch == 2){
-            if(state.unitType == 0){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-            }
-        }
-        if(state.channelsSwitch == 3){
-            if(state.unitType == 0){
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-        }
-        if(state.channelsSwitch == 4){
-            if(state.unitType == 0){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }else{
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-        }
         while(a < CHANNELS_NUMBER){
+            // Select channel
             // a = channel
+            // when channelsSwitch is 0 we switch between all channels using the iterator a
+            if(state.channelsSwitch==0){
+                b = a + 1;
+            } else{
+                // if it is not 0, we measure only the selected channel
+                b = state.channelsSwitch;
+            }
+            // first we set both pin to select the first channel (in cdu both pins 1, in cru both pins 0)
+            if(state.unitType == 1){
+                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
+                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
+            }
+            if(state.unitType == 0){
+                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
+                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
+            }
+            // then we toggle the correct pins according to the chosen channel
+            c = b ^ 1;
+            c = c & 1;
+            if(c==1){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
+            }
+
+            if(b >= 3){
+                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
+            }
+
             // select the correct pin according to unit type. For CRU we select
             // Rx detect PIN(Tal's card), for CDU we select Tx detect PIN(FEM card)
             if(state.unitType == 0){
@@ -944,37 +910,6 @@ if(state.tddMode != 1){
 
             n += 1;
             a += 1;
-            // select channel again
-            if(state.channelsSwitch == 0){
-                if(a == 1){
-                    if(state.unitType == 0){
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-                if (a == 2){
-                    if(state.unitType == 0){
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-                if (a == 3){
-                    if(state.unitType == 0){
-                        gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-                    }else{
-                        gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                        gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-                    }
-                }
-            }
-
         }
         a = 0;
     }

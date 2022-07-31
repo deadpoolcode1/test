@@ -10,7 +10,7 @@
   * - <b>Tool version</b>:     2.9.0.208
   * - <b>Tool patches</b>:     1
   * - <b>Target chip</b>:      CC1352P1F3, package QFN48 7x7 RGZ, revision E (2.1) or F (3.0)
-  * - <b>Created</b>:          2022-07-27 15:56:50.301
+  * - <b>Created</b>:          2022-07-31 15:13:00.429
   * - <b>Computer</b>:         LAPTOP-2C67QHF3
   * - <b>User</b>:             epc_5
   *
@@ -121,25 +121,25 @@
 #define SCIF_SYSTEM_AGC_TASK_ID 0
 
 
-/// System AGC: The sIze of the array of the sums of the samples results (for each channel sum of samples from downlinkRF, downlinkIF, uplinkRF, uplinkIF).
+/// System AGC: The size of the array of the sums of the samples results (for each channel sum of samples from DLRF, ULRF, DLIF, ULIF).
 #define SCIF_SYSTEM_AGC_AVERAGE_SIZE 16
-/// System AGC: ADC measures buffer size for each cahnnel
+/// System AGC: Number of measures on each channel from one sample cycle (one DL/UL period)
 #define SCIF_SYSTEM_AGC_BUFFER_SIZE 10
-/// System AGC: Number of channels.
+/// System AGC: Number of channels
 #define SCIF_SYSTEM_AGC_CHANNELS_NUMBER 4
-/// System AGC: 
+/// System AGC: 15% of results from all samples across cycles for a given channel
 #define SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE 3
-/// System AGC: The number of top 20% results from each channel
+/// System AGC: 20% of results from all samples across cycles for a given channel
 #define SCIF_SYSTEM_AGC_MODES_CHANNEL_SIZE 4
-/// System AGC: Top 20% of results from the samples
+/// System AGC: 20% of sample across all cycles and channels
 #define SCIF_SYSTEM_AGC_MODES_SIZE 16
-/// System AGC: Number of measures from all channels in each  sample cycle
+/// System AGC: Number of samples from all channels in each sample cycle
 #define SCIF_SYSTEM_AGC_MULTI_BUFFER_SIZE 40
-/// System AGC: Total number of measures from all  channels across all samples
+/// System AGC: Total number of measures from all channels across all samples cycles
 #define SCIF_SYSTEM_AGC_MULTI_RESULT_SIZE 80
-/// System AGC: Number of measures for a channel in a sample cycle.
+/// System AGC: Number of measures for a channel across all sample cycles
 #define SCIF_SYSTEM_AGC_RESULTS 20
-/// System AGC: Number of samples cycles.
+/// System AGC: Number of sample cycles
 #define SCIF_SYSTEM_AGC_SAMPLE_SIZE 2
 /// System AGC I/O mapping: Analog sensor output
 #define SCIF_SYSTEM_AGC_DIO_ASENSOR_OUTPUT { 24, 23, 25 }
@@ -171,56 +171,54 @@ typedef struct {
 
 /// System AGC: Task input data structure
 typedef struct {
-    uint16_t randomDelayDL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(DL event)
-    uint16_t randomDelayUL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(UL event)
+    uint16_t randomDelayDL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(DL event). Contains multiple numbers for each sample cylce.
+    uint16_t randomDelayUL[2]; ///< Random delay period after interrupt wakeup and before starting to perform measures(UL event). Contains multiple numbers for each sample cylce.
     uint16_t tddLock;          ///< TDD lock status
 } SCIF_SYSTEM_AGC_INPUT_T;
 
 
 /// System AGC: Task output data structure
 typedef struct {
-    uint16_t channelsAverage[16];        ///< 
-    uint16_t channelsAverageTemp[16];    ///< 
-    uint16_t channelsMaxIFDL[4];         ///< 
-    uint16_t channelsMaxIFDLTemp[4];     ///< 
-    uint16_t channelsMaxIFUL[4];         ///< 
-    uint16_t channelsMaxIFULTemp[4];     ///< 
-    uint16_t channelsMaxRFDL[4];         ///< 
-    uint16_t channelsMaxRFDLTemp[4];     ///< 
-    uint16_t channelsMaxRFUL[4];         ///< 
-    uint16_t channelsMaxRFULTemp[4];     ///< 
-    uint16_t channelsMinIFDL[4];         ///< 
-    uint16_t channelsMinIFDLTemp[4];     ///< 
-    uint16_t channelsMinIFUL[4];         ///< 
-    uint16_t channelsMinIFULTemp[4];     ///< 
-    uint16_t channelsMinRFDL[4];         ///< 
-    uint16_t channelsMinRFDLTemp[4];     ///< 
-    uint16_t channelsMinRFUL[4];         ///< 
-    uint16_t channelsMinRFULTemp[4];     ///< 
-    uint16_t maxSamplesIFDL[16];         ///< 
-    uint16_t maxSamplesIFUL[16];         ///< 
-    uint16_t maxSamplesRFDL[16];         ///< 
-    uint16_t maxSamplesRFUL[16];         ///< 
-    uint16_t minSamplesIFDL[16];         ///< 
-    uint16_t minSamplesIFUL[16];         ///< 
-    uint16_t minSamplesRFDL[16];         ///< 
-    uint16_t minSamplesRFUL[16];         ///< 
-    uint16_t pSamplesMultiChannelIF[40]; ///< 
-    uint16_t pSamplesMultiChannelRF[40]; ///< 
+    uint16_t channelsAverage[16];        ///< Contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1-4DLRF, sumsChannel1-4ULRF, sumsChannel1-4DLIF,  sumsChannel1-4ULIF].
+    uint16_t channelsAverageTemp[16];    ///< Stores the average sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxIFDL[4];         ///< Contains sums of the 15% max results from downlink IF of channels 1-4.
+    uint16_t channelsMaxIFDLTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxIFUL[4];         ///< Contains sums of the 15% max results from uplink IF of channels 1-4.
+    uint16_t channelsMaxIFULTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxRFDL[4];         ///< Contains sums of the 15% max results from downlink RF of channels 1-4.
+    uint16_t channelsMaxRFDLTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMaxRFUL[4];         ///< Contains sums of the 15% max results from uplink RF of channels 1-4.
+    uint16_t channelsMaxRFULTemp[4];     ///< Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinIFDL[4];         ///< Contains sums of the 15% min results from downlink IF of channels 1-4.
+    uint16_t channelsMinIFDLTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinIFUL[4];         ///< Contains sums of the 15% min results from uplink IF of channels 1-4.
+    uint16_t channelsMinIFULTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinRFDL[4];         ///< Contains sums of the 15% min results from downlink RF of channels 1-4.
+    uint16_t channelsMinRFDLTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t channelsMinRFUL[4];         ///< Contains sums of the 15% min results from uplink RF of channels 1-4.
+    uint16_t channelsMinRFULTemp[4];     ///< Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done.
+    uint16_t maxSamplesIFDL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for IF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesIFUL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for IF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesRFDL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for RF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t maxSamplesRFUL[16];         ///< Contains the 20% top reasults for each channel from all smaple cycles for RF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples].
+    uint16_t minSamplesIFDL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for IF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesIFUL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for IF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesRFDL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for RF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t minSamplesRFUL[16];         ///< Contains the 20% bottom reasults for each channel from all smaple cycles for RF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples].
+    uint16_t pSamplesMultiChannelIF[40]; ///< Stores IF samples of each sample cycle from each channel
+    uint16_t pSamplesMultiChannelRF[40]; ///< Stores RF samples of each sample cycle from each channel
 } SCIF_SYSTEM_AGC_OUTPUT_T;
 
 
 /// System AGC: Task state structure
 typedef struct {
     uint16_t alertEnabled;   ///< Is ALERT interrupt generation enabled?
-    uint16_t channelsSwitch; ///< 
+    uint16_t channelsSwitch; ///< Channel select - 0: measure all channels, 1 - 4: measure only this channel (copied from cfg in Event A)
     uint16_t exit;           ///< Set to exit the ADC data streamer
-    uint16_t head;           ///< ADC sample buffer (input) head index
-    uint16_t ledCounter;     ///< 
-    uint16_t samplesCount;   ///< 
-    uint16_t tail;           ///< ADC sample buffer (output) tail index
-    uint16_t tddMode;        ///< 
-    uint16_t unitType;       ///< 
+    uint16_t ledCounter;     ///< Determines which LED will turn on in Auto mode
+    uint16_t samplesCount;   ///< The sample cycles counter
+    uint16_t tddMode;        ///< TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto (copied from cfg in Event A)
+    uint16_t unitType;       ///< Type of unit - 0 : CDU, 1: CRU  (copied from cfg in Event A)
 } SCIF_SYSTEM_AGC_STATE_T;
 
 
@@ -257,4 +255,4 @@ void scifReinitTaskIo(uint32_t bvTaskIds);
 //@}
 
 
-// Generated by LAPTOP-2C67QHF3 at 2022-07-27 15:56:50.301
+// Generated by LAPTOP-2C67QHF3 at 2022-07-31 15:13:00.429

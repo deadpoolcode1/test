@@ -28,6 +28,14 @@ typedef enum AGC_sensorMode{
     AGC_UL
 } AGC_sensorMode_t;
 
+typedef enum AGC_channels{
+    AGC_ALL_CHANNELS,
+    AGC_CHANNEL_1,
+    AGC_CHANNEL_2,
+    AGC_CHANNEL_3,
+    AGC_CHANNEL_4
+} AGC_channels_t;
+
 typedef struct
 {
     // 0-4 RfRx, 5-8 RfxTx, 9-12 IfRx, 13-16 IfTx
@@ -61,8 +69,8 @@ typedef struct
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, int channel, AGC_ctrlPins_t *pins);
-CRS_retVal_t Agc_setChannel(uint16_t channel);
+CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, AGC_ctrlPins_t *pins);
+CRS_retVal_t Agc_setChannel(AGC_channels_t channel);
 CRS_retVal_t Agc_init(void * sem);
 void Agc_process(void);
 
@@ -77,7 +85,7 @@ AGC_results_t Agc_getResults();
 AGC_max_results_t Agc_getMaxResults();
 CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode);
 AGC_sensorMode_t Agc_getMode();
-uint16_t Agc_getChannel();
+AGC_channels_t Agc_getChannel();
 
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock);

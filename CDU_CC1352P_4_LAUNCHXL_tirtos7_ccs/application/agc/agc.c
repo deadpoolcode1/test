@@ -165,21 +165,22 @@ void Agc_process(void)
 
         Agc_sample();
         char envFile[4096]={0};
-        AGC_sensorMode_t mode = Agc_getMode();
-        // update cfg struct
-        scifTaskData.systemAgc.cfg.tddMode = mode;
+        // update cfg struct for next sample
+        scifTaskData.systemAgc.cfg.tddMode = Agc_getMode();
         scifTaskData.systemAgc.cfg.channelsSwitch = gAgcChannel;
         #ifndef CLI_SENSOR
             scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
         #else
             scifTaskData.systemAgc.cfg.unitType = TYPE_CRU;
         #endif
+        // this is the mode the sample we got was on
+        AGC_sensorMode_t mode = (AGC_sensorMode_t)scifTaskData.systemAgc.state.tddMode;
         // check alarms
         #ifndef CLI_SENSOR
             Thresh_read("DLMaxInputPower", envFile);
             int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
             NULL, 10);
-            if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CDU)) && (mode==AGC_DL))
+            if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CDU)) && (mode==AGC_DL||mode==AGC_AUTO) )
             {
                 Alarms_setAlarm(DLMaxInputPower);
             }
@@ -191,7 +192,7 @@ void Agc_process(void)
             Thresh_read("ULMaxOutputPower", envFile);
             int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
             NULL, 10);
-            if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CDU)) && (mode==AGC_UL) )
+            if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CDU)) && (mode==AGC_UL||mode==AGC_AUTO) )
             {
                 Alarms_setAlarm(ULMaxOutputPower);
             }
@@ -203,7 +204,7 @@ void Agc_process(void)
             Thresh_read("ULMaxInputPower", envFile);
             int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
             NULL, 10);
-            if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CRU)) && (mode==AGC_UL) )
+            if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CRU)) && (mode==AGC_UL||mode==AGC_AUTO) )
             {
                 Alarms_setAlarm(ULMaxInputPower);
             }
@@ -215,7 +216,7 @@ void Agc_process(void)
             Thresh_read("DLMaxOutputPower", envFile);
             int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
             NULL, 10);
-            if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CRU)) && (mode==AGC_DL)  )
+            if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CRU)) && (mode==AGC_DL||mode==AGC_AUTO) )
             {
                 Alarms_setAlarm(DLMaxOutputPower);
             }
