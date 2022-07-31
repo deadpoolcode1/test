@@ -176,55 +176,65 @@ void Agc_process(void)
         // this is the mode the sample we got was on
         AGC_sensorMode_t mode = (AGC_sensorMode_t)scifTaskData.systemAgc.state.tddMode;
         // check alarms
-        #ifndef CLI_SENSOR
-            Thresh_read("DLMaxInputPower", envFile);
-            int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
-            NULL, 10);
-            if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CDU)) && (mode==AGC_DL||mode==AGC_AUTO) )
-            {
-                Alarms_setAlarm(DLMaxInputPower);
-            }
-            else
-            {
-                Alarms_clearAlarm(DLMaxInputPower, ALARM_INACTIVE);
-            }
-            memset(envFile, 0, 4096);
-            Thresh_read("ULMaxOutputPower", envFile);
-            int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
-            NULL, 10);
-            if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CDU)) && (mode==AGC_UL||mode==AGC_AUTO) )
-            {
-                Alarms_setAlarm(ULMaxOutputPower);
-            }
-            else
-            {
-                Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
-            }
-        #else
-            Thresh_read("ULMaxInputPower", envFile);
-            int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
-            NULL, 10);
-            if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CRU)) && (mode==AGC_UL||mode==AGC_AUTO) )
-            {
-                Alarms_setAlarm(ULMaxInputPower);
-            }
-            else
-            {
-                Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
-            }
-            memset(envFile, 0, 4096);
-            Thresh_read("DLMaxOutputPower", envFile);
-            int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
-            NULL, 10);
-            if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CRU)) && (mode==AGC_DL||mode==AGC_AUTO) )
-            {
-                Alarms_setAlarm(DLMaxOutputPower);
-            }
-            else
-            {
-                Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
-            }
-        #endif
+        if((mode!=AGC_AUTO) ||(mode==AGC_AUTO && Agc_getLock())){
+            #ifndef CLI_SENSOR
+                Thresh_read("DLMaxInputPower", envFile);
+                int16_t dlMaxInputPower = strtol(envFile + strlen("DLMaxInputPower="),
+                NULL, 10);
+                if ((dlMaxInputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CDU)) && (mode==AGC_DL||mode==AGC_AUTO) )
+                {
+                    Alarms_setAlarm(DLMaxInputPower);
+                }
+                else
+                {
+                    Alarms_clearAlarm(DLMaxInputPower, ALARM_INACTIVE);
+                }
+                memset(envFile, 0, 4096);
+                Thresh_read("ULMaxOutputPower", envFile);
+                int16_t ulMaxOutputPower = strtol(envFile + strlen("ULMaxOutputPower="),
+                NULL, 10);
+                if ((ulMaxOutputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CDU)) && (mode==AGC_UL||mode==AGC_AUTO) )
+                {
+                    Alarms_setAlarm(ULMaxOutputPower);
+                }
+                else
+                {
+                    Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
+                }
+            #else
+                Thresh_read("ULMaxInputPower", envFile);
+                int16_t ulMaxInputPower = strtol(envFile + strlen("ULMaxInputPower="),
+                NULL, 10);
+                if ((ulMaxInputPower < Agc_convert(gCurrentMaxResults[1], UL_RF, TYPE_CRU)) && (mode==AGC_UL||mode==AGC_AUTO) )
+                {
+                    Alarms_setAlarm(ULMaxInputPower);
+                }
+                else
+                {
+                    Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
+                }
+                memset(envFile, 0, 4096);
+                Thresh_read("DLMaxOutputPower", envFile);
+                int16_t dlMaxOutputPower = strtol(envFile + strlen("DLMaxOutputPower="),
+                NULL, 10);
+                if ((dlMaxOutputPower < Agc_convert(gCurrentMaxResults[0], DL_RF, TYPE_CRU)) && (mode==AGC_DL||mode==AGC_AUTO) )
+                {
+                    Alarms_setAlarm(DLMaxOutputPower);
+                }
+                else
+                {
+                    Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
+                }
+            #endif
+        }else{
+            #ifndef CLI_SENSOR
+            Alarms_clearAlarm(DLMaxInputPower, ALARM_INACTIVE);
+            Alarms_clearAlarm(ULMaxOutputPower, ALARM_INACTIVE);
+            #else
+            Alarms_clearAlarm(ULMaxInputPower, ALARM_INACTIVE);
+            Alarms_clearAlarm(DLMaxOutputPower, ALARM_INACTIVE);
+            #endif
+        }
         // update interval
         memset(envFile, 0, 4096);
         Thresh_read("AgcInterval", envFile);

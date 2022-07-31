@@ -412,6 +412,8 @@ CRS_retVal_t Alarms_temp_Init()
  */
 CRS_retVal_t Alarms_TDDLock_Init()
 {
+#ifndef CLI_SENSOR
+
     GPIO_init();
     //set on both edges
 //    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_INT_BOTH_EDGES);
@@ -422,6 +424,8 @@ CRS_retVal_t Alarms_TDDLock_Init()
     {
         Alarms_setAlarm(TDDLock);
     }
+#endif
+
     return CRS_SUCCESS;
 
 }

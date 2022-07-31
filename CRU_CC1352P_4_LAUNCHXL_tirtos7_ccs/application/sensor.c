@@ -266,7 +266,7 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
-//    Alarms_init(sem);
+    Alarms_init(sem);
     Agc_init(sem);
 
 //    if (CONFIG_AUTO_START)
