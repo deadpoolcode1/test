@@ -149,7 +149,9 @@ CRS_retVal_t Env_delete(char *vars){
 
     envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
     length = Vars_removeFileVars(&envHandle, envCache, vars);
-
+    if(!length){
+        return CRS_FAILURE;
+    }
     envCache = CRS_realloc(envCache, length);
 
     return CRS_SUCCESS;

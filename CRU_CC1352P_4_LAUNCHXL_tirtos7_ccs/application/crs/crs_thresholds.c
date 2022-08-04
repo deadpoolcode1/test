@@ -154,7 +154,9 @@ CRS_retVal_t Thresh_delete(char *vars){
 
     threshCache = CRS_realloc(threshCache, threshRegionAttrs.regionSize);
     length = Vars_removeFileVars(&threshHandle, threshCache, vars);
-
+    if(!length){
+        return CRS_FAILURE;
+    }
     threshCache = CRS_realloc(threshCache, length);
 
     return CRS_SUCCESS;

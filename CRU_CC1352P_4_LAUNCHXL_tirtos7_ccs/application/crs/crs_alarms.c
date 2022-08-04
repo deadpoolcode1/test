@@ -73,19 +73,19 @@ static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal);
 
 CRS_retVal_t Alarms_printAlarms()
 {
-    CLI_cliPrintf("\r\n1 DLMaxInputPower 0x%x", gAlarmArr[DLMaxInputPower]);
-    CLI_cliPrintf("\r\n2 ULMaxOutputPower 0x%x", gAlarmArr[ULMaxOutputPower]);
-    CLI_cliPrintf("\r\n3 MaxCableLoss 0x%x", gAlarmArr[MaxCableLoss]);
-    CLI_cliPrintf("\r\n4 SystemTemperatureHigh 0x%x",
+    CLI_cliPrintf("\r\n0x1 DLMaxInputPower 0x%x", gAlarmArr[DLMaxInputPower]);
+    CLI_cliPrintf("\r\n0x2 ULMaxOutputPower 0x%x", gAlarmArr[ULMaxOutputPower]);
+    CLI_cliPrintf("\r\n0x3 MaxCableLoss 0x%x", gAlarmArr[MaxCableLoss]);
+    CLI_cliPrintf("\r\n0x4 SystemTemperatureHigh 0x%x",
                   gAlarmArr[SystemTemperatureHigh]);
-    CLI_cliPrintf("\r\n5 SystemTemperatureLow 0x%x",
+    CLI_cliPrintf("\r\n0x5 SystemTemperatureLow 0x%x",
                   gAlarmArr[SystemTemperatureLow]);
-    CLI_cliPrintf("\r\n6 ULMaxInputPower 0x%x", gAlarmArr[ULMaxInputPower]);
-    CLI_cliPrintf("\r\n7 DLMaxOutputPower 0x%x", gAlarmArr[DLMaxOutputPower]);
-    CLI_cliPrintf("\r\n8 TDDLock 0x%x", gAlarmArr[TDDLock]);
-    CLI_cliPrintf("\r\n9 PLLLockPrimary 0x%x", gAlarmArr[PLLLockPrimary]);
-    CLI_cliPrintf("\r\n10 PLLLockSecondary 0x%x", gAlarmArr[PLLLockSecondary]);
-    CLI_cliPrintf("\r\n11 SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
+    CLI_cliPrintf("\r\n0x6 ULMaxInputPower 0x%x", gAlarmArr[ULMaxInputPower]);
+    CLI_cliPrintf("\r\n0x7 DLMaxOutputPower 0x%x", gAlarmArr[DLMaxOutputPower]);
+    CLI_cliPrintf("\r\n0x8 TDDLock 0x%x", gAlarmArr[TDDLock]);
+    CLI_cliPrintf("\r\n0x9 PLLLockPrimary 0x%x", gAlarmArr[PLLLockPrimary]);
+    CLI_cliPrintf("\r\n0xa PLLLockSecondary 0x%x", gAlarmArr[PLLLockSecondary]);
+    CLI_cliPrintf("\r\n0xb SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
 
 }
 /**

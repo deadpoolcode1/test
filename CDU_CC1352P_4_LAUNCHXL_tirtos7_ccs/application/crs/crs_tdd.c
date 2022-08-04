@@ -785,17 +785,17 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
     if (scs == 1)
     {
-        CLI_cliPrintf("\r\nSCS=15");
+        CLI_cliPrintf("\r\nSCS=15Hz");
     }
     else if (scs == 2)
     {
         isGood = false;
-        CLI_cliPrintf("\r\nSCS=30");
+        CLI_cliPrintf("\r\nSCS=30Hz");
     }
     else if (scs == 4)
     {
         isGood = false;
-        CLI_cliPrintf("\r\nSCS=60");
+        CLI_cliPrintf("\r\nSCS=60Hz");
     }
 
     uint8_t pattern2 = gUartTxBuffer[30];
@@ -833,11 +833,11 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     }
     int8_t ttg_vals[4] = { gUartTxBuffer[37], gUartTxBuffer[38],
                            gUartTxBuffer[39], gUartTxBuffer[40] };
-    CLI_cliPrintf("\r\nTTG=%i %i %i %i", ttg_vals[0], ttg_vals[1], ttg_vals[2],
+    CLI_cliPrintf("\r\nTTG=0x%x 0x%x 0x%x 0x%x", ttg_vals[0], ttg_vals[1], ttg_vals[2],
                   ttg_vals[3]);
     int8_t rtg_vals[4] = { gUartTxBuffer[41], gUartTxBuffer[42],
                            gUartTxBuffer[43], gUartTxBuffer[44] };
-    CLI_cliPrintf("\r\nRTG=%i %i %i %i", rtg_vals[0], rtg_vals[1], rtg_vals[2],
+    CLI_cliPrintf("\r\nRTG=0x%x 0x%x 0x%x 0x%x", rtg_vals[0], rtg_vals[1], rtg_vals[2],
                   rtg_vals[3]);
 
     uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);
@@ -866,52 +866,52 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         if (dl == 6214 || dl == 7214 || dl == 8214)
         {
             gFrame = 0;
-            CLI_cliPrintf("\r\nFrameFormat=5");
+            CLI_cliPrintf("\r\nFrameFormat=0x5");
         }
         if (dl == 6642 || dl == 7642 || dl == 8642)
         {
             gFrame = 1;
 
-            CLI_cliPrintf("\r\nFrameFormat=6");
+            CLI_cliPrintf("\r\nFrameFormat=0x6");
 
         }
         if (dl == 6714 || dl == 7714 || dl == 8714)
         {
             gFrame = 2;
 
-            CLI_cliPrintf("\r\nFrameFormat=7");
+            CLI_cliPrintf("\r\nFrameFormat=0x7");
 
         }
         if (dl == 6785 || dl == 7785 || dl == 8785)
         {
             gFrame = 3;
 
-            CLI_cliPrintf("\r\nFrameFormat=8");
+            CLI_cliPrintf("\r\nFrameFormat=0x8");
 
         }
         if (dl == 6857 || dl == 7857 || dl == 8857)
         {
             gFrame = 4;
 
-            CLI_cliPrintf("\r\nFrameFormat=4");
+            CLI_cliPrintf("\r\nFrameFormat=0x4");
         }
 
         if (dl == 6214 || dl == 6642 || dl == 6714 || dl == 6785 || dl == 6857)
         {
             gAlloc = 3;
-            CLI_cliPrintf("\r\nAllocationMode=3");
+            CLI_cliPrintf("\r\nAllocationMode=0x3");
         }
         if (dl == 7214 || dl == 7642 || dl == 7714 || dl == 7785 || dl == 7857)
         {
             gAlloc = 4;
 
-            CLI_cliPrintf("\r\nAllocationMode=4");
+            CLI_cliPrintf("\r\nAllocationMode=0x4");
         }
         if (dl == 8214 || dl == 8642 || dl == 8714 || dl == 8785 || dl == 8857)
         {
             gAlloc = 5;
 
-            CLI_cliPrintf("\r\nAllocationMode=5");
+            CLI_cliPrintf("\r\nAllocationMode=0x5");
         }
     }
     else if (period == 5000)
@@ -920,49 +920,49 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
         {
             gFrame = 0;
 
-            CLI_cliPrintf("\r\nFrameFormat=5");
+            CLI_cliPrintf("\r\nFrameFormat=0x5");
         }
         if (dl == 1642 || dl == 2642 || dl == 3642)
         {
             gFrame = 1;
 
-            CLI_cliPrintf("\r\nFrameFormat=6");
+            CLI_cliPrintf("\r\nFrameFormat=0x6");
         }
         if (dl == 1714 || dl == 2714 || dl == 3714)
         {
             gFrame = 2;
 
-            CLI_cliPrintf("\r\nFrameFormat=7");
+            CLI_cliPrintf("\r\nFrameFormat=0x7");
         }
         if (dl == 1785 || dl == 2785 || dl == 3785)
         {
             gFrame = 3;
 
-            CLI_cliPrintf("\r\nFrameFormat=8");
+            CLI_cliPrintf("\r\nFrameFormat=0x8");
         }
         if (dl == 1857 || dl == 2857 || dl == 3857)
         {
             gFrame = 4;
 
-            CLI_cliPrintf("\r\nFrameFormat=4");
+            CLI_cliPrintf("\r\nFrameFormat=0x4");
         }
         if (dl == 1214 || dl == 1642 || dl == 1714 || dl == 1785 || dl == 1857)
         {
             gAlloc = 0;
 
-            CLI_cliPrintf("\r\nAllocationMode=0");
+            CLI_cliPrintf("\r\nAllocationMode=0x0");
         }
         if (dl == 2214 || dl == 2642 || dl == 2714 || dl == 2785 || dl == 2857)
         {
             gAlloc = 1;
 
-            CLI_cliPrintf("\r\nAllocationMode=1");
+            CLI_cliPrintf("\r\nAllocationMode=0x1");
         }
         if (dl == 3214 || dl == 3642 || dl == 3714 || dl == 3785 || dl == 3857)
         {
             gAlloc = 2;
 
-            CLI_cliPrintf("\r\nAllocationMode=2");
+            CLI_cliPrintf("\r\nAllocationMode=0x2");
         }
 
     }

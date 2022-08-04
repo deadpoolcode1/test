@@ -184,7 +184,7 @@ void Vars_getVars(char *file, char *keys, char *values)
     CRS_free(copyKeys);
 }
 
-void Vars_removeVars(char *file, char *keys, char * returnedFile){
+bool Vars_removeVars(char *file, char *keys, char * returnedFile){
     // file: key=value\nkey=value\n
     // keys: key1 key2 key3
     // values: values [MAX_LINE_CHARS];
@@ -200,6 +200,7 @@ void Vars_removeVars(char *file, char *keys, char * returnedFile){
     char *delim;
     char *token = strtok(copyFile, "\n");
     bool delete = false;
+    bool deleted = false;
     while (token != NULL)
     {
         key = strtok(copyKeys, " ");
@@ -212,6 +213,7 @@ void Vars_removeVars(char *file, char *keys, char * returnedFile){
                 if (strcmp(key, token) == 0)
                 {
                     delete = true;
+                    deleted = true;
                 }
                 *delim = '=';
             }
@@ -234,6 +236,7 @@ void Vars_removeVars(char *file, char *keys, char * returnedFile){
     }
     CRS_free(copyFile);
     CRS_free(copyKeys);
+    return deleted;
 }
 
 bool Vars_createFile(NVS_Handle * fileHandle){
@@ -349,7 +352,12 @@ uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     char * returnedFile = CRS_calloc(fileRegionAttrs.regionSize-STRLEN_BYTES, sizeof(char));
 
     // get new file string
-    Vars_removeVars(file, vars, returnedFile);
+    bool deleted = Vars_removeVars(file, vars, returnedFile);
+    if(!deleted){
+        // if no deletion happened, return 0
+        CRS_free(returnedFile);
+        return 0;
+    }
 
     // get new file length and write it to flash
     uint16_t newLength = strlen(file);

@@ -106,11 +106,6 @@
 #define CLI_LIST_ALARMS_STOP "alarms stop"
 #define CLI_LIST_ALARMS_START "alarms start"
 
-
-#define CLI_CRS_EV_OPEN "evopen"
-#define CLI_CRS_EV_CLOSE "evclose"
-#define CLI_CRS_EV_GET_EV "evnext"
-
 #define CLI_CRS_FPGA_OPEN "fpga open"
 #define CLI_CRS_FPGA_CLOSE "fpga close"
 #define CLI_CRS_FPGA_WRITE "fpga write"
@@ -137,16 +132,18 @@
 
 #define CLI_CRS_FS_INSERT "fs insert"
 #define CLI_CRS_FS_LS "fs ls"
-#define CLI_CRS_FS_READLINE  "fs readline"
 #define CLI_CRS_FS_READFILE  "fs cat"
+#define CLI_CRS_FS_DELETE "fs rm"
+#define CLI_CRS_FS_FORMAT "fs format"
+
+#define CLI_CRS_FS_READLINE  "fs readline"
 #define CLI_CRS_FS_NATIVE "fs native"
 
-#define CLI_CRS_FS_DELETE "fs rm"
 #define CLI_CRS_FS_UPLOAD "fs upload orig"
 #define CLI_CRS_FS_UPLOAD_RF "fs upload rf"
 #define CLI_CRS_FS_UPLOAD_DIG "fs upload dig"
 #define CLI_CRS_FS_UPLOAD_FPGA "fs upload fpga"
-#define CLI_CRS_FS_FORMAT "fs format"
+
 
 #define CLI_AGC "sensor"
 #define CLI_AGC_DEBUG "debug sensor"
@@ -160,17 +157,17 @@
 #define CLI_CRS_ENV_LS "env ls"
 #define CLI_CRS_ENV_UPDATE "env update"
 #define CLI_CRS_ENV_RM "env rm"
-#define CLI_CRS_ENV_FORMAT "env erase all"
 #define CLI_CRS_ENV_RESTORE "env restore"
-
-#define CLI_CRS_GET_TIME "time"
- #define CLI_CRS_SET_TIME "set time"
+#define CLI_CRS_ENV_FORMAT "env format"
 
 #define CLI_CRS_TRSH_LS "thrsh ls"
 #define CLI_CRS_TRSH_UPDATE "thrsh update"
 #define CLI_CRS_TRSH_RM "thrsh rm"
-#define CLI_CRS_TRSH_FORMAT "thrsh erase all"
 #define CLI_CRS_TRSH_RESTORE "thrsh restore"
+#define CLI_CRS_TRSH_FORMAT "thrsh format"
+
+#define CLI_CRS_GET_TIME "time"
+#define CLI_CRS_SET_TIME "set time"
 
 #define CLI_CRS_WATCHDOG_DISABLE "watchdog disable"
 
@@ -560,7 +557,6 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
     bool inputBad = true;
 
     bool is_async_command = false;
-    uint32_t mysize = sizeof(CLI_CRS_EV_OPEN);
 
 #ifndef CLI_SENSOR
     if (memcmp(CLI_FORM_NWK, line, sizeof(CLI_FORM_NWK)) == 0)
@@ -2114,7 +2110,7 @@ static CRS_retVal_t CLI_tddSetTtgParsing(char *line)
          int i;
          for(i=0;i<4;i++){
              token = strtok(NULL, s);
-             ttg_vals[i] = strtol(&(token[0]), NULL, 10);
+             ttg_vals[i] = strtol(&(token[0]), NULL, 0);
          }
 
 
@@ -2167,7 +2163,7 @@ static CRS_retVal_t CLI_tddSetRtgParsing(char *line)
          int i;
          for(i=0;i<4;i++){
              token = strtok(NULL, s);
-             rtg_vals[i] = strtol(&(token[0]), NULL, 10);
+             rtg_vals[i] = strtol(&(token[0]), NULL, 0);
          }
 
 
@@ -4263,7 +4259,7 @@ static CRS_retVal_t CLI_setTimeParsing(char *line)
      #endif
     token = strtok(NULL, s);
 
-    unsigned long time_seconds = strtoul(token, NULL, 10);
+    unsigned long time_seconds = strtoul(&(token[2]), NULL, 16);
     Seconds_set(time_seconds);
 
     CLI_cliPrintf("\r\n%x", Seconds_get());
@@ -4582,84 +4578,90 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 
     CLI_cliPrintf("\r\n");
 
+    CLI_printCommInfo(CLI_LIST_ALARMS_LIST, strlen(CLI_LIST_ALARMS_LIST), "[shortAddr]");
+    CLI_printCommInfo(CLI_LIST_ALARMS_SET, strlen(CLI_LIST_ALARMS_SET), "[shortAddr] [id] [state]");
+    //CLI_printCommInfo(CLI_LIST_ALARMS_START, strlen(CLI_LIST_ALARMS_START), "");
+    //CLI_printCommInfo(CLI_LIST_ALARMS_STOP, strlen(CLI_LIST_ALARMS_STOP), "");
+
+    CLI_printCommInfo(CLI_CRS_CONFIG_FILE, strlen(CLI_CRS_CONFIG_FILE), "[shortAddr] [flat filename]");
+
+    CLI_printCommInfo(CLI_CRS_ENV_FORMAT, strlen(CLI_CRS_ENV_FORMAT), "[shortAddr] ");
+    CLI_printCommInfo(CLI_CRS_ENV_LS, strlen(CLI_CRS_ENV_LS), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_ENV_RESTORE, strlen(CLI_CRS_ENV_RESTORE), "[shortAddr] ");
+    CLI_printCommInfo(CLI_CRS_ENV_RM, strlen(CLI_CRS_ENV_RM), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_ENV_UPDATE, strlen(CLI_CRS_ENV_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+
+    CLI_printCommInfo(CLI_CRS_FPGA_CLOSE, strlen(CLI_CRS_FPGA_CLOSE), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_FPGA_OPEN, strlen(CLI_CRS_FPGA_OPEN), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_FPGA_WRITELINES, strlen(CLI_CRS_FPGA_WRITELINES), "[shortAddr] [lines seperated by new line char]");
+
     CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
 
-    CLI_printCommInfo(CLI_CRS_FPGA_OPEN, strlen(CLI_CRS_FPGA_OPEN), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_FPGA_CLOSE, strlen(CLI_CRS_FPGA_CLOSE), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_FPGA_WRITELINES, strlen(CLI_CRS_FPGA_WRITELINES), "[shortAddr] [lines seperated by new line char]");
-    CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_START, strlen(CLI_CRS_FPGA_TRANSPARENT_START), "[shortAddr]");
-    CLI_cliPrintf("%");
-    CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_END, strlen(CLI_CRS_FPGA_TRANSPARENT_END), "[shortAddr]");
+    //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_START, strlen(CLI_CRS_FPGA_TRANSPARENT_START), "[shortAddr]");
+    //CLI_cliPrintf("%");
+    //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_END, strlen(CLI_CRS_FPGA_TRANSPARENT_END), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_FS_DELETE, strlen(CLI_CRS_FS_DELETE), "[shortAddr] [filename]");
+    CLI_printCommInfo(CLI_CRS_FS_FORMAT, strlen(CLI_CRS_FS_FORMAT), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FS_INSERT, strlen(CLI_CRS_FS_INSERT), "[shortAddr] [filename] [lines seperated by new line char]");
     CLI_printCommInfo(CLI_CRS_FS_LS, strlen(CLI_CRS_FS_LS), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_FS_READFILE, strlen(CLI_CRS_FS_READFILE), "[shortAddr] [filename]");
-    CLI_printCommInfo(CLI_CRS_FS_DELETE, strlen(CLI_CRS_FS_DELETE), "[shortAddr] [filename]");
+    CLI_printCommInfo(CLI_CRS_FS_READFILE, strlen(CLI_CRS_FS_READFILE), "[shortAddr] [filename] [startIndex] [readSize]");
 //#define CLI_MODE_SLAVE "slave"
 //#define CLI_MODE_NATIVE "native"
 //
 //#define CLI_SNAP "snap"
 //#define CLI_SCRIPT "script"
 
-    CLI_printCommInfo(CLI_CRS_FS_UPLOAD_RF, strlen(CLI_CRS_FS_UPLOAD_RF), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [rf address] [lut line number] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_DIG, strlen(CLI_CRS_FS_UPLOAD_DIG), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [chip number] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_FPGA, strlen(CLI_CRS_FS_UPLOAD_FPGA), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [param=value]");
-    CLI_printCommInfo(CLI_CRS_FS_FORMAT, strlen(CLI_CRS_FS_FORMAT), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_FS_UPLOAD_RF, strlen(CLI_CRS_FS_UPLOAD_RF), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [rf address] [lut line number] [param=value]");
 
+    CLI_printCommInfo(CLI_CRS_OAD_FORMAT, strlen(CLI_CRS_OAD_FORMAT), "");
+#ifndef CLI_SENSOR
+    CLI_printCommInfo(CLI_CRS_OAD_GET_IMG_VER, strlen(CLI_CRS_OAD_GET_IMG_VER), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_OAD_RCV_IMG, strlen(CLI_CRS_OAD_RCV_IMG), "");
+    CLI_printCommInfo(CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
+    CLI_printCommInfo(CLI_CRS_UPDATE_IMG, strlen(CLI_CRS_UPDATE_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
+#endif
 
-
-    CLI_printCommInfo(CLI_CRS_ENV_LS, strlen(CLI_CRS_ENV_LS), "[shortAddr] [key1 key2 ...]");
-    CLI_printCommInfo(CLI_CRS_ENV_UPDATE, strlen(CLI_CRS_ENV_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
-    CLI_printCommInfo(CLI_CRS_ENV_RM, strlen(CLI_CRS_ENV_RM), "[shortAddr] [key1 key2 ...]");
-    CLI_printCommInfo(CLI_CRS_ENV_FORMAT, strlen(CLI_CRS_ENV_FORMAT), "[shortAddr] ");
-    CLI_printCommInfo(CLI_CRS_ENV_RESTORE, strlen(CLI_CRS_ENV_RESTORE), "[shortAddr] ");
-
-
-    CLI_printCommInfo(CLI_CRS_TRSH_LS, strlen(CLI_CRS_TRSH_LS), "[shortAddr] [key1 key2 ...]");
-    CLI_printCommInfo(CLI_CRS_TRSH_UPDATE, strlen(CLI_CRS_TRSH_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
-    CLI_printCommInfo(CLI_CRS_TRSH_RM, strlen(CLI_CRS_TRSH_RM), "[shortAddr] [key1 key2 ...]");
-    CLI_printCommInfo(CLI_CRS_TRSH_FORMAT, strlen(CLI_CRS_TRSH_FORMAT), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_TRSH_RESTORE, strlen(CLI_CRS_TRSH_RESTORE), "[shortAddr]");
-
-
-    CLI_printCommInfo(CLI_CRS_CONFIG_LINE, strlen(CLI_CRS_CONFIG_LINE), "[shortAddr] [flat filename] [INV lineNumber] [scriptName:name=val]");
-    CLI_printCommInfo(CLI_CRS_CONFIG_FILE, strlen(CLI_CRS_CONFIG_FILE), "[shortAddr] [flat filename]");
-
-    CLI_printCommInfo(CLI_CRS_SET_TIME, strlen(CLI_CRS_SET_TIME), "[shortAddr] [unix time in seconds (base 10)]");
-    CLI_printCommInfo(CLI_CRS_GET_TIME, strlen(CLI_CRS_GET_TIME), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_RESET, strlen(CLI_CRS_RESET), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
 
     CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
     CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
 
-    CLI_printCommInfo(CLI_CRS_TDD_OPEN, strlen(CLI_CRS_TDD_OPEN), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_TDD_CLOSE, strlen(CLI_CRS_TDD_CLOSE), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_TDD_STATUS, strlen(CLI_CRS_TDD_STATUS), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_TDD_HOL, strlen(CLI_CRS_TDD_HOL), "[shortAddr] [min] [sec]");
     CLI_printCommInfo(CLI_CRS_TDD_ALLOC, strlen(CLI_CRS_TDD_ALLOC), "[shortAddr] [alloc]");
+    CLI_printCommInfo(CLI_CRS_TDD_CLOSE, strlen(CLI_CRS_TDD_CLOSE), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_TDD_FRAME, strlen(CLI_CRS_TDD_FRAME), "[shortAddr] [frame]");
-    CLI_printCommInfo(CLI_CRS_TDD_SCS, strlen(CLI_CRS_TDD_SCS), "[shortAddr] [scs](0x1:15Hz, 0x2:30Hz, 0x4:60Hz)");
-    CLI_printCommInfo(CLI_CRS_TDD_SYNC_MODE, strlen(CLI_CRS_TDD_SYNC_MODE), "[shortAddr] [mode](0x0:Auto, 0x1:Manual)");
-    CLI_printCommInfo(CLI_CRS_TDD_SS_POS, strlen(CLI_CRS_TDD_SS_POS), "[shortAddr] [ss_pos]");
-    CLI_printCommInfo(CLI_CRS_TDD_TTG, strlen(CLI_CRS_TDD_TTG), "[shortAddr] [val 1] [val 2] [val 3] [val 4](values in signed decimals -127 to 127)");
-    CLI_printCommInfo(CLI_CRS_TDD_RTG, strlen(CLI_CRS_TDD_RTG), "[shortAddr] [val 1] [val 2] [val 3] [val 4](values in signed decimals, -127 to 127)");
+    CLI_printCommInfo(CLI_CRS_TDD_GET_LOCK, strlen(CLI_CRS_TDD_GET_LOCK), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TDD_HOL, strlen(CLI_CRS_TDD_HOL), "[shortAddr] [min] [sec]");
+    CLI_printCommInfo(CLI_CRS_TDD_OPEN, strlen(CLI_CRS_TDD_OPEN), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_TDD_CMD, strlen(CLI_CRS_TDD_CMD), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TDD_RTG, strlen(CLI_CRS_TDD_RTG), "[shortAddr] [val 1] [val 2] [val 3] [val 4](-0x80 to 0x7f)");
+    CLI_printCommInfo(CLI_CRS_TDD_SCS, strlen(CLI_CRS_TDD_SCS), "[shortAddr] [scs](0x1:15Hz, 0x2:30Hz, 0x4:60Hz)");
+    CLI_printCommInfo(CLI_CRS_TDD_SS_POS, strlen(CLI_CRS_TDD_SS_POS), "[shortAddr] [ss_pos]");
+    CLI_printCommInfo(CLI_CRS_TDD_STATUS, strlen(CLI_CRS_TDD_STATUS), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TDD_SYNC_MODE, strlen(CLI_CRS_TDD_SYNC_MODE), "[shortAddr] [mode](0x0:Auto, 0x1:Manual)");
+    CLI_printCommInfo(CLI_CRS_TDD_TTG, strlen(CLI_CRS_TDD_TTG), "[shortAddr] [val 1] [val 2] [val 3] [val 4](-0x80 to 0x7f)");
 
 
-    CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TRSH_FORMAT, strlen(CLI_CRS_TRSH_FORMAT), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TRSH_LS, strlen(CLI_CRS_TRSH_LS), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_TRSH_RESTORE, strlen(CLI_CRS_TRSH_RESTORE), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_TRSH_RM, strlen(CLI_CRS_TRSH_RM), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_TRSH_UPDATE, strlen(CLI_CRS_TRSH_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+
+    CLI_printCommInfo(CLI_CRS_GET_TIME, strlen(CLI_CRS_GET_TIME), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_SET_TIME, strlen(CLI_CRS_SET_TIME), "[shortAddr] [time](unix time)");
 
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
-    CLI_printCommInfo(CLI_LIST_ALARMS_LIST, strlen(CLI_LIST_ALARMS_LIST), "[shortAddr]");
-    CLI_printCommInfo(CLI_LIST_ALARMS_SET, strlen(CLI_LIST_ALARMS_SET), "[shortAddr] [id] [state]");
-    CLI_printCommInfo(CLI_LIST_ALARMS_STOP, strlen(CLI_LIST_ALARMS_STOP), "");
-    CLI_printCommInfo(CLI_LIST_ALARMS_START, strlen(CLI_LIST_ALARMS_START), "");
 
+    //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
 
 #ifndef CLI_SENSOR
     CLI_printCommInfo(CLI_LIST_SENSORS, strlen(CLI_LIST_SENSORS), "");
-
 #endif
-
     CLI_printCommInfo(CLI_DEVICE, strlen(CLI_DEVICE), "");
+
 
     CLI_cliPrintf("\r\n");
 
