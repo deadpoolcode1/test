@@ -133,7 +133,7 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
     CRS_free(copyVars);
 }
 
-void Vars_getVars(char *file, char *keys, char *values)
+bool Vars_getVars(char *file, char *keys, char *values)
 {
     // file: key=value\nkey=value\n
     // keys: key1 key2 key3
@@ -149,6 +149,7 @@ void Vars_getVars(char *file, char *keys, char *values)
     char *key;
     char *delim;
     char *token = strtok(copyKeys, " ");
+    bool exists = false;
 
     while (token != NULL)
     {
@@ -165,6 +166,7 @@ void Vars_getVars(char *file, char *keys, char *values)
                     strcat(values, key);
                     strcat(values, "\n");
                     key = NULL;
+                    exists = true;
                 }
                 *delim = '=';
             }
@@ -182,6 +184,7 @@ void Vars_getVars(char *file, char *keys, char *values)
     }
     CRS_free(copyFile);
     CRS_free(copyKeys);
+    return exists;
 }
 
 bool Vars_removeVars(char *file, char *keys, char * returnedFile){

@@ -109,7 +109,10 @@ CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
         Thresh_init();
     }
     if(strlen(vars)){
-        Vars_getVars(threshCache, vars, returnedVars);
+        bool exists = Vars_getVars(threshCache, vars, returnedVars);
+        if(!exists){
+            return CRS_FAILURE;
+        }
     }
     else{
         if(strlen(threshCache)){

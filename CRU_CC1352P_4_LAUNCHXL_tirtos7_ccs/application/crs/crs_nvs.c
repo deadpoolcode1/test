@@ -32,7 +32,7 @@ static uint32_t gNumFiles;
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-static void printStatus(int_fast16_t retStatus);
+//static void printStatus(int_fast16_t retStatus);
 static CRS_retVal_t Nvs_readFAT(CRS_FAT_t *fat);
 static CRS_retVal_t Nvs_readFAT_64files(CRS_FAT_t *fat, int i);
 static CRS_retVal_t Nvs_writeFAT(CRS_FAT_t *fat);
@@ -251,8 +251,8 @@ CRS_retVal_t Nvs_cat(char *filename)
     }
     if (i == MAX_FILES)
     {
-        CLI_cliPrintf("\r\nfile not found!\r\n");
-        return CRS_SUCCESS;
+        //CLI_cliPrintf("\r\nfile not found!\r\n");
+        return CRS_FAILURE;
     }
     char fileContent[4096] = { 0 };
     NVS_read(gNvsHandle,
@@ -293,8 +293,8 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
     }
     if (i == MAX_FILES)
     {
-        CLI_cliPrintf("\r\nfile not found!\r\n");
-        return CRS_SUCCESS;
+        //CLI_cliPrintf("\r\nfile not found!\r\n");
+        return CRS_FAILURE;
     }
     char fileContent[4096] = { 0 };
     NVS_read(gNvsHandle,
@@ -346,13 +346,13 @@ CRS_retVal_t Nvs_rm(char *filename)
     }
     if (i == gNumFiles)
     {
-        CLI_cliPrintf("\r\nno such file\r\n");
-        return CRS_SUCCESS;
+        //CLI_cliPrintf("\r\nno such file\r\n");
+        return CRS_FAILURE;
     }
     fat[i].isExist = false;
     memset(fat[i].filename, 0, FILENAME_SZ);
     Nvs_writeFAT(fat);
-    CLI_cliPrintf("\r\n%s deleted\r\n", filename);
+    //CLI_cliPrintf("\r\n%s deleted\r\n", filename);
     return CRS_SUCCESS;
 }
 
@@ -382,7 +382,7 @@ CRS_retVal_t Nvs_debug()
 CRS_retVal_t Nvs_format()
 {
     int_fast16_t retStatus = NVS_erase(gNvsHandle, 0, gRegionAttrs.regionSize);
-    printStatus(retStatus);
+    //printStatus(retStatus);
 }
 
 CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
@@ -654,26 +654,26 @@ static CRS_retVal_t Nvs_writeFAT(CRS_FAT_t *fat)
 }
 
 
-static void printStatus(int_fast16_t retStatus)
-{
-    if (retStatus == NVS_STATUS_SUCCESS)
-    {
-        CLI_cliPrintf("\r\nNVS_STATUS_SUCCESS");
-    }
-    if (retStatus == NVS_STATUS_ERROR)
-    {
-        CLI_cliPrintf("\r\nNVS_STATUS_ERROR");
-    }
-    if (retStatus == NVS_STATUS_INV_OFFSET)
-    {
-        CLI_cliPrintf("\r\nNVS_STATUS_INV_OFFSET");
-    }
-    if (retStatus == NVS_STATUS_INV_WRITE)
-    {
-        CLI_cliPrintf("\r\NVS_STATUS_INV_WRITE");
-    }
-    if (retStatus == NVS_STATUS_INV_ALIGNMENT)
-    {
-        CLI_cliPrintf("\r\NVS_STATUS_INV_ALIGNMENT");
-    }
-}
+//static void printStatus(int_fast16_t retStatus)
+//{
+//    if (retStatus == NVS_STATUS_SUCCESS)
+//    {
+//        CLI_cliPrintf("\r\nNVS_STATUS_SUCCESS");
+//    }
+//    if (retStatus == NVS_STATUS_ERROR)
+//    {
+//        CLI_cliPrintf("\r\nNVS_STATUS_ERROR");
+//    }
+//    if (retStatus == NVS_STATUS_INV_OFFSET)
+//    {
+//        CLI_cliPrintf("\r\nNVS_STATUS_INV_OFFSET");
+//    }
+//    if (retStatus == NVS_STATUS_INV_WRITE)
+//    {
+//        CLI_cliPrintf("\r\NVS_STATUS_INV_WRITE");
+//    }
+//    if (retStatus == NVS_STATUS_INV_ALIGNMENT)
+//    {
+//        CLI_cliPrintf("\r\NVS_STATUS_INV_ALIGNMENT");
+//    }
+//}

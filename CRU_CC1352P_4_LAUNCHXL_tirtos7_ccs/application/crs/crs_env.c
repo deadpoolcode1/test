@@ -106,7 +106,10 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
         Env_init();
     }
     if(strlen(vars)){
-        Vars_getVars(envCache, vars, returnedVars);
+        bool exists = Vars_getVars(envCache, vars, returnedVars);
+        if(!exists){
+            return CRS_FAILURE;
+        }
     }
     else{
         if(strlen(envCache)){
