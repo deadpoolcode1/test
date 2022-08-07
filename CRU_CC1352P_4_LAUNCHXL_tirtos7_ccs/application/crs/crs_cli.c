@@ -3074,10 +3074,22 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
     Cllc_getFfdShortAddr(&addr);
     if (addr != shortAddr)
     {
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr, line);
+        if (stat != Collector_status_success)
+               {
+                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                   CLI_startREAD();
+               }
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
         return CRS_SUCCESS;
     }
+
 #endif
     token = strtok(NULL, s);    //filename
     char filename[FILENAME_SZ] = { 0 };
@@ -3104,8 +3116,12 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
 
     }
     token = strtok(NULL, s);//[chipNumber]
-    uint32_t chipNum=strtol(token, NULL, 10);
-
+    if(!token){
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+        return CRS_FAILURE;
+    }
+    uint32_t chipNum=strtoul(&token[2], NULL, 16);
 
         token = strtok(NULL, s);//nameVals
         CRS_nameValue_t nameVals[NAME_VALUES_SZ];
@@ -3145,7 +3161,7 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
 
 
 
-//fs upload dig [shortAddr] [filename] [mode (slave/native)] [chipNumber]  [nameVals]
+//fs upload fpga [shortAddr] [filename] [mode (slave/native)] [nameVals]
 static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line)
 {
     const char s[2] = " ";
@@ -4581,7 +4597,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 //#define CLI_SNAP "snap"
 //#define CLI_SCRIPT "script"
 
-    CLI_printCommInfo(CLI_CRS_FS_UPLOAD_DIG, strlen(CLI_CRS_FS_UPLOAD_DIG), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [chip number] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [param=value]");
+    CLI_printCommInfo(CLI_CRS_FS_UPLOAD_DIG, strlen(CLI_CRS_FS_UPLOAD_DIG), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [chip number] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_FPGA, strlen(CLI_CRS_FS_UPLOAD_FPGA), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [param=value]");
     CLI_printCommInfo(CLI_CRS_FS_UPLOAD_RF, strlen(CLI_CRS_FS_UPLOAD_RF), "[shortAddr] [filename] [mode (" CLI_MODE_SLAVE "/" CLI_MODE_NATIVE ")] [filetype (" CLI_SNAP "/" CLI_SCRIPT ")] [rf address] [lut line number] [param=value]");
 
