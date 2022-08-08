@@ -3153,6 +3153,11 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
 
     CRS_retVal_t retStatus = DIG_uploadSnapDig(filename, chipMode,chipNum, nameVals,
                                                 fpgaMultiLineCallback);
+    if (retStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+    }
 
     return retStatus;
 }
@@ -3255,6 +3260,12 @@ static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line)
 
     CRS_retVal_t retStatus = DIG_uploadSnapFpga(filename, chipMode, nameVals,
                                                 fpgaMultiLineCallback);
+
+    if (retStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+    }
 
     return retStatus;
 }
@@ -3364,8 +3375,12 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
 
     CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
 
+    if (retStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+    }
 
-//    CLI_startREAD();
     return retStatus;
 }
 
