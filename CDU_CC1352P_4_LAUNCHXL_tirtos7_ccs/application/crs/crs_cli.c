@@ -4365,7 +4365,7 @@ static CRS_retVal_t CLI_getGainParsing(char *line)
     token = strtok(NULL, s);
     int gain;
     if(strcmp("dc_rf_high_freq_hb_rx", token) == 0){
-        gain = CRS_cbGainStates.dc_if_low_freq_tx;
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
         ret = CRS_SUCCESS;
     } else if(strcmp("uc_rf_high_freq_hb_tx", token) == 0){
         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
