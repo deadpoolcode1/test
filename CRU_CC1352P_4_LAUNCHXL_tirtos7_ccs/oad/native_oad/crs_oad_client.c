@@ -191,11 +191,11 @@ CRS_retVal_t Oad_checkImgEnvVar(){
         char ver[4]={0};
         memcpy(ver,&_imgHdr.fixedHdr.softVer[1],3);
         uint32_t imgExtFlash=strtol(ver,NULL,10);
-        if ((imgExtFlash>imgPrev)) {
+//        if ((imgExtFlash>imgPrev)) {
             char currImg[500]={0};
             sprintf(currImg,"img=%s",ver);
             Env_write(currImg);
-        }
+//        }
     }
 //    OADStorage_close();
     return CRS_SUCCESS;

@@ -153,11 +153,11 @@ CRS_retVal_t Oad_checkImgEnvVar(){
         memcpy(ver,&remoteAppImageId.softVer[1],3);
         uint32_t imgExtFlash=strtol(ver,NULL,10);
         //if this is a collector img - update the img env var
-        if ((imgExtFlash>imgPrev)) {
+//        if ((imgExtFlash>imgPrev)) {
             char currImg[500]={0};
             sprintf(currImg,"img=%s",ver);
             Env_write(currImg);
-        }
+//        }
     }
     OADStorage_close();
     return CRS_SUCCESS;
