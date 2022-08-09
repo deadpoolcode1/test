@@ -4729,6 +4729,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_GET_TIME, strlen(CLI_CRS_GET_TIME), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_SET_TIME, strlen(CLI_CRS_SET_TIME), "[shortAddr] [time](unix time)");
 
+    CLI_printCommInfo(CLI_CRS_GET_GAIN, strlen(CLI_CRS_GET_GAIN), "[shortAddr] [state](dc_rf_high_freq_hb_rx, uc_rf_high_freq_hb_tx, uc_if_low_freq_rx, dc_if_low_freq_tx)");
+
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
 
     //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
