@@ -833,11 +833,11 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     }
     int8_t ttg_vals[4] = { gUartTxBuffer[37], gUartTxBuffer[38],
                            gUartTxBuffer[39], gUartTxBuffer[40] };
-    CLI_cliPrintf("\r\nTTG=0x%x 0x%x 0x%x 0x%x", ttg_vals[0], ttg_vals[1], ttg_vals[2],
+    CLI_cliPrintf("\r\nTTG=%d %d %d %d", ttg_vals[0], ttg_vals[1], ttg_vals[2],
                   ttg_vals[3]);
     int8_t rtg_vals[4] = { gUartTxBuffer[41], gUartTxBuffer[42],
                            gUartTxBuffer[43], gUartTxBuffer[44] };
-    CLI_cliPrintf("\r\nRTG=0x%x 0x%x 0x%x 0x%x", rtg_vals[0], rtg_vals[1], rtg_vals[2],
+    CLI_cliPrintf("\r\nRTG=%d %d %d %d", rtg_vals[0], rtg_vals[1], rtg_vals[2],
                   rtg_vals[3]);
 
     uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);

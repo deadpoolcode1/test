@@ -4378,7 +4378,7 @@ static CRS_retVal_t CLI_getGainParsing(char *line)
         ret = CRS_SUCCESS;
     }
     if(ret==CRS_SUCCESS){
-        CLI_cliPrintf("\r\nGain=0x%x", gain);
+        CLI_cliPrintf("\r\nGain=%d", gain);
     }
     CLI_cliPrintf("\r\nStatus: 0x%x", ret);
     CLI_startREAD();
