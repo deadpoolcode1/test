@@ -169,6 +169,8 @@
 #define CLI_CRS_GET_TIME "time"
 #define CLI_CRS_SET_TIME "set time"
 
+#define CLI_CRS_GET_GAIN "get gain"
+
 #define CLI_CRS_WATCHDOG_DISABLE "watchdog disable"
 
 
@@ -285,6 +287,8 @@ static CRS_retVal_t CLI_trshRestore(char *line);
 static CRS_retVal_t CLI_getTimeParsing(char *line);
 static CRS_retVal_t CLI_setTimeParsing(char *line);
 static const char* getTime_str();
+
+static CRS_retVal_t CLI_getGainParsing(char *line);
 
 static CRS_retVal_t CLI_config_direct(char *line);
 static CRS_retVal_t CLI_config_file(char *line);
@@ -756,7 +760,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                     inputBad = false;
               }
 
+          if (memcmp(CLI_CRS_GET_GAIN, line, sizeof(CLI_CRS_GET_GAIN) - 1) == 0)
+                  {
 
+                      CLI_getGainParsing(line);
+
+                        inputBad = false;
+                  }
 
 
           if (memcmp(CLI_CRS_TDD_OPEN, line, sizeof(CLI_CRS_TDD_OPEN) - 1) == 0)
@@ -2746,6 +2756,7 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
             CLI_cliPrintf("\r\nULDetMaxInPwr=%s",agcResults.RfMaxUL);
             CLI_cliPrintf("\r\nULDetectorMaxCableIFPower=%s",agcResults.IfMaxUL);
 #endif
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
             CLI_startREAD();
             return CRS_SUCCESS;
 }
@@ -2938,7 +2949,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
             }
         }
     }
-
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 }
@@ -4313,6 +4324,67 @@ static CRS_retVal_t CLI_getTimeParsing(char *line)
     return CRS_SUCCESS;
 }
 
+
+static CRS_retVal_t CLI_getGainParsing(char *line)
+{
+    const char s[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_GET_GAIN)]), s);
+    //token = strtok(NULL, s);
+
+    //shortAddr in decimal
+    uint32_t shortAddr = CLI_convertStrUint(&(token[2]));
+    #ifndef CLI_SENSOR
+
+          uint16_t addr = 0;
+          Cllc_getFfdShortAddr(&addr);
+          if (addr != shortAddr)
+          {
+              // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+              ApiMac_sAddr_t dstAddr;
+              dstAddr.addr.shortAddr = shortAddr;
+              dstAddr.addrMode = ApiMac_addrType_short;
+              Collector_status_t stat;
+              stat = Collector_sendCrsMsg(&dstAddr, line);
+              if (stat != Collector_status_success)
+                 {
+                     CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                     CLI_startREAD();
+                 }
+              // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+              return CRS_SUCCESS;
+          }
+     #endif
+    CRS_retVal_t ret = CRS_FAILURE;
+    token = strtok(NULL, s);
+    int gain;
+    if(strcmp("dc_rf_high_freq_hb_rx", token) == 0){
+        gain = CRS_cbGainStates.dc_if_low_freq_tx;
+        ret = CRS_SUCCESS;
+    } else if(strcmp("uc_rf_high_freq_hb_tx", token) == 0){
+        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
+        ret = CRS_SUCCESS;
+    } else if(strcmp("uc_if_low_freq_rx", token) == 0){
+        gain = CRS_cbGainStates.uc_if_low_freq_rx;
+        ret = CRS_SUCCESS;
+    } else if(strcmp("dc_if_low_freq_tx", token) == 0){
+        gain = CRS_cbGainStates.dc_if_low_freq_tx;
+        ret = CRS_SUCCESS;
+    }
+    if(ret==CRS_SUCCESS){
+        CLI_cliPrintf("\r\nGain=0x%x", gain);
+    }
+    CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+    CLI_startREAD();
+    return ret;
+}
+
 static CRS_retVal_t CLI_sensorChannelParsing(char *line)
 {
      const char s[2] = " ";
@@ -4369,6 +4441,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
 //    else{
 //        CLI_cliPrintf("\r\nSensorStatus=0x%x", retStatus);
 //    }
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 

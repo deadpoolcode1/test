@@ -785,17 +785,17 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
     if (scs == 1)
     {
-        CLI_cliPrintf("\r\nSCS=15Hz");
+        CLI_cliPrintf("\r\nSCS=15");
     }
     else if (scs == 2)
     {
         isGood = false;
-        CLI_cliPrintf("\r\nSCS=30Hz");
+        CLI_cliPrintf("\r\nSCS=30");
     }
     else if (scs == 4)
     {
         isGood = false;
-        CLI_cliPrintf("\r\nSCS=60Hz");
+        CLI_cliPrintf("\r\nSCS=60");
     }
 
     uint8_t pattern2 = gUartTxBuffer[30];
