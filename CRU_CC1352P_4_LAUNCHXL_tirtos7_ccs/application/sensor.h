@@ -70,6 +70,8 @@ Sensor_status_t Sensor_sendOadRsp(uint16_t *pDstAddr,
                           uint8_t *pMsgPayload,
                           uint32_t msgLen);
 void Ssf_crsInitScript();
+void  getMac(ApiMac_sAddrExt_t *mac);
+uint16_t getPanId();
 
 extern bool Ssf_getNetworkInfo(ApiMac_deviceDescriptor_t *pDevInfo,
                               Llc_netInfo_t  *pParentInfo);

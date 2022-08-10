@@ -569,3 +569,10 @@ static void updateRssiStrct(int8_t rssi)
 
 }
 
+void getMac(ApiMac_sAddrExt_t *mac){
+    memcpy(mac, gDevInfo.extAddress, sizeof(ApiMac_sAddrExt_t));
+}
+
+uint16_t getPanId(){
+    return gDevInfo.panID;
+}

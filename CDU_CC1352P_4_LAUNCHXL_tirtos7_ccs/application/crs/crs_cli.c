@@ -1524,7 +1524,14 @@ static CRS_retVal_t CLI_unit(char *line)
                rsp = Ssf_getNetworkInfo(&devInfo, &nwkInfo);
                if (rsp == false)
                {
-                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                   uint16_t panID = getPanId();
+                   //uint16_t panID = CRS_GLOBAL_PAN_ID;
+                   ApiMac_sAddrExt_t  mac = {0};
+                   getMac(&mac);
+                   CLI_convertExtAddrTo2Uint32(&(mac), &left, &right);
+                   CLI_cliPrintf(", 0x%x, 0x%x%x", panID, left, right);
+
+//                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
                }
                else
                {
