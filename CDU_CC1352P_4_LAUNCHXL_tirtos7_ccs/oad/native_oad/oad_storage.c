@@ -223,6 +223,8 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  */
 uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
 {
+
+    eraseFlashPg(1); //erase metaData
     uint8_t idStatus;
 
     // Find the number of blocks in the image header, round up if necessary
