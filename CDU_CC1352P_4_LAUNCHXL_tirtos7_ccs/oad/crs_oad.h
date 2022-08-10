@@ -37,7 +37,9 @@ CRS_retVal_t Oad_parseOadPkt( uint8_t* incomingPacket);
 CRS_retVal_t Oad_distributorSendTargetFwVerReq(uint16_t dstAddr);
 CRS_retVal_t Oad_targetReset(uint16_t dstAddr);
 CRS_retVal_t Oad_flashFormat();
+CRS_retVal_t Oad_Reinit();
 void* oadRadioAccessAllocMsg(uint32_t msgLen);
 
+extern bool oadInProgress;
 
 #endif /* APPLICATION_CRS_OAD_CRS_OAD_H_ */

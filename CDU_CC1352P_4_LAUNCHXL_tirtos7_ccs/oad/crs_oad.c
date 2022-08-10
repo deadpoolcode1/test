@@ -54,7 +54,7 @@ static bool gUpdateUartImgIsReset=false;
  */
 /*static*/uint16_t oadBNumBlocks = 0;//total blocks to send
 /*static*/uint16_t oadBlock = 0;//current block sending
-static bool oadInProgress = false;
+bool oadInProgress = false;
 static UART_Handle uartHandle;
 
 /*!
@@ -450,6 +450,16 @@ void* oadRadioAccessAllocMsg(uint32_t msgLen)
 
     return msgBuffer + 2;
 }
+
+
+CRS_retVal_t Oad_Reinit()
+{
+    oadInProgress = false;
+          oadBNumBlocks = 0;
+          CLI_init(false);
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+    }
 
 /******************************************************************************
  Local Functions

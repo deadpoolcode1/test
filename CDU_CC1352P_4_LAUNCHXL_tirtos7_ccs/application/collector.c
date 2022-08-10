@@ -554,7 +554,9 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
 //    CLI_cliPrintf("\r\ndisassocIndCB");
-
+if (oadInProgress) {
+    Oad_Reinit();
+}
     int x = 0;
     for (x = 0; x < MAX_DEVICES_IN_NETWORK; x++)
     {
