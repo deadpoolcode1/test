@@ -242,7 +242,7 @@ extern bool hasExternalFlash(void);
  * @return  @ref FLASH_SUCCESS if read succeeded
  *          @ref FLASH_FAILURE if the flash returned an error
  */
-extern uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
+extern uint8_t readInternalFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
 
 /*!
  * Read data from flash using page and offset
@@ -268,7 +268,7 @@ extern uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf,
  * @return  status - @ref FLASH_SUCCESS if programmed successfully or
  *                   @ref FLASH_FAILURE if programming failed
  */
-extern uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
+extern uint8_t writeInternalFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
 
 /*!
  * Write data to flash using page and offset

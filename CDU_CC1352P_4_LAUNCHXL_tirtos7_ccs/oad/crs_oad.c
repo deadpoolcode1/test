@@ -26,7 +26,11 @@
 #include "oad/RadioProtocol.h"
 #include DeviceFamily_constructPath(driverlib/sys_ctrl.h)
 #include "application/crs/crs_env.h"
-
+//oad switch
+#include "common/cc26xx/flash_interface/flash_interface.h"
+#include <ti/drivers/dpl/HwiP.h>
+#include DeviceFamily_constructPath(driverlib/flash.h)
+#include "oad/native_oad/oad_image_header_app.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -460,6 +464,36 @@ CRS_retVal_t Oad_Reinit()
           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
           CLI_startREAD();
     }
+
+
+CRS_retVal_t Oad_createFactoryImageBackup(){
+    OADStorage_createFactoryImageBackup();
+    return CRS_SUCCESS;
+
+}
+
+
+CRS_retVal_t Oad_invalidateImg(){
+
+        imgFixedHdr_t imgHdr={0};
+        readInternalFlash((uint32_t)0, (uint8_t *)&imgHdr, OAD_IMG_HDR_LEN);
+             imgHdr.crcStat=CRC_INVALID;
+           size_t sz=  offsetof(imgHdr_t, fixedHdr.crcStat);
+    //       writeInternalFlash((uint32_t)0, (uint8_t *)&imgHdr, OAD_IMG_HDR_LEN);
+             uint8_t invalidCrc = CRC_INVALID;
+             /* Enter critical section. */
+                uint32_t key = HwiP_disable();
+             uint32_t retval = FlashProgram(&invalidCrc, (uint32_t)(&_imgHdr.fixedHdr.crcStat),
+                                               sizeof(_imgHdr.fixedHdr.crcStat));
+             //       /* Exit critical section. */
+                    HwiP_restore(key);
+
+           imgFixedHdr_t imgHdr2={0};
+           readInternalFlash((uint32_t)0, (uint8_t *)&imgHdr2, OAD_IMG_HDR_LEN);
+
+        return CRS_SUCCESS;
+
+}
 
 /******************************************************************************
  Local Functions
