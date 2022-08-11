@@ -467,8 +467,18 @@ CRS_retVal_t Oad_Reinit()
 
 
 CRS_retVal_t Oad_createFactoryImageBackup(){
-    OADStorage_createFactoryImageBackup();
-    return CRS_SUCCESS;
+
+    uint8_t rtn=   OADStorage_createFactoryImageBackup();
+    switch (rtn) {
+        case OADStorage_Status_Success:
+            return CRS_SUCCESS;
+        case OADStorage_FlashError:
+            return CRS_FAILURE;
+        default:
+            return CRS_SUCCESS;
+    }
+
+
 
 }
 

@@ -1043,8 +1043,9 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 #endif
       if (memcmp(CLI_CRS_OAD_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_FACTORY_IMG) - 1) == 0)
                {
-          Oad_createFactoryImageBackup();
 
+          CRS_retVal_t rsp=  Oad_createFactoryImageBackup();
+          CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
                    inputBad = false;
                    CLI_startREAD();
                }
