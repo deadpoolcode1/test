@@ -4441,7 +4441,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
         return CRS_FAILURE;
     }
     retStatus = Agc_setChannel((AGC_channels_t)channel);
-    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+//    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
 //    if(retStatus == CRS_SUCCESS){
 //        CLI_cliPrintf("\r\nSensorStatus=OK");
 //    }
