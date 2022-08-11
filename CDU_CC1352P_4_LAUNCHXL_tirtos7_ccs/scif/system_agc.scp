@@ -65,6 +65,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
         <tattr name="state.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.invalid" desc="signal that results of current sample cycle should be discarded and not copied to the results arrays." type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledCounter" desc="Determines which LED will turn on in Auto mode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.samplesCount" desc="The sample cycles counter" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
         <tattr name="state.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
@@ -384,12 +385,29 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[// update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
+        <sccode name="event0" init_power_mode="0"><![CDATA[//cancel all scheduled event triggers
+evhCancelTrigger(0);
+evhCancelTrigger(1);
+evhCancelTrigger(2);
+
+// update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.samplesCount == SAMPLE_SIZE){
     state.tddMode = cfg.tddMode;
     state.channelsSwitch = cfg.channelsSwitch;
     state.unitType = cfg.unitType;
 }
+
+// check if the TDD mode was changed in the middle of the sampling cycles
+if(state.tddMode == cfg.tddMode){
+    state.invalid = 0;
+} else{
+    // if it was, mark currently stored result as invalid, advance the sample counter to the last cycle
+    // and trigger the next event so results will get discarded
+    state.invalid = 1;
+    state.samplesCount = 1;
+    evhSetupTimer0Trigger(1, 1, 2);
+}
+
 // if tdd mode is auto
 if(state.tddMode == 0){
     if(state.ledCounter == 0){
@@ -430,8 +448,10 @@ if(state.tddMode == 0){
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
-//cancel timer trigger of event A that was activated as backup
+//cancel all scheduled event triggers
 evhCancelTrigger(0);
+evhCancelTrigger(1);
+evhCancelTrigger(2);
 //enter event code only if Manual DL mode or Auto(skip if Manual UL)
 if(state.tddMode != 2){
     // turn DL LED on (in auto mode it stays on only half the time)
@@ -756,40 +776,49 @@ if(state.tddMode != 2){
             n += 1;
         }
 
-        // copy the results from the temp array to the 'real' array
-        n = 0;
-        while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFDL[n] = output.channelsMaxRFDLTemp[n];
-            output.channelsMaxIFDL[n] = output.channelsMaxIFDLTemp[n];
-            output.channelsMinRFDL[n] = output.channelsMinRFDLTemp[n];
-            output.channelsMinIFDL[n] = output.channelsMinIFDLTemp[n];
-            n += 1;
+        if(state.invalid != 1){
+            // copy the results from the temp array to the 'real' array
+            n = 0;
+            while(n<CHANNELS_NUMBER){
+                output.channelsMaxRFDL[n] = output.channelsMaxRFDLTemp[n];
+                output.channelsMaxIFDL[n] = output.channelsMaxIFDLTemp[n];
+                output.channelsMinRFDL[n] = output.channelsMinRFDLTemp[n];
+                output.channelsMinIFDL[n] = output.channelsMinIFDLTemp[n];
+                n += 1;
+            }
         }
-
         // copy average sums vaules from the temp array to the 'real' array and clear temp array
         n = 0;
         a = 0;
         while(n<CHANNELS_NUMBER){
             a = n;
-            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            if(state.invalid != 1){
+                output.channelsAverage[n] = output.channelsAverageTemp[n];
+            }
             output.channelsAverageTemp[n] = 0;
             n += 8;
-            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            if(state.invalid != 1){
+                output.channelsAverage[n] = output.channelsAverageTemp[n];
+            }
             output.channelsAverageTemp[n] = 0;
             n = a;
             n += 1;
         }
-
-        // if TDD mode is manual DL, results are ready and an interrupt is sent to main CPU
-        n = 0;
-        if(state.tddMode == 1){
-            state.samplesCount = SAMPLE_SIZE;
-            rtlLogStructs(BV_RTL_LOG_OUTPUT);
-            // if interrupt flag is enabled, raises the interrupt for application to process results
-            if(state.alertEnabled == 1) {
-                state.alertEnabled = 0;
-                fwGenQuickAlertInterrupt();
+        if(state.invalid != 1){
+            // if TDD mode is manual DL, results are ready and an interrupt is sent to main CPU
+            n = 0;
+            if(state.tddMode == 1){
+                state.samplesCount = SAMPLE_SIZE;
+                rtlLogStructs(BV_RTL_LOG_OUTPUT);
+                // if interrupt flag is enabled, raises the interrupt for application to process results
+                if(state.alertEnabled == 1) {
+                    state.alertEnabled = 0;
+                    fwGenQuickAlertInterrupt();
+                }
             }
+        } else{
+            state.samplesCount = SAMPLE_SIZE;
+            evhSetupTimer0Trigger(2, 1, 2);
         }
     }
     // if TDD mode is auto, trigger the next falling edge interrupt for UL Event C
@@ -805,8 +834,10 @@ if(state.tddMode != 2){
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
-//cancel timer trigger of event A that was activated as backup
+//cancel all scheduled event triggers
 evhCancelTrigger(0);
+evhCancelTrigger(1);
+evhCancelTrigger(2);
 //enter event code only if Manual UL mode or Auto(skip if Manual DL)
 if(state.tddMode != 1){
     // turn UL LED on (in auto mode it stays on only half the time)
@@ -1132,15 +1163,16 @@ if(state.tddMode != 1){
             output.minSamplesIFUL[n] = 65535;
             n += 1;
         }
-
-        // copy the results from the temp array to the 'real' array
-        n = 0;
-        while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFUL[n] = output.channelsMaxRFULTemp[n];
-            output.channelsMaxIFUL[n] = output.channelsMaxIFULTemp[n];
-            output.channelsMinRFUL[n] = output.channelsMinRFULTemp[n];
-            output.channelsMinIFUL[n] = output.channelsMinIFULTemp[n];
-            n += 1;
+        if(state.invalid != 1){
+            // copy the results from the temp array to the 'real' array
+            n = 0;
+            while(n<CHANNELS_NUMBER){
+                output.channelsMaxRFUL[n] = output.channelsMaxRFULTemp[n];
+                output.channelsMaxIFUL[n] = output.channelsMaxIFULTemp[n];
+                output.channelsMinRFUL[n] = output.channelsMinRFULTemp[n];
+                output.channelsMinIFUL[n] = output.channelsMinIFULTemp[n];
+                n += 1;
+            }
         }
 
         // copy average sums vaules from the temp array to the 'real' array and clear temp array
@@ -1149,23 +1181,31 @@ if(state.tddMode != 1){
         while(n<CHANNELS_NUMBER){
             a = n;
             n += 4;
-            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            if(state.invalid != 1){
+                output.channelsAverage[n] = output.channelsAverageTemp[n];
+            }
             output.channelsAverageTemp[n] = 0;
             n += 8;
-            output.channelsAverage[n] = output.channelsAverageTemp[n];
+            if(state.invalid != 1){
+                output.channelsAverage[n] = output.channelsAverageTemp[n];
+            }
             output.channelsAverageTemp[n] = 0;
             n = a;
             n += 1;
         }
-
-        // if TDD mode is manual UL or Auto, results are ready and an interrupt is sent to main CPU
-        n = 0;
-        state.samplesCount = SAMPLE_SIZE;
-        rtlLogStructs(BV_RTL_LOG_OUTPUT);
-        // if interrupt flag is enabled, raises the interrupt for application to process results
-        if(state.alertEnabled == 1) {
-            state.alertEnabled = 0;
-            fwGenQuickAlertInterrupt();
+        if(state.invalid != 1){
+            // if TDD mode is manual UL or Auto, results are ready and an interrupt is sent to main CPU
+            n = 0;
+            state.samplesCount = SAMPLE_SIZE;
+            rtlLogStructs(BV_RTL_LOG_OUTPUT);
+            // if interrupt flag is enabled, raises the interrupt for application to process results
+            if(state.alertEnabled == 1) {
+                state.alertEnabled = 0;
+                fwGenQuickAlertInterrupt();
+            }
+        } else{
+            state.samplesCount = SAMPLE_SIZE;
+            evhSetupTimer0Trigger(0, 1, 2);
         }
     }
 

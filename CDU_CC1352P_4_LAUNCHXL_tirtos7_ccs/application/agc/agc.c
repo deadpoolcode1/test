@@ -78,7 +78,9 @@ void scTaskAlertCallback(void) {
     // Wake up the OS task
     //Semaphore_post(Semaphore_handle(&semScTaskAlert));
     //Util_setEvent(&AGC_events, AGC_EVT);
-    gAgcReady = 1;
+    if(scifTaskData.systemAgc.state.invalid != 1){
+        gAgcReady = 1;
+    }
 
 } // taskAlertCallback
 
