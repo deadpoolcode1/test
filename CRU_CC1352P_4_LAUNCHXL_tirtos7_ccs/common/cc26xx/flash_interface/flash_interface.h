@@ -204,7 +204,7 @@ extern "C"
 /*!
  * Total size of external flash
  */
-#define EFL_FLASH_SIZE                      0x100000
+#define EFL_FLASH_SIZE                      0x80000 //0x100000
 
 /** @} End EXT_FLASH_MACROS */
 
