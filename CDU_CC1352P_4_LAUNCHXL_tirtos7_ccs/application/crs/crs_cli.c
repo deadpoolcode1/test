@@ -185,9 +185,9 @@
 #define CLI_CRS_OAD_SEND_IMG "oad send img"
 #define CLI_CRS_UPDATE_IMG "update img"
 #define CLI_CRS_OAD_GET_IMG_VER "oad get img"
+#endif
 #define CLI_CRS_OAD_FACTORY_IMG "oad factory img"
 #define CLI_CRS_OAD_INVALID "oad invalid img"
-#endif
 #define CLI_CRS_OAD_FORMAT "oad format"
 
 
@@ -1037,6 +1037,10 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                    //CLI_startREAD();
                }
 
+
+
+
+#endif
       if (memcmp(CLI_CRS_OAD_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_FACTORY_IMG) - 1) == 0)
                {
           Oad_createFactoryImageBackup();
@@ -1052,9 +1056,6 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                    inputBad = false;
                    CLI_startREAD();
                }
-
-
-#endif
       if (memcmp(CLI_CRS_RESET, line, sizeof(CLI_CRS_RESET) - 1) == 0)
                {
               CLI_OadResetParsing(line);

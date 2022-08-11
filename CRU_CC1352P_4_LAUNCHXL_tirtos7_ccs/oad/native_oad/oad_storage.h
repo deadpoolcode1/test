@@ -232,6 +232,31 @@ extern void OADStorage_close(void);
 /*********************************************************************
 *********************************************************************/
 
+/*********************************************************************
+ * @fn      OADStorage_createFactoryImageBackup
+ *
+ * @brief   This function creates factory image backup of current running image
+ *
+ * @param   None
+ *
+ * @return  status  OADStorage_Status_Success/OADStorage_FlashError
+ *
+ */
+extern uint8_t OADStorage_createFactoryImageBackup(void);
+/*********************************************************************
+ * @fn      OADStorage_checkFactoryImage
+ *
+ * @brief   This function check if the valid factory image exists on external
+ *          flash
+ *
+ * @param   None
+ *
+ * @return  TRUE If factory image exists on external flash, else FALSE
+ *
+ */
+extern bool OADStorage_checkFactoryImage(void);
+
+
 #ifdef __cplusplus
 }
 #endif

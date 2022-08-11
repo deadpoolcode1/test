@@ -77,6 +77,8 @@ CRS_retVal_t Oad_flashFormat();
 CRS_retVal_t Oad_parseOadPkt(void* pSrcAddress, uint8_t* incomingPacket);
 CRS_retVal_t OadClient_init(void *sem);
 CRS_retVal_t Oad_checkImgEnvVar();
+CRS_retVal_t Oad_createFactoryImageBackup();
+CRS_retVal_t Oad_invalidateImg();
  /** @brief  Function to open the SOADProtocol module
  *
  *  @param  params      An pointer to OADClient_Params_t structure for initialization
@@ -93,6 +95,7 @@ extern CRS_retVal_t OadClient_process(void);
  *  Called when the user app is performing a reset to the P-App context
  */
 extern void OADClient_invalidateHeader(void);
+
 
 /*********************************************************************
 *********************************************************************/
