@@ -386,9 +386,9 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
             </io_usage>
         </resource_ref>
         <sccode name="event0" init_power_mode="0"><![CDATA[//cancel all scheduled event triggers
-evhCancelTrigger(0);
+//evhCancelTrigger(0);
 evhCancelTrigger(1);
-evhCancelTrigger(2);
+//evhCancelTrigger(2);
 
 // update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.samplesCount == SAMPLE_SIZE){
@@ -406,6 +406,7 @@ if(state.tddMode == cfg.tddMode){
     state.invalid = 1;
     state.samplesCount = 1;
     evhSetupTimer0Trigger(1, 1, 2);
+    fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
 }
 
 // if tdd mode is auto
@@ -440,18 +441,18 @@ if(state.tddMode == 0){
     //Activate timer trigger on event A, so if interrupt does not occur or there is no lock then
     //event runs again from the start
     //timer of 100 ms
-    // if mode is not auto, trigger event B immediately
     evhSetupTimer0Trigger(0, 100, 2);
 
 }else{
+    // if mode is not auto, trigger event B immediately
     evhSetupTimer0Trigger(1, 1, 2);
 }
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
 //cancel all scheduled event triggers
 evhCancelTrigger(0);
-evhCancelTrigger(1);
-evhCancelTrigger(2);
+//evhCancelTrigger(1);
+//evhCancelTrigger(2);
 //enter event code only if Manual DL mode or Auto(skip if Manual UL)
 if(state.tddMode != 2){
     // turn DL LED on (in auto mode it stays on only half the time)
@@ -819,6 +820,7 @@ if(state.tddMode != 2){
         } else{
             state.samplesCount = SAMPLE_SIZE;
             evhSetupTimer0Trigger(2, 1, 2);
+            fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
         }
     }
     // if TDD mode is auto, trigger the next falling edge interrupt for UL Event C
@@ -836,8 +838,8 @@ if(state.tddMode != 2){
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
 //cancel all scheduled event triggers
 evhCancelTrigger(0);
-evhCancelTrigger(1);
-evhCancelTrigger(2);
+//evhCancelTrigger(1);
+//evhCancelTrigger(2);
 //enter event code only if Manual UL mode or Auto(skip if Manual DL)
 if(state.tddMode != 1){
     // turn UL LED on (in auto mode it stays on only half the time)
@@ -1206,6 +1208,7 @@ if(state.tddMode != 1){
         } else{
             state.samplesCount = SAMPLE_SIZE;
             evhSetupTimer0Trigger(0, 1, 2);
+            fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
         }
     }
 
