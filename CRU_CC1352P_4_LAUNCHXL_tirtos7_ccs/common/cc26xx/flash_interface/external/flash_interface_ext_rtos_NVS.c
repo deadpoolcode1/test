@@ -48,13 +48,22 @@
  * INCLUDES
  */
 
-#include <common/cc26xx/flash_interface/flash_interface.h>
+#include "common/cc26xx/flash_interface/flash_interface.h"
 #include <ti_drivers_config.h>
 #include <ti/drivers/NVS.h>
-
+#include DeviceFamily_constructPath(driverlib/flash.h)
+#include DeviceFamily_constructPath(driverlib/vims.h)
 /*******************************************************************************
  * Constants and macros
  */
+typedef uint32_t halIntState_t;
+
+
+#define HAL_ENTER_CRITICAL_SECTION(x)  \
+  do { (x) = !IntMasterDisable(); } while (0)
+
+#define HAL_EXIT_CRITICAL_SECTION(x) \
+  do { if (x) { (void) IntMasterEnable(); } } while (0)
 
 /*******************************************************************************
  * PRIVATE VARIABLES
@@ -67,38 +76,11 @@ static NVS_Params nvsParams;
 /*******************************************************************************
  * PRIVATE FUNCTIONS
  */
-
+static uint8_t disableCache(void);
+static void enableCache(uint8_t state);
 /*******************************************************************************
  * FUNCTIONS
  */
-
-
-/*********************************************************************
- * @fn      eraseFlashPg
- *
- * @brief   Erase all flash region size.
- *
- *
- *
- * @return  status - FLASH_SUCCESS if programmed successfully or
- *                   FLASH_FAILURE if programming failed
- */
-uint8_t eraseFlashRg()
-{
-  uint8_t flashStat = FLASH_FAILURE;
-  if(isOpen)
-  {
-      if(NVS_erase(nvsHandle, 0, regionAttrs.regionSize)
-         == NVS_STATUS_SUCCESS)
-      {
-          flashStat = FLASH_SUCCESS;
-      }
-  }
-
-  return flashStat;
-}
-
-
 
 /*******************************************************************************
  * @fn      flash_init
@@ -303,4 +285,141 @@ uint8_t eraseFlashPg(uint8_t page)
   return flashStat;
 }
 
+
+/*********************************************************************
+ * @fn      eraseFlashPg
+ *
+ * @brief   Erase all flash region size.
+ *
+ *
+ *
+ * @return  status - FLASH_SUCCESS if programmed successfully or
+ *                   FLASH_FAILURE if programming failed
+ */
+uint8_t eraseFlashRg()
+{
+  uint8_t flashStat = FLASH_FAILURE;
+  if(isOpen)
+  {
+      if(NVS_erase(nvsHandle, 0, regionAttrs.regionSize)
+         == NVS_STATUS_SUCCESS)
+      {
+          flashStat = FLASH_SUCCESS;
+      }
+  }
+
+  return flashStat;
+}
+
+
+
+
+/*********************************************************************
+ * @fn      readInternalFlash
+ *
+ * @brief   Read data from Internal flash.
+ *
+ * @param   page   - page to read from in flash
+ * @param   offset - offset into flash page to begin reading
+ * @param   pBuf   - pointer to buffer into which data is read.
+ * @param   len    - length of data to read in bytes.
+ *
+ * @return  None.
+ */
+uint8_t readInternalFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
+{
+  halIntState_t cs;
+  uint8_t *ptr = (uint8_t *)addr;
+
+  // Enter critical section.
+  HAL_ENTER_CRITICAL_SECTION(cs);
+
+  // Read from pointer into buffer.
+  while (len--)
+  {
+    *pBuf++ = *ptr++;
+  }
+
+  // Exit critical section.
+  HAL_EXIT_CRITICAL_SECTION(cs);
+
+  return (FLASH_SUCCESS);
+}
+
+
+/*********************************************************************
+ * @fn      writeFlash
+ *
+ * @brief   Write data to flash.
+ *
+ * @param   page   - page to write to in flash
+ * @param   offset - offset into flash page to begin writing
+ * @param   pBuf   - pointer to buffer of data to write
+ * @param   len    - length of data to write in bytes
+ *
+ * @return  None.
+ */
+uint8_t writeInternalFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
+{
+  uint8_t cacheState;
+  uint32_t flashStat = FLASH_SUCCESS;
+
+  cacheState = disableCache();
+
+  flashStat = FlashProgram((uint8_t*)pBuf, (uint32_t)addr, len);
+
+  enableCache(cacheState);
+
+  return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
+}
+
+
+
+
+
+
+/*********************************************************************
+ * @fn      disableCache
+ *
+ * @brief   Resumes system after a write to flash, if necessary.
+ *
+ * @param   None.
+ *
+ * @return  VIMS_MODE_ENABLED if cache was in use before this operation,
+ *          VIMS_MODE_DISABLED otherwise.
+ */
+static uint8_t disableCache(void)
+{
+  uint8_t state = VIMSModeGet(VIMS_BASE);
+
+  // Check VIMS state
+  if (state != VIMS_MODE_DISABLED)
+  {
+    // Invalidate cache
+    VIMSModeSet(VIMS_BASE, VIMS_MODE_DISABLED);
+
+    // Wait for disabling to be complete
+    while (VIMSModeGet(VIMS_BASE) != VIMS_MODE_DISABLED);
+  }
+
+  return (state);
+}
+
+/*********************************************************************
+ * @fn      enableCache
+ *
+ * @brief   Prepares system for a write to flash, if necessary.
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
+static void enableCache(uint8_t state)
+{
+  if (state != VIMS_MODE_DISABLED)
+  {
+    // Enable the Cache.
+    VIMSModeSet(VIMS_BASE, VIMS_MODE_ENABLED);
+  }
+}
 

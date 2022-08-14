@@ -38,6 +38,9 @@ CRS_retVal_t Oad_distributorSendTargetFwVerReq(uint16_t dstAddr);
 CRS_retVal_t Oad_targetReset(uint16_t dstAddr);
 CRS_retVal_t Oad_flashFormat();
 CRS_retVal_t Oad_Reinit();
+CRS_retVal_t Oad_createFactoryImageBackup();
+CRS_retVal_t Oad_invalidateImg();
+
 void* oadRadioAccessAllocMsg(uint32_t msgLen);
 
 extern bool oadInProgress;

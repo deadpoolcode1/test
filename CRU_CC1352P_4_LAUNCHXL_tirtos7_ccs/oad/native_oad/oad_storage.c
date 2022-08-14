@@ -120,7 +120,8 @@ static uint8_t oadFindExtFlMetaPage(void);
 static OADStorage_Status_t oadValidateCandidateHdr(imgHdr_t *receivedHeader);
 static uint8_t oadCheckDL(void);
 static uint8_t oadCheckImageID(OADStorage_imgIdentifyPld_t *idPld);
-
+static uint32_t oadFindFactImgAddr();
+static uint8_t oadEraseExtFlashPages(uint8_t imgStartPage, uint32_t imgLen, uint32_t pageSize);
 
 void OADStorage_flashErase()
 {
@@ -1056,5 +1057,166 @@ void OADStorage_close(void)
     flash_close();
 }
 
+
+
 /*********************************************************************
 *********************************************************************/
+
+
+
+/*********************************************************************
+ * @fn      OADStorage_createFactoryImageBackup
+ *
+ * @brief   This function creates factory image backup of current running image
+ *
+ * @param   None
+ *
+ * @return  status  OADStorage_Status_Success/OADStorage_FlashError
+ *
+ */
+uint8_t OADStorage_createFactoryImageBackup(void)
+{
+    uint8_t rtn = OADStorage_Status_Success;
+    uint8_t status = 0;
+    uint32_t dstAddr = oadFindFactImgAddr();
+    uint32_t dstAddrStart = dstAddr;
+    uint32_t imgStart = _imgHdr.imgPayload.startAddr;
+    uint32_t imgLen = _imgHdr.fixedHdr.imgEndAddr - (uint32_t)&_imgHdr;
+
+    /* initialize external flash driver */
+    if(flash_open() != 0)
+    {
+        // First erase factory image metadata page
+        if(eraseFlashPg(EXT_FLASH_PAGE(EFL_ADDR_META)) != FLASH_SUCCESS)
+        {
+            return OADStorage_FlashError;
+        }
+
+        /* Erase - external portion to be written*/
+        status = oadEraseExtFlashPages(EXT_FLASH_PAGE(dstAddr),
+                (_imgHdr.fixedHdr.imgEndAddr - _imgHdr.imgPayload.startAddr -1),
+                 EFL_PAGE_SIZE);
+        if(status == OADStorage_Status_Success)
+        {
+            /* COPY - image from internal to external */
+//            if(writeFlashPg(dstAddrStart, sizeof(imgHdr_t), (uint8_t *)(imgStart), imgLen) == FLASH_SUCCESS)
+          if(writeFlash(dstAddr, (uint8_t *)(imgStart), imgLen) == FLASH_SUCCESS)
+           {
+               imgHdr_t imgHdr = { .fixedHdr.imgID = OAD_EXTFL_ID_VAL }; /* Write OAD flash metadata identification */
+
+               /* Copy Image header from internal flash image, skip ID values */
+               memcpy( ((uint8_t *)&imgHdr + CRC_OFFSET), ((uint8_t *)imgStart + 8) , OAD_IMG_HDR_LEN);
+
+               /*
+                * Calculate the CRC32 value and update that in image header as CRC32
+                * wouldn't be available for running image.
+                */
+               imgHdr.fixedHdr.crc32 = CRC32_calc(imgHdr.imgPayload.startAddr, INTFLASH_PAGE_SIZE, 0,  imgLen, false);
+
+               /* Update CRC status */
+               imgHdr.fixedHdr.crcStat = CRC_VALID;
+
+               /* Update image length */
+               imgHdr.fixedHdr.len = _imgHdr.fixedHdr.imgEndAddr - (uint32_t)&_imgHdr;
+
+               uint32_t *ptr = (uint32_t *)&imgHdr;
+
+               /* update external flash storage address */
+               ptr[OAD_IMG_HDR_LEN/4] = dstAddrStart;
+
+               /* Allow application or some other place in BIM to mark factory image as
+                  pending copy (OAD_IMG_COPY_PEND). Should not be done here, as
+                  what is in flash at this time will already be the factory
+                  image. */
+               imgHdr.fixedHdr.imgCpStat = DEFAULT_STATE;
+               imgHdr.fixedHdr.imgType = OAD_IMG_TYPE_FACTORY;
+
+               /* WRITE METADATA */
+                if(writeFlash(EFL_ADDR_META, (uint8_t *)&imgHdr, OAD_IMG_HDR_LEN + 8) != FLASH_SUCCESS)
+                {
+                   rtn = OADStorage_FlashError;
+                }
+            } // end of if(writeFlash((dstAddr+4,  (uint8_t *)(imgStart +4), (imgLen -4)) == FLASH_SUCCESS)
+            else
+            {
+                rtn = OADStorage_FlashError;
+            }
+       }
+       else //  if(extFlashErase(dstAddr, imgLen))
+       {
+           rtn = OADStorage_FlashError;
+       } //  end of if(extFlashErase(dstAddr, imgLen))
+
+        ExtImageInfo_t metadataHdr={0};
+               /* Read whole metadata header */
+          readFlash(0, (uint8_t *)&metadataHdr, EFL_METADATA_LEN);
+        /* close driver */
+        flash_close();
+
+     } // end of flash_Open
+
+
+int x=0;
+
+    return(rtn);
+}
+
+
+/*********************************************************************
+ * @fn      oadFindFactImgAddr
+ *
+ * @brief   Find a place for factory image in external flash
+ *          This will grow the image down from the top of flash
+ *
+ * @return  destAddr   Destination of Factory image in ext fl
+ */
+static uint32_t oadFindFactImgAddr()
+{
+    // Create factory image if there isn't one
+    uint32_t imgLen = _imgHdr.fixedHdr.imgEndAddr - (uint32_t)&_imgHdr;
+    uint8_t numFlashPages = EXT_FLASH_PAGE(imgLen);
+    if(EXTFLASH_PAGE_MASK & imgLen)
+    {
+        numFlashPages += 1;
+    }
+    // Note currently we have problem in erasing last flash page,
+    // workaround to leave last page
+    return (EFL_FLASH_SIZE - EXT_FLASH_ADDRESS(numFlashPages + 1, 0));
+}
+
+/*********************************************************************
+ * @fn      oadEraseExtFlashPages
+ *
+ * @brief   This function erases external flash pages
+ *
+ * @param   imgStartPage  Image start page on external flash
+ * @param   imgLen        Image length
+ * @param   pageSize      Page size of external flash.
+ *
+ * @return  status        OADStorage_Status_Success/OADStorage_FlashError
+ *
+ */
+static uint8_t oadEraseExtFlashPages(uint8_t imgStartPage, uint32_t imgLen, uint32_t pageSize)
+{
+    uint8_t status = OADStorage_Status_Success;
+    uint8_t page;
+    uint8_t numFlashPages = imgLen/pageSize;
+    if(0 != (imgLen % pageSize))
+    {
+        numFlashPages += 1;
+    }
+
+    // Erase the correct amount of pages
+    //for(uint8_t page=imgStartPage; page<(imgStartPage + numFlashPages); ++page)
+    for(page=imgStartPage; page<(imgStartPage + numFlashPages); ++page)
+    {
+        uint8_t flashStat = eraseFlashPg(page);
+        if(flashStat == FLASH_FAILURE)
+        {
+            // If we fail to pre-erase, then halt the OAD process
+            status = OADStorage_FlashError;
+            break;
+        }
+    }
+    return status;
+}
