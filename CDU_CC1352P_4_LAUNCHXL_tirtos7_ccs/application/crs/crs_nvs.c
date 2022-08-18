@@ -495,7 +495,7 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
     while (i < MAX_FILES)
     {
 
-        if ((memcmp(FATcache[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(fat[i].filename)))
+        if ((memcmp(FATcache[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(FATcache[i].filename)))
         {
             fat = FATcache[i];
             break;
