@@ -51,16 +51,9 @@ CRS_retVal_t Nvs_cat(char *filename);
 CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize);
 CRS_retVal_t Nvs_debug();
 CRS_retVal_t Nvs_format();
-CRS_retVal_t Nvs_insertSpecificLine(char *filename, const char *line,
-                                    uint32_t lineNum);
-
 CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine);
 CRS_retVal_t Nvs_readFile(const char *filename, char *respLine);
 
-CRS_retVal_t Nvs_treadVarsFile(char *vars, int file_type);
-CRS_retVal_t Nvs_setVarsFile(char *vars, int file_type);
-CRS_retVal_t Nvs_rmVarsFile(char *vars, int file_type);
-CRS_retVal_t Nvs_createVarsFile(char *vars, int file_type);
 CRS_retVal_t Nvs_isFileExists(char *filename);
 
 char* Nvs_readFileWithMalloc(char *filename);

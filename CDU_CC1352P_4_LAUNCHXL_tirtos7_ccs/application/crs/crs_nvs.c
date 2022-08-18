@@ -243,7 +243,7 @@ CRS_retVal_t Nvs_cat(char *filename)
     int i = 0;
     while (i < MAX_FILES)
     {
-        if (memcmp(fat[i].filename, filename, strlen(filename)) == 0)
+        if ((memcmp(fat[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(fat[i].filename)) )
         {
             break;
         }
@@ -285,7 +285,7 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
     int i = 0;
     while (i < MAX_FILES)
     {
-        if (memcmp(fat[i].filename, filename, strlen(filename)) == 0)
+        if ((memcmp(fat[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(fat[i].filename)))
         {
             break;
         }
@@ -338,7 +338,7 @@ CRS_retVal_t Nvs_rm(char *filename)
     int i = 0;
     while (i < gNumFiles)
     {
-        if (memcmp(fat[i].filename, filename, strlen(filename)) == 0)
+        if ((memcmp(fat[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(fat[i].filename)))
         {
             break;
         }
@@ -495,7 +495,7 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
     while (i < MAX_FILES)
     {
 
-        if (memcmp(FATcache[i].filename, filename, strlen(filename)) == 0)
+        if ((memcmp(FATcache[i].filename, filename, strlen(filename)) == 0) && (strlen(filename)==strlen(fat[i].filename)))
         {
             fat = FATcache[i];
             break;
