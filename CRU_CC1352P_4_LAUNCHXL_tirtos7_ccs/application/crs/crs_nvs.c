@@ -151,8 +151,8 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 
         if (i >= FAT_CACHE_SZ && i % FAT_CACHE_SZ == 0)
         {
-            if (memcmp(FATcache[i % FAT_CACHE_SZ].filename, filename,
-                       strlen(filename)) == 0)
+            if ((memcmp(FATcache[i % FAT_CACHE_SZ].filename, filename,
+                       strlen(filename)) == 0) && (strlen(filename)==strlen(FATcache[i % FAT_CACHE_SZ].filename)))
             {
                 isAppend = true;
                 break;
@@ -576,8 +576,8 @@ char* Nvs_readFileWithMalloc(char *filename)
 
         if (i >= FAT_CACHE_SZ && i % FAT_CACHE_SZ == 0)
         {
-            if (memcmp(FATcache[i % FAT_CACHE_SZ].filename, filename,
-                       strlen(filename)) == 0)
+            if ((memcmp(FATcache[i % FAT_CACHE_SZ].filename, filename,
+                       strlen(filename)) == 0) && (strlen(filename)==strlen(FATcache[i % FAT_CACHE_SZ].filename)))
             {
                 //            fat = FATcache[i];
                 memcpy(&fat, &(FATcache[i % FAT_CACHE_SZ]), sizeof(CRS_FAT_t));
