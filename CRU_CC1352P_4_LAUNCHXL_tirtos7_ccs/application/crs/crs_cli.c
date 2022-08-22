@@ -429,15 +429,15 @@ void errorHandle(){
  */
 CRS_retVal_t CLI_init(bool restartMsg)
 {
-    int i=0;
-    char bugArr[2];
-    while(1){
-        bugArr[i]=100;
-        i++;
-        if (i==1000) {
-            break;
-        }
-    }
+//    int i=0;
+//    char bugArr[2];
+//    while(1){
+//        bugArr[i]=100;
+//        i++;
+//        if (i==1000) {
+//            break;
+//        }
+//    }
 
     /*
      *  Do nothing if the module has already been initialized or if
