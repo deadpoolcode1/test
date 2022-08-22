@@ -165,6 +165,7 @@ Task.numPriorities     = 6;
 
 Error.policy       = "Error_SPIN";
 Error.printDetails = false;
+Error.raiseHook    = "errorHandle";
 
 const System           = scripting.addModule("/ti/sysbios/runtime/System", {}, false);
 System.abortFxn        = "System_abortSpin";

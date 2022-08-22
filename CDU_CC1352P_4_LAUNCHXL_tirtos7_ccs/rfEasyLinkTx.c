@@ -65,6 +65,7 @@
 #include "cp_cli.h"
 #include "application/crs/crs_cli.h"
 #include "mac/mediator.h"
+#include "oad/crs_oad.h"
 
 
 
@@ -128,9 +129,8 @@ int main(void)
     /* Call driver init functions. */
     Board_initGeneral();
 
-
-
     CLI_init(true);
+
 //    CP_CLI_init();
 
     Mediator_init();

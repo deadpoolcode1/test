@@ -136,7 +136,6 @@ void Collector_init()
 
 void Collector_process(void)
 {
-
     if (Collector_events & COLLECTOR_UI_INPUT_EVT)
     {
         CLI_processCliUpdate(NULL, NULL);

@@ -411,6 +411,12 @@ CRS_retVal_t CLI_close(){
 }
 
 
+void errorHandle(){
+    Oad_invalidateImg();
+    SysCtrlSystemReset();
+}
+
+
 /*********************************************************************
  * @fn          CLI_init
  *
@@ -423,6 +429,16 @@ CRS_retVal_t CLI_close(){
  */
 CRS_retVal_t CLI_init(bool restartMsg)
 {
+    int i=0;
+    char bugArr[2];
+    while(1){
+        bugArr[i]=100;
+        i++;
+        if (i==1000) {
+            break;
+        }
+    }
+
     /*
      *  Do nothing if the module has already been initialized or if
      *  CLI_init has been called without trying to manage any of the three
