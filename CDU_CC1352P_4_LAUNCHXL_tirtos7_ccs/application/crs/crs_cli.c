@@ -2471,6 +2471,11 @@ static CRS_retVal_t CLI_fsInsertParsing(char *line)
 
     //filename
     token = strtok(NULL, s);
+    if (strlen(token)>CRS_NVS_LINE_BYTES){
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+        return CRS_FAILURE;
+    }
     memcpy(filename, token, strlen(token));
     uint32_t filenameSize = strlen(token);
 
@@ -2501,13 +2506,24 @@ static CRS_retVal_t CLI_fsInsertParsing(char *line)
 //        token2 = strtok(NULL, d);
 //    }
     CLI_startREAD();
-
+    return rspStatus;
 }
 
 static CRS_retVal_t CLI_fsLsParsing(char *line)
 {
     //uint32_t shortAddr = CUI_convertStrUint(char *st)
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FS_LS) + 2]), NULL, 16);
+    const char s[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FS_LS)]), s);
+
+
+    //uint32_t commSize = sizeof(CLI_CRS_FS_READLINE);
+    uint32_t addrSize = strlen(token);
+    //shortAddr in decimal
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
 #ifndef CLI_SENSOR
 
     uint16_t addr = 0;
@@ -2530,8 +2546,11 @@ static CRS_retVal_t CLI_fsLsParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-//    CRS_retVal_t retStatus = Fs_ls();
-    CRS_retVal_t retStatus = Nvs_ls();
+    token = strtok(NULL, " ");
+    uint32_t pageNum = strtoul(token, NULL, 0);
+
+    CRS_retVal_t retStatus = Nvs_ls(pageNum);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
 
 }

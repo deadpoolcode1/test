@@ -83,20 +83,30 @@ CRS_retVal_t Nvs_init(void *sem)
 
 }
 
-CRS_retVal_t Nvs_ls()
+CRS_retVal_t Nvs_ls(uint8_t page)
 {
 
     /* Display the NVS region attributes. */
-    CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
-    CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
+//    CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
+//    CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     char strlenStr[STRLEN_BYTES] = { 0 };
     uint32_t strlen;
     int i = 0;
-    int numfiles = 0;
+    //int numfiles = 0;
+    int pageFileNum = 10; // number of files in a page
+    bool moreFiles = false;
 
-    while (i < MAX_FILES)
+    int fileNum = MAX_FILES;
+    if (page){
+        fileNum = pageFileNum*page;
+        if (fileNum>MAX_FILES){
+            fileNum = MAX_FILES;
+        }
+        i = fileNum - pageFileNum;
+    }
+    while (i < fileNum)
     {
         if (fat[i].isExist == true)
         {
@@ -108,7 +118,7 @@ CRS_retVal_t Nvs_ls()
                 strlen -= 1;
             }
             CLI_cliPrintf("\r\nName=%s Size=0x%x", fat[i].filename, strlen);
-            numfiles++;
+//            numfiles++;
             strlen = 0;
             memset(strlenStr, 0, STRLEN_BYTES);
         }
@@ -116,14 +126,31 @@ CRS_retVal_t Nvs_ls()
         i++;
     }
 
-    CLI_cliPrintf("\r\nAvblFilesSlots=0x%x", gNumFiles - numfiles);
-
+    if(i < MAX_FILES){
+        if(fat[i].isExist==true){
+            moreFiles = true;
+        }
+    }
+//    if (){
+//        CLI_cliPrintf("\r\nAvblFilesSlots=0x%x", gNumFiles - numfiles);
+//    }
+    if(moreFiles){
+        return CRS_NEXT;
+    }
+    CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
+    CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
+    CLI_cliPrintf("\r\nMaxFilesNum=0x%x", gNumFiles);
+    return CRS_SUCCESS;
 }
 
 
 
 CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 {
+    // currently set maximum filename length to 32 chars
+    if (strlen(filename) > STRLEN_BYTES){
+        return CRS_FAILURE;
+    }
     char temp[1024] = { 0 };
     char strlenStr[STRLEN_BYTES] = { 0 };
     memcpy(temp, buff, strlen(buff));

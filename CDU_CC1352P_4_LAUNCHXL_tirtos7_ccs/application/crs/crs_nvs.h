@@ -42,7 +42,7 @@ typedef struct CRS_fat
  Function Prototypes
  *****************************************************************************/
 CRS_retVal_t Nvs_init(void *sem);
-CRS_retVal_t Nvs_ls();
+CRS_retVal_t Nvs_ls(uint8_t page);
 CRS_retVal_t Nvs_rm(char *filename);
 CRS_retVal_t Nvs_writeFile(char *filename, char *buff);
 CRS_retVal_t Nvs_writeTempFile(char *filename, char *buff);

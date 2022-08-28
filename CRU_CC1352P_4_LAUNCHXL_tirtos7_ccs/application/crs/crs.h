@@ -48,7 +48,8 @@ typedef enum CRS_retVal
     CRS_NO_RSP,
     CRS_EOF,
     CRS_TDD_NOT_OPEN,
-    CRS_TDD_NOT_LOCKED
+    CRS_TDD_NOT_LOCKED,
+    CRS_NEXT
 } CRS_retVal_t;
 
 typedef enum CRS_chipMode
