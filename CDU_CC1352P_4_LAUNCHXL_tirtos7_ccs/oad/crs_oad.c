@@ -292,7 +292,7 @@ CRS_retVal_t Oad_process()
 
  Public function defined in oad_server.h
  */
-CRS_retVal_t Oad_distributorUartRcvImg(bool updateUartImgIsReset)
+CRS_retVal_t Oad_distributorUartRcvImg(bool updateUartImgIsReset,bool isFactory)
 {
     gUpdateUartImgIsReset=updateUartImgIsReset;
     CRS_retVal_t status = CLI_close();
@@ -323,7 +323,7 @@ CRS_retVal_t Oad_distributorUartRcvImg(bool updateUartImgIsReset)
         /* adjust the image type so that the image is stored in the User Image space */
         imgMetaData[IMG_TYPE_OFFSET] = OAD_IMG_TYPE_USR_BEGIN;
 
-        oadBNumBlocks = OADStorage_imgIdentifyWrite(imgMetaData);
+        oadBNumBlocks = OADStorage_imgIdentifyWrite(imgMetaData,isFactory);
         oadBlock = 0;
 
         /* set event to get next block */

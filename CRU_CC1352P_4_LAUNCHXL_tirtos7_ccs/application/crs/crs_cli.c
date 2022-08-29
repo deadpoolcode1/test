@@ -181,13 +181,14 @@
 #define CLI_CRS_RSSI_CHECK "rssi check"
 
 #ifndef CLI_SENSOR
-#define CLI_CRS_OAD_RCV_IMG "oad rcv img"
-#define CLI_CRS_OAD_SEND_IMG "oad send img"
-#define CLI_CRS_UPDATE_IMG "update img"
-#define CLI_CRS_OAD_GET_IMG_VER "oad get img"
+#define CLI_CRS_OAD_RCV_IMG "oad rcv img" //sending via UART a sensor img to extFlash
+#define CLI_CRS_OAD_SEND_IMG "oad send img" //sending the oad img residing in the extFlash OverTheAir to the sensor extFlash
+#define CLI_CRS_UPDATE_IMG "update img" //sending via UART the collector img to extFlash and upgrading it
+#define CLI_CRS_OAD_GET_IMG_VER "oad get img" //getting the img version residing in extFlash
+#define CLI_CRS_OAD_RCV_FACTORY_IMG "oad rcv factory img" //sending via UART a img into the extFlash factory slot
 #endif
-#define CLI_CRS_OAD_FACTORY_IMG "oad factory img"
-#define CLI_CRS_OAD_INVALID "oad invalid img"
+#define CLI_CRS_OAD_FACTORY_IMG "oad factory img" //backing up the current running img into extFlash factory slot
+#define CLI_CRS_OAD_INVALID "oad invalid img" //making the current running img be invalid for the next boot
 #define CLI_CRS_OAD_FORMAT "oad format"
 
 
@@ -1007,7 +1008,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
       if (memcmp(CLI_CRS_OAD_RCV_IMG, line, sizeof(CLI_CRS_OAD_RCV_IMG) - 1) == 0)
                {
 
-                  Oad_distributorUartRcvImg(false);
+                  Oad_distributorUartRcvImg(false,false);
                    inputBad = false;
 //                   CLI_startREAD();
                }
@@ -1028,9 +1029,9 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                 }else{
                   isResetInt= strtoul(token+2,NULL,10);
                   if (isResetInt) {
-                      Oad_distributorUartRcvImg(true);
+                      Oad_distributorUartRcvImg(true,false);
                 }else{
-                    Oad_distributorUartRcvImg(false);
+                    Oad_distributorUartRcvImg(false,false);
                 }
                    inputBad = false;
 //                   CLI_startREAD();
@@ -1054,7 +1055,14 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                }
 
 
+      if (memcmp(CLI_CRS_OAD_RCV_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_RCV_FACTORY_IMG) - 1) == 0)
+                {
 
+           CRS_retVal_t rsp=  Oad_distributorUartRcvImg(false,true);
+           CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                    inputBad = false;
+                    CLI_startREAD();
+                }
 
 #endif
       if (memcmp(CLI_CRS_OAD_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_FACTORY_IMG) - 1) == 0)
@@ -1065,6 +1073,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                    inputBad = false;
                    CLI_startREAD();
                }
+
+
+
+
+
+
+
 
       if (memcmp(CLI_CRS_OAD_INVALID, line, sizeof(CLI_CRS_OAD_INVALID) - 1) == 0)
                {

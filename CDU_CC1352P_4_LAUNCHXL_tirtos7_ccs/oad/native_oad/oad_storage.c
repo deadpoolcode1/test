@@ -222,7 +222,7 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  *
  * @return  Total Blocks if image accepted, 0 if Image rejected
  */
-uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
+uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 {
     eraseFlashPg(0); //erase metaData
     eraseFlashPg(1); //erase metaData
@@ -251,7 +251,11 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
         }
         else
         {
-            imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+            if (isFactory) {
+                imageAddress = oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+            }else{
+                imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+            }
             imagePage = EXT_FLASH_PAGE(imageAddress);
             metaPage = oadFindExtFlMetaPage();
         }

@@ -157,7 +157,7 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  *
   * @return  Total Blocks if image accepted, 0 if Image rejected
  */
-extern uint16_t OADStorage_imgIdentifyWrite(uint8_t *pValue);
+extern uint16_t OADStorage_imgIdentifyWrite(uint8_t *pValue,bool isFactory);
 
 /*********************************************************************
  * @fn      OADStorage_imgBlockRead
