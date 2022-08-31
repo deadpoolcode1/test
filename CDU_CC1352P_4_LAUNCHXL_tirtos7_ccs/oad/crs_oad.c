@@ -370,7 +370,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
 
  Public function defined in oad_server.h
  */
- CRS_retVal_t Oad_distributorSendImg(uint16_t dstAddr,bool isReset)
+ CRS_retVal_t Oad_distributorSendImg(uint16_t dstAddr,bool isReset,bool isFactory)
 {
      OADStorage_imgIdentifyPld_t remoteImgId;
      oadClientAddr = dstAddr;
@@ -387,7 +387,9 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
 
         /* get num blocks and setup OADStorage to store in user image region */
         oadBNumBlocks = OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteImgId);
-
+        if (isFactory) {
+            remoteImgId.imgType=OAD_IMG_TYPE_FACTORY;
+        }
         /*
          * Hard code imgId to 0 - its not used in this
          * implementation as there is only 1 image available
