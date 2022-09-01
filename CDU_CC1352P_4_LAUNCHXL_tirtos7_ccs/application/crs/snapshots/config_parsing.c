@@ -707,7 +707,7 @@ void Config_process(void)
                     Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
                     return;
                 }
-                CLI_cliPrintf("\r\n%s FAIL", lineInv);
+                CLI_cliPrintf("\r\n%s,FAIL", lineInv);
 
 
             }
@@ -741,7 +741,7 @@ void Config_process(void)
                 Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
                 return;
             }
-            CLI_cliPrintf("\r\n%s PASS", lineInv);
+            CLI_cliPrintf("\r\n%s,PASS", lineInv);
 
             gInvLineNumber++;
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
