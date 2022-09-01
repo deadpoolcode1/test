@@ -88,6 +88,7 @@ typedef struct crs_box
  *****************************************************************************/
 CRS_retVal_t Config_configInit(void *sem);
 CRS_retVal_t Config_runConfigFile(char *filename, FPGA_cbFn_t cbFunc);
+CRS_retVal_t Config_runConfigFileDiscovery(char *filename, FPGA_cbFn_t cbFunc);
 CRS_retVal_t Config_getInvLine(char *invName, uint32_t lineNum,
                                char *fileContent, char *respLine);
 CRS_retVal_t Config_getPackageLine(uint32_t lineNum, char *fileContent,

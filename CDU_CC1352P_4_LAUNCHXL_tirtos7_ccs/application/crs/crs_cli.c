@@ -180,6 +180,9 @@
 #define CLI_CRS_RSSI "rssi"
 #define CLI_CRS_RSSI_CHECK "rssi check"
 
+#define CLI_DISCOVER_MODULES "discover modules"
+
+
 #ifndef CLI_SENSOR
 #define CLI_CRS_OAD_RCV_IMG "oad rcv img" //sending via UART a sensor img to extFlash
 #define CLI_CRS_OAD_SEND_IMG "oad send img" //sending the oad img residing in the extFlash OverTheAir to the sensor extFlash
@@ -297,6 +300,7 @@ static CRS_retVal_t CLI_config_direct(char *line);
 static CRS_retVal_t CLI_config_file(char *line);
 static CRS_retVal_t CLI_config_line(char *line);
 
+static CRS_retVal_t CLI_discoverModules(char *line);
 
 static CRS_retVal_t CLI_OadSendImgParsing(char *line);
 static CRS_retVal_t CLI_OadGetImgParsing(char *line);
@@ -1250,6 +1254,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
              CLI_config_file(line);
                inputBad = false;
            }
+
+      if (memcmp(CLI_DISCOVER_MODULES, line, sizeof(CLI_DISCOVER_MODULES) - 1) == 0)
+                {
+
+          CLI_discoverModules(line);
+                    inputBad = false;
+                }
       if (memcmp(CLI_CRS_TMP, line, sizeof(CLI_CRS_TMP) - 1) == 0)
       {
 
@@ -3672,6 +3683,54 @@ static CRS_retVal_t CLI_config_file(char *line)
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
        Config_runConfigFile(filename, fpgaMultiLineCallback);
+
+}
+
+static CRS_retVal_t CLI_discoverModules(char *line)
+{
+    const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_DISCOVER_MODULES)]), s);
+       //token = strtok(NULL, s);
+       uint32_t commSize = sizeof(CLI_DISCOVER_MODULES);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+   #ifndef CLI_SENSOR
+
+       uint16_t addr = 0;
+       Cllc_getFfdShortAddr(&addr);
+       if (addr != shortAddr)
+       {
+           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+           ApiMac_sAddr_t dstAddr;
+           dstAddr.addr.shortAddr = shortAddr;
+           dstAddr.addrMode = ApiMac_addrType_short;
+           Collector_status_t stat;
+           stat = Collector_sendCrsMsg(&dstAddr, line);
+           if (stat != Collector_status_success)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                  }
+//           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+           return CRS_SUCCESS;
+       }
+   #endif
+       char filename[CRS_NVS_LINE_BYTES] = { 0 };
+
+       //filename
+       token = strtok(NULL, s);
+       memcpy(filename, token, strlen(token));
+       uint32_t filenameSize = strlen(token);
+       Config_runConfigFileDiscovery(filename, fpgaMultiLineCallback);
 
 }
 
