@@ -231,6 +231,7 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  */
 uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
 {
+    bool isFactory=false;
     uint8_t idStatus;
 
     // Find the number of blocks in the image header, round up if necessary
@@ -239,7 +240,10 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
 
     // Cast the pBlockData byte array to OADStorage_imgIdentifyPld_t
     OADStorage_imgIdentifyPld_t *idPld = (OADStorage_imgIdentifyPld_t *)(pBlockData);
-
+    if (idPld->imgType==OAD_IMG_TYPE_FACTORY) {
+        isFactory=true;
+        idPld->imgType=OAD_IMG_TYPE_APPSTACKLIB;
+    }
     // Validate the ID
     idStatus = oadCheckImageID(idPld);
 
@@ -254,7 +258,11 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
         }
         else
         {
-            imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+            if (isFactory) {
+                          imageAddress = oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                      }else{
+                          imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+                      }
             imagePage = EXT_FLASH_PAGE(imageAddress);
             metaPage = oadFindExtFlMetaPage();
         }

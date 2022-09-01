@@ -372,6 +372,7 @@ static void oadFwVersionReqCb(void *pSrcAddr)
 static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
                                 uint8_t *imgMetaData)
 {
+
 //    CLI_cliPrintf("\r\noadImgIdentifyReqCb");
     /*
      * Ignore imgId - its not used in this

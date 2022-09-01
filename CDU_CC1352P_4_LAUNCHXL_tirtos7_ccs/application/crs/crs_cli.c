@@ -4688,14 +4688,16 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
 }
 #ifndef CLI_SENSOR
 
-//oad send img 0xshortAddr 0xisReset
+//oad send img 0xshortAddr 0xisReset 0xisFactory
 static CRS_retVal_t CLI_OadSendImgParsing(char *line)
 {
     uint16_t dstAddr=0;
     char tempLine[512]={0};
     memcpy(tempLine,line,strlen(line));
     uint16_t isResetInt=0;
+    uint16_t isFactoryInt=0;
     bool isReset=true;
+    bool isFactory=false;
     const char s[2] = " ";
           char *token;
           /* get the first token */
@@ -4707,13 +4709,23 @@ static CRS_retVal_t CLI_OadSendImgParsing(char *line)
              token = strtok(NULL, s);//0xisReset
              CRS_retVal_t retstatus=CRS_FAILURE;
              if (token==NULL) {
-                 retstatus = Oad_distributorSendImg(dstAddr,isReset);
+                 token = strtok(NULL, s);//0xisFactory
+                 isFactoryInt=strtoul(token+2,NULL,16);
+                 if (isFactoryInt!=0) {
+                     isFactory=true;
+                }
+                 retstatus = Oad_distributorSendImg(dstAddr,isReset,isFactory);
             }else{
                 isResetInt=strtoul(token+2,NULL,16);
                 if (isResetInt==0) {
                     isReset=false;
                 }
-                retstatus = Oad_distributorSendImg(dstAddr,isReset);
+                token = strtok(NULL, s);//0xisFactory
+                        isFactoryInt=strtoul(token+2,NULL,16);
+                        if (isFactoryInt!=0) {
+                            isFactory=true;
+                       }
+                retstatus = Oad_distributorSendImg(dstAddr,isReset,isFactory);
             }
 
              if(retstatus==CRS_FAILURE){
@@ -4831,7 +4843,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 #ifndef CLI_SENSOR
     CLI_printCommInfo(CLI_CRS_OAD_GET_IMG_VER, strlen(CLI_CRS_OAD_GET_IMG_VER), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_OAD_RCV_IMG, strlen(CLI_CRS_OAD_RCV_IMG), "");
-    CLI_printCommInfo(CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
+    CLI_printCommInfo(CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG), "[shortAddr] [reset](0x0:False, 0x1:True) [factory](0x0:False, 0x1:True)");
     CLI_printCommInfo(CLI_CRS_UPDATE_IMG, strlen(CLI_CRS_UPDATE_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
 #endif
 

@@ -31,7 +31,7 @@ CRS_retVal_t Oad_init(void *sem);
 CRS_retVal_t Oad_checkImgEnvVar();
 CRS_retVal_t Oad_process();
 CRS_retVal_t Oad_distributorUartRcvImg(bool updateUartImgIsReset,bool isFactory);
-CRS_retVal_t Oad_distributorSendImg(uint16_t dstAddr,bool isReset);
+CRS_retVal_t Oad_distributorSendImg(uint16_t dstAddr,bool isReset,bool isFactory);
 CRS_retVal_t Oad_distributorGetFwVer();
 CRS_retVal_t Oad_parseOadPkt( uint8_t* incomingPacket);
 CRS_retVal_t Oad_distributorSendTargetFwVerReq(uint16_t dstAddr);
