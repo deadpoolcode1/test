@@ -12,10 +12,14 @@ versionTextFile = open('../oad/native_oad/oad_image_header_app.c', 'r')
 Lines = versionTextFile.readlines()
 for line in Lines:
     if('SOFTWARE_VER' in line):
-        version=(line[-4])
+        version3=(line[-4])
+        version2=(line[-6])
+        version1=(line[-8])
         break
 
-target = r'CRU_00'+version+r'.bin'
+target = r'CRU_'+version1+version2+version3+r'.bin'
+
+
 
 
 shutil.copyfile(original, target)
