@@ -9,8 +9,8 @@ Lines = versionTextFile.readlines()
 for line in Lines:
     if('SOFTWARE_VER' in line):
         version3=(line[-4])
-        version2=(line[-6])
-        version1=(line[-8])
+        version2=(line[-9])
+        version1=(line[-14])
         break
 
 target = r'CDU_'+version1+version2+version3+r'.bin'
