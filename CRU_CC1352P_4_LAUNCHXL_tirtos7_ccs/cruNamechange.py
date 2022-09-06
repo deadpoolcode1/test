@@ -17,7 +17,7 @@ for line in Lines:
         version1=(line[-14])
         break
 
-target = r'CDU_'+version1+version2+version3+r'.bin'
+target = r'CRU_'+version1+version2+version3+r'.bin'
 
 
 
