@@ -173,6 +173,7 @@
 
 #define CLI_CRS_WATCHDOG_DISABLE "watchdog disable"
 
+#define CLI_CRS_MODEM_TEST "modem test"
 
 #define CLI_CRS_DEBUG "fs debug"
 
@@ -302,6 +303,7 @@ static CRS_retVal_t CLI_config_direct(char *line);
 static CRS_retVal_t CLI_config_file(char *line);
 static CRS_retVal_t CLI_config_line(char *line);
 
+static CRS_retVal_t CLI_modemTest(char *line);
 static CRS_retVal_t CLI_discoverModules(char *line);
 
 static CRS_retVal_t CLI_OadSendImgParsing(char *line);
@@ -1296,6 +1298,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
            {
 
           CLI_watchdogDisableParsing(line);
+                           inputBad = false;
+           }
+
+      if (memcmp(CLI_CRS_MODEM_TEST, line, sizeof(CLI_CRS_MODEM_TEST) - 1) == 0)
+           {
+
+          CLI_modemTest(line);
                            inputBad = false;
            }
 
@@ -4433,6 +4442,31 @@ static CRS_retVal_t CLI_setTimeParsing(char *line)
     CLI_startREAD();
     return CRS_SUCCESS;
 
+
+}
+
+static CRS_retVal_t CLI_modemTest(char *line)
+{
+    const char s[2] = " ";
+        char *token;
+        char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+        memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+        /* get the first token */
+        //0xaabb shortAddr
+        token = strtok(&(tmpBuff[sizeof(CLI_CRS_MODEM_TEST)]), s);
+        //token = strtok(NULL, s);
+
+        uint32_t timeMs = strtoul(&(token[2]), NULL, 16);
+        #ifndef CLI_SENSOR
+        Collector_sendCrsMsgTest(timeMs);
+
+      #else
+
+      #endif
+
+
+        return CRS_SUCCESS;
 
 }
 

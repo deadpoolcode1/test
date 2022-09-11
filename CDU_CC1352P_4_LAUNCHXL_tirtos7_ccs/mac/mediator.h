@@ -32,6 +32,7 @@
 
 typedef struct
 {
+    ApiMac_mcpsDataTest_t* test;
 
     ApiMac_mcpsDataReq_t* msg;
 } Mediator_msgObjSentToMac_t;

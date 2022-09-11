@@ -24,7 +24,7 @@
 
 #define CRS_PAN_ID 0x11
 
-#define CRS_PAYLOAD_MAX_SIZE 100
+#define CRS_PAYLOAD_MAX_SIZE 1000
 #define CRS_PKT_MAX_SIZE 150
 
 #define CRS_MAX_PKT_RETRY 5
@@ -33,7 +33,7 @@
 
 typedef enum
 {
-    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP, MAC_COMMAND_DISCOVERY
+    MAC_COMMAND_DATA, MAC_COMMAND_ACK, MAC_COMMAND_BEACON, MAC_COMMAND_ASSOC_REQ, MAC_COMMAND_ASSOC_RSP, MAC_COMMAND_DISCOVERY, MAC_COMMAND_TEST
 } MAC_commandId_t;
 
 typedef struct Frame
@@ -49,7 +49,7 @@ typedef struct Frame
     uint16_t dstAddrShort;
     uint8_t panId;
     uint8_t isNeedAck;
-    uint8_t payload[1000];
+    uint8_t payload[CRS_PAYLOAD_MAX_SIZE];
 } MAC_crsPacket_t;
 
 typedef struct FrameBeacon
