@@ -316,6 +316,10 @@ static CRS_retVal_t CLI_tmpParsing(char *line);
 
 static CRS_retVal_t CLI_rssiParsing(char *line);
 
+static CRS_retVal_t CLI_ledOnParsing(char *line);
+static CRS_retVal_t CLI_ledOffParsing(char *line);
+
+
 static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
@@ -1105,14 +1109,16 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                }
       if (memcmp(CLI_CRS_LED_ON, line, sizeof(CLI_CRS_LED_ON) - 1) == 0)
                {
-                  Agc_ledOn();
+          CLI_ledOnParsing(line);
+//                  Agc_ledOn();
               inputBad = false;
               CLI_startREAD();
                }
 
       if (memcmp(CLI_CRS_LED_OFF, line, sizeof(CLI_CRS_LED_OFF) - 1) == 0)
                 {
-                   Agc_ledOff();
+          CLI_ledOffParsing(line);
+//                   Agc_ledOff();
                inputBad = false;
                CLI_startREAD();
                 }
@@ -1633,6 +1639,68 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #endif
         CLI_startREAD();
+}
+
+
+static CRS_retVal_t CLI_ledOnParsing(char *line)
+{
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_ON) + 2]), NULL,
+                                 16);
+#ifndef CLI_SENSOR
+
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr, line);
+        if (stat != Collector_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+        }
+
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+        return CRS_SUCCESS;
+    }
+#endif
+    CRS_retVal_t retStatus = Agc_ledOn();
+    return retStatus;
+}
+
+
+static CRS_retVal_t CLI_ledOffParsing(char *line)
+{
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_OFF) + 2]), NULL,
+                                 16);
+#ifndef CLI_SENSOR
+
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr, line);
+        if (stat != Collector_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+        }
+
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+        return CRS_SUCCESS;
+    }
+#endif
+    CRS_retVal_t retStatus = Agc_ledOff();
+    return retStatus;
 }
 
 static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
@@ -4934,6 +5002,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_GET_GAIN, strlen(CLI_CRS_GET_GAIN), "[shortAddr] [state](dc_rf_high_freq_hb_rx, uc_rf_high_freq_hb_tx, uc_if_low_freq_rx, dc_if_low_freq_tx)");
 
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
 
     //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
 

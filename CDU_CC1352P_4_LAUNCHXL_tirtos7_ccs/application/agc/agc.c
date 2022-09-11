@@ -323,10 +323,12 @@ AGC_channels_t Agc_getChannel(){
 
 CRS_retVal_t Agc_ledOn(){
     scifTaskData.systemAgc.state.ledOn = 1;
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Agc_ledOff(){
     scifTaskData.systemAgc.state.ledOn = 0;
+    return CRS_SUCCESS;
 }
 
 
