@@ -58,7 +58,7 @@ static uint32_t gIdxTest = 0;
 static uint8_t gMsduHandle = 0;
 static uint32_t gLen = 0;
 
-static bool gIsDone = true;
+static volatile bool gIsDone = true;
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -226,11 +226,15 @@ static void smacFinishedSendingTestCb(EasyLink_Status status)
     }
     else
     {
+        if (gIsDone == false)
+        {
+            Util_setEvent(&smtEvents, SMT_FAIL_EVT);
 
-        Util_setEvent(&smtEvents, SMT_FAIL_EVT);
+            /* Wake up the application thread when it waits for clock event */
+            Semaphore_post(macSem);
+        }
 
-        /* Wake up the application thread when it waits for clock event */
-        Semaphore_post(macSem);
+
     }
 }
 

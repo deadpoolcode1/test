@@ -492,7 +492,7 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
 bool Collector_sendCrsMsgTest(uint32_t time)
 {
 
-    ApiMac_mcpsDataTest_t dataTest = {0};;
+    ApiMac_mcpsDataTest_t dataTest = {0};
 
 
     dataTest.msduHandle = getMsduHandle(Smsgs_cmdIds_crsReq);
