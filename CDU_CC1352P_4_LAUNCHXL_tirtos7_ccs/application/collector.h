@@ -174,5 +174,6 @@ bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr);
 
 void Cllc_getFfdShortAddr(uint16_t *shortAddr);
 void Csf_sensorsDataPrint(uint16_t shortAddr);
+bool Collector_sendCrsMsgTest(uint32_t time);
 
 #endif /* APPLICATION_COLLECTOR_H_ */

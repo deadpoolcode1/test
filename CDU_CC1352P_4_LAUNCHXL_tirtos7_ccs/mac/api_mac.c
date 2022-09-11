@@ -345,7 +345,22 @@ extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData)
     p->msdu.p = data;
     Mediator_msgObjSentToMac_t msg = { 0 };
     msg.msg = p;
+    msg.test = NULL;
 //    msg.msg->msdu.p = p;
+    Mediator_sendMsgToMac(&msg);
+    return ApiMac_status_success;
+}
+
+extern ApiMac_status_t ApiMac_mcpsDataTest(ApiMac_mcpsDataTest_t *pTest)
+{
+
+    ApiMac_mcpsDataTest_t *p = malloc(sizeof(ApiMac_mcpsDataTest_t) + 50);
+    memset(p, 0, sizeof(ApiMac_mcpsDataTest_t) + 50);
+    memcpy(p, pTest, sizeof(ApiMac_mcpsDataTest_t));
+
+    Mediator_msgObjSentToMac_t msg = { 0 };
+    msg.msg = NULL;
+    msg.test = p;
     Mediator_sendMsgToMac(&msg);
     return ApiMac_status_success;
 }

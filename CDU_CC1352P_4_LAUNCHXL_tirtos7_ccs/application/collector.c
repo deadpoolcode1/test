@@ -43,6 +43,7 @@
 
 /* App marker in MSDU handle */
 #define APP_MARKER_MSDU_HANDLE 0x80
+#define TEST_MARKER_MSDU_HANDLE 0x40
 
 /******************************************************************************
  Global variables
@@ -63,6 +64,7 @@ static uint16_t gDeviceShortAddr = 0xaabb;
 
 /*! Device's Outgoing MSDU Handle values */
 static uint8_t deviceTxMsduHandle = 0;
+static bool gIsTestPacket = false;
 
 /******************************************************************************
  Local function prototypes
@@ -214,6 +216,8 @@ bool Collector_isKnownDevice(ApiMac_sAddr_t *pDstAddr)
     }
     return false;
 }
+
+
 
 Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
 {
@@ -470,6 +474,7 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
     dataReq.msdu.len = len;
 
     dataReq.msdu.p = pData;
+    gIsTestPacket = false;
 
     ApiMac_status_t status = ApiMac_mcpsDataReq(&dataReq);
     if (status != ApiMac_status_success)
@@ -484,18 +489,35 @@ static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
     }
 }
 
-/*!
- * @brief      Get the next MSDU Handle
- *             <BR>
- *             The MSDU handle has 3 parts:<BR>
- *             - The MSBit(7), when set means the the application sent the message
- *             - Bit 6, when set means that the app message is a config request
- *             - Bits 0-5, used as a message counter that rolls over.
- *
- * @param      msgType - message command id needed
- *
- * @return     msdu Handle
- */
+bool Collector_sendCrsMsgTest(uint32_t time)
+{
+
+    ApiMac_mcpsDataTest_t dataTest = {0};;
+
+
+    dataTest.msduHandle = getMsduHandle(Smsgs_cmdIds_crsReq);
+
+
+    //    CLI_cliPrintf("\r\nin send msg: msdu handle:0x%x, type:0x%x", dataReq.msduHandle, type);
+
+    dataTest.time = time;
+
+    gIsTestPacket = true;
+
+    ApiMac_status_t status = ApiMac_mcpsDataTest(&dataTest);
+    if (status != ApiMac_status_success)
+    {
+        /*  Transaction overflow occurred */
+        return (false);
+    }
+    else
+    {
+
+        return (true);
+    }
+}
+
+
 static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType)
 {
     uint8_t msduHandle = deviceTxMsduHandle;
@@ -515,6 +537,7 @@ static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType)
 
     return (msduHandle);
 }
+
 
 static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 {
@@ -601,6 +624,22 @@ static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd)
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 {
 //    CLI_cliPrintf("\r\ndataCnfCB");
+
+    if (gIsTestPacket == true)
+    {
+        gIsTestPacket = false;
+        if (pDataCnf->status != ApiMac_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x14");
+            CLI_startREAD();
+            return;
+
+        }
+        CLI_cliPrintf("\r\nStatus: 0x0");
+        CLI_startREAD();
+        return;
+
+    }
 
     if (pDataCnf->status != ApiMac_status_success)
     {

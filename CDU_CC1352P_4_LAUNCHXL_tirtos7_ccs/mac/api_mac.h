@@ -235,6 +235,15 @@ typedef struct _apimac_mcpsdatareq
     ApiMac_sData_t msdu;
 } ApiMac_mcpsDataReq_t;
 
+/*! MCPS data request type */
+typedef struct _apimac_mcpsdatatest
+{
+    /*! Application-defined handle value associated with this data request */
+    uint8_t msduHandle;
+    /*! Data buffer */
+    uint32_t time;
+} ApiMac_mcpsDataTest_t;
+
 /*! MAC_MLME_START_CNF type */
 typedef struct _apimac_mlmestartcnf
 {
@@ -616,5 +625,8 @@ extern void ApiMac_processIncoming(void);
  *              (@ref ApiMac_status_noResources) - Resources not available
  */
 extern ApiMac_status_t ApiMac_mcpsDataReq(ApiMac_mcpsDataReq_t *pData);
+
+extern ApiMac_status_t ApiMac_mcpsDataTest(ApiMac_mcpsDataTest_t *pTest);
+
 
 #endif /* MAC_API_MAC_H_ */

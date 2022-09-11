@@ -25,6 +25,7 @@
 #include "stateMachines/sm_content_ack.h"
 #include "stateMachines/sm_assoc.h"
 #include "stateMachines/sm_discovery.h"
+#include "stateMachines/sm_test.h"
 
 /* EasyLink API Header files */
 #include "easylink/EasyLink.h"
@@ -42,7 +43,8 @@ typedef enum
     MAC_SM_RX_IDLE,
     MAC_SM_BEACON,
     MAC_SM_CONTENT_ACK,
-    MAC_SM_OFF
+    MAC_SM_OFF,
+    MAC_SM_TEST
 } Mac_smStateCodes_t;
 
 /******************************************************************************
@@ -162,6 +164,7 @@ static void macFnx(UArg arg0, UArg arg1)
     Smas_init(macSemHandle);
     Smac_init(macSemHandle);
     Smd_init(macSemHandle);
+    Smt_init(macSemHandle);
     Clock_Params_init(&gClkParams);
     gClkParams.period = 0;
     gClkParams.startFlag = FALSE;
@@ -232,6 +235,10 @@ static void macFnx(UArg arg0, UArg arg1)
         else if (gState == MAC_SM_CONTENT_ACK)
         {
             Smac_process();
+        }
+        else if (gState == MAC_SM_TEST)
+        {
+            Smt_process();
         }
 
         //MAC_TASK_TX_DONE_EVT
@@ -400,7 +407,7 @@ static void processkIncomingAppMsgs()
     {
 
     }
-    else
+    else if(msg.msg != NULL)
     {
         gTotalSmacPackts++;
 
@@ -438,7 +445,6 @@ static void processkIncomingAppMsgs()
         pkt.seqRcv = node.seqRcv;
 
         pkt.isNeedAck = 1;
-        memcpy(gStartOfPacket, msg.msg->msdu.p, msg.msg->msdu.len);
 
         memcpy(pkt.payload, msg.msg->msdu.p, msg.msg->msdu.len);
         pkt.len = msg.msg->msdu.len;
@@ -450,6 +456,17 @@ static void processkIncomingAppMsgs()
         Smac_sendContent(&pkt, msg.msg->msduHandle);
         free(msg.msg->msdu.p);
         free(msg.msg);
+    }
+    else if(msg.test != NULL)
+    {
+//        MAC_COMMAND_TEST
+
+
+        gState = MAC_SM_TEST;
+        EasyLink_abort();
+        Smd_startTest(msg.test->time, msg.test->msduHandle);
+
+        free(msg.test);
     }
 
 }
