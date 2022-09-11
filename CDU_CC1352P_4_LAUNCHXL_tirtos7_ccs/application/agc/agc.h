@@ -86,7 +86,8 @@ AGC_max_results_t Agc_getMaxResults();
 CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode);
 AGC_sensorMode_t Agc_getMode();
 AGC_channels_t Agc_getChannel();
-
+CRS_retVal_t Agc_ledOn();
+CRS_retVal_t Agc_ledOff();
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock);
 #endif

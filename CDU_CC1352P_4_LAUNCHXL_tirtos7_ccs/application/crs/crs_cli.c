@@ -194,6 +194,8 @@
 #define CLI_CRS_OAD_INVALID "oad invalid img" //making the current running img be invalid for the next boot
 #define CLI_CRS_OAD_FORMAT "oad format"
 
+#define CLI_CRS_LED_ON "led on"
+#define CLI_CRS_LED_OFF "led off"
 
 #define CLI_CRS_RESET "reset"
 
@@ -1099,6 +1101,22 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               CLI_startREAD();
 //                  SysCtrlSystemReset();
                }
+      if (memcmp(CLI_CRS_LED_ON, line, sizeof(CLI_CRS_LED_ON) - 1) == 0)
+               {
+                  Agc_ledOn();
+              inputBad = false;
+              CLI_startREAD();
+               }
+
+      if (memcmp(CLI_CRS_LED_OFF, line, sizeof(CLI_CRS_LED_OFF) - 1) == 0)
+                {
+                   Agc_ledOff();
+               inputBad = false;
+               CLI_startREAD();
+                }
+
+
+
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
                   Oad_flashFormat();

@@ -321,6 +321,15 @@ AGC_channels_t Agc_getChannel(){
     return gAgcChannel;
 }
 
+CRS_retVal_t Agc_ledOn(){
+    scifTaskData.systemAgc.state.ledOn = 1;
+}
+
+CRS_retVal_t Agc_ledOff(){
+    scifTaskData.systemAgc.state.ledOn = 0;
+}
+
+
 CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
     // change tdd mode in thrsh file.
     char envFile[1024] = { 0 };
