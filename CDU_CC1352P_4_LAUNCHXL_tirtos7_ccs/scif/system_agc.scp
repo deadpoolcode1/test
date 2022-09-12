@@ -412,16 +412,16 @@ if(state.tddMode == cfg.tddMode){
 
 // if tdd mode is auto
 if(state.tddMode == 0){
-//    if(state.ledCounter == 0){
-//        gpioClearOutput(AUXIO_O_RED_LED);
-//        gpioClearOutput(AUXIO_O_GREEN_LED);
-//    }
-//   if(state.ledCounter >= 100){
-//      gpioClearOutput(AUXIO_O_RED_LED);
-//     gpioClearOutput(AUXIO_O_GREEN_LED);
-//    state.ledCounter = 0;
- //}
-//    state.ledCounter += 1;
+    //    if(state.ledCounter == 0){
+    //        gpioClearOutput(AUXIO_O_RED_LED);
+    //        gpioClearOutput(AUXIO_O_GREEN_LED);
+    //    }
+    //   if(state.ledCounter >= 100){
+    //      gpioClearOutput(AUXIO_O_RED_LED);
+    //     gpioClearOutput(AUXIO_O_GREEN_LED);
+    //    state.ledCounter = 0;
+    //}
+    //    state.ledCounter += 1;
 
     //get the TDD lock
     U16 lock;
@@ -431,29 +431,33 @@ if(state.tddMode == 0){
         // lock detect PIN: 0-locked, 1-not locked (XOR to flip it)
         lock ^= 1;
         if(lock == 1){ //Auto mode : locked - Steady Pink
-              gpioSetOutput(AUXIO_O_RED_LED);
-                gpioSetOutput(AUXIO_O_GREEN_LED);
-          if(state.ledOn==0){
-        gpioClearOutput(AUXIO_O_RED_LED);
-        gpioClearOutput(AUXIO_O_GREEN_LED);
-    }
+            gpioSetOutput(AUXIO_O_RED_LED);
+            gpioSetOutput(AUXIO_O_GREEN_LED);
 
+            if(state.ledOn==0){
+                gpioClearOutput(AUXIO_O_RED_LED);
+                gpioClearOutput(AUXIO_O_GREEN_LED);
+            }
         }else{ //Auto mode : unlocked - Flashing Pink
-                if(state.ledCounter == 0){
-        gpioClearOutput(AUXIO_O_RED_LED);
-        gpioClearOutput(AUXIO_O_GREEN_LED);
-    }
-                  if(state.ledCounter >= 50){
-                      gpioClearOutput(AUXIO_O_RED_LED);
-                     gpioClearOutput(AUXIO_O_GREEN_LED);
+      if(state.ledCounter <= 100){
+            gpioSetOutput(AUXIO_O_RED_LED);
+            gpioSetOutput(AUXIO_O_GREEN_LED);
+            }
+            if(state.ledCounter >= 100){
+                gpioClearOutput(AUXIO_O_RED_LED);
+                gpioClearOutput(AUXIO_O_GREEN_LED);
+
+            }
+            state.ledCounter += 1;
+                if(state.ledCounter == 200){
                     state.ledCounter = 0;
-                 }
-                state.ledCounter += 1;
+                }
+
         }
-         if(state.ledOn==0){
-        gpioClearOutput(AUXIO_O_RED_LED);
-        gpioClearOutput(AUXIO_O_GREEN_LED);
-    }
+        if(state.ledOn==0){
+            gpioClearOutput(AUXIO_O_RED_LED);
+            gpioClearOutput(AUXIO_O_GREEN_LED);
+        }
 
     }else{
         // CRU gets lock status via a meassage from CDU, checks and updates periodically
