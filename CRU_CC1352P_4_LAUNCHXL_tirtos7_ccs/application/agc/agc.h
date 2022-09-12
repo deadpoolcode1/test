@@ -88,6 +88,7 @@ AGC_sensorMode_t Agc_getMode();
 AGC_channels_t Agc_getChannel();
 CRS_retVal_t Agc_ledOn();
 CRS_retVal_t Agc_ledOff();
+CRS_retVal_t Agc_evtCntrPrint(uint16_t* eventcntr);
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock);
 #endif

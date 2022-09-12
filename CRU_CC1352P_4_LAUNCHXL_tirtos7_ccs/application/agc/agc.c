@@ -329,6 +329,11 @@ CRS_retVal_t Agc_ledOff(){
     scifTaskData.systemAgc.state.ledOn = 0;
 }
 
+CRS_retVal_t Agc_evtCntrPrint(uint16_t* eventcntr){
+    *eventcntr=scifTaskData.systemAgc.cfg.eventCounter;
+    return CRS_SUCCESS;
+}
+
 CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
     // change tdd mode in thrsh file.
     char envFile[1024] = { 0 };

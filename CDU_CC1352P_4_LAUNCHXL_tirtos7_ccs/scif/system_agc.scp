@@ -29,6 +29,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="RESULTS" desc="Number of measures for a channel across all sample cycles" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
         <tattr name="SAMPLE_SIZE" desc="Number of sample cycles" type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
         <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.eventCounter" desc="counts transitons number from event b(UL) to c(DL)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event). Contains multiple numbers for each sample cylce." size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -386,7 +387,8 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[//cancel all scheduled event triggers
+        <sccode name="event0" init_power_mode="0"><![CDATA[//Auto mode
+//cancel all scheduled event triggers
 //evhCancelTrigger(0);
 evhCancelTrigger(1);
 //evhCancelTrigger(2);
@@ -480,6 +482,7 @@ if(state.tddMode == 0){
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
 //cancel all scheduled event triggers
+cfg.eventCounter += 1;
 evhCancelTrigger(0);
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
@@ -487,14 +490,14 @@ evhCancelTrigger(0);
 if(state.tddMode != 2){
     // turn DL LED on (in auto mode it stays on only half the time)
     if(state.tddMode == 1){ //Manual DL - Steady Blue
-           // if(state.ledCounter < 50){
-               gpioClearOutput(AUXIO_O_RED_LED);
-                gpioSetOutput(AUXIO_O_GREEN_LED);
-          //  }
-        }//else{
-       //    gpioClearOutput(AUXIO_O_RED_LED);
-       //    gpioSetOutput(AUXIO_O_GREEN_LED);
-      //  }
+        // if(state.ledCounter < 50){
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioSetOutput(AUXIO_O_GREEN_LED);
+        //  }
+    }//else{
+    //    gpioClearOutput(AUXIO_O_RED_LED);
+    //    gpioSetOutput(AUXIO_O_GREEN_LED);
+    //  }
     if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
@@ -871,6 +874,7 @@ if(state.tddMode != 2){
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
 //cancel all scheduled event triggers
+cfg.eventCounter -= 1;
 evhCancelTrigger(0);
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
@@ -878,16 +882,16 @@ evhCancelTrigger(0);
 if(state.tddMode != 1){
     // turn UL LED on (in auto mode it stays on only half the time)
     if(state.tddMode == 2 ){ //Manual UL - Steady Orange
-           // if(state.ledCounter > 50){
-              gpioClearOutput(AUXIO_O_GREEN_LED);
-               gpioSetOutput(AUXIO_O_RED_LED);
-          //  }
-     }
-     //else{
-       //     gpioClearOutput(AUXIO_O_GREEN_LED);
-       //     gpioSetOutput(AUXIO_O_RED_LED);
-   //  }
-        if(state.ledOn==0){
+        // if(state.ledCounter > 50){
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+        gpioSetOutput(AUXIO_O_RED_LED);
+        //  }
+    }
+    //else{
+    //     gpioClearOutput(AUXIO_O_GREEN_LED);
+    //     gpioSetOutput(AUXIO_O_RED_LED);
+    //  }
+    if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
