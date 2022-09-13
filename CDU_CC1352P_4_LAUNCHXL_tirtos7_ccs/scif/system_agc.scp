@@ -432,7 +432,14 @@ if(state.tddMode == 0){
         gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
         // lock detect PIN: 0-locked, 1-not locked (XOR to flip it)
         lock ^= 1;
-        if(lock == 1){ //Auto mode : locked - Steady Pink
+
+
+    }else{
+        // CRU gets lock status via a meassage from CDU, checks and updates periodically
+        lock = input.tddLock;
+    }
+
+    if(lock == 1){ //Auto mode : locked - Steady Pink
             gpioSetOutput(AUXIO_O_RED_LED);
             gpioSetOutput(AUXIO_O_GREEN_LED);
 
@@ -441,9 +448,9 @@ if(state.tddMode == 0){
                 gpioClearOutput(AUXIO_O_GREEN_LED);
             }
         }else{ //Auto mode : unlocked - Flashing Pink
-      if(state.ledCounter <= 100){
-            gpioSetOutput(AUXIO_O_RED_LED);
-            gpioSetOutput(AUXIO_O_GREEN_LED);
+            if(state.ledCounter <= 100){
+                gpioSetOutput(AUXIO_O_RED_LED);
+                gpioSetOutput(AUXIO_O_GREEN_LED);
             }
             if(state.ledCounter >= 100){
                 gpioClearOutput(AUXIO_O_RED_LED);
@@ -451,9 +458,9 @@ if(state.tddMode == 0){
 
             }
             state.ledCounter += 1;
-                if(state.ledCounter == 200){
-                    state.ledCounter = 0;
-                }
+            if(state.ledCounter == 200){
+                state.ledCounter = 0;
+            }
 
         }
         if(state.ledOn==0){
@@ -461,10 +468,7 @@ if(state.tddMode == 0){
             gpioClearOutput(AUXIO_O_GREEN_LED);
         }
 
-    }else{
-        // CRU gets lock status via a meassage from CDU, checks and updates periodically
-        lock = input.tddLock;
-    }
+
 
     //if locked, activate the rising edge interrupt on event B
     if(lock == 1){

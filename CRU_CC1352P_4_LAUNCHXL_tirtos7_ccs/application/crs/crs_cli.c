@@ -3073,7 +3073,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
     }
     int i;
     // print all channels results
-    //CLI_cliPrintf("\r\nSensorStatus=OK");
+    CLI_cliPrintf("\r\nSensorMode=0x%x",mode);
     if(!channel){
         for(i=0;i<4;i++){
                 if(mode == 0 || mode == 1){
