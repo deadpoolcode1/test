@@ -148,6 +148,9 @@
 #define CLI_AGC "sensor"
 #define CLI_AGC_DEBUG "debug sensor"
 #define CLI_AGC_MODE "set sensor"
+#define CLI_AGC_GET_MODE "get sensor"
+#define CLI_AGC_CHANNEL "set channel"
+
 #define CLI_AGC_CHANNEL "set channel"
 
 #define CLI_CRS_CONFIG_DIRECT "config direct"
@@ -282,6 +285,7 @@ static CRS_retVal_t CLI_fsFormat(char *line);
 static CRS_retVal_t CLI_sensorsParsing(char *line);
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line);
 static CRS_retVal_t CLI_sensorModeParsing(char *line);
+static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
 
 static CRS_retVal_t CLI_envUpdate(char *line);
@@ -1254,6 +1258,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_sensorModeParsing(line);
           inputBad = false;
       }
+
+      else if (memcmp(CLI_AGC_GET_MODE, line, sizeof(CLI_AGC_GET_MODE) - 1) == 0){
+          CLI_sensorGetModeParsing(line);
+          inputBad = false;
+      }
+
       else if (memcmp(CLI_AGC_CHANNEL, line, sizeof(CLI_AGC_CHANNEL) - 1) == 0){
           CLI_sensorChannelParsing(line);
           inputBad = false;
@@ -3073,7 +3083,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
     }
     int i;
     // print all channels results
-    CLI_cliPrintf("\r\nSensorMode=0x%x",mode);
+//    CLI_cliPrintf("\r\nSensorMode=0x%x",mode);
     if(!channel){
         for(i=0;i<4;i++){
                 if(mode == 0 || mode == 1){
@@ -3181,6 +3191,48 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
     CLI_startREAD();
     return retStatus;
 }
+
+static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_MODE)]), s);
+       //token = strtok(NULL, s);
+       uint32_t commSize = sizeof(CLI_AGC_GET_MODE);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr, line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+            return CRS_SUCCESS;
+        }
+    #endif
+   uint16_t mode = Agc_getMode();
+    CLI_cliPrintf("\r\nsensorMode: 0x%x", mode);
+    CLI_startREAD();
+}
+
+
 
 static CRS_retVal_t CLI_sensorModeParsing(char *line)
 {
