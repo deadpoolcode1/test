@@ -153,7 +153,7 @@ void Sensor_init( )
 
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
-
+    Agc_ledEnv();
     Nvs_init(sem);
     Thresh_init();
     Env_init();

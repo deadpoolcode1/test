@@ -22,9 +22,9 @@
 
 #define ENV_FILENAME "env"
 #ifndef CLI_SENSOR
-    #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0"
+    #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0\nledMode=1"
 #else
-    #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0"
+    #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0\nledMode=1"
 #endif
 
 /******************************************************************************

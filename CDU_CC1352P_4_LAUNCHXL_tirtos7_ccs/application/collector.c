@@ -115,7 +115,7 @@ void Collector_init()
            (sizeof(Cllc_associated_devices_t) * CRS_GLOBAL_MAX_SENSORS));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
-
+    Agc_ledEnv();
     Nvs_init(sem);
     Env_init();
     Thresh_init();

@@ -198,6 +198,8 @@
 #define CLI_CRS_OAD_INVALID "oad invalid img" //making the current running img be invalid for the next boot
 #define CLI_CRS_OAD_FORMAT "oad format"
 
+
+#define CLI_CRS_LED_MODE "ledMode"
 #define CLI_CRS_LED_ON "led on"
 #define CLI_CRS_LED_OFF "led off"
 
@@ -323,6 +325,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line);
 
 static CRS_retVal_t CLI_rssiParsing(char *line);
 
+static CRS_retVal_t CLI_ledModeParsing(char *line);
 static CRS_retVal_t CLI_ledOnParsing(char *line);
 static CRS_retVal_t CLI_ledOffParsing(char *line);
 static CRS_retVal_t CLI_evtCntrParsing(char *line);
@@ -1093,13 +1096,6 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                    CLI_startREAD();
                }
 
-
-
-
-
-
-
-
       if (memcmp(CLI_CRS_OAD_INVALID, line, sizeof(CLI_CRS_OAD_INVALID) - 1) == 0)
                {
           Oad_invalidateImg();
@@ -1114,6 +1110,17 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               CLI_startREAD();
 //                  SysCtrlSystemReset();
                }
+
+      //ledMode [shortAddr] [on/off: 0x1 | 0x0]
+      if (memcmp(CLI_CRS_LED_MODE, line, sizeof(CLI_CRS_LED_MODE) - 1) == 0)
+                 {
+           CRS_retVal_t ret= CLI_ledModeParsing(line);
+           CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+               inputBad = false;
+                CLI_startREAD();
+                 }
+
+
       if (memcmp(CLI_CRS_LED_ON, line, sizeof(CLI_CRS_LED_ON) - 1) == 0)
                {
           CLI_ledOnParsing(line);
@@ -1658,6 +1665,50 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #endif
         CLI_startREAD();
+}
+
+//ledMode [shortAddr] [on/off: 0x1 | 0x0]
+static CRS_retVal_t CLI_ledModeParsing(char *line)
+{
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_MODE) + 2]), NULL,
+                                 16);
+#ifndef CLI_SENSOR
+
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr, line);
+        if (stat != Collector_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+        }
+
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+        return CRS_SUCCESS;
+    }
+#endif
+        const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       token = strtok(&(tmpBuff[sizeof(CLI_CRS_LED_MODE)]), s); //shortAddr
+       token = strtok(NULL, s);//[on/off: 0x1 | 0x0]
+       if (token == NULL) {
+        return CRS_FAILURE;
+    }
+       uint16_t ledModeInt=0;
+       ledModeInt=strtoul(token+2,NULL,16);
+
+    CRS_retVal_t retStatus = Agc_ledMode(ledModeInt);
+    return retStatus;
 }
 
 
@@ -5068,6 +5119,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
     CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
     CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
+    CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
     CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
 
     CLI_printCommInfo(CLI_CRS_TDD_ALLOC, strlen(CLI_CRS_TDD_ALLOC), "[shortAddr] [alloc]");
@@ -5097,8 +5149,10 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_GET_GAIN, strlen(CLI_CRS_GET_GAIN), "[shortAddr] [state](dc_rf_high_freq_hb_rx, uc_rf_high_freq_hb_tx, uc_if_low_freq_rx, dc_if_low_freq_tx)");
 
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
+
+    CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
+    //CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
+    //CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_EVT_CNTR, strlen(CLI_CRS_EVT_CNTR), "[shortAddr]");
 
 

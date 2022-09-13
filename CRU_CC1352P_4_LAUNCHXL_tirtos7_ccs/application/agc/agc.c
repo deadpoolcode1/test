@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "application/crs/crs.h"
+#include "application/crs/crs_env.h"
 #include "agc.h"
 #include "application/crs/crs_agc_management.h"
 #include "application/crs/crs_alarms.h"
@@ -321,12 +322,34 @@ AGC_channels_t Agc_getChannel(){
     return gAgcChannel;
 }
 
+CRS_retVal_t Agc_ledEnv(){
+    char envFile[1024] = { 0 };
+    CRS_retVal_t ret= Env_read("ledMode", envFile);
+    if (ret == CRS_FAILURE) {
+        Agc_ledMode(0x1);
+        return CRS_SUCCESS;
+    }
+    uint16_t ledModeInt = strtol(envFile + strlen("ledMode="),NULL,16);
+    scifTaskData.systemAgc.state.ledOn = ledModeInt;
+    return CRS_SUCCESS;
+}
+
+
+CRS_retVal_t Agc_ledMode(uint16_t ledModeInt){
+    scifTaskData.systemAgc.state.ledOn = ledModeInt;
+    char ledMode[500]={0};
+    sprintf(ledMode,"ledMode=%x",ledModeInt);
+    Env_write(ledMode);
+    return CRS_SUCCESS;
+}
 CRS_retVal_t Agc_ledOn(){
     scifTaskData.systemAgc.state.ledOn = 1;
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Agc_ledOff(){
     scifTaskData.systemAgc.state.ledOn = 0;
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Agc_evtCntrPrint(uint16_t* eventcntr){
