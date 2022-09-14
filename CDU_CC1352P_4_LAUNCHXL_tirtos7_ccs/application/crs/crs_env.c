@@ -33,7 +33,7 @@
 
 static char * envCache  = NULL;
 static NVS_Handle envHandle;
-
+static NVS_Attrs gRegionAttrs;
 
 /******************************************************************************
  Public Functions
@@ -50,11 +50,13 @@ CRS_retVal_t Env_restore()
     if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
     {
         CRS_free(envCache);
-        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
-        if (!envCache)
-        {
-            envCache = CRS_calloc(1, sizeof(char));
-        }
+//        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
+//        if (!envCache)
+//        {
+//            envCache = CRS_calloc(1, sizeof(char));
+//        }
+        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
+        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
     }
     else
     {
@@ -81,6 +83,12 @@ CRS_retVal_t Env_init(){
             return CRS_FAILURE;
         }
     }
+    /*
+         * This will populate a NVS_Attrs structure with properties specific
+         * to a NVS_Handle such as region base address, region size,
+         * and sector size.
+         */
+    NVS_getAttrs(envHandle, &gRegionAttrs);
 
     CRS_retVal_t status;
     int length = Vars_getLength(&envHandle);
@@ -161,7 +169,6 @@ CRS_retVal_t Env_delete(char *vars){
 }
 
 CRS_retVal_t Env_format(){
-
     if (envHandle == NULL)
     {
         NVS_Params nvsParams;
@@ -169,7 +176,7 @@ CRS_retVal_t Env_format(){
         NVS_Params_init(&nvsParams);
         envHandle = NVS_open(ENV_NVS, &nvsParams);
     }
-
+//    int_fast16_t retStatus = NVS_erase(envHandle, 0, gRegionAttrs.regionSize);
     bool ret = Vars_createFile(&envHandle);
     CRS_free(envCache);
     envCache = CRS_calloc(1, sizeof(char));

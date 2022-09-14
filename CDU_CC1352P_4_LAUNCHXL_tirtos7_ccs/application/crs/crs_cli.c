@@ -3284,7 +3284,7 @@ static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
 }
 
 
-
+//set sensor [shortAddr] [mode]
 static CRS_retVal_t CLI_sensorModeParsing(char *line)
 {
      const char s[2] = " ";
@@ -3325,11 +3325,11 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line)
 
     token = strtok(NULL, s);
     uint32_t tempMode = strtoul(&(token[2]), NULL, 16);
-    if ((tempMode>AGC_UL) ||(!Agc_isInitialized())){
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-        CLI_startREAD();
-        return CRS_FAILURE;
-    }
+//    if ((tempMode>AGC_UL) ||(!Agc_isInitialized())){
+//        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//        CLI_startREAD();
+//        return CRS_FAILURE;
+//    }
     AGC_sensorMode_t mode = (AGC_sensorMode_t)tempMode;
     CRS_retVal_t retStatus = Agc_setMode(mode);
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);

@@ -392,7 +392,6 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
 //evhCancelTrigger(0);
 evhCancelTrigger(1);
 //evhCancelTrigger(2);
-
 // update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.samplesCount == SAMPLE_SIZE){
     state.tddMode = cfg.tddMode;
@@ -440,33 +439,33 @@ if(state.tddMode == 0){
     }
 
     if(lock == 1){ //Auto mode : locked - Steady Pink
-            gpioSetOutput(AUXIO_O_RED_LED);
-            gpioSetOutput(AUXIO_O_GREEN_LED);
+        gpioSetOutput(AUXIO_O_RED_LED);
+        gpioSetOutput(AUXIO_O_GREEN_LED);
 
-            if(state.ledOn==0){
-                gpioClearOutput(AUXIO_O_RED_LED);
-                gpioClearOutput(AUXIO_O_GREEN_LED);
-            }
-        }else{ //Auto mode : unlocked - Flashing Pink
-            if(state.ledCounter <= 50){
-                gpioSetOutput(AUXIO_O_RED_LED);
-                gpioSetOutput(AUXIO_O_GREEN_LED);
-            }
-            if(state.ledCounter >= 50){
-                gpioClearOutput(AUXIO_O_RED_LED);
-                gpioClearOutput(AUXIO_O_GREEN_LED);
-
-            }
-            state.ledCounter += 1;
-            if(state.ledCounter == 100){
-                state.ledCounter = 0;
-            }
-
-        }
         if(state.ledOn==0){
             gpioClearOutput(AUXIO_O_RED_LED);
             gpioClearOutput(AUXIO_O_GREEN_LED);
         }
+    }else{ //Auto mode : unlocked - Flashing Pink
+        if(state.ledCounter <= 50){
+            gpioSetOutput(AUXIO_O_RED_LED);
+            gpioSetOutput(AUXIO_O_GREEN_LED);
+        }
+        if(state.ledCounter >= 50){
+            gpioClearOutput(AUXIO_O_RED_LED);
+            gpioClearOutput(AUXIO_O_GREEN_LED);
+
+        }
+        state.ledCounter += 1;
+        if(state.ledCounter == 100){
+            state.ledCounter = 0;
+        }
+
+    }
+    if(state.ledOn==0){
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+    }
 
 
 
@@ -1265,9 +1264,12 @@ evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="initialize" init_power_mode="0"><![CDATA[//immediately start event A code
-//gpioSetOutput(AUXIO_O_RED_LED);
+gpioClearOutput(AUXIO_O_RED_LED);
+gpioClearOutput(AUXIO_O_GREEN_LED);
 evhSetupTimer0Trigger(0, 1, 0);]]></sccode>
         <sccode name="terminate" init_power_mode="0"><![CDATA[// cancel events trigger on termination
+gpioClearOutput(AUXIO_O_RED_LED);
+gpioClearOutput(AUXIO_O_GREEN_LED);
 evhCancelTrigger(0);
 evhCancelTrigger(1);
 evhCancelTrigger(2);]]></sccode>

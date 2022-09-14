@@ -344,6 +344,7 @@ CRS_retVal_t Agc_ledMode(uint16_t ledModeInt){
 }
 CRS_retVal_t Agc_ledOn(){
     scifTaskData.systemAgc.state.ledOn = 1;
+
     return CRS_SUCCESS;
 }
 
@@ -371,6 +372,7 @@ CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
 
     scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
+    scifTaskData.systemAgc.state.tddMode = mode;
     gAgcMode = mode;
     int i;
     for(i=0;i<SCIF_SYSTEM_AGC_AVERAGE_SIZE;i++){
