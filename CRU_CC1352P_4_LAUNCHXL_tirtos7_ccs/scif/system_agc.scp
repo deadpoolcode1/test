@@ -447,17 +447,17 @@ if(state.tddMode == 0){
             gpioClearOutput(AUXIO_O_GREEN_LED);
         }
     }else{ //Auto mode : unlocked - Flashing Pink
-        if(state.ledCounter <= 50){
+        if(state.ledCounter <= 25){
             gpioSetOutput(AUXIO_O_RED_LED);
             gpioSetOutput(AUXIO_O_GREEN_LED);
         }
-        if(state.ledCounter >= 50){
+        if(state.ledCounter >= 25){
             gpioClearOutput(AUXIO_O_RED_LED);
             gpioClearOutput(AUXIO_O_GREEN_LED);
 
         }
         state.ledCounter += 1;
-        if(state.ledCounter == 100){
+        if(state.ledCounter == 50){
             state.ledCounter = 0;
         }
 

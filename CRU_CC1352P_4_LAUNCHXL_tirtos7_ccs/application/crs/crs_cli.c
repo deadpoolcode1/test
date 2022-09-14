@@ -1115,9 +1115,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
       if (memcmp(CLI_CRS_LED_MODE, line, sizeof(CLI_CRS_LED_MODE) - 1) == 0)
                  {
            CRS_retVal_t ret= CLI_ledModeParsing(line);
-           CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+
                inputBad = false;
-                CLI_startREAD();
                  }
 
 
@@ -1708,6 +1707,8 @@ static CRS_retVal_t CLI_ledModeParsing(char *line)
        ledModeInt=strtoul(token+2,NULL,16);
 
     CRS_retVal_t retStatus = Agc_ledMode(ledModeInt);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
     return retStatus;
 }
 

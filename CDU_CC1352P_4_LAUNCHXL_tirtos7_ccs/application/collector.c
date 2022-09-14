@@ -115,24 +115,21 @@ void Collector_init()
            (sizeof(Cllc_associated_devices_t) * CRS_GLOBAL_MAX_SENSORS));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
-    Agc_ledEnv();
     Nvs_init(sem);
     Env_init();
     Thresh_init();
     SnapInit(sem);
-    //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);
     Config_configInit(sem);
     Fpga_initSem(sem);
-    //    AGCinit(sem);
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
     Manage_initSem(sem);
     Oad_init(sem);
     Csf_crsInitScript();
-//       Agc_init();
+//       Agc_init(); ----------->agc init is after you run flat script
 
 }
 
@@ -421,7 +418,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
     CLI_startREAD();
     Alarms_init(sem);
     Agc_init(sem);
-
+    Agc_ledEnv();
 //    if (CONFIG_AUTO_START)
 //    {
 //        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
