@@ -30,6 +30,8 @@
 #include "agc/agc.h"
 #include "crs/crs_thresholds.h"
 #include "crs/crs_agc_management.h"
+#include "crs_msgs.h"
+
 #include "easylink/EasyLink.h"
 #include "application/crs/crs_alarms.h"
 #include "oad/native_oad/crs_oad_client.h"
@@ -89,7 +91,10 @@ static uint8_t deviceTxMsduHandle = 0;
 
 static ApiMac_deviceDescriptor_t gDevInfo = { 0 };
 static Llc_netInfo_t gParentInfo = { 0 };
+static bool gIsMsgInParts = false;
 
+static bool gIsSendingCrsMsg = false;
+static uint8_t gCrsMsgMsduHandle = false;
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -289,6 +294,7 @@ void Ssf_processCliUpdate()
 
 Sensor_status_t Sensor_sendCrsRsp(uint16_t shortAddr, uint8_t *pMsg)
 {
+    gIsMsgInParts = false;
     Smsgs_statusValues_t stat = Smsgs_statusValues_invalid;
     uint8_t crsRsp[SMSGS_CRS_MSG_LENGTH] = { 0 };
     memcpy(crsRsp + 1, pMsg, SMSGS_CRS_MSG_LENGTH - 2);
@@ -305,6 +311,30 @@ Sensor_status_t Sensor_sendCrsRsp(uint16_t shortAddr, uint8_t *pMsg)
     }
 
     stat = Smsgs_statusValues_success;
+    return stat;
+
+}
+
+Sensor_status_t Sensor_sendCrsInParts(uint16_t shortAddr, uint8_t *pMsg)
+{
+    gIsMsgInParts = true;
+    Smsgs_statusValues_t stat = Smsgs_statusValues_invalid;
+    uint8_t crsRsp[SMSGS_CRS_MSG_LENGTH] = { 0 };
+    memcpy(crsRsp + 1, pMsg, SMSGS_CRS_MSG_LENGTH - 2);
+
+//    if ((Jdllc_getProvState() == Jdllc_states_joined)
+//            || (Jdllc_getProvState() == Jdllc_states_rejoined))
+    {
+        /* send the response message directly */
+        crsRsp[0] = (uint8_t) Smsgs_cmdIds_crsRspInParts;
+
+        Sensor_sendMsg(Smsgs_cmdIds_crsRspInParts, shortAddr, strlen(crsRsp) + 2,
+                       crsRsp);
+
+    }
+
+    stat = Smsgs_statusValues_success;
+    return stat;
 
 }
 
@@ -333,8 +363,6 @@ Sensor_status_t Sensor_sendOadRsp(uint16_t *pDstAddr,
     return stat;
 }
 
-static bool gIsSendingCrsMsg = false;
-static uint8_t gCrsMsgMsduHandle = false;
 
 static bool Sensor_sendMsg(Smsgs_cmdIds_t type, uint16_t shortAddr,
                            uint16_t len, uint8_t *pData)
@@ -431,13 +459,23 @@ static void assocIndCB(ApiMac_mlmeAssociateInd_t *pAssocInd)
 
 static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd)
 {
+
 //        CLI_cliPrintf("\r\ndisassocIndCB");
     if (gIsSendingCrsMsg == true)
     {
+
         gIsSendingCrsMsg = false;
         AGCM_finishedTask();
 
     }
+    if (gIsMsgInParts == true)
+    {
+        gIsMsgInParts = false;
+        Msgs_sendingMsgFailedCb();
+        AGCM_finishedTask();
+
+    }
+
     Agc_setLock(false);
 
     isConnected = false;
@@ -460,7 +498,11 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
     {
         gIsSendingCrsMsg = false;
         AGCM_finishedTask();
+    }
 
+    if (gIsMsgInParts == true)
+    {
+        Msgs_sendNextMsgCb();
     }
 }
 

@@ -681,6 +681,16 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
        //            CLI_startREAD();
                    break;
 
+        case Smsgs_cmdIds_crsRspInParts:
+
+                    if (pDataInd->msdu.len > 1)
+                    {
+                        CLI_cliPrintf("%s", pDataInd->msdu.p + 1);
+                    }
+
+
+                    break;
+
 
         default:
             /* Should not receive other messages */

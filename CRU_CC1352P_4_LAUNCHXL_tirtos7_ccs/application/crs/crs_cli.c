@@ -49,6 +49,9 @@
 #include "crs_env.h"
 #include "application/agc/agc.h"
 #include DeviceFamily_constructPath(driverlib/sys_ctrl.h)
+#ifdef CLI_SENSOR
+#include "application/crs_msgs.h"
+#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -4969,9 +4972,11 @@ CRS_retVal_t CLI_startREAD()
     if (gIsRemoteCommand == true || (gIsRemoteTransparentBridge == true && gRspBuff != 0))
     {
         gIsRemoteCommand = false;
-        Sensor_sendCrsRsp(gDstAddr, gRspBuff);
-        memset(gRspBuff, 0, RSP_BUFFER_SIZE);
-        gRspBuffIdx = 0;
+
+        Msgs_sendMsgs(gDstAddr);
+//        Sensor_sendCrsRsp(gDstAddr, gRspBuff);
+//        memset(gRspBuff, 0, RSP_BUFFER_SIZE);
+//        gRspBuffIdx = 0;
         return CRS_SUCCESS;
     }
 
@@ -5080,20 +5085,27 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
     va_start(args, _format);
     SystemP_vsnprintf(printBuff, sizeof(printBuff), _format, args);
     va_end(args);
+#ifdef CLI_SENSOR
 
     if (gIsRemoteCommand == true
             || (gIsRemoteTransparentBridge == true
                     && strstr(printBuff, "AP>") != NULL))
     {
-        if (gRspBuffIdx + strlen(printBuff) >= RSP_BUFFER_SIZE)
-        {
-            return CRS_FAILURE;
-        }
+//        if (gRspBuffIdx + strlen(printBuff) >= RSP_BUFFER_SIZE)
+//        {
+//            Msgs_addMsg(gRspBuff, gRspBuffIdx);
+//            memset(gRspBuff, 0, sizeof(gRspBuff));
+//            gRspBuffIdx = 0;
+////            return CRS_FAILURE;
+//        }
+//
+//        memcpy(&gRspBuff[gRspBuffIdx], printBuff, strlen(printBuff));
+//        gRspBuffIdx = gRspBuffIdx + strlen(printBuff);
+//        return CRS_SUCCESS;
 
-        memcpy(&gRspBuff[gRspBuffIdx], printBuff, strlen(printBuff));
-        gRspBuffIdx = gRspBuffIdx + strlen(printBuff);
-        return CRS_SUCCESS;
+        Msgs_addMsg(printBuff, strlen(printBuff));
     }
+#endif
 
     CLI_writeString(printBuff, strlen(printBuff));
     return CRS_SUCCESS;
