@@ -173,6 +173,7 @@ void Sensor_init( )
     Tdd_initSem(sem);
     CRS_init();
     OadClient_init(sem);
+    Msgs_init(sem);
     Ssf_crsInitScript();
     //       Agc_init(); ----------->agc init is after you run flat script
 }
@@ -215,6 +216,7 @@ void Sensor_process(void)
     Agc_process();
     Alarms_process();
     OadClient_process();
+    Msgs_process();
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
@@ -501,10 +503,7 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
         AGCM_finishedTask();
     }
 
-    if (gIsMsgInParts == true)
-    {
-        Msgs_sendNextMsgCb();
-    }
+
 }
 
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
@@ -524,6 +523,11 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
         case Smsgs_cmdIds_OADsendImgIdentifyReq:
                    Oad_parseOadPkt(&pDataInd->srcShortAddr,(pDataInd->msdu.p) + 3);
                      break;
+
+        case Smsgs_cmdIds_crsReqInParts:
+            Msgs_sendNextMsgCb();
+
+                             break;
 
         default:
             /* Should not receive other messages */

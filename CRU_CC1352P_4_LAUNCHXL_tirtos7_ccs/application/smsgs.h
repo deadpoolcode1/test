@@ -73,6 +73,7 @@ typedef enum
 
     Smsgs_cmdIds_OADsendImgIdentifyRsp = 27,
     Smsgs_cmdIds_crsRspInParts = 28,
+    Smsgs_cmdIds_crsReqInParts = 29,
 
 //    Smsgs_cmdIds_crsAlarmsListReq = 27,
 //    Smsgs_cmdIds_crsAlarmsListRsp = 28,
