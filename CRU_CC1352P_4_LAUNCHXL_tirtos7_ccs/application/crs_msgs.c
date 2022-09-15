@@ -26,7 +26,7 @@
 
 #define FILE_SIZE 4096
 #define FILE_NAME "MSGS_FILE"
-#define RSP_BUFFER_SIZE 1024
+#define RSP_BUFFER_SIZE (SMSGS_CRS_MSG_LENGTH - 100)
 
 
 
@@ -51,7 +51,7 @@ static uint16_t msgsEvents = 0;
 static uint32_t gFileIdx = 0;
 static uint16_t gDstShortAddr = 0;
 
-
+static volatile bool gIsWriteToFile = false;
 
 static volatile bool gIsDone = true;
 /******************************************************************************
@@ -98,6 +98,7 @@ CRS_retVal_t Msgs_addMsg(uint8_t * msg, uint32_t len)
 {
     if (gRspBuffIdx + len >= RSP_BUFFER_SIZE)
     {
+        gIsWriteToFile = true;
         addToMsg(gRspBuff, gRspBuffIdx);
         memset(gRspBuff, 0, sizeof(gRspBuff));
         gRspBuffIdx = 0;
@@ -179,7 +180,7 @@ static CRS_retVal_t sendNextMsg()
 
 static CRS_retVal_t getMsg(uint8_t *msg)
 {
-    if (gRspBuffIdx > 0)
+    if (gRspBuffIdx > 0 && gIsWriteToFile == false)
     {
         memcpy(msg, gRspBuff, gRspBuffIdx);
         gRspBuffIdx = 0;
@@ -194,6 +195,7 @@ static CRS_retVal_t getMsg(uint8_t *msg)
     }
 
     memcpy(msg, file, strlen(file));
+    memcpy(&msg[strlen(file)], gRspBuff, gRspBuffIdx);
     free(file);
     return CRS_SUCCESS;
 }
@@ -205,6 +207,7 @@ static CRS_retVal_t addToMsg(uint8_t *msg, uint32_t len)
 
 static CRS_retVal_t cleanMsg()
 {
+    gIsWriteToFile = false;
     gRspBuffIdx = 0;
     memset(gRspBuff, 0, sizeof(gRspBuff));
     return Nvs_rm(FILE_NAME);

@@ -5344,6 +5344,8 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 //        return CRS_SUCCESS;
 
         Msgs_addMsg(printBuff, strlen(printBuff));
+        return CRS_SUCCESS;
+
     }
 #endif
 
