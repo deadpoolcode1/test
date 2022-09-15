@@ -15,4 +15,5 @@
 	<templateProperties value="id=rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs.projectspec.rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs,buildProfile=release,isHybrid=true"/>
 	<origin value="/home/epc_4/ti/simplelink_cc13xx_cc26xx_sdk_6_10_00_29/examples/rtos/CC1352P_4_LAUNCHXL/easylink/rfWsnNodeExtFlashOadClient/tirtos7/ccs/rfWsnNodeExtFlashOadClient_CC1352P_4_LAUNCHXL_tirtos7_ccs.projectspec"/>
 	<filesToOpen value=""/>
+	<isTargetManual value="false"/>
 </projectOptions>

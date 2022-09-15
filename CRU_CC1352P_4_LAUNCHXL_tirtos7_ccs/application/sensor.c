@@ -174,6 +174,7 @@ void Sensor_init( )
     CRS_init();
     OadClient_init(sem);
     Ssf_crsInitScript();
+    //       Agc_init(); ----------->agc init is after you run flat script
 }
 
 void Sensor_process(void)
@@ -273,7 +274,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
     CLI_startREAD();
     Alarms_init(sem);
     Agc_init(sem);
-
+    Agc_ledEnv();
 //    if (CONFIG_AUTO_START)
 //    {
 //        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
