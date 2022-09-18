@@ -648,7 +648,8 @@ static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf)
 }
 
 static uint16_t gTotalSmacPackts = 0;
-
+//sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
+//                    uint8_t *pData)
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 {
 //    CLI_cliPrintf("\r\ndataIndCB 0x%x", gTotalSmacPackts);
@@ -677,6 +678,18 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
        //            OADProtocol_ParseIncoming(&pDataInd->srcAddr.addr.shortAddr, (pDataInd->msdu.p) + 3);
        //            CLI_startREAD();
                    break;
+
+        case Smsgs_cmdIds_crsRspInParts:
+
+                    if (pDataInd->msdu.len > 1)
+                    {
+                        CLI_cliPrintf("%s", pDataInd->msdu.p + 1);
+                    }
+                    uint8_t msg[10] = {0};
+                    msg[0] = Smsgs_cmdIds_crsReqInParts;
+                    sendMsg(Smsgs_cmdIds_crsReqInParts, pDataInd->srcShortAddr, 2, msg);
+
+                    break;
 
 
         default:
