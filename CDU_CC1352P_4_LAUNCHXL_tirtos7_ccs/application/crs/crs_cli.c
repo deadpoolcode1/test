@@ -1144,7 +1144,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_evtCntrParsing(line);
 //                  Agc_ledOn();
               inputBad = false;
-              CLI_startREAD();
+
                }
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
@@ -1808,6 +1808,7 @@ static CRS_retVal_t CLI_evtCntrParsing(char *line)
     uint16_t eventcntr=0;
     CRS_retVal_t retStatus = Agc_evtCntrPrint(&eventcntr);
     CLI_cliPrintf("\r\nevent Counter: 0x%x", eventcntr);
+    CLI_startREAD();
     return retStatus;
 }
 
