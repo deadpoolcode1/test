@@ -485,14 +485,20 @@ if(state.tddMode == 0){
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
 //cancel all scheduled event triggers
-cfg.eventCounter += 1;
+
 evhCancelTrigger(0);
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
 //enter event code only if Manual DL mode or Auto(skip if Manual UL)
 if(state.tddMode != 2){
+
     // turn DL LED on (in auto mode it stays on only half the time)
     if(state.tddMode == 1){ //Manual DL - Steady Blue
+        U16 valueTddSyncPin;
+        gpioGetInputValue(AUXIO_I_TDD_SYNCH; valueTddSyncPin);
+        if(valueTddSyncPin == 1){
+            cfg.eventCounter += 1;
+        }
         // if(state.ledCounter < 50){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioSetOutput(AUXIO_O_GREEN_LED);
@@ -877,14 +883,20 @@ if(state.tddMode != 2){
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
 //cancel all scheduled event triggers
-cfg.eventCounter -= 1;
+
 evhCancelTrigger(0);
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
 //enter event code only if Manual UL mode or Auto(skip if Manual DL)
 if(state.tddMode != 1){
+
     // turn UL LED on (in auto mode it stays on only half the time)
     if(state.tddMode == 2 ){ //Manual UL - Steady Orange
+         U16 valueTddSyncPin;
+        gpioGetInputValue(AUXIO_I_TDD_SYNCH; valueTddSyncPin);
+        if(valueTddSyncPin == 0){
+            cfg.eventCounter -= 1;
+        }
         // if(state.ledCounter > 50){
         gpioClearOutput(AUXIO_O_GREEN_LED);
         gpioSetOutput(AUXIO_O_RED_LED);
