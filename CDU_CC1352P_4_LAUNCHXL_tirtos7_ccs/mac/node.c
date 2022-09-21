@@ -154,7 +154,7 @@ void Node_listNodes()
     {
         if (!(gNodes[i].isVacant))
         {
-            CP_CLI_cliPrintf("\r\nNode #0x%x : ", i);
+//            CP_CLI_cliPrintf("\r\nNode #0x%x : ", i);
             macPrint(gNodes[i].mac);
         }
     }

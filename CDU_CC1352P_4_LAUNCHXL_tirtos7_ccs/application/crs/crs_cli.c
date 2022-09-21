@@ -386,7 +386,7 @@ static volatile bool gIsTransparentBridge = false;
 static volatile bool gIsTransparentBridgeSuspended = false;
 #ifndef CLI_SENSOR
 static uint32_t gTransparentShortAddr = 0;
-//static uint32_t gRspBuffIdx = 0;
+static uint32_t gRspBuffIdx = 0;
 #endif
 static volatile bool gIsAsyncCommand = false;
 

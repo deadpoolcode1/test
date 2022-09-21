@@ -120,7 +120,7 @@ OADProtocol_Status_t OADProtocol_ParseIncoming(void* pSrcAddress, uint8_t* incom
 {    
     uint8_t cbIdx;
     OADProtocol_Status_t status = OADProtocol_Failed;
-    uint16_t srcAddr = (uint16_t) *((uint16_t*) pSrcAddress);
+//    uint16_t srcAddr = (uint16_t) *((uint16_t*) pSrcAddress);
     /* Process the message */
     for(cbIdx = 0; cbIdx < (sizeof(incomingPacketProcessTable) / sizeof(incomingPacketProcess_t)) ;cbIdx++)
     {
@@ -305,7 +305,7 @@ OADProtocol_Status_t OADProtocol_sendOadImgBlockRsp(void* pDstAddress, uint8_t i
 
     if(pOadBlockRspPacket == NULL)
     {
-        CLI_cliPrintf("\r\nfailed to allocate buffer on heap!");
+//        CLI_cliPrintf("\r\nfailed to allocate buffer on heap!");
         return status; 
     }
 

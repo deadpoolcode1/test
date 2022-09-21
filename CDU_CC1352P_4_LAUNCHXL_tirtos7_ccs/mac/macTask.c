@@ -77,10 +77,10 @@ static bool gIsSendingBeacon = false;
 
 static bool gIsNeedToSendDiscovery = false;
 
-static bool gIsSendingDiscovery = false;
+//static bool gIsSendingDiscovery = false;
 
 
-static uint16_t gDiscoveryNodeIdx = 0;
+//static uint16_t gDiscoveryNodeIdx = 0;
 
 /******************************************************************************
  Local Function Prototypes
@@ -89,7 +89,7 @@ static uint16_t gDiscoveryNodeIdx = 0;
 static void macFnx(UArg arg0, UArg arg1);
 static void processTxDone();
 static void processRxDone();
-static void stateMachineAckContent(Mac_smStateCodes_t argStateCode);
+//static void stateMachineAckContent(Mac_smStateCodes_t argStateCode);
 
 static void processkIncomingAppMsgs();
 static void sendContent(uint8_t mac[8]);
@@ -397,7 +397,7 @@ static void initCollectorPib()
 
 }
 static uint16_t gTotalSmacPackts = 0;
-static uint8_t gStartOfPacket[100] = {0};
+//static uint8_t gStartOfPacket[100] = {0};
 
 static void processkIncomingAppMsgs()
 {

@@ -206,6 +206,7 @@ CRS_retVal_t Tdd_initSem(void *sem)
     return CRS_SUCCESS;
 }
 
+
 CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 {
 
@@ -284,14 +285,19 @@ CRS_retVal_t Tdd_isOpen()
 
 CRS_retVal_t Tdd_isLocked()
 {
+#ifndef CLI_SENSOR
     GPIO_init();
     if(GPIO_read(CONFIG_GPIO_BTN1)){
         return CRS_TDD_NOT_LOCKED;
     }
     return CRS_SUCCESS;
-//    if(gIsLocked){
-//        return CRS_SUCCESS;
-//    }
+#endif
+
+    if(gIsLocked){
+        return CRS_SUCCESS;
+    }else{
+        return CRS_FAILURE;
+    }
 }
 
 CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
@@ -693,6 +699,7 @@ TDD_tdArgs_t Tdd_getTdArgs()
 
 void Tdd_process(void)
 {
+    gIsLocked=Agc_getLock();
     if (Tdd_events & TDD_OPEN_EV)
     {
         UtilTimer_stop(&tddClkStruct);

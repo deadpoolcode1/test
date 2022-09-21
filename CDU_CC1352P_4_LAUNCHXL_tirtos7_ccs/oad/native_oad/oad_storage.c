@@ -1168,9 +1168,6 @@ uint8_t OADStorage_createFactoryImageBackup(void)
 
      } // end of flash_Open
 
-
-int x=0;
-
     return(rtn);
 }
 

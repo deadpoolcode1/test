@@ -65,6 +65,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.pSamplesMultiChannelRF" desc="Stores RF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
         <tattr name="state.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.cruLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.invalid" desc="signal that results of current sample cycle should be discarded and not copied to the results arrays." type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledCounter" desc="Determines which LED will turn on in Auto mode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
@@ -387,11 +388,11 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[//Auto mode
-//cancel all scheduled event triggers
+        <sccode name="event0" init_power_mode="0"><![CDATA[//cancel all scheduled event triggers
 //evhCancelTrigger(0);
 evhCancelTrigger(1);
 //evhCancelTrigger(2);
+
 // update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.samplesCount == SAMPLE_SIZE){
     state.tddMode = cfg.tddMode;
@@ -413,17 +414,24 @@ if(state.tddMode == cfg.tddMode){
 
 // if tdd mode is auto
 if(state.tddMode == 0){
-    //    if(state.ledCounter == 0){
-    //        gpioClearOutput(AUXIO_O_RED_LED);
-    //        gpioClearOutput(AUXIO_O_GREEN_LED);
-    //    }
-    //   if(state.ledCounter >= 100){
-    //      gpioClearOutput(AUXIO_O_RED_LED);
-    //     gpioClearOutput(AUXIO_O_GREEN_LED);
-    //    state.ledCounter = 0;
-    //}
-    //    state.ledCounter += 1;
-
+    if(state.ledCounter == 0){
+        gpioSetOutput(AUXIO_O_RED_LED);
+        gpioSetOutput(AUXIO_O_GREEN_LED);
+        //turn off cruLock
+        state.cruLock=0;
+    }
+    if(state.ledCounter >= 100){
+        gpioSetOutput(AUXIO_O_RED_LED);
+        gpioSetOutput(AUXIO_O_GREEN_LED);
+        //turn off cruLock
+        state.cruLock=0;
+        state.ledCounter = 0;
+    }
+    state.ledCounter += 1;
+            if(state.ledOn==0){
+            gpioClearOutput(AUXIO_O_RED_LED);
+            gpioClearOutput(AUXIO_O_GREEN_LED);
+        }
     //get the TDD lock
     U16 lock;
     if(state.unitType == 0){
@@ -431,43 +439,10 @@ if(state.tddMode == 0){
         gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
         // lock detect PIN: 0-locked, 1-not locked (XOR to flip it)
         lock ^= 1;
-
-
     }else{
         // CRU gets lock status via a meassage from CDU, checks and updates periodically
         lock = input.tddLock;
     }
-
-    if(lock == 1){ //Auto mode : locked - Steady Pink
-        gpioSetOutput(AUXIO_O_RED_LED);
-        gpioSetOutput(AUXIO_O_GREEN_LED);
-
-        if(state.ledOn==0){
-            gpioClearOutput(AUXIO_O_RED_LED);
-            gpioClearOutput(AUXIO_O_GREEN_LED);
-        }
-    }else{ //Auto mode : unlocked - Flashing Pink
-        if(state.ledCounter <= 25){
-            gpioSetOutput(AUXIO_O_RED_LED);
-            gpioSetOutput(AUXIO_O_GREEN_LED);
-        }
-        if(state.ledCounter >= 25){
-            gpioClearOutput(AUXIO_O_RED_LED);
-            gpioClearOutput(AUXIO_O_GREEN_LED);
-
-        }
-        state.ledCounter += 1;
-        if(state.ledCounter == 50){
-            state.ledCounter = 0;
-        }
-
-    }
-    if(state.ledOn==0){
-        gpioClearOutput(AUXIO_O_RED_LED);
-        gpioClearOutput(AUXIO_O_GREEN_LED);
-    }
-
-
 
     //if locked, activate the rising edge interrupt on event B
     if(lock == 1){
@@ -485,23 +460,25 @@ if(state.tddMode == 0){
 //evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
 //cancel all scheduled event triggers
-cfg.eventCounter += 1;
 evhCancelTrigger(0);
+cfg.eventCounter += 1;
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
 //enter event code only if Manual DL mode or Auto(skip if Manual UL)
 if(state.tddMode != 2){
     // turn DL LED on (in auto mode it stays on only half the time)
-    if(state.tddMode == 1){ //Manual DL - Steady Blue
-        // if(state.ledCounter < 50){
+    if(state.tddMode == 0){
+        if(state.ledCounter < 50){
+            gpioClearOutput(AUXIO_O_RED_LED);
+            gpioSetOutput(AUXIO_O_GREEN_LED);
+            //set cruLock
+            state.cruLock=1;
+        }
+    }else{ // state.tddMode != 0
         gpioClearOutput(AUXIO_O_RED_LED);
-        gpioSetOutput(AUXIO_O_GREEN_LED);
-        //  }
-    }//else{
-    //    gpioClearOutput(AUXIO_O_RED_LED);
-    //    gpioSetOutput(AUXIO_O_GREEN_LED);
-    //  }
-    if(state.ledOn==0){
+        gpioSetOutput(AUXIO_O_GREEN_LED);//sets BLUE static
+    }
+      if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
@@ -877,24 +854,25 @@ if(state.tddMode != 2){
 }]]></sccode>
         <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
 //cancel all scheduled event triggers
-cfg.eventCounter -= 1;
 evhCancelTrigger(0);
+cfg.eventCounter -= 1;
 //evhCancelTrigger(1);
 //evhCancelTrigger(2);
 //enter event code only if Manual UL mode or Auto(skip if Manual DL)
 if(state.tddMode != 1){
     // turn UL LED on (in auto mode it stays on only half the time)
-    if(state.tddMode == 2 ){ //Manual UL - Steady Orange
-        // if(state.ledCounter > 50){
+    if(state.tddMode == 0){
+        if(state.ledCounter > 50){
+            gpioClearOutput(AUXIO_O_GREEN_LED);
+            gpioSetOutput(AUXIO_O_RED_LED);
+            //set cruLock
+            state.cruLock=1;
+        }
+    }else{
         gpioClearOutput(AUXIO_O_GREEN_LED);
         gpioSetOutput(AUXIO_O_RED_LED);
-        //  }
     }
-    //else{
-    //     gpioClearOutput(AUXIO_O_GREEN_LED);
-    //     gpioSetOutput(AUXIO_O_RED_LED);
-    //  }
-    if(state.ledOn==0){
+      if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }

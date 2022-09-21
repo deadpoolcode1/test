@@ -73,7 +73,7 @@ CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, A
 CRS_retVal_t Agc_setChannel(AGC_channels_t channel);
 CRS_retVal_t Agc_init(void * sem);
 void Agc_process(void);
-
+bool Agc_getLock();
 CRS_retVal_t Agc_sample();
 CRS_retVal_t Agc_sample_debug();
 void scTaskAlertCallback(void);

@@ -65,17 +65,17 @@ static void* gSem;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
 static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
-//static uint16_t gCounterInc=0;
-//static uint16_t gCounterDec=0;
+
 
 #ifdef CLI_SENSOR
+static uint16_t gCounterInc=0;
+static uint16_t gCounterDec=0;
 static bool gIsTDDLocked=0;
 #endif
 
 static void processAgcTimeoutCallback(UArg a0);
 static void processAgcSample();
 static void Agc_updateMaxStored(int db, AGC_sampleType_t type);
-static bool Agc_getLock();
 
 void scTaskAlertCallback(void) {
     //Log_info0("callback");
@@ -252,33 +252,11 @@ void Agc_process(void)
         UtilTimer_start(&agcClkStruct);
         AGCM_finishedTask();
 #ifdef CLI_SENSOR
-        if (gIsTDDLocked) {
-              if (scifTaskData.systemAgc.cfg.eventCounter >= 0x200) {
+        if (gIsTDDLocked) {//if CDU sent a msg that it's locked, we will verify that the CRU is locked from the scif
+            //if cruLock - gIsTDDLocked=lock
+              if (scifTaskData.systemAgc.state.cruLock==0){
                   gIsTDDLocked=false;
-                  gCounterInc=0;
-                  scifTaskData.systemAgc.cfg.eventCounter=0x1;
-                  }
-              if (scifTaskData.systemAgc.cfg.eventCounter <= 0xfdff) {
-                  scifTaskData.systemAgc.cfg.eventCounter=0xfffe;
-                         gIsTDDLocked=false;
-                         gCounterInc=0;
-                         }
-
-              if (scifTaskData.systemAgc.cfg.eventCounter <= 0xf) {
-                  gCounterInc++;//TODO move it to a process of agc, if locked no need to inc ginc, if not locked zero ginc
-                  if(gCounterInc>=10) {
-                     gIsTDDLocked=true;
-                     gCounterInc=0;
-                                      }
-                 }
-
-              if (scifTaskData.systemAgc.cfg.eventCounter >= 0xfff0) {
-                        gCounterDec++;
-                        if(gCounterDec>=10) {
-                           gIsTDDLocked=true;
-                           gCounterDec=0;
-                                            }
-                       }
+              }
           }
 #endif
 
@@ -791,7 +769,7 @@ static void Agc_updateMaxStored(int db, AGC_sampleType_t type){
 
 }
 
-static bool Agc_getLock(){
+bool Agc_getLock(){
 #ifndef CLI_SENSOR
     CRS_retVal_t retVal = Tdd_isLocked();
     if( retVal == CRS_TDD_NOT_LOCKED){
@@ -799,7 +777,6 @@ static bool Agc_getLock(){
     }
     return true;
 #else
-
 
     return gIsTDDLocked;
 #endif
