@@ -20,7 +20,7 @@
 /******************************************************************************
  Local variables
  *****************************************************************************/
-static uint32_t gLineNumber = 1;
+//static uint32_t gLineNumber = 1;
 static char gFileToUpload[FILENAME_SZ] = { 0 };
 
 static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
@@ -41,20 +41,16 @@ static uint32_t gFileContentCacheIdx = 0;
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-static void uploadSnapRawCb(const FPGA_cbArgs_t _cbArgs);
-static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
-static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
+//static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
+//static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs);
-
 static CRS_retVal_t zeroLineToSendArray();
 static CRS_retVal_t getPrevLine(char *line);
 
 static CRS_retVal_t getNextLine(char *line);
 static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
                                 uint32_t numLines, char *respLine);
-
-static void Nvs_uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs);
 static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
 
 /******************************************************************************
@@ -63,7 +59,7 @@ static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
 CRS_retVal_t SnapInit(void *sem)
 {
     collectorSem = sem;
-
+    return CRS_SUCCESS;
 }
 CRS_retVal_t Snap_uploadSnapRf(char *filename, uint32_t rfAddr,
                                uint32_t LUTLineNum, CRS_chipMode_t chipMode,
@@ -189,7 +185,7 @@ void Snap_process(void)
                 Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
                 return;
             }
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
             return;
@@ -261,7 +257,7 @@ void Snap_process(void)
         rspStatus = getPrevLine(line);
         if (rspStatus == CRS_FAILURE)
         {
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gSnapEvents, STAR_RSP_EV);
             return;
@@ -316,8 +312,6 @@ void Snap_process(void)
 
         Util_clearEvent(&gSnapEvents, STAR_RSP_EV);
         return;
-
-        Util_clearEvent(&gSnapEvents, STAR_RSP_EV);
     }
 
 }
@@ -325,13 +319,6 @@ void Snap_process(void)
 /******************************************************************************
  Local Functions
  *****************************************************************************/
-static CRS_retVal_t digRunNextLine()
-{
-    CRS_retVal_t rspStatus;
-    char line[LINE_SZ] = { 0 };
-
-}
-
 static CRS_retVal_t getPrevLine(char *line)
 {
 //    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
@@ -408,6 +395,7 @@ static CRS_retVal_t zeroLineToSendArray()
     {
         memset(gLineToSendArray[i], 0, CRS_NVS_LINE_BYTES);
     }
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
@@ -422,13 +410,13 @@ static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
         respLine[strlen(respLine)] = '\n';
         strcat(respLine, lines[i]);
     }
-
+    return CRS_SUCCESS;
 }
 
 static void uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs)
 {
     char *line = _cbArgs.arg3;
-    uint32_t size = _cbArgs.arg0;
+//    uint32_t size = _cbArgs.arg0;
 
     Util_setEvent(&gSnapEvents, STAR_RSP_EV);
     memset(gStarRdRespLine, 0, LINE_SZ);
@@ -480,23 +468,24 @@ static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs)
     Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
     Semaphore_post(collectorSem);
 }
+
 static void finishedFileCb(const FPGA_cbArgs_t _cbArgs)
 {
 
-    const FPGA_cbArgs_t cbArgs;
+    const FPGA_cbArgs_t cbArgs={0};
     gCbFn(cbArgs);
 //                Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
 }
 
-static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-}
-
-static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-}
+//static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs)
+//{
+//    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
+//
+//static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
+//{
+//    Util_setEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
 

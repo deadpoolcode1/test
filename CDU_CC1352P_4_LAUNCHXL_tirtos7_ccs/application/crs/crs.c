@@ -124,7 +124,7 @@ CRS_retVal_t CRS_watchdogDisable()
 
     Clock_stop(gClkHandle);
     Watchdog_close(gWatchdogHandle);
-
+return CRS_SUCCESS;
 }
 
 /******************************************************************************

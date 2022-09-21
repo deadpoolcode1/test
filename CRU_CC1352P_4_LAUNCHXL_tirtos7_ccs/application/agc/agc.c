@@ -65,10 +65,11 @@ static void* gSem;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
 static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
-static uint16_t gCounterInc=0;
-static uint16_t gCounterDec=0;
+
 
 #ifdef CLI_SENSOR
+static uint16_t gCounterInc=0;
+static uint16_t gCounterDec=0;
 static bool gIsTDDLocked=0;
 #endif
 

@@ -35,20 +35,21 @@
 /******************************************************************************
  Local variables
  *****************************************************************************/
-static char *gFpgaRoutingStrings[ROUTING_STRINGS_SIZE] = { "wr 0xff 0x" };
-static CRS_chipMode_t gMode = MODE_NATIVE;
-static Semaphore_Handle collectorSem;
-static uint32_t gChipsStatus = 0;
-static uint32_t gChipsStatusIdx = 0;
-static FPGA_cbFn_t gCbFn = NULL;
-static uint16_t Discovery_events = 0;
+//static char *gFpgaRoutingStrings[ROUTING_STRINGS_SIZE] = { "wr 0xff 0x" };
+//static CRS_chipMode_t gMode = MODE_NATIVE;
+//static Semaphore_Handle collectorSem;
+//static uint32_t gChipsStatus = 0;
+//static uint32_t gChipsStatusIdx = 0;
+//static FPGA_cbFn_t gCbFn = NULL;
+//static uint16_t Discovery_events = 0;
 
 /******************************************************************************
  Public Functions
  *****************************************************************************/
 CRS_retVal_t Discovery_init(void *sem)
 {
-    collectorSem = sem;
+//    collectorSem = sem;
+    return CRS_SUCCESS;
 }
 
 void Discovery_process(void);

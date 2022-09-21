@@ -215,9 +215,9 @@
  Local variables
  *****************************************************************************/
 
-static uint8_t *gTmp = CLI_ESC_UP;
+//static uint8_t *gTmp = CLI_ESC_UP;
 #ifndef CLI_SENSOR
-static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
+//static Cllc_associated_devices_t gCllc_associatedDevListLocal[4];
 #endif
 int8_t gRssiAvg=0;
 #ifndef CLI_SENSOR
@@ -230,13 +230,10 @@ static CRS_retVal_t CLI_formNwkParsing(char *line);
 static CRS_retVal_t CLI_openNwkParsing(char *line);
 static CRS_retVal_t CLI_closeNwkParsing(char *line);
 
-static CRS_retVal_t CLI_sendPingParsing(char *line);
 static CRS_retVal_t CLI_listSensorsParsing(char *line);
 
 
 
-static CRS_retVal_t CLI_nwkStatusParsing(char *line);
-static CRS_retVal_t CLI_ledToggleParsing(char *line);
 #else
 static CRS_retVal_t CLI_associate(char *line);
 static CRS_retVal_t CLI_disassociate(char *line);
@@ -244,14 +241,10 @@ static CRS_retVal_t CLI_disassociate(char *line);
 #endif
 static CRS_retVal_t CLI_unit(char *line);
 
-static CRS_retVal_t CLI_checkAddr(uint32_t addr);
 
 static CRS_retVal_t CLI_AlarmsListParsing(char *line);
 static CRS_retVal_t CLI_AlarmsSetParsing(char *line);
 
-static CRS_retVal_t CLI_eventsOpenParsing(char *line);
-static CRS_retVal_t CLI_eventsNextParsing(char *line);
-static CRS_retVal_t CLI_eventsCloseParsing(char *line);
 
 static CRS_retVal_t CLI_fpgaOpenParsing(char *line);
 static CRS_retVal_t CLI_fpgaCloseParsing(char *line);
@@ -285,7 +278,6 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line);
 static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line);
 static CRS_retVal_t CLI_fsReadFileParsing(char *line);
 static CRS_retVal_t CLI_fsReadFileNative(char *line);
-static CRS_retVal_t CLI_fsUploadSlaveParsing(char *line);
 static CRS_retVal_t CLI_fsFormat(char *line);
 static CRS_retVal_t CLI_sensorsParsing(char *line);
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line);
@@ -307,7 +299,7 @@ static CRS_retVal_t CLI_trshRestore(char *line);
 
 static CRS_retVal_t CLI_getTimeParsing(char *line);
 static CRS_retVal_t CLI_setTimeParsing(char *line);
-static const char* getTime_str();
+
 
 static CRS_retVal_t CLI_getGainParsing(char *line);
 
@@ -317,9 +309,10 @@ static CRS_retVal_t CLI_config_line(char *line);
 
 static CRS_retVal_t CLI_modemTest(char *line);
 static CRS_retVal_t CLI_discoverModules(char *line);
-
+#ifndef CLI_SENSOR
 static CRS_retVal_t CLI_OadSendImgParsing(char *line);
 static CRS_retVal_t CLI_OadGetImgParsing(char *line);
+#endif
 static CRS_retVal_t CLI_OadResetParsing(char *line);
 
 static CRS_retVal_t CLI_watchdogDisableParsing(char *line);
@@ -368,8 +361,8 @@ static uint32_t gUartTxBufferIdx = 0;
 static uint8_t gUartRxBuffer[2] = { 0 };
 
 //gUartRxBuffer
-static SemaphoreP_Handle gUartSem;
-static SemaphoreP_Struct gUartSemStruct;
+//static SemaphoreP_Handle gUartSem;
+//static SemaphoreP_Struct gUartSemStruct;
 
 #define UART_WRITE_BUFF_SIZE 2500
 
@@ -380,7 +373,7 @@ static volatile uint32_t gWriteNowBuffIdx = 0;
 static volatile uint32_t gWriteNowBuffSize = 0;
 static volatile uint32_t gWriteWaitingBuffIdx = 0;
 
-static uint32_t gWriteNowBuffTotalSize = 0;
+//static uint32_t gWriteNowBuffTotalSize = 0;
 
 static volatile bool gIsDoneWriting = true;
 static volatile bool gIsDoneFilling = false;
@@ -391,13 +384,17 @@ static volatile bool gIsNoPlaceForPrompt = false;
 //for transparent bridge
 static volatile bool gIsTransparentBridge = false;
 static volatile bool gIsTransparentBridgeSuspended = false;
+#ifndef CLI_SENSOR
 static uint32_t gTransparentShortAddr = 0;
-
+static uint32_t gRspBuffIdx = 0;
+#endif
 static volatile bool gIsAsyncCommand = false;
 
+
+#ifdef CLI_SENSOR
 static uint8_t gRspBuff[RSP_BUFFER_SIZE] = { 0 };
-static uint32_t gRspBuffIdx = 0;
 static uint16_t gDstAddr;
+#endif
 
 static volatile bool gIsRemoteCommand = false;
 static volatile bool gIsRemoteTransparentBridge = false;
@@ -406,16 +403,16 @@ static volatile bool gIsTranRemoteCommandSent = false;
 
 static bool gReadNextCommand = false;
 
-static int8_t gRssi = 0;
+//static int8_t gRssi = 0;
 
 
-static uint32_t gUartLastCommBuffSize = 0;
-static bool gIsNewCommand = true;
+//static uint32_t gUartLastCommBuffSize = 0;
+//static bool gIsNewCommand = true;
 
 static uint8_t gTmpUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
-
+#ifndef CLI_SENSOR
 static uint8_t gCopyUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
-
+#endif
 
 /******************************************************************************
  * Public CLI APIs
@@ -541,7 +538,7 @@ CRS_retVal_t CLI_processCliSendMsgUpdate(void)
     }
 //    CLI_startREAD();
     memcpy(gCopyUartTxBuffer, gUartTxBuffer, LAST_COMM_COMM_SIZE);
-    gIsNewCommand = true;
+//    gIsNewCommand = true;
     memset(gUartTxBuffer, 0, CUI_NUM_UART_CHARS - 1);
     memset(gTmpUartTxBuffer, 0, LAST_COMM_COMM_SIZE - 1);
 
@@ -550,6 +547,7 @@ CRS_retVal_t CLI_processCliSendMsgUpdate(void)
     gIsTranRemoteCommandSent = true;
 //    memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
 //    gUartTxBufferIdx = 0;
+    return CRS_SUCCESS;
 }
 #endif
 
@@ -563,14 +561,16 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
     if (line == NULL)
     {
-        line = gUartTxBuffer;
+        line = (char *)gUartTxBuffer;
         gUartTxBuffer[gUartTxBufferIdx - 1] = 0;
 
     }
     else
     {
         gIsRemoteCommand = true;
+#ifdef CLI_SENSOR
         gDstAddr = pDstAddr;
+#endif
 
     }
 
@@ -1354,12 +1354,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
       {
           CLI_cliPrintf(badInputMsg);
           CLI_startREAD();
-          return 0;
+          return CRS_SUCCESS;
       }
       else if (inputBad)
       {
           CLI_startREAD();
-          return 0;
+          return CRS_SUCCESS;
       }
 
   //    gUartTxBufferIdx--;
@@ -1430,16 +1430,11 @@ static CRS_retVal_t CLI_listSensorsParsing(char *line)
        CLI_startREAD();
 
    //    discoverNextSensor();
-       return (NULL);
+       return CRS_SUCCESS;;
 
 }
 
 
-
-
-static CRS_retVal_t CLI_sendPingParsing(char *line);
-static CRS_retVal_t CLI_nwkStatusParsing(char *line);
-static CRS_retVal_t CLI_ledToggleParsing(char *line);
 #else
 static CRS_retVal_t CLI_associate(char *line)
 {
@@ -1471,7 +1466,7 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
         ApiMac_sAddr_t dstAddr;
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat=CRS_FAILURE;
+        Collector_status_t stat=Collector_status_deviceNotFound;
 //        memset(gCllc_associatedDevListLocal,0,sizeof(Cllc_associated_devices_t)*4);
 //        memcpy(gCllc_associatedDevListLocal,Cllc_associatedDevList,sizeof(Cllc_associated_devices_t)*4);
         int x = 0;
@@ -1491,7 +1486,7 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line)
                 sprintf(rssiAvgStr," %d",Cllc_associatedDevList[x].rssiAvgCru);
                 strcat(tempLine2,rssiAvgStr);
                 }
-                stat = Collector_sendCrsMsg(&dstAddr, tempLine2);
+                stat = Collector_sendCrsMsg(&dstAddr,(uint8_t *) tempLine2);
                 break;
             }
         }
@@ -1557,7 +1552,7 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1571,9 +1566,9 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
 #endif
          CRS_retVal_t retStatus=CRS_FAILURE;
          if(CHECK_BIT(state,ALARM_ACTIVE_BIT_LOCATION)==0){
-              retStatus=Alarms_clearAlarm((Alarms_alarmType_t) id - 1, ALARM_INACTIVE);
+              retStatus=Alarms_clearAlarm((Alarms_alarmType_t) (id - 1), ALARM_INACTIVE);
          }if(CHECK_BIT(state,ALARM_STICKY_BIT_LOCATION)==0){
-             Alarms_clearAlarm((Alarms_alarmType_t) id - 1, ALARM_STICKY);
+             Alarms_clearAlarm((Alarms_alarmType_t) (id - 1), ALARM_STICKY);
          }
          if (retStatus == CRS_FAILURE)
          {
@@ -1583,6 +1578,7 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
                  }
          CLI_startREAD();
+         return CRS_SUCCESS;
 }
 
 
@@ -1667,6 +1663,7 @@ static CRS_retVal_t CLI_unit(char *line)
 
 #endif
         CLI_startREAD();
+        return CRS_SUCCESS;
 }
 
 //ledMode [shortAddr] [on/off: 0x1 | 0x0]
@@ -1685,7 +1682,7 @@ static CRS_retVal_t CLI_ledModeParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1731,7 +1728,7 @@ static CRS_retVal_t CLI_ledOnParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t *) line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1762,7 +1759,7 @@ static CRS_retVal_t CLI_ledOffParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1794,7 +1791,7 @@ static CRS_retVal_t CLI_evtCntrParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1827,7 +1824,7 @@ static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -1874,7 +1871,7 @@ static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
 
         if (stat != Collector_status_success)
         {
@@ -1885,7 +1882,7 @@ static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-    CRS_retVal_t retStatus = CRS_FAILURE;
+//    CRS_retVal_t retStatus = CRS_FAILURE;
 
     char *fpgaLine =
             &(line[sizeof(CLI_CRS_FPGA_WRITELINES) + strlen(token) + 1]);
@@ -1922,7 +1919,7 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
 
         if (stat != Collector_status_success)
         {
@@ -1933,7 +1930,7 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-    CRS_retVal_t retStatus = CRS_FAILURE;
+//    CRS_retVal_t retStatus = CRS_FAILURE;
 
     char *fpgaLine =
             &(line[sizeof(CLI_CRS_FPGA_READLINES) + strlen(token) + 1]);
@@ -1960,11 +1957,12 @@ static CRS_retVal_t CLI_fpgaTransStartParsing(char *line)
 
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
-    uint16_t addr = 0;
-    gTransparentShortAddr = shortAddr;
+
+
 
 #ifndef CLI_SENSOR
-
+    uint16_t addr = 0;
+    gTransparentShortAddr = shortAddr;
     Cllc_getFfdShortAddr(&addr);
 
     if (addr != shortAddr)
@@ -1995,7 +1993,7 @@ static CRS_retVal_t CLI_fpgaTransStartParsing(char *line)
         gIsRemoteTransparentBridge = true;
     }
     CLI_startREAD();
-
+return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
@@ -2053,7 +2051,7 @@ static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
         gUartTxBufferIdx = 0;
 
     }
-
+    return CRS_SUCCESS;
 #endif
 
 }
@@ -2075,7 +2073,7 @@ static CRS_retVal_t CLI_tddOpenParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2124,7 +2122,7 @@ static CRS_retVal_t CLI_tddStatusParsing(char *line)
             dstAddr.addr.shortAddr = shortAddr;
             dstAddr.addrMode = ApiMac_addrType_short;
             Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
+            stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
             if (stat != Collector_status_success)
             {
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2152,7 +2150,7 @@ static CRS_retVal_t CLI_tddSetSyncModeParsing(char *line)
     //0xaabb shortAddr
     token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_SYNC_MODE)]), s);
     //token = strtok(NULL, s);
-    uint32_t commSize = sizeof(CLI_CRS_TDD_SYNC_MODE);
+//    uint32_t commSize = sizeof(CLI_CRS_TDD_SYNC_MODE);
     uint32_t addrSize = strlen(token);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2168,7 +2166,7 @@ static CRS_retVal_t CLI_tddSetSyncModeParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2203,7 +2201,7 @@ static CRS_retVal_t CLI_tddSetScsParsing(char *line)
       //0xaabb shortAddr
       token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_SCS)]), s);
       //token = strtok(NULL, s);
-      uint32_t commSize = sizeof(CLI_CRS_TDD_SCS);
+//      uint32_t commSize = sizeof(CLI_CRS_TDD_SCS);
       uint32_t addrSize = strlen(token);
       //shortAddr in decimal
       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2219,7 +2217,7 @@ static CRS_retVal_t CLI_tddSetScsParsing(char *line)
           dstAddr.addr.shortAddr = shortAddr;
           dstAddr.addrMode = ApiMac_addrType_short;
           Collector_status_t stat;
-          stat = Collector_sendCrsMsg(&dstAddr, line);
+          stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
           if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2252,7 +2250,7 @@ static CRS_retVal_t CLI_tddSetSsPosParsing(char *line)
       //0xaabb shortAddr
       token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_SS_POS)]), s);
       //token = strtok(NULL, s);
-      uint32_t commSize = sizeof(CLI_CRS_TDD_SS_POS);
+//      uint32_t commSize = sizeof(CLI_CRS_TDD_SS_POS);
       uint32_t addrSize = strlen(token);
       //shortAddr in decimal
       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2268,7 +2266,7 @@ static CRS_retVal_t CLI_tddSetSsPosParsing(char *line)
           dstAddr.addr.shortAddr = shortAddr;
           dstAddr.addrMode = ApiMac_addrType_short;
           Collector_status_t stat;
-          stat = Collector_sendCrsMsg(&dstAddr, line);
+          stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
           if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2302,7 +2300,7 @@ static CRS_retVal_t CLI_tddSetHolParsing(char *line)
          //0xaabb shortAddr
          token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_HOL)]), s);
          //token = strtok(NULL, s);
-         uint32_t commSize = sizeof(CLI_CRS_TDD_HOL);
+//         uint32_t commSize = sizeof(CLI_CRS_TDD_HOL);
          uint32_t addrSize = strlen(token);
          //shortAddr in decimal
          uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2318,7 +2316,7 @@ static CRS_retVal_t CLI_tddSetHolParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2362,7 +2360,7 @@ static CRS_retVal_t CLI_tddSetTtgParsing(char *line)
          //0xaabb shortAddr
          token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_TTG)]), s);
          //token = strtok(NULL, s);
-         uint32_t commSize = sizeof(CLI_CRS_TDD_TTG);
+//         uint32_t commSize = sizeof(CLI_CRS_TDD_TTG);
          uint32_t addrSize = strlen(token);
          //shortAddr in decimal
          uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2378,7 +2376,7 @@ static CRS_retVal_t CLI_tddSetTtgParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2415,7 +2413,7 @@ static CRS_retVal_t CLI_tddSetRtgParsing(char *line)
          //0xaabb shortAddr
          token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_RTG)]), s);
          //token = strtok(NULL, s);
-         uint32_t commSize = sizeof(CLI_CRS_TDD_RTG);
+//         uint32_t commSize = sizeof(CLI_CRS_TDD_RTG);
          uint32_t addrSize = strlen(token);
          //shortAddr in decimal
          uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2431,7 +2429,7 @@ static CRS_retVal_t CLI_tddSetRtgParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2468,7 +2466,7 @@ static CRS_retVal_t CLI_tddCommandParsing(char *line)
          //0xaabb shortAddr
          token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_CMD)]), s);
          //token = strtok(NULL, s);
-         uint32_t commSize = sizeof(CLI_CRS_TDD_CMD);
+//         uint32_t commSize = sizeof(CLI_CRS_TDD_CMD);
          uint32_t addrSize = strlen(token);
          //shortAddr in decimal
          uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2484,7 +2482,7 @@ static CRS_retVal_t CLI_tddCommandParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2514,7 +2512,7 @@ static CRS_retVal_t CLI_tddGetLockParsing(char *line)
          //0xaabb shortAddr
          token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_GET_LOCK)]), s);
          //token = strtok(NULL, s);
-         uint32_t commSize = sizeof(CLI_CRS_TDD_GET_LOCK);
+//         uint32_t commSize = sizeof(CLI_CRS_TDD_GET_LOCK);
          uint32_t addrSize = strlen(token);
          //shortAddr in decimal
          uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2530,7 +2528,7 @@ static CRS_retVal_t CLI_tddGetLockParsing(char *line)
              dstAddr.addr.shortAddr = shortAddr;
              dstAddr.addrMode = ApiMac_addrType_short;
              Collector_status_t stat;
-             stat = Collector_sendCrsMsg(&dstAddr, line);
+             stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
              if (stat != Collector_status_success)
                     {
                         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2565,7 +2563,7 @@ static CRS_retVal_t CLI_tddSetFrameParsing(char *line)
            //0xaabb shortAddr
            token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_FRAME)]), s);
            //token = strtok(NULL, s);
-           uint32_t commSize = sizeof(CLI_CRS_TDD_FRAME);
+//           uint32_t commSize = sizeof(CLI_CRS_TDD_FRAME);
            uint32_t addrSize = strlen(token);
            //shortAddr in decimal
            uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2581,7 +2579,7 @@ static CRS_retVal_t CLI_tddSetFrameParsing(char *line)
                dstAddr.addr.shortAddr = shortAddr;
                dstAddr.addrMode = ApiMac_addrType_short;
                Collector_status_t stat;
-               stat = Collector_sendCrsMsg(&dstAddr, line);
+               stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                if (stat != Collector_status_success)
                       {
                           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2616,7 +2614,7 @@ static CRS_retVal_t CLI_tddSetAllocParsing(char *line)
             //0xaabb shortAddr
             token = strtok(&(tmpBuff[sizeof(CLI_CRS_TDD_ALLOC)]), s);
             //token = strtok(NULL, s);
-            uint32_t commSize = sizeof(CLI_CRS_TDD_ALLOC);
+//            uint32_t commSize = sizeof(CLI_CRS_TDD_ALLOC);
             uint32_t addrSize = strlen(token);
             //shortAddr in decimal
             uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2632,7 +2630,7 @@ static CRS_retVal_t CLI_tddSetAllocParsing(char *line)
                 dstAddr.addr.shortAddr = shortAddr;
                 dstAddr.addrMode = ApiMac_addrType_short;
                 Collector_status_t stat;
-                stat = Collector_sendCrsMsg(&dstAddr, line);
+                stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                 if (stat != Collector_status_success)
                        {
                            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2687,7 +2685,7 @@ static CRS_retVal_t CLI_fsInsertParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2765,7 +2763,7 @@ static CRS_retVal_t CLI_fsLsParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2782,7 +2780,7 @@ static CRS_retVal_t CLI_fsLsParsing(char *line)
     CRS_retVal_t retStatus = Nvs_ls(pageNum);
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
-
+return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_fsReadLineParsing(char *line)
@@ -2796,7 +2794,7 @@ static CRS_retVal_t CLI_fsReadLineParsing(char *line)
     //0xaabb shortAddr
     token = strtok(&(tmpBuff[sizeof(CLI_CRS_FS_READLINE)]), s);
     //token = strtok(NULL, s);
-    uint32_t commSize = sizeof(CLI_CRS_FS_READLINE);
+//    uint32_t commSize = sizeof(CLI_CRS_FS_READLINE);
     uint32_t addrSize = strlen(token);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2812,7 +2810,7 @@ static CRS_retVal_t CLI_fsReadLineParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2840,7 +2838,7 @@ static CRS_retVal_t CLI_fsReadLineParsing(char *line)
     CLI_cliPrintf("%s line #%d:%s  strlen:0x%x\n", filename, lineNumber,
                   respLine, strlen(respLine));
     CLI_startREAD();
-
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_fsReadFileParsing(char *line)
@@ -2854,7 +2852,7 @@ static CRS_retVal_t CLI_fsReadFileParsing(char *line)
     //0xaabb shortAddr
     token = strtok(&(tmpBuff[sizeof(CLI_CRS_FS_READFILE)]), s);
     //token = strtok(NULL, s);
-    uint32_t commSize = sizeof(CLI_CRS_FS_READFILE);
+//    uint32_t commSize = sizeof(CLI_CRS_FS_READFILE);
     uint32_t addrSize = strlen(token);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2870,7 +2868,7 @@ static CRS_retVal_t CLI_fsReadFileParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2931,7 +2929,7 @@ static CRS_retVal_t CLI_fsReadFileNative(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -2959,7 +2957,7 @@ static CRS_retVal_t CLI_fsDeleteParsing(char *line)
     //0xaabb shortAddr
     token = strtok(&(tmpBuff[sizeof(CLI_CRS_FS_DELETE)]), s);
     //token = strtok(NULL, s);
-    uint32_t commSize = sizeof(CLI_CRS_FS_DELETE);
+//    uint32_t commSize = sizeof(CLI_CRS_FS_DELETE);
     uint32_t addrSize = strlen(token);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -2975,7 +2973,7 @@ static CRS_retVal_t CLI_fsDeleteParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3026,7 +3024,7 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
            if (stat != Collector_status_success)
           {
               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3080,7 +3078,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
            if (stat != Collector_status_success)
           {
               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3259,7 +3257,7 @@ static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
        //0xaabb shortAddr
        token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_MODE)]), s);
        //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_AGC_GET_MODE);
+//       uint32_t commSize = sizeof(CLI_AGC_GET_MODE);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -3274,7 +3272,7 @@ static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
             dstAddr.addr.shortAddr = shortAddr;
             dstAddr.addrMode = ApiMac_addrType_short;
             Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
+            stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
             if (stat != Collector_status_success)
             {
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3286,6 +3284,7 @@ static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
    uint16_t mode = Agc_getMode();
     CLI_cliPrintf("\r\nsensorMode: 0x%x", mode);
     CLI_startREAD();
+    return CRS_SUCCESS;
 }
 
 
@@ -3301,7 +3300,7 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line)
        //0xaabb shortAddr
        token = strtok(&(tmpBuff[sizeof(CLI_AGC_MODE)]), s);
        //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_AGC_MODE);
+//       uint32_t commSize = sizeof(CLI_AGC_MODE);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -3316,7 +3315,7 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line)
             dstAddr.addr.shortAddr = shortAddr;
             dstAddr.addrMode = ApiMac_addrType_short;
             Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
             if (stat != Collector_status_success)
             {
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3376,7 +3375,7 @@ static CRS_retVal_t CLI_fsUploadParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3388,7 +3387,7 @@ static CRS_retVal_t CLI_fsUploadParsing(char *line)
     }
 #endif
     CRS_retVal_t retStatus = Snap_uploadSnapRaw(
-            &(line[sizeof(CLI_CRS_FS_UPLOAD) + addrSize+1]),UNKNOWN,fpgaMultiLineCallback);
+            (&(line[sizeof(CLI_CRS_FS_UPLOAD) + addrSize+1])),(CRS_chipMode_t)UNKNOWN,fpgaMultiLineCallback);
     return retStatus;
 }
 
@@ -3426,7 +3425,7 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3539,7 +3538,7 @@ static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3645,7 +3644,7 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
         dstAddr.addr.shortAddr = shortAddr;
         dstAddr.addrMode = ApiMac_addrType_short;
         Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, line);
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
         if (stat != Collector_status_success)
                {
                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3760,7 +3759,7 @@ static CRS_retVal_t CLI_config_direct(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3784,7 +3783,7 @@ static CRS_retVal_t CLI_config_direct(char *line)
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
        //lineNumber
-       char lineNumStr[10]={0};
+//       char lineNumStr[10]={0};
        token = strtok(NULL, s);
        uint32_t lineNumSize = strlen(token);
        uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
@@ -3816,7 +3815,7 @@ static CRS_retVal_t CLI_config_direct(char *line)
        }
 
 //       Config_runConfigDirect(filename, lineNum, fileInfos, fpgaMultiLineCallback);
-
+       return CRS_SUCCESS;
 }
 
 
@@ -3850,7 +3849,7 @@ static CRS_retVal_t CLI_config_line(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3868,7 +3867,7 @@ static CRS_retVal_t CLI_config_line(char *line)
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
        //lineNumber
-       char lineNumStr[10]={0};
+//       char lineNumStr[10]={0};
        token = strtok(NULL, s);
        uint32_t lineNumSize = strlen(token);
        uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
@@ -3877,7 +3876,7 @@ static CRS_retVal_t CLI_config_line(char *line)
        memcpy(fileInfos, line + commSize+ addrSize+filenameSize+lineNumSize+ 3, strlen(line + commSize+ addrSize+filenameSize+lineNumSize+ 3));
 
        Config_runConfigFileLine(filename, lineNum, fileInfos, fpgaMultiLineCallback);
-
+       return CRS_SUCCESS;
 }
 
 
@@ -3895,7 +3894,7 @@ static CRS_retVal_t CLI_config_file(char *line)
        //0xaabb shortAddr
        token = strtok(&(tmpBuff[sizeof(CLI_CRS_CONFIG_FILE)]), s);
        //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_CRS_CONFIG_FILE);
+//       uint32_t commSize = sizeof(CLI_CRS_CONFIG_FILE);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -3911,7 +3910,7 @@ static CRS_retVal_t CLI_config_file(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3929,7 +3928,7 @@ static CRS_retVal_t CLI_config_file(char *line)
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
        Config_runConfigFile(filename, fpgaMultiLineCallback);
-
+       return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_discoverModules(char *line)
@@ -3943,7 +3942,7 @@ static CRS_retVal_t CLI_discoverModules(char *line)
        //0xaabb shortAddr
        token = strtok(&(tmpBuff[sizeof(CLI_DISCOVER_MODULES)]), s);
        //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_DISCOVER_MODULES);
+//       uint32_t commSize = sizeof(CLI_DISCOVER_MODULES);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -3959,7 +3958,7 @@ static CRS_retVal_t CLI_discoverModules(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -3977,7 +3976,7 @@ static CRS_retVal_t CLI_discoverModules(char *line)
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
        Config_runConfigFileDiscovery(filename, fpgaMultiLineCallback);
-
+       return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_fsFormat(char *line)
@@ -3995,7 +3994,7 @@ static CRS_retVal_t CLI_fsFormat(char *line)
           dstAddr.addr.shortAddr = shortAddr;
           dstAddr.addrMode = ApiMac_addrType_short;
           Collector_status_t stat;
-          stat = Collector_sendCrsMsg(&dstAddr, line);
+          stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
           if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4040,7 +4039,7 @@ static CRS_retVal_t CLI_envUpdate(char *line)
            dstAddr.addr.shortAddr = shortAddr;
            dstAddr.addrMode = ApiMac_addrType_short;
            Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr, line);
+           stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
            if (stat != Collector_status_success)
                   {
                       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4098,7 +4097,7 @@ static CRS_retVal_t CLI_envRm(char *line)
                    dstAddr.addr.shortAddr = shortAddr;
                    dstAddr.addrMode = ApiMac_addrType_short;
                    Collector_status_t stat;
-                   stat = Collector_sendCrsMsg(&dstAddr, line);
+                   stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                    if (stat != Collector_status_success)
                           {
                               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4154,7 +4153,7 @@ static CRS_retVal_t CLI_envLs(char *line)
             dstAddr.addr.shortAddr = shortAddr;
             dstAddr.addrMode = ApiMac_addrType_short;
             Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
+            stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
             if (stat != Collector_status_success)
             {
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4205,7 +4204,7 @@ static CRS_retVal_t CLI_envFormat(char *line)
                   //0xaabb shortAddr
                   token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_FORMAT)]), s);
                   //token = strtok(NULL, s);
-                  uint32_t commSize = sizeof(CLI_CRS_ENV_FORMAT);
+//                  uint32_t commSize = sizeof(CLI_CRS_ENV_FORMAT);
                   uint32_t addrSize = strlen(token);
                   //shortAddr in decimal
                   uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -4221,7 +4220,7 @@ static CRS_retVal_t CLI_envFormat(char *line)
                       dstAddr.addr.shortAddr = shortAddr;
                       dstAddr.addrMode = ApiMac_addrType_short;
                       Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                       if (stat != Collector_status_success)
                              {
                                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4249,7 +4248,7 @@ static CRS_retVal_t CLI_envRestore(char *line)
                   //0xaabb shortAddr
                   token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_RESTORE)]), s);
                   //token = strtok(NULL, s);
-                  uint32_t commSize = sizeof(CLI_CRS_ENV_RESTORE);
+//                  uint32_t commSize = sizeof(CLI_CRS_ENV_RESTORE);
                   uint32_t addrSize = strlen(token);
                   //shortAddr in decimal
                   uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -4265,7 +4264,7 @@ static CRS_retVal_t CLI_envRestore(char *line)
                       dstAddr.addr.shortAddr = shortAddr;
                       dstAddr.addrMode = ApiMac_addrType_short;
                       Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
+                      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
                       if (stat != Collector_status_success)
                              {
                                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4311,7 +4310,7 @@ static CRS_retVal_t CLI_trshUpdate(char *line)
                dstAddr.addr.shortAddr = shortAddr;
                dstAddr.addrMode = ApiMac_addrType_short;
                Collector_status_t stat;
-               stat = Collector_sendCrsMsg(&dstAddr, line);
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
                if (stat != Collector_status_success)
                       {
                           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4418,7 +4417,7 @@ static CRS_retVal_t CLI_trshRm(char *line)
                    dstAddr.addr.shortAddr = shortAddr;
                    dstAddr.addrMode = ApiMac_addrType_short;
                    Collector_status_t stat;
-                   stat = Collector_sendCrsMsg(&dstAddr, line);
+                   stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                    if (stat != Collector_status_success)
                           {
                               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4467,7 +4466,7 @@ static CRS_retVal_t CLI_trshLs(char *line)
                       dstAddr.addr.shortAddr = shortAddr;
                       dstAddr.addrMode = ApiMac_addrType_short;
                       Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                       if (stat != Collector_status_success)
                              {
                                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4521,7 +4520,7 @@ static CRS_retVal_t CLI_trshFormat(char *line)
                   //0xaabb shortAddr
                   token = strtok(&(tmpBuff[sizeof(CLI_CRS_TRSH_FORMAT)]), s);
                   //token = strtok(NULL, s);
-                  uint32_t commSize = sizeof(CLI_CRS_TRSH_FORMAT);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_FORMAT);
                   uint32_t addrSize = strlen(token);
                   //shortAddr in decimal
                   uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -4537,7 +4536,7 @@ static CRS_retVal_t CLI_trshFormat(char *line)
                       dstAddr.addr.shortAddr = shortAddr;
                       dstAddr.addrMode = ApiMac_addrType_short;
                       Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
+                      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
                       if (stat != Collector_status_success)
                              {
                                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4567,7 +4566,7 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                   //0xaabb shortAddr
                   token = strtok(&(tmpBuff[sizeof(CLI_CRS_TRSH_RESTORE)]), s);
                   //token = strtok(NULL, s);
-                  uint32_t commSize = sizeof(CLI_CRS_TRSH_RESTORE);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_RESTORE);
                   uint32_t addrSize = strlen(token);
                   //shortAddr in decimal
                   uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -4583,7 +4582,7 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                       dstAddr.addr.shortAddr = shortAddr;
                       dstAddr.addrMode = ApiMac_addrType_short;
                       Collector_status_t stat;
-                      stat = Collector_sendCrsMsg(&dstAddr, line);
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                       if (stat != Collector_status_success)
                              {
                                  CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4601,19 +4600,6 @@ static CRS_retVal_t CLI_trshRestore(char *line)
 
 }
 
-
-static const char* getTime_str(){
-//    time_t t1;
-//    struct tm *ltm;
-//    char *curTime;
-//    t1 = time(NULL);
-//    ltm = localtime(&t1);
-//    curTime = asctime(ltm);
-//    curTime[strcspn(curTime, "\n")] = 0;
-//    return curTime;
-
-
-}
 
 static CRS_retVal_t CLI_setTimeParsing(char *line)
 {
@@ -4641,7 +4627,7 @@ static CRS_retVal_t CLI_setTimeParsing(char *line)
               dstAddr.addr.shortAddr = shortAddr;
               dstAddr.addrMode = ApiMac_addrType_short;
               Collector_status_t stat;
-              stat = Collector_sendCrsMsg(&dstAddr, line);
+              stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
               if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4715,7 +4701,7 @@ static CRS_retVal_t CLI_getTimeParsing(char *line)
               dstAddr.addr.shortAddr = shortAddr;
               dstAddr.addrMode = ApiMac_addrType_short;
               Collector_status_t stat;
-              stat = Collector_sendCrsMsg(&dstAddr, line);
+              stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
               if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4759,7 +4745,7 @@ static CRS_retVal_t CLI_getGainParsing(char *line)
               dstAddr.addr.shortAddr = shortAddr;
               dstAddr.addrMode = ApiMac_addrType_short;
               Collector_status_t stat;
-              stat = Collector_sendCrsMsg(&dstAddr, line);
+              stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
               if (stat != Collector_status_success)
                  {
                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4805,7 +4791,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
        //0xaabb shortAddr
        token = strtok(&(tmpBuff[sizeof(CLI_AGC_CHANNEL)]), s);
        //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_AGC_CHANNEL);
+//       uint32_t commSize = sizeof(CLI_AGC_CHANNEL);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -4820,7 +4806,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
             dstAddr.addr.shortAddr = shortAddr;
             dstAddr.addrMode = ApiMac_addrType_short;
             Collector_status_t stat;
-            stat = Collector_sendCrsMsg(&dstAddr, line);
+            stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
             if (stat != Collector_status_success)
             {
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4883,7 +4869,7 @@ static CRS_retVal_t CLI_tmpParsing(char *line)
                 dstAddr.addr.shortAddr = shortAddr;
                 dstAddr.addrMode = ApiMac_addrType_short;
                 Collector_status_t stat;
-                stat = Collector_sendCrsMsg(&dstAddr, line);
+                stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                 if (stat != Collector_status_success)
                 {
                     CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4941,7 +4927,7 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
                    dstAddr.addr.shortAddr = shortAddr;
                    dstAddr.addrMode = ApiMac_addrType_short;
                    Collector_status_t stat;
-                   stat = Collector_sendCrsMsg(&dstAddr, line);
+                   stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
                    if (stat != Collector_status_success)
                    {
                        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -5062,7 +5048,7 @@ static CRS_retVal_t CLI_OadResetParsing(char *line)
     CLI_startREAD();
     Task_sleep(1000);
         SysCtrlSystemReset();
-
+        return CRS_SUCCESS;
 }
 
 
@@ -5234,7 +5220,7 @@ CRS_retVal_t CLI_startREAD()
     {
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
     }
-    gIsNewCommand = true;
+//    gIsNewCommand = true;
     memset(gUartTxBuffer, 0, CUI_NUM_UART_CHARS - 1);
     memset(gTmpUartTxBuffer, 0, LAST_COMM_COMM_SIZE - 1);
 
@@ -5272,8 +5258,8 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
                         break;
                 case CRS_DEBUG:
                    return CRS_SUCCESS;
-                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
-                        break;
+//                   CLI_cliPrintf( "\r\n[DEBUG  ] %s:%d : ", file, line);
+//                        break;
                 case CRS_ERR:
 //                  return;
 
@@ -5296,7 +5282,7 @@ static CRS_retVal_t defaultTestLog( const log_level level, const char* file, con
                 SystemP_vsnprintf(printBuff, sizeof(printBuff), format, args);
                 va_end(args);
                 CLI_cliPrintf(printBuff);
-
+                return CRS_SUCCESS;
 
 }
 
@@ -5344,7 +5330,7 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 //        gRspBuffIdx = gRspBuffIdx + strlen(printBuff);
 //        return CRS_SUCCESS;
 
-        Msgs_addMsg(printBuff, strlen(printBuff));
+        Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
     }
 #endif
 
@@ -5363,7 +5349,7 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
     {
         gWriteNowBuffIdx = gWriteNowBuffIdx + _size;
         gWriteNowBuffSize = gWriteNowBuffSize - _size;
-        UART_write(gUartHandle, &gWriteNowBuff[gWriteNowBuffIdx],
+        UART_write(gUartHandle, (void *)&gWriteNowBuff[gWriteNowBuffIdx],
                    gWriteNowBuffSize);
 
         return;
@@ -5373,15 +5359,15 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
     if (gIsDoneFilling)
     {
 
-        memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-        memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
+        memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+        memcpy((void *)gWriteNowBuff, (void *)gWriteWaitingBuff, gWriteWaitingBuffIdx);
         gWriteNowBuffSize = gWriteWaitingBuffIdx;
-        memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx + 1);
+        memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx + 1);
         gWriteWaitingBuffIdx = 0;
         gWriteNowBuffIdx = 0;
         gIsDoneWriting = false;
         gIsDoneFilling = false;
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+        UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
         return ;
     }
@@ -5391,12 +5377,12 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
         gIsNoPlaceForPrompt = false;
         gIsDoneWriting = false;
 
-        memset(gWriteNowBuff, 0, strlen(CLI_PROMPT) + 1);
-        memcpy(gWriteNowBuff, CLI_PROMPT, strlen(CLI_PROMPT));
+        memset((void *)gWriteNowBuff, 0, strlen(CLI_PROMPT) + 1);
+        memcpy((void *)gWriteNowBuff, CLI_PROMPT, strlen(CLI_PROMPT));
         gWriteNowBuffSize = strlen(CLI_PROMPT);
         gWriteNowBuffIdx = 0;
 
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+        UART_write(gUartHandle,(void *) gWriteNowBuff, gWriteNowBuffSize);
     }
 
     //    }
@@ -5627,20 +5613,20 @@ static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size)
     {
         if (gWriteWaitingBuffIdx + _size < UART_WRITE_BUFF_SIZE)
         {
-            memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+            memcpy((void *)&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
             gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
         }
 
         gWriteNowBuffSize = gWriteWaitingBuffIdx;
 
-        memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-        memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
-        memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
+        memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+        memcpy((void *)gWriteNowBuff, (void *)gWriteWaitingBuff, gWriteWaitingBuffIdx);
+        memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
         gWriteWaitingBuffIdx = 0;
         gWriteNowBuffIdx = 0;
         gIsDoneWriting = false;
-        gWriteNowBuffTotalSize = gWriteNowBuffSize;
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+//        gWriteNowBuffTotalSize = gWriteNowBuffSize;
+        UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
         return CRS_SUCCESS;
     }
@@ -5656,15 +5642,15 @@ static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size)
             }
             return CRS_SUCCESS;
         }
-        bool flag = false;
+//        bool flag = false;
         while (gIsDoneFilling == true)
         {
-flag  = true;
+//flag  = true;
         }
 
 
 
-        memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+        memcpy((void *)&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
         gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
 
         if (_size >= strlen(CLI_PROMPT)
@@ -5674,7 +5660,7 @@ flag  = true;
         }
         char *cliPrompt = CLI_PROMPT;
         if (_size >= strlen(CLI_PROMPT)
-                && memcmp(cliPrompt + 2, _buffer + 1, strlen(CLI_PROMPT) - 2)
+                && memcmp(cliPrompt + 2,(char *) _buffer + 1, strlen(CLI_PROMPT) - 2)
                         == 0)
         {
             gIsDoneFilling = true;
@@ -5694,22 +5680,20 @@ flag  = true;
 
                     gWriteNowBuffSize = gWriteWaitingBuffIdx;
 
-                    memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-                    memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
-                    memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
+                    memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+                    memcpy((void *)gWriteNowBuff,(void *) gWriteWaitingBuff, gWriteWaitingBuffIdx);
+                    memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
                     gWriteWaitingBuffIdx = 0;
                     gWriteNowBuffIdx = 0;
                     gIsDoneWriting = false;
-                    gWriteNowBuffTotalSize = gWriteNowBuffSize;
-                    UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+//                    gWriteNowBuffTotalSize = gWriteNowBuffSize;
+                    UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
                     return CRS_SUCCESS;
                 }
 
         return CRS_SUCCESS;
     }
-
-    return CRS_SUCCESS;
 }
 
 
@@ -5821,12 +5805,7 @@ static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uin
 
     *left = leftPart;
     *right = rightPart;
-
-}
-
-CRS_retVal_t CLI_updateRssi(int8_t rssi)
-{
-    gRssi = rssi;
+    return CRS_SUCCESS;
 }
 
 

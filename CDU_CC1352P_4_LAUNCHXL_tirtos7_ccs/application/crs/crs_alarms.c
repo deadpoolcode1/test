@@ -59,7 +59,7 @@ static char gDiscExpectVal[EXPECTEDVAL_SZ] = { 0 };
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-static void Alarms_PLL_Check(void *arg);
+//static void Alarms_PLL_Check(void *arg);
 static void Alarms_PLLPrimaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static void Alarms_PLLSecondaryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
 static void Alarms_PLLPrimaryDiscoveryFpgaRsp(const FPGA_cbArgs_t _cbArgs);
@@ -86,7 +86,7 @@ CRS_retVal_t Alarms_printAlarms()
     CLI_cliPrintf("\r\n0x9 PLLLockPrimary 0x%x", gAlarmArr[PLLLockPrimary]);
     CLI_cliPrintf("\r\n0xa PLLLockSecondary 0x%x", gAlarmArr[PLLLockSecondary]);
     CLI_cliPrintf("\r\n0xb SyncPLLLock 0x%x", gAlarmArr[SyncPLLLock]);
-
+return CRS_SUCCESS;
 }
 /**
  * turns on the alarm_active bit or the failed to discover bit
@@ -109,6 +109,7 @@ CRS_retVal_t Alarms_setAlarm(Alarms_alarmType_t alarmType)
     }
     gAlarmArr[alarmType] |= 1UL << ALARM_ACTIVE_BIT_LOCATION; //turn on the alarm active bit
     gAlarmArr[alarmType] |= 1UL << ALARM_STICKY_BIT_LOCATION; //turn on the alarm sticky bit
+    return CRS_SUCCESS;
 }
 
 /**
@@ -328,12 +329,13 @@ CRS_retVal_t Alarms_process(void)
         Util_clearEvent(&Alarms_events,
         ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT);
     }
-
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Alarms_getTemperature(int16_t *currentTemperature)
 {
     *currentTemperature = Temperature_getTemperature();
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Alarms_setTemperatureHigh(int16_t temperature)
@@ -481,7 +483,7 @@ CRS_retVal_t Alarms_checkRssi(int8_t rssiAvg)
     {
         Alarms_clearAlarm(MaxCableLoss, ALARM_INACTIVE);
     }
-
+    return CRS_SUCCESS;
 }
 
 void Alarms_tempThresholdHighNotifyFxn(int16_t currentTemperature,
@@ -517,20 +519,13 @@ void Alarms_TDDLockNotifyFxn(uint_least8_t index)
 CRS_retVal_t Alarms_stopPooling()
 {
     Clock_stop(gClkHandle);
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Alarms_startPooling()
 {
     Clock_start(gClkHandle);
-}
-
-CRS_retVal_t Alarms_discoveryPllPrimary()
-{
-
-}
-
-CRS_retVal_t Alarms_discoveryPllSecondary()
-{
+    return CRS_SUCCESS;
 }
 
 /******************************************************************************
@@ -595,8 +590,6 @@ static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
 {
     char *line = _cbArgs.arg3;
     char rdRespLine[200] = { 0 };
-    uint32_t size = _cbArgs.arg0;
-
     memset(rdRespLine, 0, 200);
 
     int gTmpLine_idx = 0;
@@ -638,18 +631,18 @@ static CRS_retVal_t Alarms_parseRsp(const FPGA_cbArgs_t _cbArgs,
     }
 
     *rspUint32 = strtoul(rdRespLine + 6, NULL, 16);
-
+return CRS_SUCCESS;
 }
 
-static void Alarms_PLL_Check(void *arg)
-{
-    //set event
-    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
-
-    /* Wake up the application thread when it waits for clock event */
-    Semaphore_post(collectorSem);
-
-}
+//static void Alarms_PLL_Check(void *arg)
+//{
+//    //set event
+//    Util_setEvent(&Alarms_events, ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT);
+//
+//    /* Wake up the application thread when it waits for clock event */
+//    Semaphore_post(collectorSem);
+//
+//}
 
 static CRS_retVal_t Alarms_cmpDiscRsp(char *rsp, char *expVal)
 {

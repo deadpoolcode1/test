@@ -72,6 +72,7 @@ void Manage_process()
 static CRS_retVal_t runTask(Manage_taskObj_t *task)
 {
     task->cbFn(NULL);
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Manage_addTask(Manage__cbFn_t _cbFn, Manage__cbArgs_t *_cbArgs)

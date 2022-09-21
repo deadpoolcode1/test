@@ -88,8 +88,8 @@ static uint8_t appTaskStack[APP_TASK_STACK_SIZE];
 
 
 Task_Struct txTask;    /* not static so you can see in ROV */
-static Task_Params txTaskParams;
-static uint8_t txTaskStack[RFEASYLINKTX_TASK_STACK_SIZE];
+//static Task_Params txTaskParams;
+//static uint8_t txTaskStack[RFEASYLINKTX_TASK_STACK_SIZE];
 
 
 void appTaskFxn(UArg a0, UArg a1)

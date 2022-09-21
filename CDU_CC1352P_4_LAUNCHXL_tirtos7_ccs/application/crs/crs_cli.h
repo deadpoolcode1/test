@@ -22,7 +22,6 @@ CRS_retVal_t CLI_startREAD();
 CRS_retVal_t CLI_cliPrintf( const char *_format, ...);
 uint32_t CLI_convertStrUint(char *st);
 char* int2hex(uint32_t num, char *outbuf);
-CRS_retVal_t CLI_updateRssi(int8_t rssi);
 void CLI_printHeapStatus();
 
 typedef enum { CRS_INFO, CRS_DEBUG, CRS_WARN, CRS_ERR  } log_level;

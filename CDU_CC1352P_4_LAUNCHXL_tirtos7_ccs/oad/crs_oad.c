@@ -286,6 +286,7 @@ CRS_retVal_t Oad_process()
         /* Clear the event */
         Util_clearEvent(&Oad_events, OAD_RF_FINISHED_OAD_EVT);
     }
+    return CRS_SUCCESS;
 }
 /*!
  Update Available FW
@@ -331,7 +332,7 @@ CRS_retVal_t Oad_distributorUartRcvImg(bool updateUartImgIsReset,bool isFactory)
         /* Wake up the application thread when it waits for clock event */
         Semaphore_post(collectorSem);
     }
-
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Oad_distributorGetFwVer()
@@ -356,6 +357,7 @@ CRS_retVal_t Oad_distributorGetFwVer()
         CLI_cliPrintf("\r\nfailed to write img from UART");
     }
     OADStorage_close();
+    return CRS_SUCCESS;
 }
 
 
@@ -363,6 +365,7 @@ CRS_retVal_t Oad_distributorGetFwVer()
 CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
 
     OADProtocol_ParseIncoming(&oadClientAddr, (incomingPacket));
+    return CRS_SUCCESS;
 }
 
 /*!
@@ -422,16 +425,19 @@ CRS_retVal_t Oad_distributorSendTargetFwVerReq(uint16_t dstAddr){
         oadBlock=0;
         CLI_startREAD();
     }
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Oad_targetReset(uint16_t dstAddr){
     OADProtocol_sendOadResetReq(&dstAddr);
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Oad_flashFormat(){
     OADStorage_init();
     OADStorage_flashErase();
     OADStorage_close();
+    return CRS_SUCCESS;
 }
 
 
@@ -466,6 +472,7 @@ CRS_retVal_t Oad_Reinit()
           CLI_init(false);
           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
           CLI_startREAD();
+          return CRS_SUCCESS;
     }
 
 

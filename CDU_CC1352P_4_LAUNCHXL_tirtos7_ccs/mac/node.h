@@ -51,7 +51,7 @@ uint16_t shortAddr;
 
 
 void Node_init();
-
+void Node_listNodes();
 bool Node_getNode(uint8_t mac[MAC_SIZE],Node_nodeInfo_t* rspNode);
 bool Node_getNodeByShortAddr(uint16_t shortAddr,Node_nodeInfo_t* rspNode);
 

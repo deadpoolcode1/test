@@ -39,11 +39,11 @@ static Clock_Handle digClkHandle;
 
 static uint32_t gDigAddr = 0;
 
-static uint32_t gLineNumber = 1;
+//static uint32_t gLineNumber = 1;
 static char gFileToUpload[FILENAME_SZ] = { 0 };
 
 static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
-static uint32_t gLUT_line = 0;
+//static uint32_t gLUT_line = 0;
 static CRS_chipMode_t gMode = MODE_NATIVE;
 static CRS_chipType_t gChipType = DIG;
 
@@ -63,21 +63,19 @@ static bool gIsFileDone = false;
  Local Function Prototypes
  *****************************************************************************/
 
-static void uploadSnapRawCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs);
-static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
-static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs);
+//static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
+//static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs);
 static void uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs);
 
 static CRS_retVal_t zeroLineToSendArray();
 static CRS_retVal_t getPrevLine(char *line);
 
 static CRS_retVal_t getNextLine(char *line);
-static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
-                                uint32_t numLines, char *respLine);
+//static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
+//                                uint32_t numLines, char *respLine);
 
-static void Nvs_uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs);
-static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
+//static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
 
 static CRS_retVal_t runLine(char *line);
 static CRS_retVal_t runApplyCommand(char *line);
@@ -113,7 +111,7 @@ CRS_retVal_t DigInit(void *sem)
                                        5, 0,
                                        false,
                                        0);
-
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
@@ -237,7 +235,7 @@ void DIG_process(void)
                 gIsFileDone = false;
                 CRS_free(gFileContentCache);
                 gFileContentCache = NULL;
-                const FPGA_cbArgs_t cbArgs;
+                const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
                 Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
                 return;
@@ -264,7 +262,7 @@ void DIG_process(void)
             CRS_free(gFileContentCache);
             gFileContentCache = NULL;
 
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gDigEvents, STAR_RSP_EV);
             return;
@@ -331,7 +329,7 @@ static CRS_retVal_t runLine(char *line)
     {
 
         CRS_LOG(CRS_DEBUG, "Running line: %s", line);
-        char rspLine[100] = { 0 };
+//        char rspLine[100] = { 0 };
 
         if (((strstr(line, "16b'")) || (strstr(line, "32b'"))))
         {
@@ -430,15 +428,13 @@ static CRS_retVal_t runLine(char *line)
 
                 CRS_free(gFileContentCache);
                 gFileContentCache = NULL;
-                const FPGA_cbArgs_t cbArgs;
+                const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
                 Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
                 return CRS_SUCCESS;
             }
         }
     }
-    return CRS_SUCCESS;
-
 }
 
 static CRS_retVal_t runApplyCommand(char *line)
@@ -482,7 +478,7 @@ static CRS_retVal_t incermentParam(char *line)
     char b[NAMEVALUE_NAME_SZ] = { 0 };
     int32_t bInt = 0;
     int32_t result = 0;
-    char varValue[10] = { 0 };
+//    char varValue[10] = { 0 };
     int i = 0;
     while (*ptr != ' ')
     {
@@ -553,6 +549,7 @@ static CRS_retVal_t incermentParam(char *line)
         }
         i++;
     }
+    return CRS_SUCCESS;
 }
 static CRS_retVal_t addParam(char *line)
 {
@@ -602,7 +599,7 @@ static CRS_retVal_t addParam(char *line)
     {
         gNameValues[idx].value = strtol(varValue, NULL, 10);
     }
-
+    return CRS_SUCCESS;
 }
 static CRS_retVal_t runSlashCommand(char *line)
 {
@@ -662,7 +659,7 @@ static CRS_retVal_t runSlashCommand(char *line)
         }
 //        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
     }
-
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label'
@@ -676,7 +673,7 @@ static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label
     char *ptrResp = strstr(gFileContentCache, label);
     ptrResp += strlen(label) + 1;
     gFileContentCacheIdx = ptrResp - gFileContentCache;
-
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t runIfCommand(char *line)
@@ -719,6 +716,7 @@ static CRS_retVal_t runIfCommand(char *line)
     {
         runGotoCommand(label);
     }
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t runPrintCommand(char *line)
@@ -756,7 +754,7 @@ static CRS_retVal_t runPrintCommand(char *line)
     }
     CLI_cliPrintf("\r\n");
 //ptr+=2;//skip '" '
-
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t runWCommand(char *line)
@@ -912,7 +910,7 @@ static CRS_retVal_t getAddress(char *line, uint32_t *rsp)
     /* get the first token */
     char tokenMode[5] = { 0 }; //w r ew er
     char tokenAddr[15] = { 0 }; //0x1a10601c
-    char tokenValue[10] = { 0 }; //0x0003
+//    char tokenValue[10] = { 0 }; //0x0003
     char baseAddr[15] = { 0 };
     memset(baseAddr, '0', 8);
 
@@ -943,7 +941,7 @@ static CRS_retVal_t getVal(char *line, char *rsp)
     /* get the first token */
     char tokenMode[5] = { 0 }; //w r ew er
     char tokenAddr[15] = { 0 }; //0x1a10601c
-    char tokenValue[10] = { 0 }; //0x0003
+//    char tokenValue[10] = { 0 }; //0x0003
     char baseAddr[15] = { 0 };
     memset(baseAddr, '0', 8);
 
@@ -1063,27 +1061,28 @@ static CRS_retVal_t zeroLineToSendArray()
     {
         memset(gLineToSendArray[i], 0, CRS_NVS_LINE_BYTES);
     }
+    return CRS_SUCCESS;
 }
 
-static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
-                                uint32_t numLines, char *respLine)
-{
-    int i = 0;
-
-    strcpy(respLine, lines[0]);
-
-    for (i = 1; i < numLines; i++)
-    {
-        respLine[strlen(respLine)] = '\n';
-        strcat(respLine, lines[i]);
-    }
-
-}
+//static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
+//                                uint32_t numLines, char *respLine)
+//{
+//    int i = 0;
+//
+//    strcpy(respLine, lines[0]);
+//
+//    for (i = 1; i < numLines; i++)
+//    {
+//        respLine[strlen(respLine)] = '\n';
+//        strcat(respLine, lines[i]);
+//    }
+//    return CRS_SUCCESS;
+//}
 
 static void uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs)
 {
     char *line = _cbArgs.arg3;
-    uint32_t size = _cbArgs.arg0;
+//    uint32_t size = _cbArgs.arg0;
 
     Util_setEvent(&gDigEvents, STAR_RSP_EV);
     memset(gStarRdRespLine, 0, LINE_SZ);
@@ -1130,18 +1129,18 @@ static void uploadSnapStarCb(const FPGA_cbArgs_t _cbArgs)
     Semaphore_post(collectorSem);
 }
 
-static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-}
-static void finishedFileCb(const FPGA_cbArgs_t _cbArgs)
-{
-
-    const FPGA_cbArgs_t cbArgs;
-    gCbFn(cbArgs);
-//                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-}
+//static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs)
+//{
+//    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
+//static void finishedFileCb(const FPGA_cbArgs_t _cbArgs)
+//{
+//
+//    const FPGA_cbArgs_t cbArgs;
+//    gCbFn(cbArgs);
+////                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//}
 
 static void uploadSnapDigCb(const FPGA_cbArgs_t _cbArgs)
 {
@@ -1156,11 +1155,11 @@ static void uploadSnapRdDigCb(const FPGA_cbArgs_t _cbArgs)
     Semaphore_post(collectorSem);
 }
 
-static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-}
+//static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs)
+//{
+//    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
 
 static void processDigTimeoutCallback(UArg a0)
 {

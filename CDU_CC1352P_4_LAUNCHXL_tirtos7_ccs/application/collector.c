@@ -72,7 +72,7 @@ static bool gIsTestPacket = false;
 static bool sendMsg(Smsgs_cmdIds_t type, uint16_t dstShortAddr, uint16_t len,
                     uint8_t *pData);
 static uint8_t getMsduHandle(Smsgs_cmdIds_t msgType);
-static void processCliUpdateCb(Manage__cbArgs_t *_cbArgs);
+//static void processCliUpdateCb(Manage__cbArgs_t *_cbArgs);
 
 static void dataCnfCB(ApiMac_mcpsDataCnf_t *pDataCnf);
 static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd);
@@ -81,7 +81,7 @@ static void disassocIndCB(ApiMac_mlmeDisassociateInd_t *pDisassocInd);
 static void discoveryIndCB(ApiMac_mlmeDiscoveryInd_t *pDiscoveryInd);
 static void updateCduRssiStrct(int8_t rssi, int idx);
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
-static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
+//static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
 
 /******************************************************************************
@@ -174,7 +174,7 @@ void Csf_crsInitScript()
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
     {
-        FPGA_cbArgs_t cbArgs;
+        FPGA_cbArgs_t cbArgs={0};
         CLI_cliPrintf("\r\nUnable to run init script");
 
         fpgaCrsDoneCallback(cbArgs);
@@ -229,7 +229,7 @@ Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
 
         uint8_t buffer[SMSGS_CRS_MSG_LENGTH + 20] = { 0 };
         buffer[0] = (uint8_t) Smsgs_cmdIds_crsReq;
-        if (SMSGS_CRS_MSG_LENGTH < strlen(line))
+        if (SMSGS_CRS_MSG_LENGTH < strlen((char *)line))
         {
             memcpy(buffer + 1, line, SMSGS_CRS_MSG_LENGTH - 2);
             if ((sendMsg(Smsgs_cmdIds_crsReq, pDstAddr->addr.shortAddr,
@@ -259,9 +259,9 @@ Collector_status_t Collector_sendCrsMsg(ApiMac_sAddr_t *pDstAddr, uint8_t *line)
         }
         else
         {
-            memcpy(buffer + 1, line, strlen(line));
+            memcpy(buffer + 1, line, strlen((char *)line));
             if ((sendMsg(Smsgs_cmdIds_crsReq, pDstAddr->addr.shortAddr,
-                         (strlen(buffer) + 20), buffer)) == true)
+                         (strlen((char *)buffer) + 20), buffer)) == true)
             {
 //                    if (memcmp(line, "rssi", 4) == 0)
 //                    {
@@ -391,27 +391,27 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
     else
     {
         CLI_cliPrintf("\r\nUnable to run flat file");
-        FPGA_cbArgs_t cbArgs;
+        FPGA_cbArgs_t cbArgs={0};
         fpgaCrsDoneCallback(cbArgs);
     }
 
 }
 
-static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
-{
-    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
-    NULL,
-                                                fpgaCrsDoneCallback);
-//    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
-
-    if (retStatus == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
-        FPGA_cbArgs_t cbArgs;
-        fpgaCrsDoneCallback(cbArgs);
-    }
-
-}
+//static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
+//{
+//    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
+//    NULL,
+//                                                fpgaCrsDoneCallback);
+////    CRS_retVal_t retStatus = Config_runConfigFile("flat", fpgaCrsDoneCallback);
+//
+//    if (retStatus == CRS_FAILURE)
+//    {
+//        CLI_cliPrintf("\r\nUnable to run TDDModeToTx script");
+//        FPGA_cbArgs_t cbArgs;
+//        fpgaCrsDoneCallback(cbArgs);
+//    }
+//
+//}
 
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
@@ -662,8 +662,9 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 
         switch (cmdId)
         {
+        {
         case Smsgs_cmdIds_crsRsp:
-
+        {
             if (pDataInd->msdu.len > 1)
             {
                 CLI_cliPrintf("%s", pDataInd->msdu.p + 1);
@@ -672,15 +673,17 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
             CLI_startREAD();
 
             break;
+        }
         case Smsgs_cmdIds_OADsendImgIdentifyRsp:
+        {
        //            memcpy(oadApiMacExtAddr,pDataInd->srcAddr.addr.extAddr,sizeof(ApiMac_sAddrExt_t));
                    Oad_parseOadPkt((pDataInd->msdu.p) + 3);
        //            OADProtocol_ParseIncoming(&pDataInd->srcAddr.addr.shortAddr, (pDataInd->msdu.p) + 3);
        //            CLI_startREAD();
                    break;
-
+        }
         case Smsgs_cmdIds_crsRspInParts:
-
+        {
                     if (pDataInd->msdu.len > 1)
                     {
                         CLI_cliPrintf("%s", pDataInd->msdu.p + 1);
@@ -691,10 +694,13 @@ static void dataIndCB(ApiMac_mcpsDataInd_t *pDataInd)
 
                     break;
 
-
+        }
         default:
+        {
             /* Should not receive other messages */
             break;
+        }
+        }
         }
     }
     else

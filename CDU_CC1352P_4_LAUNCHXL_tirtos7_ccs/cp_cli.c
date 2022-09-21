@@ -60,21 +60,21 @@ static volatile bool gIsDoneFilling = false;
 static volatile bool gIsNoPlaceForPrompt = false;
 static volatile bool gIsAsyncCommand = false;
 static bool gReadNextCommand = false;
-static bool gIsNewCommand = true;
+//static bool gIsNewCommand = true;
 
 
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-static void recivePacketCommand(char *line);
-static void sendPacketCommand(char *line);
+static void recivePacketCommand(uint8_t *line);
+static void sendPacketCommand(uint8_t *line);
 static void CLI_writeString(void *_buffer, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void defaultTestLog(const cp_log_level level, const char *file,
                            const int line, const char *format, ...);
-static void debugCli(char *line);
-static void addNodeCommand(char *line);
+static void debugCli(uint8_t *line);
+static void addNodeCommand(uint8_t *line);
 /******************************************************************************
  Global variables
  *****************************************************************************/
@@ -140,7 +140,7 @@ void CP_CLI_processCliUpdate()
 
     bool inputBad = true;
 
-    bool is_async_command = false;
+//    bool is_async_command = false;
 
     if (memcmp(CLI_DEBUG, line, sizeof(CLI_DEBUG) - 1) == 0)
     {
@@ -197,7 +197,7 @@ void CP_CLI_processCliUpdate()
 //
 //
 
-    if (inputBad && strlen(line) > 0)
+    if (inputBad && strlen((const char *)line) > 0)
     {
         CP_CLI_cliPrintf(badInputMsg);
         CP_CLI_startREAD();
@@ -223,7 +223,7 @@ void CP_CLI_startREAD()
 
     CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
 
-    gIsNewCommand = true;
+//    gIsNewCommand = true;
     memset(gUartTxBuffer, 0, CUI_NUM_UART_CHARS - 1);
 
     gUartTxBufferIdx = 0;
@@ -266,18 +266,18 @@ void CP_CLI_cliPrintf(const char *_format, ...)
 /******************************************************************************
  Local Functions
  *****************************************************************************/
-static void debugCli(char *line)
+static void debugCli(uint8_t *line)
 {
     Smac_printStateMachine();
     CP_CLI_startREAD();
 }
 
-static void addNodeCommand(char *line)
+static void addNodeCommand(uint8_t *line)
 {
     Node_nodeInfo_t node = { 0 };
-    uint8_t mac[MAC_SIZE] = { 0 };
+//    uint8_t mac[MAC_SIZE] = { 0 };
     char tempBuff[TMP_BUFF_SZIE] = { 0 };
-    memcpy(tempBuff, line, strlen(line));
+    memcpy(tempBuff, line, strlen((const char *)line));
     const char s[2] = " ";
     char *token;
     /* get the first token */
@@ -307,7 +307,7 @@ static void addNodeCommand(char *line)
 
 }
 
-static void sendPacketCommand(char *line)
+static void sendPacketCommand(uint8_t *line)
 {
 //    Node_nodeInfo_t node = { 0 };
 //    uint8_t mac[MAC_SIZE] = { 0 };
@@ -336,7 +336,7 @@ static void sendPacketCommand(char *line)
 
 }
 
-static void recivePacketCommand(char *line)
+static void recivePacketCommand(uint8_t *line)
 {
     RX_enterRx(NULL, NULL);
     CP_CLI_startREAD();
@@ -350,7 +350,7 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
     {
         gWriteNowBuffIdx = gWriteNowBuffIdx + _size;
         gWriteNowBuffSize = gWriteNowBuffSize - _size;
-        UART_write(gUartHandle, &gWriteNowBuff[gWriteNowBuffIdx],
+        UART_write(gUartHandle, (const void *)&gWriteNowBuff[gWriteNowBuffIdx],
                    gWriteNowBuffSize);
 
         return;
@@ -360,15 +360,15 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
     if (gIsDoneFilling)
     {
 
-        memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-        memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
+        memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+        memcpy((void *)gWriteNowBuff, (void *)gWriteWaitingBuff, gWriteWaitingBuffIdx);
         gWriteNowBuffSize = gWriteWaitingBuffIdx;
-        memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx + 1);
+        memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx + 1);
         gWriteWaitingBuffIdx = 0;
         gWriteNowBuffIdx = 0;
         gIsDoneWriting = false;
         gIsDoneFilling = false;
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+        UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
         return;
     }
@@ -378,12 +378,12 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
         gIsNoPlaceForPrompt = false;
         gIsDoneWriting = false;
 
-        memset(gWriteNowBuff, 0, strlen(CLI_PROMPT) + 1);
-        memcpy(gWriteNowBuff, CLI_PROMPT, strlen(CLI_PROMPT));
+        memset((void *)gWriteNowBuff, 0, strlen(CLI_PROMPT) + 1);
+        memcpy((void *)gWriteNowBuff, CLI_PROMPT, strlen(CLI_PROMPT));
         gWriteNowBuffSize = strlen(CLI_PROMPT);
         gWriteNowBuffIdx = 0;
 
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+        UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
     }
 
     //    }
@@ -491,20 +491,20 @@ static void CLI_writeString(void *_buffer, size_t _size)
     {
         if (gWriteWaitingBuffIdx + _size < UART_WRITE_BUFF_SIZE)
         {
-            memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+            memcpy((void *)&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
             gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
         }
 
         gWriteNowBuffSize = gWriteWaitingBuffIdx;
 
-        memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-        memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
-        memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
+        memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+        memcpy((void *)gWriteNowBuff, (void *)gWriteWaitingBuff, gWriteWaitingBuffIdx);
+        memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
         gWriteWaitingBuffIdx = 0;
         gWriteNowBuffIdx = 0;
         gIsDoneWriting = false;
 //        gWriteNowBuffTotalSize = gWriteNowBuffSize;
-        UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+        UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
         return;
     }
@@ -520,13 +520,13 @@ static void CLI_writeString(void *_buffer, size_t _size)
             }
             return;
         }
-        bool flag = false;
+//        bool flag = false;
         while (gIsDoneFilling == true)
         {
-            flag = true;
+//            flag = true;
         }
 
-        memcpy(&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
+        memcpy((void *)&gWriteWaitingBuff[gWriteWaitingBuffIdx], _buffer, _size);
         gWriteWaitingBuffIdx = gWriteWaitingBuffIdx + _size;
 
         if (_size >= strlen(CLI_PROMPT)
@@ -536,7 +536,7 @@ static void CLI_writeString(void *_buffer, size_t _size)
         }
         char *cliPrompt = CLI_PROMPT;
         if (_size >= strlen(CLI_PROMPT)
-                && memcmp(cliPrompt + 2, _buffer + 1, strlen(CLI_PROMPT) - 2)
+                && memcmp(cliPrompt + 2, (char *)_buffer + 1, strlen(CLI_PROMPT) - 2)
                         == 0)
         {
             gIsDoneFilling = true;
@@ -547,22 +547,20 @@ static void CLI_writeString(void *_buffer, size_t _size)
 
             gWriteNowBuffSize = gWriteWaitingBuffIdx;
 
-            memset(gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
-            memcpy(gWriteNowBuff, gWriteWaitingBuff, gWriteWaitingBuffIdx);
-            memset(gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
+            memset((void *)gWriteNowBuff, 0, gWriteWaitingBuffIdx + 1);
+            memcpy((void *)gWriteNowBuff, (void *)gWriteWaitingBuff, gWriteWaitingBuffIdx);
+            memset((void *)gWriteWaitingBuff, 0, gWriteWaitingBuffIdx);
             gWriteWaitingBuffIdx = 0;
             gWriteNowBuffIdx = 0;
             gIsDoneWriting = false;
 //                    gWriteNowBuffTotalSize = gWriteNowBuffSize;
-            UART_write(gUartHandle, gWriteNowBuff, gWriteNowBuffSize);
+            UART_write(gUartHandle, (void *)gWriteNowBuff, gWriteNowBuffSize);
 
             return;
         }
 
         return;
     }
-
-    return;
 }
 static void defaultTestLog(const cp_log_level level, const char *file,
                            const int line, const char *format, ...)

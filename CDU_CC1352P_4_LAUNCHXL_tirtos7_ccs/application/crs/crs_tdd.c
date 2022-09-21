@@ -153,7 +153,7 @@ static uint32_t gWantedTxBytes = 0;
 static bool gReadNextCommand = false;
 static bool gIsWantedTxBytesKnown = false;
 static bool gIsPrintStatusCommand = false;
-static bool gIsOpen = false;
+//static bool gIsOpen = false;
 static uint8_t gIsLocked;
 static uint32_t gNumReadCh = 0;
 static uint8_t gFrame = 0;
@@ -177,15 +177,15 @@ uint16_t gConfigs[2][15] = { { 1214, 1642, 1714, 1785, 1857, 2214, 2642, 2714,
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void processTddTimeoutCallback(UArg a0);
-static void tddSetReqCallback(const TDD_cbArgs_t _cbArgs);
+//static void tddSetReqCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 static void printStatus(const TDD_cbArgs_t _cbArgs);
 static void tddGetStatusCallback(const TDD_cbArgs_t _cbArgs);
 static CRS_retVal_t sendMsgAndGetStatus(void *_buffer, size_t _sizeToSend,
                                         uint32_t bytesToRead, TDD_cbFn_t _cbFn);
-static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame,
-                                                    uint8_t alloc,
-                                                    TDD_cbFn_t _cbFn);
+//static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame,
+//                                                    uint8_t alloc,
+//                                                    TDD_cbFn_t _cbFn);
 static void getInitStatus(const TDD_cbArgs_t _cbArgs);
 static void Tdd_setTddClock(uint32_t tddTime);
 static void processTddStartCallback(UArg a0);
@@ -203,6 +203,7 @@ CRS_retVal_t Tdd_initSem(void *sem)
                                        10, 0,
                                        false,
                                        0);
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
@@ -256,13 +257,11 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
         return CRS_SUCCESS;
 
     }
-
-    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Tdd_close()
 {
-    gIsOpen = false;
+//    gIsOpen = false;
     if (gUartHandle == NULL)
     {
         return CRS_SUCCESS;
@@ -303,7 +302,7 @@ CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -312,6 +311,7 @@ CRS_retVal_t Tdd_printStatus(TDD_cbFn_t _cbFn)
     gInnerCbFn = printStatus;
     sendMsgAndGetStatus(gStatusCommand, 11, 69, tddGetStatusCallback);
     gIsPrintStatusCommand = true;
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Tdd_setSyncMode(bool mode, TDD_cbFn_t _cbFn)
@@ -321,7 +321,7 @@ CRS_retVal_t Tdd_setSyncMode(bool mode, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -350,7 +350,7 @@ CRS_retVal_t Tdd_setSCS(uint8_t scs, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -382,7 +382,7 @@ CRS_retVal_t Tdd_setSs_pos(uint8_t ss_pos, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -420,16 +420,16 @@ CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
     // make request to change Allocation Mode.
-    uint8_t scs = 1;  // 15kHz
-    bool pattern2 = false; // pattern2 off
-    uint8_t ss_pos = 0; // ss_pos 0
-    bool detect = true; // detect manual
+//    uint8_t scs = 1;  // 15kHz
+//    bool pattern2 = false; // pattern2 off
+//    uint8_t ss_pos = 0; // ss_pos 0
+//    bool detect = true; // detect manual
     uint16_t dl1;
     uint16_t period;
 
@@ -500,16 +500,16 @@ CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
     }
     // make request to change Allocation Mode.
-    uint8_t scs = 1;  // 15kHz
-    bool pattern2 = false; // pattern2 off
-    uint8_t ss_pos = 0; // ss_pos 0
-    bool detect = true; // detect manual
+//    uint8_t scs = 1;  // 15kHz
+//    bool pattern2 = false; // pattern2 off
+//    uint8_t ss_pos = 0; // ss_pos 0
+//    bool detect = true; // detect manual
     uint16_t dl1;
     uint16_t period;
 
@@ -581,7 +581,7 @@ CRS_retVal_t Tdd_setHolTime(uint8_t min, uint8_t sec, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -611,7 +611,7 @@ CRS_retVal_t Tdd_setTtg(int8_t *ttg_vals, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -621,7 +621,7 @@ CRS_retVal_t Tdd_setTtg(int8_t *ttg_vals, TDD_cbFn_t _cbFn)
     int i;
     for (i = 0; i < 4; i++)
     {
-        set.ttg_vals[i] = &ttg_vals[i];
+        set.ttg_vals[i] =(uint8_t *) &ttg_vals[i];
     }
 
     uint8_t req[100] = { 0 };
@@ -640,7 +640,7 @@ CRS_retVal_t Tdd_setRtg(int8_t *rtg_vals, TDD_cbFn_t _cbFn)
         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -650,7 +650,7 @@ CRS_retVal_t Tdd_setRtg(int8_t *rtg_vals, TDD_cbFn_t _cbFn)
     int i;
     for (i = 0; i < 4; i++)
     {
-        set.rtg_vals[i] = &rtg_vals[i];
+        set.rtg_vals[i] = (uint8_t *)&rtg_vals[i];
     }
 
     uint8_t req[100] = { 0 };
@@ -669,7 +669,7 @@ CRS_retVal_t Tdd_restart(TDD_cbFn_t _cbFn)
     {
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_FAILURE;
         _cbFn(cbArgs);
         return CRS_FAILURE;
@@ -699,7 +699,7 @@ void Tdd_process(void)
 
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_SUCCESS;
         gInnerCbFn(cbArgs);
 //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
@@ -712,7 +712,7 @@ void Tdd_process(void)
 
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 =(char *) gUartTxBuffer;
         cbArgs.status = CRS_SUCCESS;
         gInnerCbFn(cbArgs);
         gFinalCbFn(cbArgs);
@@ -725,7 +725,7 @@ void Tdd_process(void)
 
         TDD_cbArgs_t cbArgs;
         cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
+        cbArgs.arg3 = (char *)gUartTxBuffer;
         cbArgs.status = CRS_SUCCESS;
         gInnerCbFn(cbArgs);
         gFinalCbFn(cbArgs);
@@ -749,7 +749,7 @@ void Tdd_process(void)
             Tdd_close();
             TDD_cbArgs_t cbArgs;
             cbArgs.arg0 = gUartTxBufferIdx;
-            cbArgs.arg3 = gUartTxBuffer;
+            cbArgs.arg3 = (char *)gUartTxBuffer;
             cbArgs.status = CRS_FAILURE;
             gFinalCbFn(cbArgs);
         }
@@ -781,7 +781,7 @@ void Tdd_process(void)
 static void printStatus(const TDD_cbArgs_t _cbArgs)
 {
     //CLI_cliPrintf("\r\nTDDStatus=OK");
-    bool isGood = true;
+//    bool isGood = true;
     uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
     if (scs == 1)
     {
@@ -789,12 +789,12 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     }
     else if (scs == 2)
     {
-        isGood = false;
+//        isGood = false;
         CLI_cliPrintf("\r\nSCS=30");
     }
     else if (scs == 4)
     {
-        isGood = false;
+//        isGood = false;
         CLI_cliPrintf("\r\nSCS=60");
     }
 
@@ -805,7 +805,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     }
     else if (pattern2 == 0x31)
     {
-        isGood = false;
+//        isGood = false;
         CLI_cliPrintf("\r\nPattern2=On");
     }
 
@@ -816,14 +816,14 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     }
     else
     {
-        isGood = false;
+//        isGood = false;
         CLI_cliPrintf("\r\nSSPosition=0x%x", sspos);
     }
 
     uint8_t detect = gUartTxBuffer[33];
     if (detect == 0x30)
     {
-        isGood = false;
+//        isGood = false;
 
         CLI_cliPrintf("\r\nSyncMode=Auto");
     }
@@ -1174,11 +1174,11 @@ static void getInitStatus(const TDD_cbArgs_t _cbArgs)
 //        counter++;
 //    }
 
-    uint8_t scs = gUartTxBuffer[29];
-    uint8_t pattern2 = gUartTxBuffer[30];
-    uint8_t sspos = gUartTxBuffer[31];
-    uint8_t detect = gUartTxBuffer[33];
-    uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);
+//    uint8_t scs = gUartTxBuffer[29];
+//    uint8_t pattern2 = gUartTxBuffer[30];
+//    uint8_t sspos = gUartTxBuffer[31];
+//    uint8_t detect = gUartTxBuffer[33];
+//    uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);
 
 //    if (scs != 1 || pattern2 != 0x30 || sspos != 0x0 || (period != 5000 && period != 10000))
 //    {
@@ -1187,84 +1187,87 @@ static void getInitStatus(const TDD_cbArgs_t _cbArgs)
 //    }
     TDD_cbArgs_t cbArgs;
     cbArgs.arg0 = gUartTxBufferIdx;
-    cbArgs.arg3 = gUartTxBuffer;
+    cbArgs.arg3 =(char *) gUartTxBuffer;
     cbArgs.status = CRS_SUCCESS;
     printStatus(cbArgs);
     gFinalCbFn(cbArgs);
 }
+//
+//static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame,
+//                                                    uint8_t alloc,
+//                                                    TDD_cbFn_t _cbFn)
+//{
+//    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+//    {
+//        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+//        TDD_cbArgs_t cbArgs;
+//        cbArgs.arg0 = gUartTxBufferIdx;
+//        cbArgs.arg3 = (char *)gUartTxBuffer;
+//        cbArgs.status = CRS_FAILURE;
+//        _cbFn(cbArgs);
+//        return CRS_FAILURE;
+//    }
+//    // make request to change Allocation Mode.
+////    uint8_t scs = 1;  // 15kHz
+////    bool pattern2 = false; // pattern2 off
+////    uint8_t ss_pos = 0; // ss_pos 0
+////    bool detect = true; // detect manual
+//    uint16_t dl1;
+//    uint16_t period;
+//
+//    Tdd_setRequest_t set = createRequest();
+//
+////    set.scs = &scs;
+////    set.pattern2 = &pattern2;
+////    set.ss_pos = &ss_pos;
+////    set.detect = &detect;
+//
+//    if (frame == 0 || frame == 5)
+//    {
+//        dl1 = 214;
+//    }
+//    else if (frame == 1 || frame == 6)
+//    {
+//        dl1 = 642;
+//    }
+//    else if (frame == 2 || frame == 7)
+//    {
+//        dl1 = 714;
+//    }
+//    else if (frame == 3 || frame == 8)
+//    {
+//        dl1 = 785;
+//    }
+//    else if (frame == 4)
+//    {
+//        dl1 = 857;
+//    }
+//    if (alloc < 3)
+//    {
+//        period = 5000;
+//        set.pattern1_period = &period;
+//        dl1 += 1000 + (alloc * 1000);
+//    }
+//    else
+//    {
+//        period = 10000;
+//        set.pattern1_period = &period;
+//        dl1 += 3000 + (alloc * 1000);
+//    }
+//
+//    set.dl1_us = &dl1;
+//
+//    uint8_t req[100] = { 0 };
+//    makeRequest(set, req);
+//
+//    gFinalCbFn = _cbFn;
+//    gInnerCbFn = printStatus;
+//    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+//    return CRS_SUCCESS;
+//}
+//
+//
 
-static CRS_retVal_t setFrameFormatAndAllocationMode(uint8_t frame,
-                                                    uint8_t alloc,
-                                                    TDD_cbFn_t _cbFn)
-{
-    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
-    {
-        //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
-        TDD_cbArgs_t cbArgs;
-        cbArgs.arg0 = gUartTxBufferIdx;
-        cbArgs.arg3 = gUartTxBuffer;
-        cbArgs.status = CRS_FAILURE;
-        _cbFn(cbArgs);
-        return CRS_FAILURE;
-    }
-    // make request to change Allocation Mode.
-    uint8_t scs = 1;  // 15kHz
-    bool pattern2 = false; // pattern2 off
-    uint8_t ss_pos = 0; // ss_pos 0
-    bool detect = true; // detect manual
-    uint16_t dl1;
-    uint16_t period;
-
-    Tdd_setRequest_t set = createRequest();
-
-//    set.scs = &scs;
-//    set.pattern2 = &pattern2;
-//    set.ss_pos = &ss_pos;
-//    set.detect = &detect;
-
-    if (frame == 0 || frame == 5)
-    {
-        dl1 = 214;
-    }
-    else if (frame == 1 || frame == 6)
-    {
-        dl1 = 642;
-    }
-    else if (frame == 2 || frame == 7)
-    {
-        dl1 = 714;
-    }
-    else if (frame == 3 || frame == 8)
-    {
-        dl1 = 785;
-    }
-    else if (frame == 4)
-    {
-        dl1 = 857;
-    }
-    if (alloc < 3)
-    {
-        period = 5000;
-        set.pattern1_period = &period;
-        dl1 += 1000 + (alloc * 1000);
-    }
-    else
-    {
-        period = 10000;
-        set.pattern1_period = &period;
-        dl1 += 3000 + (alloc * 1000);
-    }
-
-    set.dl1_us = &dl1;
-
-    uint8_t req[100] = { 0 };
-    makeRequest(set, req);
-
-    gFinalCbFn = _cbFn;
-    gInnerCbFn = printStatus;
-    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
-    return CRS_SUCCESS;
-}
 
 static CRS_retVal_t sendMsgAndGetStatus(void *_buffer, size_t _sizeToSend,
                                         uint32_t bytesToRead, TDD_cbFn_t _cbFn)
@@ -1274,6 +1277,7 @@ static CRS_retVal_t sendMsgAndGetStatus(void *_buffer, size_t _sizeToSend,
     startRead(bytesToRead);
     Tdd_setTddClock(70);
     Tdd_writeString(_buffer, _sizeToSend);
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t startRead(uint32_t bytesRead)
@@ -1283,6 +1287,7 @@ static CRS_retVal_t startRead(uint32_t bytesRead)
     memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
     gUartTxBufferIdx = 0;
     gReadNextCommand = true;
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t Tdd_writeString(void *_buffer, size_t _size)
@@ -1298,6 +1303,7 @@ static CRS_retVal_t Tdd_writeString(void *_buffer, size_t _size)
     }
 
     UART_write(gUartHandle, _buffer, _size);
+    return CRS_SUCCESS;
 }
 
 static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size)
@@ -1309,7 +1315,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
     if (_size)
     {
         gNumReadCh++;
-        gIsOpen = true;
+//        gIsOpen = true;
         if (gReadNextCommand == false)
         {
             UART_read(gUartHandle, gUartRxBuffer, 1);
@@ -1337,7 +1343,7 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size)
             TDD_cbArgs_t cbArgs;
             cbArgs.arg0 = gUartTxBufferIdx;
 //            cbArgs.arg1 = gCommandSize;
-            cbArgs.arg3 = gUartTxBuffer;
+            cbArgs.arg3 =(char *) gUartTxBuffer;
             gCbFn(cbArgs);
         }
         UART_read(gUartHandle, gUartRxBuffer, 1);
@@ -1367,13 +1373,6 @@ static void tddOpenCallback(const TDD_cbArgs_t _cbArgs)
 
 }
 
-static void tddSetReqCallback(const TDD_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&Tdd_events, TDD_SET_RSP_EV);
-
-    Semaphore_post(collectorSem);
-
-}
 
 static void tddGetStatusCallback(const TDD_cbArgs_t _cbArgs)
 {

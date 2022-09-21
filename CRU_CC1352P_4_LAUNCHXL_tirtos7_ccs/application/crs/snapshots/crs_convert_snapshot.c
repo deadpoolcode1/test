@@ -500,7 +500,7 @@ CRS_retVal_t Convert_convertStar(char *starLine, char *rdResp, char *parsedLine)
     }
     strcat(result, valStr);
     memcpy(parsedLine, result, strlen(result));
-
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Convert_rdParser(char *addr, char respLine[9][CRS_NVS_LINE_BYTES])
@@ -526,6 +526,7 @@ CRS_retVal_t Convert_rdParser(char *addr, char respLine[9][CRS_NVS_LINE_BYTES])
     strcat(rd_converted[0], "0000");
     memcpy(respLine[0], rd_converted[0], CRS_NVS_LINE_BYTES);
     memcpy(respLine[1], rd_converted[1], CRS_NVS_LINE_BYTES);
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Convert_applyLine(char respLine[9][CRS_NVS_LINE_BYTES],
@@ -586,6 +587,7 @@ CRS_retVal_t Convert_applyLine(char respLine[9][CRS_NVS_LINE_BYTES],
     rspLineIdx++;
 
     memcpy(respLine[rspLineIdx], lines[1], strlen(lines[1]));
+    return CRS_SUCCESS;
 }
 
 //slave:
@@ -595,7 +597,7 @@ CRS_retVal_t Convert_rd(uint32_t addr, CRS_chipMode_t mode, uint32_t rfAddr,
                         char convertedResp[2][CRS_NVS_LINE_BYTES])
 {
 
-    char addrStr[15] = { 0 };
+//    char addrStr[15] = { 0 };
 
     if (mode == MODE_NATIVE)
     {
@@ -683,6 +685,7 @@ static CRS_retVal_t checkRfChain(uint32_t addrVal)
             gIsRfChainChanged = true;
         }
     }
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t changeRfChain(uint32_t addrVal)
@@ -735,4 +738,5 @@ static CRS_retVal_t changeRfChain(uint32_t addrVal)
             gIsFirstLine = false;
         }
     }
+    return CRS_SUCCESS;
 }

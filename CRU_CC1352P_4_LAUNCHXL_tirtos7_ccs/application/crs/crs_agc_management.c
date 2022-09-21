@@ -23,7 +23,7 @@
  Local variables
  *****************************************************************************/
 
-static void *sem;
+//static void *sem;
 static AGCM_cbFn_t gTaskArr[TASK_ARR_SIZE] = {0};
 static uint32_t gTaskArrIdx = 0;
 static volatile bool gIsTaskRunnig = false;
@@ -34,7 +34,7 @@ static volatile bool gIsTaskRunnig = false;
 
 static bool isThereNextTask();
 static bool addTask(AGCM_cbFn_t cb);
-static bool runTask(AGCM_cbFn_t cb);
+//static bool runTask(AGCM_cbFn_t cb);
 static bool runNextTask();
 
 
@@ -102,10 +102,10 @@ static bool addTask(AGCM_cbFn_t cb)
 
 }
 
-static bool runTask(AGCM_cbFn_t cb)
-{
-
-}
+//static bool runTask(AGCM_cbFn_t cb)
+//{
+//
+//}
 
 static bool runNextTask()
 {

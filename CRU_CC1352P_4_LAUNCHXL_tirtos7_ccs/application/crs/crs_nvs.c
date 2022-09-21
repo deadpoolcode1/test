@@ -25,7 +25,7 @@ char *bufCache = NULL;
  *****************************************************************************/
 static NVS_Handle gNvsHandle;
 static NVS_Attrs gRegionAttrs;
-static Semaphore_Handle collectorSem;
+//static Semaphore_Handle collectorSem;
 static uint8_t gFAT_sector_sz;
 static uint32_t gNumFiles;
 
@@ -34,19 +34,9 @@ static uint32_t gNumFiles;
  *****************************************************************************/
 //static void printStatus(int_fast16_t retStatus);
 static CRS_retVal_t Nvs_readFAT(CRS_FAT_t *fat);
-static CRS_retVal_t Nvs_readFAT_64files(CRS_FAT_t *fat, int i);
 static CRS_retVal_t Nvs_writeFAT(CRS_FAT_t *fat);
-static CRS_retVal_t Nvs_writeFATRecord(CRS_FAT_t *fat, uint32_t location);
-static CRS_retVal_t Nvs_writeFAT_64files(CRS_FAT_t *fat, int i);
 static CRS_retVal_t Nvs_readFATNumFiles(CRS_FAT_t *fat, uint32_t start,
                                         uint32_t numFiles);
-static CRS_retVal_t isVarsFileExists(int file_type);
-
-static void getVars(char *file, char *keys, char *values);
-static void setVars(char *file, char *vars, const char *d);
-
-static int hex2int(char ch);
-
 static CRS_FAT_t FATcache[FAT_CACHE_SZ + 1] = { 0 };
 
 /******************************************************************************
@@ -54,7 +44,7 @@ static CRS_FAT_t FATcache[FAT_CACHE_SZ + 1] = { 0 };
  *****************************************************************************/
 CRS_retVal_t Nvs_init(void *sem)
 {
-    collectorSem = sem;
+//    collectorSem = sem;
     NVS_Params nvsParams;
     NVS_init();
     NVS_Params_init(&nvsParams);
@@ -64,7 +54,7 @@ CRS_retVal_t Nvs_init(void *sem)
     {
         CLI_cliPrintf("NVS_open() failed.\r\n");
 
-        return (NULL);
+        return (CRS_FAILURE);
     }
     /*
      * This will populate a NVS_Attrs structure with properties specific
@@ -334,8 +324,8 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
             * gRegionAttrs.sectorSize) + (STRLEN_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) fileContent, stringlen);
 //    char line[50] = { 0 };
-    const char s[2] = "\n";
-    char *token;
+//    const char s[2] = "\n";
+//    char *token;
     char fileSegment[650] = { 0 };
     if((fileIndex+readSize)>4096){
         readSize = 4096 - fileIndex;
@@ -385,7 +375,7 @@ CRS_retVal_t Nvs_rm(char *filename)
 
 CRS_retVal_t Nvs_debug()
 {
-    CRS_FAT_t *fat;
+    CRS_FAT_t *fat={0};
 
     NVS_read(gNvsHandle, 0, (void*) fat, sizeof(CRS_FAT_t));
 
@@ -393,7 +383,7 @@ CRS_retVal_t Nvs_debug()
     NVS_read(gNvsHandle,
              ((fat)->index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
              (void*) fileContent, (fat)->len);
-    readJson(fileContent);
+//    readJson(fileContent);
 //    int_fast16_t retStatus = NVS_write(gNvsHandle, (4096 * 2), (void* )buff, sizeof(buff),
 //    NVS_WRITE_ERASE | NVS_WRITE_POST_VERIFY);
 //    printStatus(retStatus);
@@ -410,6 +400,12 @@ CRS_retVal_t Nvs_format()
 {
     int_fast16_t retStatus = NVS_erase(gNvsHandle, 0, gRegionAttrs.regionSize);
     //printStatus(retStatus);
+    if (retStatus==NVS_STATUS_SUCCESS ) {
+        return CRS_SUCCESS;
+    }else{
+        return CRS_FAILURE;
+    }
+
 }
 
 CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
@@ -647,22 +643,13 @@ char* Nvs_readFileWithMalloc(char *filename)
  Local Functions
  *****************************************************************************/
 
-static int hex2int(char ch)
-{
-    if (ch >= '0' && ch <= '9')
-        return ch - '0';
-    if (ch >= 'A' && ch <= 'F')
-        return ch - 'A' + 10;
-    if (ch >= 'a' && ch <= 'f')
-        return ch - 'a' + 10;
-    return -1;
-}
 
 
 
 static CRS_retVal_t Nvs_readFAT(CRS_FAT_t *fat)
 {
     NVS_read(gNvsHandle, 0, (void*) fat, sizeof(CRS_FAT_t) * gNumFiles);
+    return CRS_SUCCESS;
 }
 
 static CRS_retVal_t Nvs_readFATNumFiles(CRS_FAT_t *fat, uint32_t start,
@@ -671,6 +658,7 @@ static CRS_retVal_t Nvs_readFATNumFiles(CRS_FAT_t *fat, uint32_t start,
     int_fast16_t retStatus = NVS_read(gNvsHandle, start * sizeof(CRS_FAT_t),
                                       (void*) fat,
                                       sizeof(CRS_FAT_t) * numFiles);
+    return CRS_SUCCESS;
 }
 
 
@@ -678,6 +666,7 @@ static CRS_retVal_t Nvs_writeFAT(CRS_FAT_t *fat)
 {
     NVS_write(gNvsHandle, 0, (void*) fat, sizeof(CRS_FAT_t) * gNumFiles,
     NVS_WRITE_ERASE);
+    return CRS_SUCCESS;
 }
 
 
