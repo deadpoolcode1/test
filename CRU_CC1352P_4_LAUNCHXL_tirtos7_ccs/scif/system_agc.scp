@@ -53,6 +53,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.channelsMinRFDLTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFUL" desc="Contains sums of the 15% min results from uplink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.channelsMinRFULTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.cruLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesIFUL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.maxSamplesRFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for RF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
@@ -65,7 +66,6 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.pSamplesMultiChannelRF" desc="Stores RF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
         <tattr name="state.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="state.cruLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.invalid" desc="signal that results of current sample cycle should be discarded and not copied to the results arrays." type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledCounter" desc="Determines which LED will turn on in Auto mode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
@@ -418,20 +418,20 @@ if(state.tddMode == 0){
         gpioSetOutput(AUXIO_O_RED_LED);
         gpioSetOutput(AUXIO_O_GREEN_LED);
         //turn off cruLock
-        state.cruLock=0;
+        output.cruLock=0;
     }
     if(state.ledCounter >= 100){
         gpioSetOutput(AUXIO_O_RED_LED);
         gpioSetOutput(AUXIO_O_GREEN_LED);
         //turn off cruLock
-        state.cruLock=0;
+        output.cruLock=0;
         state.ledCounter = 0;
     }
     state.ledCounter += 1;
-            if(state.ledOn==0){
-            gpioClearOutput(AUXIO_O_RED_LED);
-            gpioClearOutput(AUXIO_O_GREEN_LED);
-        }
+    if(state.ledOn==0){
+        gpioClearOutput(AUXIO_O_RED_LED);
+        gpioClearOutput(AUXIO_O_GREEN_LED);
+    }
     //get the TDD lock
     U16 lock;
     if(state.unitType == 0){
@@ -472,13 +472,13 @@ if(state.tddMode != 2){
             gpioClearOutput(AUXIO_O_RED_LED);
             gpioSetOutput(AUXIO_O_GREEN_LED);
             //set cruLock
-            state.cruLock=1;
+            output.cruLock=1;
         }
     }else{ // state.tddMode != 0
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioSetOutput(AUXIO_O_GREEN_LED);//sets BLUE static
     }
-      if(state.ledOn==0){
+    if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
@@ -866,13 +866,13 @@ if(state.tddMode != 1){
             gpioClearOutput(AUXIO_O_GREEN_LED);
             gpioSetOutput(AUXIO_O_RED_LED);
             //set cruLock
-            state.cruLock=1;
+            output.cruLock=1;
         }
     }else{
         gpioClearOutput(AUXIO_O_GREEN_LED);
         gpioSetOutput(AUXIO_O_RED_LED);
     }
-      if(state.ledOn==0){
+    if(state.ledOn==0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
