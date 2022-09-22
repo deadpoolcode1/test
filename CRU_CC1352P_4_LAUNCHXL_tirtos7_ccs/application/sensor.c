@@ -212,8 +212,8 @@ void Sensor_process(void)
     Snap_process();
     Fpga_process();
     DIG_process();
-    Tdd_process();
     Agc_process();
+    Tdd_process();
     Alarms_process();
     OadClient_process();
     Msgs_process();

@@ -254,7 +254,7 @@ void Agc_process(void)
 #ifdef CLI_SENSOR
         if (gIsTDDLocked) {//if CDU sent a msg that it's locked, we will verify that the CRU is locked from the scif
             //if cruLock - gIsTDDLocked=lock
-              if (scifTaskData.systemAgc.state.cruLock==0){
+              if (scifTaskData.systemAgc.output.cruLock==0){
                   gIsTDDLocked=false;
               }
           }
@@ -371,7 +371,8 @@ CRS_retVal_t Agc_ledOff(){
 }
 
 CRS_retVal_t Agc_evtCntrPrint(uint16_t* eventcntr){
-    *eventcntr=scifTaskData.systemAgc.cfg.eventCounter;
+//    *eventcntr=scifTaskData.systemAgc.cfg.eventCounter;
+    *eventcntr= scifTaskData.systemAgc.output.cruLock;
     return CRS_SUCCESS;
 }
 

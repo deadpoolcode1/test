@@ -19,7 +19,7 @@
 #include "mac/mac_util.h"
 #include "crs_cli.h"
 #include "crs_fpga.h"
-
+#include "application/agc/agc.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/

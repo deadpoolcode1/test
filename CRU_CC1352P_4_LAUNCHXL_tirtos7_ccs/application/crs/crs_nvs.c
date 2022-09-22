@@ -612,7 +612,7 @@ char* Nvs_readFileWithMalloc(char *filename)
 
     if (i == MAX_FILES)
     {
-        CRS_LOG(CRS_ERR, "File not found");
+        CRS_LOG(CRS_ERR, "File %s not found",filename);
 
         return NULL;
     }
