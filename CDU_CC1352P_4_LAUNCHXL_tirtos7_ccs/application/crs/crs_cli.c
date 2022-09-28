@@ -206,9 +206,6 @@
 #define CLI_CRS_LED_ON "led on"
 #define CLI_CRS_LED_OFF "led off"
 
-#define CLI_CRS_EVT_CNTR "get eventcntr"
-
-
 #define CLI_CRS_RESET "reset"
 
 /******************************************************************************
@@ -1139,13 +1136,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                CLI_startREAD();
                 }
 
-      if (memcmp(CLI_CRS_EVT_CNTR, line, sizeof(CLI_CRS_EVT_CNTR) - 1) == 0)
-               {
-          CLI_evtCntrParsing(line);
-//                  Agc_ledOn();
-              inputBad = false;
 
-               }
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
@@ -1775,39 +1766,6 @@ static CRS_retVal_t CLI_ledOffParsing(char *line)
 }
 
 
-
-static CRS_retVal_t CLI_evtCntrParsing(char *line)
-{
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_EVT_CNTR) + 2]), NULL,
-                                 16);
-#ifndef CLI_SENSOR
-
-    uint16_t addr = 0;
-    Cllc_getFfdShortAddr(&addr);
-    if (addr != shortAddr)
-    {
-        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = shortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-        if (stat != Collector_status_success)
-        {
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-
-//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-        return CRS_SUCCESS;
-    }
-#endif
-    uint16_t eventcntr=0;
-    CRS_retVal_t retStatus = Agc_evtCntrPrint(&eventcntr);
-    CLI_cliPrintf("\r\nevent Counter: 0x%x", eventcntr);
-    CLI_startREAD();
-    return retStatus;
-}
 
 static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
 {
@@ -5144,8 +5102,6 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
     //CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
-    CLI_printCommInfo(CLI_CRS_EVT_CNTR, strlen(CLI_CRS_EVT_CNTR), "[shortAddr]");
-
 
     //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
 
