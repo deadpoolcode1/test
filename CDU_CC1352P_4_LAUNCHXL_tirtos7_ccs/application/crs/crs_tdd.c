@@ -292,7 +292,7 @@ CRS_retVal_t Tdd_isLocked()
     }
     return CRS_SUCCESS;
 #endif
-
+    gIsLocked=Agc_getLock();
     if(gIsLocked){
         return CRS_SUCCESS;
     }else{

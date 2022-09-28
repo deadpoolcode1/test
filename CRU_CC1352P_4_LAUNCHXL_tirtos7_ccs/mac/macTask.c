@@ -59,7 +59,7 @@ typedef struct _Sensor_rssi_t
 uint16_t macEvents = 0;
 MAC_sensorInfo_t sensorPib = { 0 };
 static uint8_t gIsLocked = 0;
-
+static bool gIsTDDLocked=0;
 
 /******************************************************************************
  Local variables
@@ -353,7 +353,8 @@ static void discoveryCb(EasyLink_RxPacket *rxPacket,
 //        uint8_t buff[1200] = {0};
         RX_buildStructPacket(&pktRec, rxPacket->payload);
 
-        gIsLocked = pktRec.payload[0];
+//        gIsLocked = pktRec.payload[0];
+        gIsTDDLocked = pktRec.payload[0];
 
         CollectorLink_collectorLinkInfo_t collectorLink;
         CollectorLink_getCollector(&collectorLink);
@@ -509,7 +510,8 @@ bool MAC_createDiscovryInd(macMlmeDiscoveryInd_t *rsp, sAddrExt_t deviceAddress)
 {
     rsp->hdr.event = MAC_MLME_DISCOVERY_IND;
     memcpy(rsp->deviceAddress, deviceAddress, 8);
-    rsp->isLocked = gIsLocked;
+//    rsp->isLocked = gIsLocked;
+    rsp->isLocked = gIsTDDLocked;
     rsp->rssiRemote.rssiAvg = gRssiStrct.rssiAvg;
     rsp->rssiRemote.rssiLast = gRssiStrct.rssiLast;
     rsp->rssiRemote.rssiMax = gRssiStrct.rssiMax;

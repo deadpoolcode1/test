@@ -70,7 +70,8 @@ static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
 #ifdef CLI_SENSOR
 static uint16_t gCounterInc=0;
 static uint16_t gCounterDec=0;
-static bool gIsTDDLocked=0;
+static bool gIsTDDLocked;
+static bool gCruTDDLocked=0;
 #endif
 
 static void processAgcTimeoutCallback(UArg a0);
@@ -255,7 +256,9 @@ void Agc_process(void)
         if (gIsTDDLocked) {//if CDU sent a msg that it's locked, we will verify that the CRU is locked from the scif
             //if cruLock - gIsTDDLocked=lock
               if (scifTaskData.systemAgc.output.cruLock==0){
-                  gIsTDDLocked=false;
+                  gCruTDDLocked=false;
+              }else{
+                  gCruTDDLocked=true;
               }
           }
 #endif
@@ -779,7 +782,8 @@ bool Agc_getLock(){
     return true;
 #else
 
-    return gIsTDDLocked;
+//    return gIsTDDLocked;
+    return gCruTDDLocked;
 #endif
 }
 
