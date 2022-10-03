@@ -15,7 +15,7 @@
 #include "crs_global_defines.h"
 #include "application/crs/crs_cli.h"
 #include "easylink/EasyLink.h"
-#include <ti/drivers/PIN.h>
+//#include <ti/drivers/PIN.h>
 
 #define MAC_TASK_CLI_UPDATE_EVT 0x0001
 #define MAC_TASK_TX_DONE_EVT 0x0002

@@ -13,7 +13,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <xdc/runtime/System.h>
 #include <ti/sysbios/knl/Clock.h>
-#include <ti/drivers/PIN.h>
+//#include <ti/drivers/PIN.h>
 
 #include "macTask.h"
 #include "cp_cli.h"

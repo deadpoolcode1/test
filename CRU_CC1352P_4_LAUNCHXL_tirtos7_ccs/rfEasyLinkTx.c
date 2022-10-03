@@ -48,7 +48,7 @@
 #include <ti/sysbios/knl/Clock.h>
 
 /* TI-RTOS Header files */
-#include <ti/drivers/PIN.h>
+//#include <ti/drivers/PIN.h>
 
 /* Board Header files */
 #include "ti_drivers_config.h"

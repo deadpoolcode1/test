@@ -13,7 +13,7 @@
  *****************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
-#include <ti/drivers/PIN.h>
+//#include <ti/drivers/PIN.h>
 #include "ti_drivers_config.h"
 
 #include "mac/api_mac.h"

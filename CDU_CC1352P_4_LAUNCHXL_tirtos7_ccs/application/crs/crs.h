@@ -12,7 +12,7 @@
  *****************************************************************************/
 #include <stdint.h>
 #include <ti/drivers/Temperature.h>
-#include <ti/drivers/PIN.h>
+//#include <ti/drivers/PIN.h>
 #include "mac/mac_util.h"
 
 #include "ti_drivers_config.h"
@@ -68,7 +68,7 @@ typedef struct CRS_nameValue
     int32_t value;
 } CRS_nameValue_t;
 
-extern PIN_Handle Crs_pinHandle;
+//extern PIN_Handle Crs_pinHandle;
 
 
 typedef struct

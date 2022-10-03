@@ -3075,7 +3075,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         }
     }
 
-    CRS_retVal_t retStatus =  Agc_sample_debug();
+    CRS_retVal_t retStatus =0;  //Agc_sample_debug();
     AGC_results_t agcResults;
     if(retStatus == CRS_SUCCESS){
         agcResults = Agc_getResults();
