@@ -103,7 +103,6 @@
 #endif
 
 #define CLI_DEVICE "unit"
-
 #define CLI_LIST_ALARMS_LIST "alarms list"
 #define CLI_LIST_ALARMS_SET "alarms set"
 #define CLI_LIST_ALARMS_STOP "alarms stop"
@@ -128,6 +127,12 @@
 #define CLI_CRS_TDD_HOL "tdd set hol"
 #define CLI_CRS_TDD_ALLOC "tdd set alloc"
 #define CLI_CRS_TDD_FRAME "tdd set frame"
+#define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
+#define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
+
+
+
+
 #define CLI_CRS_TDD_TTG "tdd set ttg"
 #define CLI_CRS_TDD_RTG "tdd set rtg"
 #define CLI_CRS_TDD_CMD "tdd restart"
@@ -208,6 +213,7 @@
 
 #define CLI_CRS_RESET "reset"
 
+
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -260,6 +266,9 @@ static CRS_retVal_t CLI_tddSetSsPosParsing(char *line);
 static CRS_retVal_t CLI_tddSetHolParsing(char *line);
 static CRS_retVal_t CLI_tddSetFrameParsing(char *line);
 static CRS_retVal_t CLI_tddSetAllocParsing(char *line);
+static CRS_retVal_t CLI_tddSetDl1Parsing(char *line);
+static CRS_retVal_t CLI_tddSetPeriod1Parsing(char *line);
+
 static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
 static CRS_retVal_t CLI_tddCommandParsing(char *line);
@@ -863,6 +872,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
               inputBad = false;
           }
+
           if (memcmp(CLI_CRS_TDD_FRAME, line, sizeof(CLI_CRS_TDD_FRAME) - 1) == 0)
           {
 
@@ -870,6 +880,23 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
               inputBad = false;
           }
+
+          if (memcmp(CLI_CRS_TDD_PERIOD1, line, sizeof(CLI_CRS_TDD_PERIOD1) - 1) == 0)  // new
+          {
+
+              CLI_tddSetPeriod1Parsing(line);
+
+              inputBad = false;
+          }
+          if (memcmp(CLI_CRS_TDD_DL1, line, sizeof(CLI_CRS_TDD_DL1) - 1) == 0)  //new
+          {
+
+              CLI_tddSetDl1Parsing(line);
+
+              inputBad = false;
+          }
+
+
 
           if (memcmp(CLI_CRS_TDD_HOL, line, sizeof(CLI_CRS_TDD_HOL) - 1) == 0)
           {
@@ -2600,9 +2627,6 @@ static CRS_retVal_t CLI_tddSetAllocParsing(char *line)
             }
         #endif
 
-
-
-
             token = strtok(NULL, s);
             uint32_t alloc = strtoul(&(token[2]), NULL, 16);
 
@@ -2610,6 +2634,106 @@ static CRS_retVal_t CLI_tddSetAllocParsing(char *line)
             CRS_retVal_t retStatus = Tdd_setAllocationMode(alloc, tddCallback);
 
                     return retStatus;
+}
+
+/*
+ * this function returns a unsigned long shortaddr from given string
+ * of this template 0x0000000000000000
+   if not valid return 0
+*/
+static uint32_t MakeULFromHex(char *hex_str)
+{
+    return strtoul(&(hex_str[2]), NULL, 16);
+}
+
+
+// tdd set period1 [shortAddr] [time]
+static CRS_retVal_t CLI_tddSetPeriod1Parsing(char *line)    //new
+{
+    const char separtor[2] = " ";
+     char *token;
+     char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+
+     token = strtok(&(tmpBuff[strlen(CLI_CRS_TDD_PERIOD1) + 1]),separtor); // shortAddr
+     uint32_t shortAddr = MakeULFromHex(token);
+
+     //collector code
+#ifndef CLI_SENSOR
+     uint16_t addr = 0;
+     Cllc_getFfdShortAddr(&addr);
+     if (addr != shortAddr)
+     {
+         ApiMac_sAddr_t dstAddr;
+         dstAddr.addr.shortAddr = shortAddr;
+         dstAddr.addrMode = ApiMac_addrType_short;
+         Collector_status_t stat;
+         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+         if (stat != Collector_status_success)
+         {
+           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+           CLI_startREAD();
+         }
+         return CRS_SUCCESS;
+     }
+
+ #endif
+     //sensor code or if shortAddr is the collector
+     token = strtok(NULL, separtor); // time
+     uint32_t period1 = MakeULFromHex(token);
+     CRS_retVal_t retStatus = Tdd_setPeriod1(period1, tddCallback);
+     if(CRS_SUCCESS != retStatus)
+     {
+         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+         CLI_startREAD();
+     }
+
+     return retStatus;
+}
+
+// tdd set dl1 [shortAddr] [time]
+static CRS_retVal_t CLI_tddSetDl1Parsing(char *line)    //new
+{
+    const char separtor[2] = " ";
+     char *token;
+     char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+     token = strtok(&(tmpBuff[strlen(CLI_CRS_TDD_DL1) + 1]),separtor); // shortAddr
+     uint32_t shortAddr = MakeULFromHex(token);
+
+     //collector code
+#ifndef CLI_SENSOR
+     uint16_t addr = 0;
+     Cllc_getFfdShortAddr(&addr);
+     if (addr != shortAddr)
+     {
+         ApiMac_sAddr_t dstAddr;
+         dstAddr.addr.shortAddr = shortAddr;
+         dstAddr.addrMode = ApiMac_addrType_short;
+         Collector_status_t stat;
+         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+         if (stat != Collector_status_success)
+         {
+           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+           CLI_startREAD();
+         }
+         return CRS_SUCCESS;
+     }
+
+ #endif
+     //sensor code or if shortAddr is the collector
+     token = strtok(NULL, separtor); // time
+     uint32_t dl1 = MakeULFromHex(token);
+     if(0 == dl1)
+     {
+         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+         CLI_startREAD();
+         return CRS_FAILURE;
+     }
+
+     return Tdd_setDl1(dl1, tddCallback);
 }
 
 
@@ -3075,7 +3199,7 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
         }
     }
 
-    CRS_retVal_t retStatus =0;  //Agc_sample_debug();
+    CRS_retVal_t retStatus =  Agc_sample_debug();
     AGC_results_t agcResults;
     if(retStatus == CRS_SUCCESS){
         agcResults = Agc_getResults();
@@ -5084,7 +5208,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_TDD_STATUS, strlen(CLI_CRS_TDD_STATUS), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_TDD_SYNC_MODE, strlen(CLI_CRS_TDD_SYNC_MODE), "[shortAddr] [mode](0x0:Auto, 0x1:Manual)");
     CLI_printCommInfo(CLI_CRS_TDD_TTG, strlen(CLI_CRS_TDD_TTG), "[shortAddr] [val 1] [val 2] [val 3] [val 4](-0x80 to 0x7f)");
-
+    CLI_printCommInfo(CLI_CRS_TDD_PERIOD1, strlen(CLI_CRS_TDD_PERIOD1), "[shortAddr] [time]");
+    CLI_printCommInfo(CLI_CRS_TDD_DL1, strlen(CLI_CRS_TDD_DL1), "[shortAddr] [time]");
 
     CLI_printCommInfo(CLI_CRS_TRSH_FORMAT, strlen(CLI_CRS_TRSH_FORMAT), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_TRSH_LS, strlen(CLI_CRS_TRSH_LS), "[shortAddr] [key1 key2 ...]");

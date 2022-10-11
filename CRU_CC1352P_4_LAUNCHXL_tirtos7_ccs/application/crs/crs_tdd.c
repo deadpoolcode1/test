@@ -499,6 +499,99 @@ CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn)
     return CRS_SUCCESS;
 }
 
+CRS_retVal_t Tdd_setDl1(uint16_t frame, TDD_cbFn_t _cbFn)  // new
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+           //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+           TDD_cbArgs_t cbArgs;
+           cbArgs.arg0 = gUartTxBufferIdx;
+           cbArgs.arg3 =(char *) gUartTxBuffer;
+           cbArgs.status = CRS_FAILURE;
+           _cbFn(cbArgs);
+           return CRS_FAILURE;
+    }
+
+    Tdd_setRequest_t set = createRequest();
+    gFrame = frame;
+    set.dl1_us = &frame;
+
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+/*
+ * This function checks if given parameter param,
+ * is one of given values in given parameter array possible_vals
+ * @param param given val
+ * @param possible_vals array of possible values
+ * @param size size of array
+ * @return true - if parameter param is present in possible_vals
+ * false - otherwise
+ */
+static bool CheckValidInput(uint16_t param, uint16_t *possible_vals, uint16_t size)
+{
+    uint16_t i = 0;
+    for(i = 0; i < size; i++)
+    {
+        if(param == possible_vals[i])
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn)  // new
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+           //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+           TDD_cbArgs_t cbArgs;
+           cbArgs.arg0 = gUartTxBufferIdx;
+           cbArgs.arg3 =(char *) gUartTxBuffer;
+           cbArgs.status = CRS_FAILURE;
+           _cbFn(cbArgs);
+           return CRS_FAILURE;
+    }
+
+    Tdd_setRequest_t set = createRequest();
+    uint16_t possible_inputs [] = {
+                                  // ms0p5, ms0p625, ms1, ms1p25, ms2, ms2p5, ms5, ms10
+                                  500,
+                                  625,
+                                  1000,
+                                  1250,
+                                  2000,
+                                  2500,
+                                  5000,
+                                  10000
+    };
+    uint16_t size = 8;
+    bool isValidInput = CheckValidInput(period1, possible_inputs, size);
+    if(isValidInput)
+    {
+      set.pattern1_period = &period1;
+      gAlloc = period1;
+      uint8_t req[100] = { 0 };
+      makeRequest(set, req);
+
+      gFinalCbFn = _cbFn;
+      gInnerCbFn = printStatus;
+      sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+      return CRS_SUCCESS;
+    }
+
+    return CRS_FAILURE;
+}
+
+
 CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
