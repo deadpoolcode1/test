@@ -499,7 +499,7 @@ CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Tdd_setDl1(uint16_t frame, TDD_cbFn_t _cbFn)  // new
+CRS_retVal_t Tdd_setDl1(uint16_t time, TDD_cbFn_t _cbFn)  // new
 {
     if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
     {
@@ -513,8 +513,8 @@ CRS_retVal_t Tdd_setDl1(uint16_t frame, TDD_cbFn_t _cbFn)  // new
     }
 
     Tdd_setRequest_t set = createRequest();
-    gFrame = frame;
-    set.dl1_us = &frame;
+    gFrame = time; // TODO maybe change, legacy because of 4G methodology
+    set.dl1_us = &time;
 
     uint8_t req[100] = { 0 };
     makeRequest(set, req);
@@ -578,7 +578,7 @@ CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn)  // new
     if(isValidInput)
     {
       set.pattern1_period = &period1;
-      gAlloc = period1;
+      gAlloc = period1; // TODO maybe change, legacy because of 4G methodology
       uint8_t req[100] = { 0 };
       makeRequest(set, req);
 
