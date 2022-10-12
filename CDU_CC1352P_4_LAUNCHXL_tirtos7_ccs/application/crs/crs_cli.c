@@ -336,7 +336,7 @@ static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
-
+static uint32_t MakeULFromHex(char *hex_str);
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
 static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right);

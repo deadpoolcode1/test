@@ -170,7 +170,7 @@ void Agc_process(void)
     // Agc_process: get the samples, check for alarms, update interval.
     if (Agc_events & AGC_GET_SAMPLE_EVT){
 
-        Agc_sample();
+       Agc_sample();
         char envFile[4096]={0};
         // update cfg struct for next sample
         scifTaskData.systemAgc.cfg.tddMode = Agc_getMode();
@@ -607,6 +607,11 @@ CRS_retVal_t Agc_sample(){
         sprintf(gAgcMaxResults.IfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_IF][0]);
     }
     else{
+        //        // for now take only from channel 1 for testing
+        //        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
+        //        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
+        //        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
+        //        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
         strcpy(gAgcMaxResults.RfMaxDL, "N/A");
         strcpy(gAgcMaxResults.IfMaxDL, "N/A");
         gCurrentMaxResults[0] = 0xffffffff;
@@ -671,6 +676,8 @@ CRS_retVal_t Agc_sample(){
 
     return CRS_SUCCESS;
 }
+
+
 
 CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, AGC_ctrlPins_t* pins){
     /*
