@@ -480,7 +480,7 @@ static OADProtocol_Status_t oadRadioAccessPacketSend(void *pDstAddr,
         status=OADProtocol_Status_Success;
     }
     //free the memory allocated in oadRadioAccessAllocMsg
-    CRS_free(pMsg);
+    CRS_free(&pMsg);
 
     return status;
 }

@@ -301,7 +301,7 @@ void RF_process(void)
         }
         else
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
         }
