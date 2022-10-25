@@ -34,11 +34,18 @@ AgcInterval=1000"
 #endif
 
 /******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
+static CRS_retVal_t nvsInit();
+static CRS_retVal_t nvsClose();
+
+/******************************************************************************
  Local variables
  *****************************************************************************/
 
 static char * threshCache  = NULL;
 static NVS_Handle threshHandle;
+static bool gIsMoudleInit = false;
 
 /******************************************************************************
  Public Functions
@@ -46,7 +53,14 @@ static NVS_Handle threshHandle;
 
 CRS_retVal_t Thresh_restore()
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
+
     if(threshCache == NULL){
+        nvsClose();
+
         return CRS_FAILURE;
         //Thresh_init();
     }
@@ -66,30 +80,28 @@ CRS_retVal_t Thresh_restore()
         memcpy(threshCache, THRSH_FILE, sizeof(THRSH_FILE));
 
     }
-   return Vars_setFile(&threshHandle, threshCache);
+    CRS_retVal_t retStatus = Vars_setFile(&threshHandle, threshCache);
+   nvsClose();
+   return retStatus;
+
 
 }
 
 CRS_retVal_t Thresh_init(){
-    if (threshHandle == NULL)
-    {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        threshHandle = NVS_open(THRESH_NVS, &nvsParams);
 
-        if (threshHandle == NULL)
-        {
-            // CLI_cliPrintf("NVS_open() failed.\r\n");
-            return CRS_FAILURE;
-        }
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
 
     CRS_retVal_t status;
     int length = Vars_getLength(&threshHandle);
     if(length == -1){
         bool ret = Vars_createFile(&threshHandle);
         if(!ret){
+            nvsClose();
+
             return CRS_FAILURE;
         }
         length = 1;
@@ -99,18 +111,24 @@ CRS_retVal_t Thresh_init(){
         threshCache = CRS_calloc(length, sizeof(char));
         status = Vars_getFile(&threshHandle, threshCache);
     }
+    nvsClose();
 
     return status;
 }
 
 CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
 
-    if(threshCache == NULL){
-        Thresh_init();
+
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
     if(strlen(vars)){
         bool exists = Vars_getVars(threshCache, vars, returnedVars);
         if(!exists){
+            nvsClose();
+
             return CRS_FAILURE;
         }
     }
@@ -122,16 +140,21 @@ CRS_retVal_t Thresh_read(char *vars, char *returnedVars){
             }
         }
     }
+    nvsClose();
 
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Thresh_write(char *vars){
 
-    uint32_t length;
-    if(threshCache == NULL){
-        Thresh_init();
+
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
+    uint32_t length;
+
 
     NVS_Attrs threshRegionAttrs;
     NVS_getAttrs(threshHandle, &threshRegionAttrs);
@@ -140,6 +163,8 @@ CRS_retVal_t Thresh_write(char *vars){
     length = Vars_setFileVars(&threshHandle, threshCache, vars);
 
     threshCache = CRS_realloc(threshCache, length);
+    nvsClose();
+
 //    char filecopy [1024] = {0};
 //    NVS_read(threshHandle, 0, (void*) filecopy, 1024);
     return CRS_SUCCESS;
@@ -147,10 +172,12 @@ CRS_retVal_t Thresh_write(char *vars){
 
 CRS_retVal_t Thresh_delete(char *vars){
 
-    uint32_t length;
-    if(threshCache == NULL){
-        Thresh_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+    uint32_t length;
+
 
     NVS_Attrs threshRegionAttrs;
     NVS_getAttrs(threshHandle, &threshRegionAttrs);
@@ -158,26 +185,63 @@ CRS_retVal_t Thresh_delete(char *vars){
     threshCache = CRS_realloc(threshCache, threshRegionAttrs.regionSize);
     length = Vars_removeFileVars(&threshHandle, threshCache, vars);
     if(!length){
+        nvsClose();
+
         return CRS_FAILURE;
     }
     threshCache = CRS_realloc(threshCache, length);
+    nvsClose();
 
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Thresh_format(){
 
-    if (threshHandle == NULL)
+    if (nvsInit() != CRS_SUCCESS)
     {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        threshHandle = NVS_open(THRESH_NVS, &nvsParams);
+        return CRS_FAILURE;
     }
+
 
     bool ret = Vars_createFile(&threshHandle);
     CRS_free(threshCache);
     threshCache = CRS_calloc(1, sizeof(char));
+    nvsClose();
+
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t nvsInit()
+{
+    if (gIsMoudleInit == true)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_Params nvsParams;
+    NVS_Params_init(&nvsParams);
+
+    threshHandle = NVS_open(THRESH_NVS, &nvsParams);
+
+    if (threshHandle == NULL)
+    {
+
+        return (CRS_FAILURE);
+    }
+
+    gIsMoudleInit = true;
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t nvsClose()
+{
+    gIsMoudleInit = false;
+
+    if (threshHandle == NULL)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_close(threshHandle);
+    threshHandle = NULL;
     return CRS_SUCCESS;
 }
 
