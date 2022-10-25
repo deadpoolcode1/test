@@ -13,12 +13,18 @@
  *****************************************************************************/
 #include "crs.h"
 #include "crs_fpga.h"
+
+/******************************************************************************
+ Constants and definitions
+ *****************************************************************************/
+#define SPI_MSG_LENGTH  (10)
+
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
 
 CRS_retVal_t Fpga_tmpInit();
-CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, FPGA_cbFn_t _cbFn);
+CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t rsp[SPI_MSG_LENGTH]);
 CRS_retVal_t FPGA_getValFromBuf(uint8_t *buf, uint32_t* val);
 
 

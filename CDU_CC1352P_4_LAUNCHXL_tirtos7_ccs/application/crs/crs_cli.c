@@ -3749,7 +3749,7 @@ static CRS_retVal_t CLI_YardenParsing(char *line)
 
 #endif
    token = strtok(NULL, s);    //filename
-   CRS_retVal_t retStatus = Yarden_runFile((uint8_t*)token);
+   CRS_retVal_t retStatus = Yarden_runFile((uint8_t*)token, NULL);
    if (retStatus != CRS_SUCCESS)
    {
        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);

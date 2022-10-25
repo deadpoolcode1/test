@@ -25,7 +25,6 @@
  Constants and definitions
  *****************************************************************************/
 #define LINE_SIZE 30
-#define SPI_MSG_LENGTH  (10)
 
 /******************************************************************************
  Local variables
@@ -248,30 +247,22 @@ CRS_retVal_t Fpga_tmpInit()
 
 }
 
-CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t *rsp)
 {
 //    CLI_cliPrintf("\r\n%s", line);
     if (line == NULL   )
     {
-        FPGA_cbArgs_t cbArgs;
-        cbArgs.arg3 = gMasterRxBuffer;
-        _cbFn(cbArgs);
+
         return CRS_FAILURE;
     }
 
-    if (_cbFn == NULL)
-    {
-        return CRS_FAILURE;
-    }
 
 
 
     //maybe read reg a and see if there is a return.
     if (line[0] == '\r' && line[1] == 0)
     {
-        FPGA_cbArgs_t cbArgs;
-        cbArgs.arg3 = gMasterRxBuffer;
-        _cbFn(cbArgs);
+
         return CRS_SUCCESS;
     }
 
@@ -298,17 +289,17 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, FPGA_cbFn_t _cbFn)
 
         if (sendSpiBuf() != CRS_SUCCESS)
         {
-            FPGA_cbArgs_t cbArgs;
-            cbArgs.arg3 = gMasterRxBuffer;
-            _cbFn(cbArgs);
+
             return CRS_FAILURE;
         }
         token2 = strtok(NULL, d);
     }
 
-    FPGA_cbArgs_t cbArgs;
-    cbArgs.arg3 = gMasterRxBuffer;
-    _cbFn(cbArgs);
+    uint32_t val;
+
+    val = 0;
+    FPGA_getValFromBuf(gMasterRxBuffer, &val);
+
     return CRS_SUCCESS;
 
 }
