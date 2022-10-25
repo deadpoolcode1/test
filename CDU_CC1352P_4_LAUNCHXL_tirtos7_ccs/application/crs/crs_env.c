@@ -27,6 +27,13 @@
     #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0\nledMode=1"
 #endif
 
+
+/******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
+static CRS_retVal_t nvsInit();
+static CRS_retVal_t nvsClose();
+
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -34,6 +41,8 @@
 static char * envCache  = NULL;
 static NVS_Handle envHandle;
 static NVS_Attrs gRegionAttrs;
+static bool gIsMoudleInit = false;
+
 
 /******************************************************************************
  Public Functions
@@ -41,8 +50,13 @@ static NVS_Attrs gRegionAttrs;
 
 CRS_retVal_t Env_restore()
 {
-
+    if (nvsInit() != CRS_SUCCESS)
+        {
+            return CRS_FAILURE;
+        }
     if(envCache == NULL){
+        nvsClose();
+
         return CRS_FAILURE;
         //Env_init();
     }
@@ -64,25 +78,20 @@ CRS_retVal_t Env_restore()
         memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
 
     }
-   return Vars_setFile(&envHandle, envCache);
+    CRS_retVal_t retStatus = Vars_setFile(&envHandle, envCache);
+
+    nvsClose();
+
+   return retStatus;
 
 }
 
 CRS_retVal_t Env_init(){
 
-    if (envHandle == NULL)
-    {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        envHandle = NVS_open(ENV_NVS, &nvsParams);
-
-        if (envHandle == NULL)
+    if (nvsInit() != CRS_SUCCESS)
         {
-            // CLI_cliPrintf("NVS_open() failed.\r\n");
             return CRS_FAILURE;
         }
-    }
     /*
          * This will populate a NVS_Attrs structure with properties specific
          * to a NVS_Handle such as region base address, region size,
@@ -95,6 +104,8 @@ CRS_retVal_t Env_init(){
     if(length == -1){
         bool ret = Vars_createFile(&envHandle);
         if(!ret){
+            nvsClose();
+
             return CRS_FAILURE;
         }
         length = 1;
@@ -104,18 +115,23 @@ CRS_retVal_t Env_init(){
         envCache = CRS_calloc(length, sizeof(char));
         status = Vars_getFile(&envHandle, envCache);
     }
+    nvsClose();
 
     return status;
 }
 
 CRS_retVal_t Env_read(char *vars, char *returnedVars){
 
-    if(envCache == NULL){
-        Env_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
     if(strlen(vars)){
         bool exists = Vars_getVars(envCache, vars, returnedVars);
         if(!exists){
+            nvsClose();
+
             return CRS_FAILURE;
         }
     }
@@ -127,15 +143,19 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
             }
         }
     }
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Env_write(char *vars){
 
-    uint32_t length;
-    if(envCache == NULL){
-        Env_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
+    uint32_t length;
 
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
@@ -144,16 +164,19 @@ CRS_retVal_t Env_write(char *vars){
     length = Vars_setFileVars(&envHandle, envCache, vars);
 
     envCache = CRS_realloc(envCache, length);
+    nvsClose();
 
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Env_delete(char *vars){
 
-    uint32_t length;
-    if(envCache == NULL){
-        Env_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+    uint32_t length;
+
 
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
@@ -161,25 +184,64 @@ CRS_retVal_t Env_delete(char *vars){
     envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
     length = Vars_removeFileVars(&envHandle, envCache, vars);
     if(!length){
+        nvsClose();
+
         return CRS_FAILURE;
     }
     envCache = CRS_realloc(envCache, length);
+    nvsClose();
 
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Env_format(){
-    if (envHandle == NULL)
+    if (nvsInit() != CRS_SUCCESS)
     {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        envHandle = NVS_open(ENV_NVS, &nvsParams);
+        return CRS_FAILURE;
     }
 //    int_fast16_t retStatus = NVS_erase(envHandle, 0, gRegionAttrs.regionSize);
     bool ret = Vars_createFile(&envHandle);
     CRS_free(envCache);
     envCache = CRS_calloc(1, sizeof(char));
+    nvsClose();
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t nvsInit()
+{
+    if (gIsMoudleInit == true)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_Params nvsParams;
+    NVS_Params_init(&nvsParams);
+
+    envHandle = NVS_open(ENV_NVS, &nvsParams);
+
+    if (envHandle == NULL)
+    {
+
+        return (CRS_FAILURE);
+    }
+
+
+
+    gIsMoudleInit = true;
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t nvsClose()
+{
+    gIsMoudleInit = false;
+
+    if (envHandle == NULL)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_close(envHandle);
+    envHandle = NULL;
     return CRS_SUCCESS;
 }
 
