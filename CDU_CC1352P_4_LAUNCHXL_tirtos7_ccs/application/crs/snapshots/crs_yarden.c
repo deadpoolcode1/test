@@ -198,7 +198,7 @@ static CRS_retVal_t IfCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
-
+    CLI_cliPrintf("handling if command");
     char *param = NULL;
     char *comparedVal = NULL;
     char label[20] = { 0 };
@@ -238,6 +238,7 @@ static CRS_retVal_t GotoCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling goto command");
     const char sep [] = " ";
     char *token = MyStrTok (line, sep); // goto
     token = MyStrTok(NULL, sep);// label
@@ -252,6 +253,8 @@ static CRS_retVal_t CommentCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling comment command");
+
 
     return CRS_SUCCESS;
 }
@@ -262,6 +265,7 @@ static CRS_retVal_t ParamsCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling params command");
 
     // move after //@@_
     line += strlen(CMD_PARAM);
@@ -308,6 +312,7 @@ static CRS_retVal_t WCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling w command");
 
     //if its a global reg
     if (isGlobal(line))
@@ -347,6 +352,8 @@ static CRS_retVal_t RCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling r command");
+
 
     return CRS_SUCCESS;
 }
@@ -357,6 +364,8 @@ static CRS_retVal_t EWCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling ew command");
+
 
     char lineToSend[100] = { 0 };
     char lineTemp[100] = { 0 };
@@ -387,6 +396,8 @@ static CRS_retVal_t ERCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling er command");
+
     return CRS_SUCCESS;
 }
 
@@ -396,6 +407,8 @@ static CRS_retVal_t ApplyCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling apply command");
+
     return CRS_SUCCESS;
 }
 
@@ -405,6 +418,8 @@ static CRS_retVal_t LabelCommandHandler (char *line)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("handling label command");
+
     return CRS_SUCCESS;
 }
 
