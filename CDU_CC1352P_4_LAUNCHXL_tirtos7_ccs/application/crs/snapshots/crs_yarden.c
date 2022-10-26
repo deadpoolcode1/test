@@ -12,6 +12,7 @@
 #include "crs_yarden.h"
 #include "crs_cli.h"
 #include "crs_nvs.h"
+#include <ti/sysbios/knl/Task.h> // TODO erase at the end
 
 /******************************************************************************
  Constants and definitions
@@ -27,6 +28,7 @@
 #define CMD_ER  "er "
 #define CMD_APPLY  "apply"
 
+#define LINE_SEPARTOR   '\n'
 #define DECIMAL 10
 #define NOT_FOUND   -1
 #define ADDRESS_CONVERT_RATIO   4
@@ -60,7 +62,7 @@ typedef struct Label_index
 } Label_index_t;
 
 typedef CRS_retVal_t (*Line_Handler_fnx) (char*);
-static char *getNextLine(void);
+static CRS_retVal_t getNextLine(char *next_line);
 static CRS_retVal_t handleLine(char *line);
 static void free_gFileBuffer(void);
 static CRS_retVal_t CheckLineSyntax(char *line, enum command_type cmd);
@@ -80,7 +82,7 @@ static CRS_retVal_t getVal(char *line, char *ret);
 static bool isInvalidAddr(char *line);
 static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber);
 static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg);
-
+static CRS_retVal_t param_Init();
 
 // Command handlers
 static CRS_retVal_t IfCommandHandler (char *line);
@@ -116,7 +118,7 @@ static Line_Handler_fnx gFunctionsTable[CmdType_NUM_OF_COMMAND_TYPES] =
 };
 
 static char *gFileBuffer = NULL;
-static uint8_t gIdxOfFileBuffer = 0;
+static uint32_t gIdxOfFileBuffer = 0;
 static CRS_nameValue_t gNameValues[YARDEN_NAME_VALUES_SZ];
 static uint8_t gNameValuesIdx = 0;
 static uint16_t gGlobalReg[NUM_GLOBAL_REG] = { 0 };
@@ -133,27 +135,35 @@ CRS_retVal_t Yarden_init(void)
 }
 CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ])
 {
+    param_Init();
     // read the file using nvs
+    CLI_cliPrintf("\r\nrunning file %s", (char*)filename);
     gFileBuffer = Nvs_readFileWithMalloc((char*)filename);
     if (NULL == gFileBuffer)
     {
         return CRS_FAILURE;
     }
+    CLI_cliPrintf("\r\nfound file %s", (char*)filename);
 
-    char *line = getNextLine();
+    uint32_t len_of_file = strlen(gFileBuffer);
+
+    char line[300] = {0};
+
     CRS_retVal_t retStatus = CRS_SUCCESS;
-
-    while (NULL != line)
+    CLI_cliPrintf("\r\nline is %s",line);
+    do
     {
         // each line needs to get handled/translated and sent to FPGA
-        retStatus = handleLine(line);
-        if (CRS_SUCCESS != retStatus)
-        {
-//            do nothing
-        }
-
-        line = getNextLine();
-    }
+        memset(line, 0,sizeof(line));
+        getNextLine(line);
+        CLI_cliPrintf("\r\nline is %s",line);
+        Task_sleep(1000);
+//        retStatus = handleLine(line);
+//        if (CRS_SUCCESS != retStatus)
+//        {
+////            do nothing
+//        }
+    }while (gIdxOfFileBuffer < len_of_file);
 
     free_gFileBuffer();
     return retStatus;
@@ -163,10 +173,19 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
 /******************************************************************************
  Private Functions
  *****************************************************************************/
-static char *getNextLine(void)
+static CRS_retVal_t getNextLine(char *next_line)
 {
-    const char s[2] = "\n";
-    return MyStrTok(&(gFileBuffer[gIdxOfFileBuffer]), s);
+    char *ptr = &gFileBuffer[gIdxOfFileBuffer];
+    uint32_t len = 0;
+    while(*ptr != LINE_SEPARTOR && *ptr != 0)
+    {
+        ptr++;
+        len++;
+    }
+    memcpy(next_line, &gFileBuffer[gIdxOfFileBuffer],len);
+    gIdxOfFileBuffer += len + 1;
+
+    return CRS_SUCCESS;
 }
 
 static void free_gFileBuffer(void)
@@ -775,4 +794,12 @@ static char *MyStrTok(char *srcString,const char *delim)
 
 
 
-
+static CRS_retVal_t param_Init()
+{
+    gFileBuffer = NULL;
+    gIdxOfFileBuffer = 0;
+    memset(gNameValues,0,sizeof(gNameValues));
+    gNameValuesIdx = 0;
+    memset(gGlobalReg,0,sizeof(gGlobalReg));
+    memset(gLineMatrix,0,sizeof(gLineMatrix));
+}
