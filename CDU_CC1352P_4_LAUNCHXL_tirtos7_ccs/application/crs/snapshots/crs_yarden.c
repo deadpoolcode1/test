@@ -9,11 +9,13 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include <ctype.h> // isdigit
+#include <ti/sysbios/knl/Task.h> // TODO erase at the end
+
 #include "crs_yarden.h"
 #include "crs_cli.h"
 #include "crs_nvs.h"
-#include <ti/sysbios/knl/Task.h> // TODO erase at the end
-
+#include "crs_tmp.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -35,6 +37,7 @@
 #define LUT_REG_NUM 8
 #define NUM_GLOBAL_REG 4
 #define NUM_LUTS 4
+#define LINE_LENGTH 50
 
 #define GLOBAL_ADDR_START   0x3F
 #define GLOBAL_ADDR_FINAL   0x42
@@ -55,11 +58,6 @@ enum command_type
     CmdType_NUM_OF_COMMAND_TYPES
 };
 
-typedef struct Label_index
-{
-    char name [YARDEN_NAME_VALUES_SZ];
-    char *label_start;
-} Yarden_label_index_t;
 
 
 typedef struct wrStruct
@@ -67,6 +65,7 @@ typedef struct wrStruct
     char mode[5]; //w r ew er
     char addr[15]; //1a10601c
     char val [20]; // 0003
+    uint32_t finalAddr;
 } Yarden_wrContainer_t;
 
 typedef CRS_retVal_t (*Line_Handler_fnx) (char*);
@@ -95,6 +94,13 @@ static bool isInvalidAddr(Yarden_wrContainer_t *wrContainer);
 //static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber);
 static CRS_retVal_t getLutNumberFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutNumber);
 static CRS_retVal_t getLutRegFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutReg);
+static bool checkEquality(char *p1, char *p2);
+static bool isNumber(char* p);
+static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp);
+static CRS_retVal_t readLutReg(uint32_t regIdx, uint32_t lutIdx, uint32_t *rsp);
+static CRS_retVal_t readGlobalRegArray(void);
+static CRS_retVal_t readLineMatrix(void);
+static CRS_retVal_t printGlobalArrayAndLineMatrix(void);
 
 //static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg);
 static CRS_retVal_t paramInit();
@@ -154,9 +160,38 @@ CRS_retVal_t Yarden_init(void)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ])
+CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ], uint32_t chipNumber, uint32_t lineNumber)
 {
     paramInit();
+    char chipNumStr [LINE_LENGTH] = {0};
+    char lineNumStr[LINE_LENGTH] = {0};
+
+    sprintf(chipNumStr, "wr 0xff 0x%x\r", chipNumber);
+    sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
+
+
+    printGlobalArrayAndLineMatrix();
+
+    uint32_t rsp = 0;
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lineNumStr,&rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    if (CRS_SUCCESS != readGlobalRegArray())
+    {
+        return CRS_FAILURE;
+    }
+    if (CRS_SUCCESS != readLineMatrix())
+    {
+        return CRS_FAILURE;
+    }
+
     saveNameVals(nameVals);
 
     // read the file using nvs
@@ -177,7 +212,7 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
         memset(line, 0,sizeof(line));
         getNextLine(line);
         CLI_cliPrintf("\r\nline is %s",line);
-        Task_sleep(1000);
+        Task_sleep(5000);
         retStatus = handleLine(line);
         if (CRS_SUCCESS != retStatus)
         {
@@ -185,6 +220,7 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
         }
     }while (gIdxOfFileBuffer < lenOfFile);
 
+    printGlobalArrayAndLineMatrix();
     freeGFileBuffer();
     return retStatus;
 
@@ -238,33 +274,38 @@ static CRS_retVal_t ifCommandHandler (char *line)
         return CRS_FAILURE;
     }
     CLI_cliPrintf("handling if command");
-    char *param = NULL;
-    char *comparedVal = NULL;
+    char *comparedVal1 = NULL;
+    char *comparedVal2 = NULL;
     char label[20] = { 0 };
     const char sep [] = " ";
 
-    int32_t comparedValInt = 0;
+//    int32_t comparedValInt = 0;
     char *ptr = line;
 
     ptr += strlen(CMD_IF); // skip "if "
 
-    param = myStrTok(ptr, sep); // get param and skip "param "
-    CLI_cliPrintf("parameter is %s",param);
+    comparedVal1 = myStrTok(ptr, sep); // get param and skip "param "
+    CLI_cliPrintf("parameter is %s",comparedVal1);
 
     myStrTok(NULL, sep); // skip ==
-    comparedVal = myStrTok(NULL, sep); // get comparedVal and skip "comparedVal "
+    comparedVal2 = myStrTok(NULL, sep); // get comparedVal and skip "comparedVal "
 
-    int8_t idx = getParamIdx(param);
-    if (idx == NOT_FOUND)
-    {
-        return CRS_FAILURE;
-    }
-
-    comparedValInt = strtol(comparedVal, NULL, DECIMAL);
-    if(gNameValues[idx].value != comparedValInt) // if == is false
+    if (false == checkEquality(comparedVal1, comparedVal2))
     {
         return CRS_SUCCESS;
     }
+//
+//    int8_t idx = getParamIdx(param);
+//    if (idx == NOT_FOUND)
+//    {
+//        return CRS_FAILURE;
+//    }
+
+//    comparedValInt = strtol(comparedVal, NULL, DECIMAL);
+//    if(gNameValues[idx].value != comparedValInt) // if == is false
+//    {
+//        return CRS_SUCCESS;
+//    }
 
     myStrTok(NULL, sep); // skip "then"
     ptr = myStrTok(NULL, sep);
@@ -366,8 +407,8 @@ static CRS_retVal_t wCommandHandler (char *line)
 //        uint32_t addrVal = getAddress(line);
 
         uint32_t addrVal = 0;
-
-        char val [20] = {0};
+        addrVal = wrContainer.finalAddr;
+        char val [LINE_LENGTH] = {0};
 //        getVal(line, val);
         memcpy(val, wrContainer.val, sizeof(val));
         if (isStarValue(val))
@@ -376,7 +417,8 @@ static CRS_retVal_t wCommandHandler (char *line)
 
             return CRS_SUCCESS;
         }
-        gGlobalReg[addrVal - GLOBAL_ADDR_START] = strtoul(val, NULL, 16);
+        gGlobalReg[ addrVal - GLOBAL_ADDR_START ] = strtoul(val, NULL, 16);
+        CLI_cliPrintf("\r\n Inserting into globals, reg %x value %x",  addrVal - GLOBAL_ADDR_START , (uint32_t) gGlobalReg[ addrVal - GLOBAL_ADDR_START ]);
         return CRS_SUCCESS;
     }
 
@@ -394,7 +436,7 @@ static CRS_retVal_t wCommandHandler (char *line)
         return CRS_FAILURE;
     }
 
-    char val [20] = {0};
+    char val [LINE_LENGTH] = {0};
 //    getVal(line, val);
     memcpy(val, wrContainer.val, sizeof(val));
     if (isStarValue(val))
@@ -405,6 +447,7 @@ static CRS_retVal_t wCommandHandler (char *line)
     }
 
     gLineMatrix[lutNumber][lutReg] = strtoul(val, NULL, 16);
+    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)gLineMatrix[lutNumber][lutReg]);
 
     return CRS_SUCCESS;
 }
@@ -430,9 +473,9 @@ static CRS_retVal_t ewCommandHandler (char *line)
     CLI_cliPrintf("handling ew command");
 
 
-    char lineToSend[100] = { 0 };
-    char lineTemp[100] = { 0 };
-    memcpy(lineTemp, line, 100);
+    char lineToSend[LINE_LENGTH] = { 0 };
+    char lineTemp[LINE_LENGTH] = { 0 };
+    memcpy(lineTemp, line, LINE_LENGTH);
 
     lineToSend[0] = 'w';
     lineToSend[1] = 'r';
@@ -537,8 +580,9 @@ static int8_t getParamIdx(char *param)
 
 static bool isGlobal(Yarden_wrContainer_t *wrContainer)
 {
-    uint32_t addrVal = 0;
-    sscanf(wrContainer->addr, "%x", &addrVal);
+//    uint32_t addrVal = 0;
+//    sscanf(wrContainer->addr, "%x", &addrVal);
+    uint32_t addrVal = wrContainer->finalAddr;
 
     if (addrVal >= GLOBAL_ADDR_START && addrVal <= GLOBAL_ADDR_FINAL)
     {
@@ -655,9 +699,11 @@ static bool isGlobal(Yarden_wrContainer_t *wrContainer)
 static bool isInvalidAddr(Yarden_wrContainer_t *wrContainer)
 {
 
-    uint32_t addrVal = 0;
-    sscanf(wrContainer->addr, "%x", &addrVal);
-    if ((addrVal < 0x8 || addrVal > 0xf)
+    //    uint32_t addrVal = 0;
+    //    sscanf(wrContainer->addr, "%x", &addrVal);
+        uint32_t addrVal = wrContainer->finalAddr;
+
+    if ((addrVal < 0x8 || addrVal > 0x27)
             && (addrVal < GLOBAL_ADDR_START || addrVal > GLOBAL_ADDR_FINAL))
     {
         return true;
@@ -674,24 +720,37 @@ static bool isInvalidAddr(Yarden_wrContainer_t *wrContainer)
 
 static CRS_retVal_t getLutNumberFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutNumber)
 {
-    uint32_t addrVal = 0;
-    sscanf(wrContainer->addr, "%x", &addrVal);
+    //    uint32_t addrVal = 0;
+    //    sscanf(wrContainer->addr, "%x", &addrVal);
+        uint32_t addrVal = wrContainer->finalAddr;
 
-    if (addrVal < 0x8 || addrVal > 0x27)
-    {
-        return CRS_FAILURE;
-    }
+        if ((addrVal >= 0x8 && addrVal <= 0xf))
+        {
+            *lutNumber = 0;
+            return (CRS_SUCCESS);
 
-    if ((addrVal >= 0x26 && addrVal <= 0x27))
-    {
-        *lutNumber = 3;
-    }
-    else
-    {
-        *lutNumber = addrVal / 0x10;
-    }
+        }
 
-    return CRS_SUCCESS;
+        if ((addrVal >= 0x10 && addrVal <= 0x17))
+        {
+            *lutNumber = 1;
+            return (CRS_SUCCESS);
+        }
+
+        if ((addrVal >= 0x18 && addrVal <= 0x1f))
+        {
+            *lutNumber = 2;
+            return (CRS_SUCCESS);
+        }
+
+        if ((addrVal >= 0x26 && addrVal <= 0x27))
+        {
+            *lutNumber = 3;
+            return (CRS_SUCCESS);
+        }
+
+        return (CRS_FAILURE);
+
 }
 //static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber)
 //{
@@ -717,8 +776,9 @@ static CRS_retVal_t getLutNumberFromWRContainer(Yarden_wrContainer_t *wrContaine
 
 static CRS_retVal_t getLutRegFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutReg)
 {
-    uint32_t addrVal = 0;
-    sscanf(wrContainer->addr, "%x", &addrVal);
+    //    uint32_t addrVal = 0;
+    //    sscanf(wrContainer->addr, "%x", &addrVal);
+        uint32_t addrVal = wrContainer->finalAddr;
 
 
     if (addrVal >= 0x26)
@@ -727,7 +787,7 @@ static CRS_retVal_t getLutRegFromWRContainer(Yarden_wrContainer_t *wrContainer, 
     }
     else
     {
-        *lutReg = addrVal % 8;
+        *lutReg = addrVal % 8; //each lut length is 8
     }
 
     return CRS_SUCCESS;
@@ -993,9 +1053,9 @@ static CRS_retVal_t handleStarLut(uint32_t lutNumber, uint32_t lutReg, char *val
 }
 static CRS_retVal_t handleStarGlobal(uint32_t addrVal, char *val)
 {
-    uint32_t regVal = gGlobalReg[addrVal - GLOBAL_ADDR_START];
+    uint32_t regVal = gGlobalReg[ addrVal - GLOBAL_ADDR_START ];
     getStarValue(val, &regVal);
-    gGlobalReg[addrVal - GLOBAL_ADDR_START] = regVal;
+    gGlobalReg[ addrVal - GLOBAL_ADDR_START ] = regVal;
 
     return CRS_SUCCESS;
 }
@@ -1046,7 +1106,37 @@ static CRS_retVal_t initwrContainer(char *line, Yarden_wrContainer_t *ret)
         i++;
     }
 
+//    uint32_t fullAddr = 0;
+//    sscanf(ret->addr, "%x",&fullAddr);
+//
+////    uint32_t partAddr = 0;
+////    char partAddrStr [LINE_LENGTH] = {0};
+////    memcpy(partAddrStr, ret->addr, 5); // copy first 5 digits of addr
+////    sscanf(partAddrStr, "%x",&partAddr);
+////
+////    uint32_t addr = fullAddr - partAddr;
+//    char *finalAddrStr = ret->addr + 5;
+//    uint32_t addr = 0;
+//    sscanf(finalAddrStr, "%x",&addr);
+
+    uint32_t fullAddr = strtoul(ret->addr,NULL,16);
+    char partAddrStr [LINE_LENGTH] = {0};
+    memset(partAddrStr, '0', 8);
+
+    memcpy(partAddrStr, ret->addr, 5); // copy first 5 digits of addr
+    uint32_t partAddr =strtoul(partAddrStr, NULL, 16);
+    uint64_t addr = (fullAddr - partAddr)/4;
+
+   // addr /= ADDRESS_CONVERT_RATIO;
+    ret->finalAddr = addr;
+
+    if(0 == memcmp(ret->mode,"r", strlen("r")) || 0 == memcmp(ret->mode, "er", strlen("er")))
+    {
+        return CRS_SUCCESS;
+    }
+
     ptr ++; // skip space
+
 
     i = 0;
     ptr+=2; // skip 0x or 16 or 32
@@ -1057,5 +1147,227 @@ static CRS_retVal_t initwrContainer(char *line, Yarden_wrContainer_t *ret)
         i++;
     }
 
+    CLI_cliPrintf("mode is %s\r\n addr is %s\r\n val is %s final address is %d", ret->mode, ret->addr, ret->val, ret->finalAddr);
+    Task_sleep(1000);
     return CRS_SUCCESS;
 }
+
+static bool checkEquality(char *p1, char *p2)
+{
+    //check for both if they are numbers
+    bool isNumberP1 = isNumber(p1);
+    bool isNumberP2 = isNumber(p2);
+    if (isNumberP1 && isNumberP2)
+    {
+        //both are numbers
+        uint32_t numP1 = 0;
+        uint32_t numP2 = 0;
+
+        sscanf(p1, "%x", &numP1);
+        sscanf(p2, "%x", &numP2);
+
+        return numP1 == numP2;
+    }
+
+    else if (isNumberP1)
+    {
+        // p2 must be a parameter
+        int8_t idx = getParamIdx(p2);
+        if(NOT_FOUND == idx)
+        {
+            return false;
+        }
+
+        uint32_t numP1 = 0;
+        sscanf(p1, "%x", &numP1);
+
+
+        return gNameValues[idx].value == numP1;
+    }
+
+    else if (isNumberP2)
+    {
+        //p1 must be parameter
+        int8_t idx = getParamIdx(p1);
+        if(NOT_FOUND == idx)
+        {
+            return false;
+        }
+
+        uint32_t numP2 = 0;
+        sscanf(p2, "%x", &numP2);
+
+
+        return gNameValues[idx].value == numP2;
+    }
+
+    else
+    {
+        // both must be parameters
+        int8_t idxP1 = getParamIdx(p1);
+        if(NOT_FOUND == idxP1)
+        {
+            return false;
+        }
+
+        int8_t idxP2 = getParamIdx(p2);
+        if(NOT_FOUND == idxP2)
+        {
+            return false;
+        }
+
+        return gNameValues[idxP1].value == gNameValues[idxP2].value;
+    }
+
+}
+
+
+static bool isNumber(char* p)
+{
+    char *ptr = p;
+    if (ptr == NULL)
+    {
+        return false;
+    }
+
+    while(ptr != NULL && *ptr != 0 && *ptr != LINE_SEPARTOR)
+    {
+        if(!isdigit(*ptr))
+        {
+            return false;
+        }
+        ptr++;
+    }
+
+    return true;
+}
+
+
+
+static CRS_retVal_t readLutReg(uint32_t regIdx, uint32_t lutIdx, uint32_t *rsp)
+{
+    char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
+
+    sprintf(lines[0], "wr 0x50 0x3900%x%x\r", regIdx, lutIdx);
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[0], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    memcpy(lines[1], "wr 0x50 0x000001\r", strlen("wr 0x50 0x000001\r"));
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[1], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    memcpy(lines[2], "wr 0x50 0x000000\r", strlen("wr 0x50 0x000000\r"));
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[2], rsp))
+    {
+        return CRS_FAILURE;
+    }
+    memcpy(lines[3], "wr 0x51 0x510000\r", strlen("wr 0x51 0x510000\r"));
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[3], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    memcpy(lines[4], "rd 0x51\r", strlen("rd 0x51\r"));
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[4], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp)
+{
+    char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
+    sprintf(lines[0], "wr 0x51 0x%x0000\r", globalIdx + GLOBAL_ADDR_START);
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[0], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    memcpy(lines[1], "rd 0x51\r", strlen("rd 0x51\r"));
+    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[1], rsp))
+    {
+        return CRS_FAILURE;
+    }
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t readGlobalRegArray(void)
+{
+    uint32_t regIdx = 0;
+
+    for(regIdx = 0; regIdx < NUM_GLOBAL_REG; regIdx++)
+    {
+        uint32_t rsp = 0;
+        if (CRS_SUCCESS != readGlobalReg(regIdx, &rsp))
+        {
+            return CRS_FAILURE;
+        }
+        gGlobalReg[regIdx] = rsp;
+    }
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t readLineMatrix(void)
+{
+    uint32_t lutIdx = 0;
+    uint32_t regIdx = 0;
+
+    for (lutIdx = 0; lutIdx < NUM_LUTS; lutIdx ++)
+    {
+        for (regIdx = 0; regIdx < LUT_REG_NUM; regIdx++)
+        {
+            uint32_t rsp = 0;
+            if (CRS_SUCCESS != readLutReg(regIdx, lutIdx, &rsp))
+            {
+                return CRS_FAILURE;
+            }
+
+            gLineMatrix[lutIdx][regIdx] = rsp;
+        }
+    }
+
+    return CRS_SUCCESS;
+}
+
+
+
+
+
+
+static CRS_retVal_t printGlobalArrayAndLineMatrix(void)
+{
+    uint16_t i = 0;
+    CLI_cliPrintf("\r\nPrinting globals\r\n");
+    for (i = 0; i < NUM_GLOBAL_REG; i++)
+    {
+        CLI_cliPrintf("reg %x: %x, ",(uint32_t)i,(uint32_t)gGlobalReg[i]);
+    }
+
+    CLI_cliPrintf("\r\nPrinting Line Matrix\r\n");
+
+    uint16_t j = 0;
+    for (i = 0; i < NUM_LUTS; i++)
+    {
+        CLI_cliPrintf("\r\nlut %d:\r\n",i);
+        for (j = 0; j < LUT_REG_NUM; j++)
+        {
+            CLI_cliPrintf("reg %x: %x, ",(uint32_t)j,(uint32_t)gLineMatrix[i][j]);
+        }
+    }
+
+    return CRS_SUCCESS;
+}
+
+
+
+

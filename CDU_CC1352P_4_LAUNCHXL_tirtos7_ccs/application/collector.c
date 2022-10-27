@@ -32,6 +32,7 @@
 #include "agc/agc.h"
 #include "application/crs/crs_management.h"
 #include "oad/crs_oad.h"
+#include "crs_tmp.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -115,6 +116,7 @@ void Collector_init()
            (sizeof(Cllc_associated_devices_t) * CRS_GLOBAL_MAX_SENSORS));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
+    Fpga_tmpInit();
     Nvs_init(sem);
     Env_init();
     Thresh_init();
@@ -122,7 +124,7 @@ void Collector_init()
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);
     Config_configInit(sem);
-    Fpga_initSem(sem);
+    //Fpga_initSem(sem);
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();

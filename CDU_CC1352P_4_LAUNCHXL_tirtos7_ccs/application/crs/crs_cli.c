@@ -3752,34 +3752,61 @@ static CRS_retVal_t CLI_YardenParsing(char *line)
    char filename[FILENAME_SZ] = { 0 };
    memcpy(filename, token, strlen(token));
 
+   token = strtok(NULL, s); // chipNumber
+    if (token == NULL)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+    }
+    uint32_t chipNumber = 0;
+    sscanf(token, "%x", &chipNumber);
+
+    token = strtok(NULL, s); // lineNumber
+    if (token == NULL)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+    }
+    uint32_t lineNumber = 0;
+    sscanf(token, "%x", &lineNumber);
+
+
 
    token = strtok(NULL, s); //nameVals
    CRS_nameValue_t nameVals[NAME_VALUES_SZ] = {0};
    memset(nameVals,0,sizeof(CRS_nameValue_t)*NAME_VALUES_SZ);
-   if(token!=NULL)
+   if(token==NULL)
    {
-       char *ptr=token;
-                  int idx=0;
-                  while(*ptr){
-                      char value[NAMEVALUE_NAME_SZ] = { 0 };
-                      int j=0;
-                      while(*ptr!='='){
-                          nameVals[idx].name[j]=*ptr;
-                          j++;
-                          ptr++;
-                      }
-                      ptr++;//skip '='
-                      j=0;
-                      while(*ptr!=' ' && *ptr!=0){
-                                      value[j]=*ptr;
-                                     j++;
-                                     ptr++;
-                                 }
-                      nameVals[idx].value=strtol(value, NULL, 10);
-                      idx++;
-                      ptr++;//skip ' '
-                  }
+       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+       CLI_startREAD();
    }
+
+
+   char *ptr=token;
+   int idx=0;
+   while(*ptr)
+   {
+      char value[NAMEVALUE_NAME_SZ] = { 0 };
+      int j=0;
+      while(*ptr!='=')
+      {
+          nameVals[idx].name[j]=*ptr;
+          j++;
+          ptr++;
+      }
+      ptr++;//skip '='
+      j=0;
+      while(*ptr!=' ' && *ptr!=0)
+      {
+                      value[j]=*ptr;
+                     j++;
+                     ptr++;
+      }
+      nameVals[idx].value=strtol(value, NULL, 10);
+      idx++;
+      ptr++;//skip ' '
+   }
+
 
 
 //   CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
@@ -3802,7 +3829,7 @@ static CRS_retVal_t CLI_YardenParsing(char *line)
 
 //   token = strtok(NULL, s);    //filename
 
-   CRS_retVal_t retStatus = Yarden_runFile((uint8_t*)filename, nameVals);
+   CRS_retVal_t retStatus = Yarden_runFile((uint8_t*)filename, nameVals, chipNumber, lineNumber);
    if (retStatus != CRS_SUCCESS)
    {
        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -5339,7 +5366,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
 
     CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
-    CLI_printCommInfo(CLI_CRS_YARDEN, strlen(CLI_CRS_YARDEN), "[shortAddr] [filename] [params]");
+    CLI_printCommInfo(CLI_CRS_YARDEN, strlen(CLI_CRS_YARDEN), "[shortAddr] [filename] [chipNumber] [lineNumber] [params]");
 
     //CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");

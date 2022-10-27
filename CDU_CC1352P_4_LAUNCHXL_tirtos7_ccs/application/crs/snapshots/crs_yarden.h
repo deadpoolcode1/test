@@ -22,7 +22,7 @@
  Function Prototypes
  *****************************************************************************/
 CRS_retVal_t Yarden_init(void);
-CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ]);
+CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ], uint32_t chipNumber, uint32_t lineNumber);
 
 
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_YARDEN_H_ */

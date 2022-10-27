@@ -89,6 +89,9 @@ static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr);
 static void writeLutCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t convertLutRegDataToStr(uint32_t regIdx, uint32_t lutNumber,
                                            char *data);
+
+static CRS_retVal_t printGlobalArrayAndLineMatrix(void);
+
 static CRS_retVal_t writeGlobalsToFpga();
 static void writeGlobalsCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t convertGlobalRegDataToStr(uint32_t regIdx, char *data);
@@ -263,6 +266,7 @@ void RF_process(void)
         if (gGlobalIdx == NUM_GLOBAL_REG)
         {
             Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
+            printGlobalArrayAndLineMatrix();
             Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
             Semaphore_post(collectorSem);
             return;
@@ -393,6 +397,8 @@ static CRS_retVal_t runFile()
         memset(line, 0, 100);
 
     }
+    printGlobalArrayAndLineMatrix();
+
     return CRS_SUCCESS;
 
 }
@@ -849,6 +855,55 @@ static CRS_retVal_t runPrintCommand(char *line)
 //ptr+=2;//skip '" '
     return CRS_SUCCESS;
 }
+
+
+
+
+
+static CRS_retVal_t printGlobalArrayAndLineMatrix(void)
+{
+    uint16_t i = 0;
+    CLI_cliPrintf("\r\nPrinting globals\r\n");
+    for (i = 0; i < NUM_GLOBAL_REG; i++)
+    {
+        CLI_cliPrintf("reg %x: %x, ",(uint32_t)i,(uint32_t)gGlobalReg[i]);
+    }
+
+    CLI_cliPrintf("\r\nPrinting Line Matrix\r\n");
+
+    uint16_t j = 0;
+    for (i = 0; i < NUM_LUTS; i++)
+    {
+        CLI_cliPrintf("\r\nlut %d:\r\n",i);
+        for (j = 0; j < LUT_REG_NUM; j++)
+        {
+            CLI_cliPrintf("reg %x: %x, ",(uint32_t)j,(uint32_t)gLineMatrix[i][j]);
+        }
+    }
+
+    return CRS_SUCCESS;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static CRS_retVal_t writeGlobalsToFpga()
 {

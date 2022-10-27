@@ -24,7 +24,7 @@
  *****************************************************************************/
 
 CRS_retVal_t Fpga_tmpInit();
-CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t rsp[SPI_MSG_LENGTH]);
+CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t* rsp);
 CRS_retVal_t FPGA_getValFromBuf(uint8_t *buf, uint32_t* val);
 
 

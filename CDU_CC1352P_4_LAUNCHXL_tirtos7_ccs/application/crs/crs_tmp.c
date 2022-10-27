@@ -159,26 +159,34 @@ CRS_retVal_t Fpga_tmpInit()
 //    }
     uint32_t counter = 0;
     char tmp[30] = {0};
-
-    for (i = 0; i < 200; i+=2)
+//"wr 0xb 0x1\n"
+    for (i = 0; i < 10; i+=1)
     {
         CLI_cliPrintf("\r\n----------------START----------------");
+        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+           convertLineAsciToSpiFormat("wr 0xb 0x1", gMasterTxBuffer);
+
+           if (sendSpiBuf() != CRS_SUCCESS)
+           {
+               //        closeSpi();
+               return CRS_FAILURE;
+           }
         memset(tmp, 0, sizeof(tmp));
-        if (i % 3 == 0)
+       // if (i % 3 == 0)
         {
-            memcpy(tmp, "wr 0x0 0x", strlen("wr 0x0 0x"));
-        }
-        else if( i % 3 == 1)
-        {
-            memcpy(tmp, "wr 0x41 0x", strlen("wr 0x41 0x"));
+            memcpy(tmp, "wr 0xff 0x", strlen("wr 0xff 0x"));
+            sprintf(&(tmp[strlen(tmp)]), "%x", i);
 
         }
-        else
+       // else if( i % 3 == 1)
         {
-            memcpy(tmp, "wr 0x42 0x", strlen("wr 0x42 0x"));
 
         }
-        sprintf(&(tmp[strlen(tmp)]), "%x", i);
+    //    else
+        {
+            //memcpy(tmp, "wr 0x42 0x", strlen("wr 0x42 0x"));
+
+        }
 //        tmp[strlen(tmp)] = i;
         memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
         convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
@@ -188,7 +196,15 @@ CRS_retVal_t Fpga_tmpInit()
             //        closeSpi();
             return CRS_FAILURE;
         }
+        memcpy(tmp, "wr 0x50 0x71234", strlen("wr 0x50 0x71234"));
+        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+               convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
 
+               if (sendSpiBuf() != CRS_SUCCESS)
+               {
+                   //        closeSpi();
+                   return CRS_FAILURE;
+               }
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
 //        convertLineAsciToSpiFormat("wr 0x40 0x3", gMasterTxBuffer);
 //
@@ -208,20 +224,29 @@ CRS_retVal_t Fpga_tmpInit()
 //        }
         memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
 
-        if (i % 3 == 0)
-        {
-            convertLineAsciToSpiFormat("rd 0x0", gMasterTxBuffer);
-        }
-        else if (i % 3 == 1)
-        {
-            convertLineAsciToSpiFormat("rd 0x41", gMasterTxBuffer);
+//        if (i % 3 == 0)
+//        {
+//            convertLineAsciToSpiFormat("rd 0x0", gMasterTxBuffer);
+//        }
+//        else if (i % 3 == 1)
+//        {
+//            convertLineAsciToSpiFormat("rd 0x41", gMasterTxBuffer);
+//
+//        }
+//        else
+//        {
+//            convertLineAsciToSpiFormat("rd 0x42", gMasterTxBuffer);
+//
+//        }
+        convertLineAsciToSpiFormat("wr 0x51 0x70000", gMasterTxBuffer);
+        if (sendSpiBuf() != CRS_SUCCESS)
+                {
+                    //        closeSpi();
+                    return CRS_FAILURE;
+                }
+        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
 
-        }
-        else
-        {
-            convertLineAsciToSpiFormat("rd 0x42", gMasterTxBuffer);
-
-        }
+                    convertLineAsciToSpiFormat("rd 0x51", gMasterTxBuffer);
 
         if (sendSpiBuf() != CRS_SUCCESS)
         {
@@ -247,7 +272,7 @@ CRS_retVal_t Fpga_tmpInit()
 
 }
 
-CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t *rsp)
+CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 {
 //    CLI_cliPrintf("\r\n%s", line);
     if (line == NULL   )
@@ -278,6 +303,10 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t *rsp)
     {
 
         memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+        if (token2[strlen(token2)-1] == '\r')
+        {
+            token2[strlen(token2)-1] = 0;
+        }
         CRS_retVal_t retVal = convertLineAsciToSpiFormat(token2, gMasterTxBuffer);
         if (retVal != CRS_SUCCESS)
         {
@@ -299,7 +328,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint8_t *rsp)
 
     val = 0;
     FPGA_getValFromBuf(gMasterRxBuffer, &val);
-
+    *rsp = val;
     return CRS_SUCCESS;
 
 }
