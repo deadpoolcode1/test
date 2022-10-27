@@ -116,7 +116,7 @@ void Collector_init()
            (sizeof(Cllc_associated_devices_t) * CRS_GLOBAL_MAX_SENSORS));
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
-    Fpga_tmpInit();
+//    Fpga_tmpInit();
     Nvs_init(sem);
     Env_init();
     Thresh_init();
@@ -124,7 +124,7 @@ void Collector_init()
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);
     Config_configInit(sem);
-    //Fpga_initSem(sem);
+    Fpga_initSem(sem);
     DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
@@ -384,13 +384,13 @@ void Cllc_getFfdShortAddr(uint16_t *shortAddr)
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    if (Fpga_isOpen() == CRS_SUCCESS)
-    {
-        CRS_retVal_t retStatus = Config_runConfigFile("flat",
-                                                      fpgaCrsDoneCallback);
-
-    }
-    else
+//    if (Fpga_isOpen() == CRS_SUCCESS)
+//    {
+//        CRS_retVal_t retStatus = Config_runConfigFile("flat",
+//                                                      fpgaCrsDoneCallback);
+//
+//    }
+//    else
     {
         CLI_cliPrintf("\r\nUnable to run flat file");
         FPGA_cbArgs_t cbArgs={0};

@@ -170,7 +170,6 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
     sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
 
 
-    printGlobalArrayAndLineMatrix();
 
     uint32_t rsp = 0;
     if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
@@ -193,6 +192,7 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
     }
 
     saveNameVals(nameVals);
+    printGlobalArrayAndLineMatrix();
 
     // read the file using nvs
     gFileBuffer = Nvs_readFileWithMalloc((char*)filename);
@@ -1046,14 +1046,17 @@ static bool isStarValue(char *val)
 static CRS_retVal_t handleStarLut(uint32_t lutNumber, uint32_t lutReg, char *val)
 {
     uint32_t regVal = gLineMatrix[lutNumber][lutReg];
+    val += 2; // skip b'
     getStarValue(val, &regVal);
     gLineMatrix[lutNumber][lutReg] = regVal;
+    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)gLineMatrix[lutNumber][lutReg]);
 
     return CRS_SUCCESS;
 }
 static CRS_retVal_t handleStarGlobal(uint32_t addrVal, char *val)
 {
     uint32_t regVal = gGlobalReg[ addrVal - GLOBAL_ADDR_START ];
+    val += 2; // skip b'
     getStarValue(val, &regVal);
     gGlobalReg[ addrVal - GLOBAL_ADDR_START ] = regVal;
 
@@ -1063,6 +1066,7 @@ static CRS_retVal_t handleStarGlobal(uint32_t addrVal, char *val)
 
 static CRS_retVal_t getStarValue(char *val, uint32_t *regVal)
 {
+    CLI_cliPrintf("the line is %s", val);
     int i = 0;
     for (i = 0; i < 16; i++)
     {
@@ -1333,6 +1337,7 @@ static CRS_retVal_t readLineMatrix(void)
             }
 
             gLineMatrix[lutIdx][regIdx] = rsp;
+            Task_sleep(1000);
         }
     }
 
