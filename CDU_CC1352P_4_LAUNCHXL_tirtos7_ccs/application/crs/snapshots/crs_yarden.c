@@ -32,6 +32,7 @@
 
 #define LINE_SEPARTOR   '\n'
 #define DECIMAL 10
+#define HEXADECIMAL 16
 #define NOT_FOUND   -1
 #define ADDRESS_CONVERT_RATIO   4
 #define LUT_REG_NUM 8
@@ -68,21 +69,33 @@ typedef struct wrStruct
     uint32_t finalAddr;
 } Yarden_wrContainer_t;
 
-typedef CRS_retVal_t (*Line_Handler_fnx) (char*);
-static CRS_retVal_t getNextLine(char *next_line);
-static CRS_retVal_t handleLine(char *line);
-static void freeGFileBuffer(void);
-static CRS_retVal_t checkLineSyntax(char *line, enum command_type cmd);
+typedef struct parsingStruct
+{
+    CRS_nameValue_t parameters[YARDEN_NAME_VALUES_SZ];
+    uint8_t parametersIdx;
+    uint16_t globalRegArray[NUM_GLOBAL_REG];
+    uint16_t lineMatrix[NUM_LUTS][LUT_REG_NUM];
+    char *fileBuffer;
+    uint32_t idxOfFileBuffer;
+    uint32_t chipNumber;
+    uint32_t lineNumber;
+}Yarden_parsingContainer_t;
+
+typedef CRS_retVal_t (*Line_Handler_fnx) (Yarden_parsingContainer_t *, char*);
+static CRS_retVal_t getNextLine(Yarden_parsingContainer_t *parsingContainer, char *next_line);
+static CRS_retVal_t handleLine(Yarden_parsingContainer_t *parsingContainer, char *line);
+//static void freeGFileBuffer(void);
+static CRS_retVal_t checkLineSyntax(Yarden_parsingContainer_t *parsingContainer, char *line, enum command_type cmd);
 static char *myStrTok(char *srcString,const char *delim);
 static uint8_t isDelim(char c, const char *delim);
 
-static CRS_retVal_t gotoGivenLabel(char *label);
+static CRS_retVal_t gotoGivenLabel(Yarden_parsingContainer_t *parsingContainer, char *label);
 
 /* this function returns the index of given param in
  * global array,
  * if not found in array return NOT_FOUND (-1)
  */
-static int8_t getParamIdx(char *param);
+static int8_t getParamIdx(Yarden_parsingContainer_t *parsingContainer, char *param);
 //static bool isGlobal(char *line);
 static bool isGlobal(Yarden_wrContainer_t *wrContainer);
 
@@ -94,33 +107,45 @@ static bool isInvalidAddr(Yarden_wrContainer_t *wrContainer);
 //static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber);
 static CRS_retVal_t getLutNumberFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutNumber);
 static CRS_retVal_t getLutRegFromWRContainer(Yarden_wrContainer_t *wrContainer, uint32_t *lutReg);
-static bool checkEquality(char *p1, char *p2);
+static bool checkEquality(Yarden_parsingContainer_t *parsingContainer, char *p1, char *p2);
 static bool isNumber(char* p);
 static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp);
 static CRS_retVal_t readLutReg(uint32_t regIdx, uint32_t lutIdx, uint32_t *rsp);
-static CRS_retVal_t readGlobalRegArray(void);
-static CRS_retVal_t readLineMatrix(void);
-static CRS_retVal_t printGlobalArrayAndLineMatrix(void);
+static CRS_retVal_t readGlobalRegArray(Yarden_parsingContainer_t *parsingContainer);
+static CRS_retVal_t readLineMatrix(Yarden_parsingContainer_t *parsingContainer);
+static CRS_retVal_t printGlobalArrayAndLineMatrix(Yarden_parsingContainer_t *parsingContainer);
+
 
 //static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg);
-static CRS_retVal_t paramInit();
-static CRS_retVal_t saveNameVals(CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ]);
+//static CRS_retVal_t paramInit();
+static CRS_retVal_t saveNameVals(Yarden_parsingContainer_t *parsingContainer, CRS_nameValue_t givenNameVals[YARDEN_NAME_VALUES_SZ]);
 static bool isStarValue(char *val);
-static CRS_retVal_t handleStarLut(uint32_t lutNumber, uint32_t lutReg, char *val);
-static CRS_retVal_t handleStarGlobal(uint32_t addrVal, char *val);
+static CRS_retVal_t handleStarLut(Yarden_parsingContainer_t *parsingContainer, uint32_t lutNumber, uint32_t lutReg, char *val);
+static CRS_retVal_t handleStarGlobal(Yarden_parsingContainer_t *parsingContainer, uint32_t addrVal, char *val);
 static CRS_retVal_t getStarValue(char *val, uint32_t *regVal);
 static CRS_retVal_t initwrContainer(char *line, Yarden_wrContainer_t *ret);
+
+static CRS_retVal_t writeLutToFpga(Yarden_parsingContainer_t *parsingContainer,uint32_t lutNumber);
+static CRS_retVal_t convertLutRegDataToStr(Yarden_parsingContainer_t *parsingContainer, uint32_t regIdx, uint32_t lutNumber,
+                                           char *data);
+static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr);
+
+static CRS_retVal_t writeGlobalsToFpga(Yarden_parsingContainer_t *parsingContainer);
+static CRS_retVal_t convertGlobalRegDataToStr(Yarden_parsingContainer_t *parsingContainer, uint32_t regIdx, char *data);
+static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr);
+
+
 // Command handlers
-static CRS_retVal_t ifCommandHandler (char *line);
-static CRS_retVal_t gotoCommandHandler (char *line);
-static CRS_retVal_t commentCommandHandler (char *line);
-static CRS_retVal_t paramsCommandHandler (char *line);
-static CRS_retVal_t wCommandHandler (char *line);
-static CRS_retVal_t rCommandHandler (char *line);
-static CRS_retVal_t ewCommandHandler (char *line);
-static CRS_retVal_t erCommandHandler (char *line);
-static CRS_retVal_t applyCommandHandler (char *line);
-static CRS_retVal_t labelCommandHandler (char *line);
+static CRS_retVal_t ifCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t gotoCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t commentCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t paramsCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t wCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t rCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t ewCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t erCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t applyCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t labelCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line);
 
 
 
@@ -143,12 +168,7 @@ static Line_Handler_fnx gFunctionsTable[CmdType_NUM_OF_COMMAND_TYPES] =
  labelCommandHandler
 };
 
-static char *gFileBuffer = NULL;
-static uint32_t gIdxOfFileBuffer = 0;
-static CRS_nameValue_t gNameValues[YARDEN_NAME_VALUES_SZ] = {0};
-static uint8_t gNameValuesIdx = 0;
-static uint16_t gGlobalReg[NUM_GLOBAL_REG] = { 0 };
-static uint16_t gLineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
+
 
 
 /******************************************************************************
@@ -162,14 +182,26 @@ CRS_retVal_t Yarden_init(void)
 
 CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ], uint32_t chipNumber, uint32_t lineNumber)
 {
-    paramInit();
+    Yarden_parsingContainer_t parsingContainer = {0};
+    parsingContainer.chipNumber = chipNumber;
+    parsingContainer.lineNumber = lineNumber;
+
+//    CRS_nameValue_t parameters[YARDEN_NAME_VALUES_SZ] = {0};
+//    uint8_t parametersIdx = 0;
+//    uint16_t globalRegArray[NUM_GLOBAL_REG] = { 0 };
+//    uint16_t lineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
+//    char *fileBuffer = NULL;
+//    uint32_t idxOfFileBuffer = 0;
+
+
+//    paramInit();
     char chipNumStr [LINE_LENGTH] = {0};
     char lineNumStr[LINE_LENGTH] = {0};
 
     sprintf(chipNumStr, "wr 0xff 0x%x\r", chipNumber);
     sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
 
-
+    printGlobalArrayAndLineMatrix(&parsingContainer);
 
     uint32_t rsp = 0;
     if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
@@ -182,26 +214,28 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
         return CRS_FAILURE;
     }
 
-    if (CRS_SUCCESS != readGlobalRegArray())
+    if (CRS_SUCCESS != readGlobalRegArray(&parsingContainer))
     {
         return CRS_FAILURE;
     }
-    if (CRS_SUCCESS != readLineMatrix())
+    if (CRS_SUCCESS != readLineMatrix(&parsingContainer))
     {
         return CRS_FAILURE;
     }
 
-    saveNameVals(nameVals);
-    printGlobalArrayAndLineMatrix();
+    Task_sleep(4000);
+    saveNameVals(&parsingContainer,nameVals);
+    printGlobalArrayAndLineMatrix(&parsingContainer);
 
     // read the file using nvs
-    gFileBuffer = Nvs_readFileWithMalloc((char*)filename);
-    if (NULL == gFileBuffer)
+    parsingContainer.fileBuffer = Nvs_readFileWithMalloc((char*)filename);
+    if (NULL ==  parsingContainer.fileBuffer)
     {
+        CLI_cliPrintf("File not found\r\n");
         return CRS_FAILURE;
     }
 
-    uint32_t lenOfFile = strlen(gFileBuffer);
+    uint32_t lenOfFile = strlen(parsingContainer.fileBuffer);
 
     char line[300] = {0};
 
@@ -210,18 +244,29 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
     {
         // each line needs to get handled/translated and sent to FPGA
         memset(line, 0,sizeof(line));
-        getNextLine(line);
+        getNextLine(&parsingContainer,line);
         CLI_cliPrintf("\r\nline is %s",line);
         Task_sleep(5000);
-        retStatus = handleLine(line);
+        retStatus = handleLine(&parsingContainer, line);
         if (CRS_SUCCESS != retStatus)
         {
-//            do nothing
+//            CLI_cliPrintf("Syntax Error\r\n");
+//            return CRS_FAILURE;
         }
-    }while (gIdxOfFileBuffer < lenOfFile);
+    }while (parsingContainer.idxOfFileBuffer < lenOfFile);
 
-    printGlobalArrayAndLineMatrix();
-    freeGFileBuffer();
+    uint32_t i = 0;
+    for (i = 0; i < NUM_LUTS; i++)
+    {
+        writeLutToFpga(&parsingContainer, i);
+    }
+
+    writeGlobalsToFpga(&parsingContainer);
+    printGlobalArrayAndLineMatrix(&parsingContainer);
+
+    free (parsingContainer.fileBuffer);
+    parsingContainer.fileBuffer = NULL;
+
     return retStatus;
 
 }
@@ -229,35 +274,35 @@ CRS_retVal_t Yarden_runFile(uint8_t *filename, CRS_nameValue_t nameVals[YARDEN_N
 /******************************************************************************
  Private Functions
  *****************************************************************************/
-static CRS_retVal_t getNextLine(char *next_line)
+static CRS_retVal_t getNextLine(Yarden_parsingContainer_t *parsingContainer, char *next_line)
 {
-    char *ptr = &gFileBuffer[gIdxOfFileBuffer];
+    char *ptr = &parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer];
     uint32_t len = 0;
     while(*ptr != LINE_SEPARTOR && *ptr != 0)
     {
         ptr++;
         len++;
     }
-    memcpy(next_line, &gFileBuffer[gIdxOfFileBuffer],len);
-    gIdxOfFileBuffer += len + 1;
+    memcpy(next_line, &parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer],len);
+    parsingContainer->idxOfFileBuffer += len + 1;
 
     return CRS_SUCCESS;
 }
 
-static void freeGFileBuffer(void)
-{
-    free (gFileBuffer);
-    gFileBuffer = NULL;
+//static void freeGFileBuffer(void)
+//{
+//    free (gFileBuffer);
+//    gFileBuffer = NULL;
+//
+//}
 
-}
 
-
-static CRS_retVal_t handleLine(char *line)
+static CRS_retVal_t handleLine(Yarden_parsingContainer_t *parsingContainer, char *line)
 {
     uint8_t i = 0;
     for (i = 0; i < CmdType_NUM_OF_COMMAND_TYPES; i++)
     {
-        if(CRS_SUCCESS == gFunctionsTable[i](line))
+        if(CRS_SUCCESS == gFunctionsTable[i](parsingContainer, line))
         {
             return CRS_SUCCESS;
         }
@@ -267,9 +312,9 @@ static CRS_retVal_t handleLine(char *line)
 }
 
 //if param == comparedVal then label
-static CRS_retVal_t ifCommandHandler (char *line)
+static CRS_retVal_t ifCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_IF))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_IF))
     {
         return CRS_FAILURE;
     }
@@ -290,7 +335,7 @@ static CRS_retVal_t ifCommandHandler (char *line)
     myStrTok(NULL, sep); // skip ==
     comparedVal2 = myStrTok(NULL, sep); // get comparedVal and skip "comparedVal "
 
-    if (false == checkEquality(comparedVal1, comparedVal2))
+    if (false == checkEquality(parsingContainer, comparedVal1, comparedVal2))
     {
         return CRS_SUCCESS;
     }
@@ -311,14 +356,14 @@ static CRS_retVal_t ifCommandHandler (char *line)
     ptr = myStrTok(NULL, sep);
     strcat(label, CMD_GOTO);
     strcat(label, ptr); // label says: "goto 'label'"
-    gotoCommandHandler(label);// run goto command on this
+    gotoCommandHandler(parsingContainer, label);// run goto command on this
 
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t gotoCommandHandler (char *line)
+static CRS_retVal_t gotoCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_GOTO))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_GOTO))
     {
         return CRS_FAILURE;
     }
@@ -327,13 +372,13 @@ static CRS_retVal_t gotoCommandHandler (char *line)
     char *token = myStrTok (line, sep); // goto
     token = myStrTok(NULL, sep);// label
     CLI_cliPrintf("the label is %s",token);
-    gotoGivenLabel(token);
+    gotoGivenLabel(parsingContainer, token);
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t commentCommandHandler (char *line)
+static CRS_retVal_t commentCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_COMMENT))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_COMMENT))
     {
         return CRS_FAILURE;
     }
@@ -343,9 +388,9 @@ static CRS_retVal_t commentCommandHandler (char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t paramsCommandHandler (char *line)
+static CRS_retVal_t paramsCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_PARAMS))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_PARAMS))
     {
         return CRS_FAILURE;
     }
@@ -353,7 +398,6 @@ static CRS_retVal_t paramsCommandHandler (char *line)
 
     // move after //@@_
     line += strlen(CMD_PARAM);
-    line ++;
 
     const char param_keyword [] = "param";
     uint8_t size = 5;
@@ -368,31 +412,31 @@ static CRS_retVal_t paramsCommandHandler (char *line)
     char sep [] = ",";
     char *varName = myStrTok(line, sep);
 
-    int8_t idx = getParamIdx(varName);
+    int8_t idx = getParamIdx(parsingContainer, varName);
     if (idx != NOT_FOUND) // if param exists
     {
         return CRS_SUCCESS;
     }
 
     // if can't save new param
-    if (gNameValuesIdx == YARDEN_NAME_VALUES_SZ)
+    if (parsingContainer->parametersIdx == YARDEN_NAME_VALUES_SZ)
     {
         return CRS_FAILURE;
     }
 
-    memcpy(gNameValues[gNameValuesIdx].name,varName, NAMEVALUE_NAME_SZ);
+    memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name,varName, NAMEVALUE_NAME_SZ);
 
     char * varValue = myStrTok(NULL, sep);
-    gNameValues[gNameValuesIdx].value = strtol(varValue, NULL, DECIMAL);
-    gNameValuesIdx++;
+    parsingContainer->parameters[parsingContainer->parametersIdx].value = strtol(varValue, NULL, DECIMAL);
+    parsingContainer->parametersIdx++;
 
 
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t wCommandHandler (char *line)
+static CRS_retVal_t wCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_W))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_W))
     {
         return CRS_FAILURE;
     }
@@ -413,12 +457,13 @@ static CRS_retVal_t wCommandHandler (char *line)
         memcpy(val, wrContainer.val, sizeof(val));
         if (isStarValue(val))
         {
-            handleStarGlobal(addrVal, val);
+            handleStarGlobal(parsingContainer, addrVal, val);
 
             return CRS_SUCCESS;
         }
-        gGlobalReg[ addrVal - GLOBAL_ADDR_START ] = strtoul(val, NULL, 16);
-        CLI_cliPrintf("\r\n Inserting into globals, reg %x value %x",  addrVal - GLOBAL_ADDR_START , (uint32_t) gGlobalReg[ addrVal - GLOBAL_ADDR_START ]);
+        parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ] = strtoul(val, NULL, HEXADECIMAL);
+        CLI_cliPrintf("\r\n Inserting into globals, reg %x value %x",  addrVal - GLOBAL_ADDR_START , (uint32_t) parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ]);
+
         return CRS_SUCCESS;
     }
 
@@ -441,20 +486,20 @@ static CRS_retVal_t wCommandHandler (char *line)
     memcpy(val, wrContainer.val, sizeof(val));
     if (isStarValue(val))
     {
-        handleStarLut(lutNumber, lutReg, val);
+        handleStarLut(parsingContainer, lutNumber, lutReg, val);
 
         return CRS_SUCCESS;
     }
 
-    gLineMatrix[lutNumber][lutReg] = strtoul(val, NULL, 16);
-    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)gLineMatrix[lutNumber][lutReg]);
+    parsingContainer->lineMatrix[lutNumber][lutReg] = strtoul(val, NULL, HEXADECIMAL);
+    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)parsingContainer->lineMatrix[lutNumber][lutReg]);
 
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t rCommandHandler (char *line)
+static CRS_retVal_t rCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_R))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_R))
     {
         return CRS_FAILURE;
     }
@@ -464,9 +509,9 @@ static CRS_retVal_t rCommandHandler (char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t ewCommandHandler (char *line)
+static CRS_retVal_t ewCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_EW))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_EW))
     {
         return CRS_FAILURE;
     }
@@ -486,19 +531,20 @@ static CRS_retVal_t ewCommandHandler (char *line)
     token = myStrTok(NULL, s); //addr
     strcat(lineToSend, token);
     token = strtok(NULL, s); //param or val
-    int8_t idx = getParamIdx(token);
+    int8_t idx = getParamIdx(parsingContainer, token);
     if (NOT_FOUND == idx)
     {
         return CRS_FAILURE;
     }
     sprintf(lineToSend + strlen(lineToSend), " 0x%x",
-                            gNameValues[idx].value);
+            parsingContainer->parameters[idx].value);
+
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t erCommandHandler (char *line)
+static CRS_retVal_t erCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_ER))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_ER))
     {
         return CRS_FAILURE;
     }
@@ -507,9 +553,9 @@ static CRS_retVal_t erCommandHandler (char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t applyCommandHandler (char *line)
+static CRS_retVal_t applyCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_APPLY))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line, CmdType_APPLY))
     {
         return CRS_FAILURE;
     }
@@ -518,9 +564,9 @@ static CRS_retVal_t applyCommandHandler (char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t labelCommandHandler (char *line)
+static CRS_retVal_t labelCommandHandler (Yarden_parsingContainer_t *parsingContainer, char *line)
 {
-    if (CRS_SUCCESS != checkLineSyntax(line,CmdType_LABEL))
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line,CmdType_LABEL))
     {
         return CRS_FAILURE;
     }
@@ -529,10 +575,10 @@ static CRS_retVal_t labelCommandHandler (char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t gotoGivenLabel(char *label)
+static CRS_retVal_t gotoGivenLabel(Yarden_parsingContainer_t *parsingContainer, char *label)
 {
     strcat(label,":");
-    char *label_ptr = strstr(gFileBuffer, label); // label_ptr is on start of label name
+    char *label_ptr = strstr(parsingContainer->fileBuffer, label); // label_ptr is on start of label name
     if (NULL == label_ptr) // if label name is not found
     {
         return CRS_FAILURE;
@@ -545,18 +591,18 @@ static CRS_retVal_t gotoGivenLabel(char *label)
 
     label_ptr ++; // go to the line where the label starts
 
-    gIdxOfFileBuffer = label_ptr - gFileBuffer; // global index now on start of label
+    parsingContainer->idxOfFileBuffer = label_ptr - parsingContainer->fileBuffer; // global index now on start of label
 
     return CRS_SUCCESS;
 }
 
 
-static int8_t getParamIdx(char *param)
+static int8_t getParamIdx(Yarden_parsingContainer_t *parsingContainer, char *param)
 {
     uint8_t i = 0;
-    for(i = 0; i < gNameValuesIdx; i++)
+    for(i = 0; i < parsingContainer->parametersIdx; i++)
     {
-        if (0 == memcmp(gNameValues[i].name, param, strlen(param)))
+        if (0 == memcmp(parsingContainer->parameters[i].name, param, strlen(param)))
         {
             return i;
         }
@@ -808,7 +854,7 @@ static CRS_retVal_t getLutRegFromWRContainer(Yarden_wrContainer_t *wrContainer, 
 //    return CRS_SUCCESS;
 //}
 
-static CRS_retVal_t checkLineSyntax(char *line, enum command_type cmd)
+static CRS_retVal_t checkLineSyntax(Yarden_parsingContainer_t *parsingContainer, char *line, enum command_type cmd)
 {
     if (cmd == CmdType_COMMENT)
     {
@@ -833,7 +879,7 @@ static CRS_retVal_t checkLineSyntax(char *line, enum command_type cmd)
 
     else if (cmd == CmdType_LABEL)
     {
-        if(gFileBuffer[gIdxOfFileBuffer - 2] != ':') // next line - 1 (\n) -1 should be :
+        if(parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer - 2] != ':') // next line - 1 (\n) -1 should be :
         {
             return CRS_FAILURE;
         }
@@ -1006,27 +1052,28 @@ static char *myStrTok(char *srcString,const char *delim)
 
 
 
-static CRS_retVal_t paramInit()
+//static CRS_retVal_t paramInit()
+//{
+//    gFileBuffer = NULL;
+//    gIdxOfFileBuffer = 0;
+//    memset(gNameValues,0,sizeof(gNameValues));
+//    gNameValuesIdx = 0;
+//    memset(gGlobalReg,0,sizeof(gGlobalReg));
+//    memset(gLineMatrix,0,sizeof(gLineMatrix));
+//
+//    return CRS_SUCCESS;
+//}
+
+
+static CRS_retVal_t saveNameVals(Yarden_parsingContainer_t *parsingContainer, CRS_nameValue_t givenNameVals[YARDEN_NAME_VALUES_SZ])
 {
-    gFileBuffer = NULL;
-    gIdxOfFileBuffer = 0;
-    memset(gNameValues,0,sizeof(gNameValues));
-    gNameValuesIdx = 0;
-    memset(gGlobalReg,0,sizeof(gGlobalReg));
-    memset(gLineMatrix,0,sizeof(gLineMatrix));
-
-    return CRS_SUCCESS;
-}
-
-
-static CRS_retVal_t saveNameVals(CRS_nameValue_t nameVals[YARDEN_NAME_VALUES_SZ])
-{
-    memcpy(gNameValues,nameVals,YARDEN_NAME_VALUES_SZ * sizeof(CRS_nameValue_t));
-    CRS_nameValue_t *nameval_counter = &gNameValues[0];
-    while(nameval_counter != NULL && (*nameval_counter).name[0] != 0)
+    memcpy(parsingContainer->parameters,givenNameVals,YARDEN_NAME_VALUES_SZ * sizeof(CRS_nameValue_t));
+    CRS_nameValue_t *nameval_iterator = parsingContainer->parameters;
+    while(nameval_iterator != NULL && (*nameval_iterator).name[0] != 0)
     {
-        gNameValuesIdx++;
-        nameval_counter++;
+        parsingContainer->parametersIdx++;
+        nameval_iterator++;
+//        CLI_cliPrintf("param is %s with value %x\r\n", nameVals[nameValuesIdx].name, nameVals[nameValuesIdx].value);
     }
 
     return CRS_SUCCESS;
@@ -1043,22 +1090,22 @@ static bool isStarValue(char *val)
 
     return false;
 }
-static CRS_retVal_t handleStarLut(uint32_t lutNumber, uint32_t lutReg, char *val)
+static CRS_retVal_t handleStarLut(Yarden_parsingContainer_t *parsingContainer, uint32_t lutNumber, uint32_t lutReg, char *val)
 {
-    uint32_t regVal = gLineMatrix[lutNumber][lutReg];
+    uint32_t regVal =parsingContainer->lineMatrix[lutNumber][lutReg];
     val += 2; // skip b'
     getStarValue(val, &regVal);
-    gLineMatrix[lutNumber][lutReg] = regVal;
-    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)gLineMatrix[lutNumber][lutReg]);
+    parsingContainer->lineMatrix[lutNumber][lutReg] = regVal;
+    CLI_cliPrintf("\r\n Inserting into lut %d reg %d value %x", lutNumber, lutReg, (uint32_t)parsingContainer->lineMatrix[lutNumber][lutReg]);
 
     return CRS_SUCCESS;
 }
-static CRS_retVal_t handleStarGlobal(uint32_t addrVal, char *val)
+static CRS_retVal_t handleStarGlobal(Yarden_parsingContainer_t *parsingContainer, uint32_t addrVal, char *val)
 {
-    uint32_t regVal = gGlobalReg[ addrVal - GLOBAL_ADDR_START ];
+    uint32_t regVal = parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ];
     val += 2; // skip b'
     getStarValue(val, &regVal);
-    gGlobalReg[ addrVal - GLOBAL_ADDR_START ] = regVal;
+    parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ] = regVal;
 
     return CRS_SUCCESS;
 }
@@ -1156,7 +1203,7 @@ static CRS_retVal_t initwrContainer(char *line, Yarden_wrContainer_t *ret)
     return CRS_SUCCESS;
 }
 
-static bool checkEquality(char *p1, char *p2)
+static bool checkEquality(Yarden_parsingContainer_t *parsingContainer, char *p1, char *p2)
 {
     //check for both if they are numbers
     bool isNumberP1 = isNumber(p1);
@@ -1164,11 +1211,8 @@ static bool checkEquality(char *p1, char *p2)
     if (isNumberP1 && isNumberP2)
     {
         //both are numbers
-        uint32_t numP1 = 0;
-        uint32_t numP2 = 0;
-
-        sscanf(p1, "%x", &numP1);
-        sscanf(p2, "%x", &numP2);
+        uint32_t numP1 = strtoul(p1, NULL, DECIMAL);
+        uint32_t numP2 = strtoul(p2, NULL, DECIMAL);
 
         return numP1 == numP2;
     }
@@ -1176,51 +1220,49 @@ static bool checkEquality(char *p1, char *p2)
     else if (isNumberP1)
     {
         // p2 must be a parameter
-        int8_t idx = getParamIdx(p2);
+        int8_t idx = getParamIdx(parsingContainer, p2);
         if(NOT_FOUND == idx)
         {
             return false;
         }
 
-        uint32_t numP1 = 0;
-        sscanf(p1, "%x", &numP1);
+        uint32_t numP1 = strtoul(p1, NULL, DECIMAL);
 
 
-        return gNameValues[idx].value == numP1;
+        return parsingContainer->parameters[idx].value == numP1;
     }
 
     else if (isNumberP2)
     {
         //p1 must be parameter
-        int8_t idx = getParamIdx(p1);
+        int8_t idx = getParamIdx(parsingContainer, p1);
         if(NOT_FOUND == idx)
         {
             return false;
         }
 
-        uint32_t numP2 = 0;
-        sscanf(p2, "%x", &numP2);
+        uint32_t numP2 = strtoul(p2, NULL, DECIMAL);
 
 
-        return gNameValues[idx].value == numP2;
+        return parsingContainer->parameters[idx].value == numP2;
     }
 
     else
     {
         // both must be parameters
-        int8_t idxP1 = getParamIdx(p1);
+        int8_t idxP1 = getParamIdx(parsingContainer, p1);
         if(NOT_FOUND == idxP1)
         {
             return false;
         }
 
-        int8_t idxP2 = getParamIdx(p2);
+        int8_t idxP2 = getParamIdx(parsingContainer, p2);
         if(NOT_FOUND == idxP2)
         {
             return false;
         }
 
-        return gNameValues[idxP1].value == gNameValues[idxP2].value;
+        return parsingContainer->parameters[idxP1].value == parsingContainer->parameters[idxP2].value;
     }
 
 }
@@ -1232,6 +1274,11 @@ static bool isNumber(char* p)
     if (ptr == NULL)
     {
         return false;
+    }
+
+    if (*ptr == '-' || *ptr == '+')
+    {
+        ptr++;
     }
 
     while(ptr != NULL && *ptr != 0 && *ptr != LINE_SEPARTOR)
@@ -1303,7 +1350,7 @@ static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp)
 }
 
 
-static CRS_retVal_t readGlobalRegArray(void)
+static CRS_retVal_t readGlobalRegArray(Yarden_parsingContainer_t *parsingContainer)
 {
     uint32_t regIdx = 0;
 
@@ -1314,14 +1361,14 @@ static CRS_retVal_t readGlobalRegArray(void)
         {
             return CRS_FAILURE;
         }
-        gGlobalReg[regIdx] = rsp;
+        parsingContainer->globalRegArray[regIdx] = rsp;
     }
 
     return CRS_SUCCESS;
 }
 
 
-static CRS_retVal_t readLineMatrix(void)
+static CRS_retVal_t readLineMatrix(Yarden_parsingContainer_t *parsingContainer)
 {
     uint32_t lutIdx = 0;
     uint32_t regIdx = 0;
@@ -1336,7 +1383,7 @@ static CRS_retVal_t readLineMatrix(void)
                 return CRS_FAILURE;
             }
 
-            gLineMatrix[lutIdx][regIdx] = rsp;
+            parsingContainer->lineMatrix[lutIdx][regIdx] = rsp;
             Task_sleep(1000);
         }
     }
@@ -1349,13 +1396,13 @@ static CRS_retVal_t readLineMatrix(void)
 
 
 
-static CRS_retVal_t printGlobalArrayAndLineMatrix(void)
+static CRS_retVal_t printGlobalArrayAndLineMatrix(Yarden_parsingContainer_t *parsingContainer)
 {
     uint16_t i = 0;
     CLI_cliPrintf("\r\nPrinting globals\r\n");
     for (i = 0; i < NUM_GLOBAL_REG; i++)
     {
-        CLI_cliPrintf("reg %x: %x, ",(uint32_t)i,(uint32_t)gGlobalReg[i]);
+        CLI_cliPrintf("reg %x: %x, ",(uint32_t)i,(uint32_t)parsingContainer->globalRegArray[i]);
     }
 
     CLI_cliPrintf("\r\nPrinting Line Matrix\r\n");
@@ -1366,13 +1413,148 @@ static CRS_retVal_t printGlobalArrayAndLineMatrix(void)
         CLI_cliPrintf("\r\nlut %d:\r\n",i);
         for (j = 0; j < LUT_REG_NUM; j++)
         {
-            CLI_cliPrintf("reg %x: %x, ",(uint32_t)j,(uint32_t)gLineMatrix[i][j]);
+            CLI_cliPrintf("reg %x: %x, ",(uint32_t)j,(uint32_t)parsingContainer->lineMatrix[i][j]);
         }
     }
 
     return CRS_SUCCESS;
 }
 
+
+
+
+
+static CRS_retVal_t writeLutToFpga(Yarden_parsingContainer_t *parsingContainer,uint32_t lutNumber)
+{
+    char *startSeq = "wr 0x50 0x430000\nwr 0x50 0x000001\nwr 0x50 0x000000";
+    char endSeq[100] = { 0 };
+    sprintf(endSeq, "\nwr 0x50 0x430%x0%x\nwr 0x50 0x000001\nwr 0x50 0x000000",
+            parsingContainer->lineNumber, (1 << lutNumber));
+    char lines[600] = { 0 };
+    memcpy(lines, startSeq, strlen(startSeq));
+    int x = 0;
+    for (x = 0; x < 8; x++)
+    {
+        char addr[11] = { 0 };
+        char val[11] = { 0 };
+
+        convertLutRegToAddrStr(x, addr);
+        convertLutRegDataToStr(parsingContainer, x, lutNumber, val);
+        sprintf(&lines[strlen(lines)], "\nwr 0x50 0x%s%s", addr, val);
+    }
+    sprintf(&lines[strlen(lines)], "%s", endSeq);
+
+    uint32_t rsp = 0;
+    Fpga_tmpWriteMultiLine(lines, &rsp);
+
+    return (CRS_SUCCESS);
+
+}
+
+
+
+
+static CRS_retVal_t convertLutRegDataToStr(Yarden_parsingContainer_t *parsingContainer, uint32_t regIdx, uint32_t lutNumber,
+                                           char *data)
+{
+    char valStr[10] = { 0 };
+    memset(valStr, '0', 4);
+    uint16_t val = parsingContainer->lineMatrix[lutNumber][regIdx];
+    char tmp[11] = { 0 };
+    sprintf(tmp, "%x", val);
+    sprintf(&valStr[4 - strlen(tmp)], "%s", tmp);
+    memcpy(data, valStr, 4);
+    return (CRS_SUCCESS);
+}
+
+static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr)
+{
+    switch (regIdx)
+    {
+    case 0:
+        memcpy(addr, "44", 2);
+        break;
+    case 1:
+        memcpy(addr, "45", 2);
+        break;
+    case 2:
+        memcpy(addr, "46", 2);
+        break;
+    case 3:
+        memcpy(addr, "47", 2);
+        break;
+    case 4:
+        memcpy(addr, "48", 2);
+        break;
+    case 5:
+        memcpy(addr, "49", 2);
+        break;
+    case 6:
+        memcpy(addr, "4a", 2);
+        break;
+    case 7:
+        memcpy(addr, "4b", 2);
+        break;
+    }
+    return (CRS_SUCCESS);
+}
+
+
+static CRS_retVal_t writeGlobalsToFpga(Yarden_parsingContainer_t *parsingContainer)
+{
+
+    char lines[LINE_LENGTH * 12] = { 0 };
+    int x = 0;
+    for (x = 0; x < NUM_GLOBAL_REG; x++)
+    {
+        char addr[LINE_LENGTH] = { 0 };
+        char val[LINE_LENGTH] = { 0 };
+
+        convertGlobalRegToAddrStr(x, addr);
+        convertGlobalRegDataToStr(parsingContainer, x, val);
+        sprintf(&lines[strlen(lines)], "wr 0x50 0x%s%s\n", addr, val);
+    }
+    lines[strlen(lines) - 1] = 0;
+
+    uint32_t rsp = 0;
+    Fpga_tmpWriteMultiLine(lines, &rsp);
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t convertGlobalRegDataToStr(Yarden_parsingContainer_t *parsingContainer, uint32_t regIdx, char *data)
+{
+    char valStr[10] = { 0 };
+    memset(valStr, '0', 4);
+    uint16_t val = parsingContainer->globalRegArray[regIdx];
+    char tmp[11] = { 0 };
+    sprintf(tmp, "%x", val);
+    sprintf(&valStr[4 - strlen(tmp)], "%s", tmp);
+    memcpy(data, valStr, 4);
+    return (CRS_SUCCESS);
+}
+
+static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr)
+{
+    switch (regIdx)
+    {
+    case 0:
+        memcpy(addr, "3f", 2);
+        break;
+    case 1:
+        memcpy(addr, "40", 2);
+        break;
+    case 2:
+        memcpy(addr, "41", 2);
+        break;
+    case 3:
+        memcpy(addr, "42", 2);
+        break;
+
+    }
+    return (CRS_SUCCESS);
+}
 
 
 

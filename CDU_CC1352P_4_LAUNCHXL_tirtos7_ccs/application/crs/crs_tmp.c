@@ -274,6 +274,10 @@ CRS_retVal_t Fpga_tmpInit()
 
 CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 {
+#ifndef CRS_TMP_SPI
+    return CRS_FAILURE;
+
+#endif
 //    CLI_cliPrintf("\r\n%s", line);
     if (line == NULL   )
     {

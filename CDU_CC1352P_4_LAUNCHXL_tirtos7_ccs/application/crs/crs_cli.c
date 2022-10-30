@@ -522,6 +522,11 @@ if(restartMsg){
 #else
         CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
 #endif
+#ifndef CRS_TMP_SPI
+        CLI_writeString(" No SPI", sizeof(" No SPI"));
+
+
+#endif
 }
 //        CLI_writeString(CLI_PROMPT, sizeof(CLI_PROMPT));
         return CRS_SUCCESS;

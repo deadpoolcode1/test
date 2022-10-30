@@ -124,7 +124,10 @@ CRS_retVal_t Fpga_initSem(void *sem)
 
 CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
 {
-//    return CRS_FAILURE;
+#ifdef CRS_TMP_SPI
+
+    return CRS_FAILURE;
+#endif
 
     if (gUartHandle != NULL)
     {
