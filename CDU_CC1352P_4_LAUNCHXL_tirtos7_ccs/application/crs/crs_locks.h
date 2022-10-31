@@ -14,12 +14,17 @@
 #include "crs.h"
 
 /******************************************************************************
+ Definitions
+ *****************************************************************************/
+typedef void (*Locks_checkLocksCB)(void);
+
+/******************************************************************************
  Function Prototypes
  *****************************************************************************/
 
 CRS_retVal_t Locks_init(void *sem);
 CRS_retVal_t Locks_process(void);
-void Locks_checkLocks(void);
+void Locks_checkLocks(Locks_checkLocksCB cb);
 #ifndef CLI_SENSOR
 bool Locks_getTddLockVal(void);
 #else

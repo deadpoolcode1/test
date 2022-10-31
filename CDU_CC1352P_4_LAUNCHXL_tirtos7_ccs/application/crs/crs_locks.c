@@ -85,6 +85,7 @@ static bool gGettersArray[lockType_numOfLockTypes] = {
      true
 };
 
+static Locks_checkLocksCB gCallBack = NULL;
 
 #ifndef CLI_SENSOR
 static CRS_retVal_t writeToTddLockReg(void);
@@ -108,6 +109,7 @@ static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs);
 static void processLocksTimeoutCallback(UArg a0);
 static void setLocksClock(uint32_t locksTime);
 static CRS_retVal_t valsInit(void);
+static void startCheckingLocks(void);
 
 
 static locks_WriteFpgafxn gFpgaWriteFunctionsTable [lockType_numOfLockTypes] =
@@ -145,7 +147,7 @@ CRS_retVal_t Locks_init(void *sem)
                                         0,
                                         false,
                                         0);
-    setLocksClock(30 * ONE_SECOND);
+    setLocksClock(5 * ONE_SECOND);
 
     return CRS_SUCCESS;
 
@@ -154,14 +156,16 @@ CRS_retVal_t Locks_process(void)
 {
 if (Locks_events & LOCKS_CHECKLOCK_EV)
 {
-    valsInit();
-    AGCM_runTask(Locks_checkLocks);
+//    CLI_cliPrintf("\r\nLOCKS_CHECKLOCK_EV");
+    AGCM_runTask(startCheckingLocks);
 
     Util_clearEvent(&Locks_events, LOCKS_CHECKLOCK_EV);
 }
 
 if (Locks_events & LOCKS_READ_NEXT_REG_EV)
 {
+//    CLI_cliPrintf("\r\nLOCKS_READ_NEXT_REG_EV");
+
     MoveIdxToNextLockIdx();
 
     Util_clearEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
@@ -171,8 +175,18 @@ if (Locks_events & LOCKS_FINISH_READING_REG_EV)
 {
     setAlarms();
     // fix unlockness
-    AGCM_finishedTask();
-    setLocksClock(30 * ONE_SECOND);
+    if (NULL != gCallBack)
+    {
+//        CLI_cliPrintf("\r\nfinished cli call");
+        gCallBack();
+        gCallBack = NULL;
+    }
+    else
+    {
+//        CLI_cliPrintf("\r\nfinished clock round");
+        AGCM_finishedTask();
+        setLocksClock(30 * ONE_SECOND);
+    }
 
     Util_clearEvent(&Locks_events, LOCKS_FINISH_READING_REG_EV);
 }
@@ -187,10 +201,19 @@ if(Locks_events & LOCKS_OPEN_FAIL_EV)
 
 return CRS_SUCCESS;
 }
-void Locks_checkLocks(void)
-{
-    gFpgaWriteFunctionsTable[gLocksIdx]();
 
+
+void Locks_checkLocks(Locks_checkLocksCB cb)
+{
+    gCallBack = cb;
+    startCheckingLocks();
+}
+
+
+static void startCheckingLocks(void)
+{
+    valsInit();
+    gFpgaWriteFunctionsTable[gLocksIdx]();
 }
 
 
@@ -287,7 +310,7 @@ void MoveIdxToNextLockIdx(void)
 static void processLocksTimeoutCallback(UArg a0)
 {
 
-    Util_setEvent(&Locks_events, LOCKS_OPEN_FAIL_EV);
+    Util_setEvent(&Locks_events, LOCKS_CHECKLOCK_EV);
 
     Semaphore_post(collectorSem);
 
@@ -366,20 +389,37 @@ static CRS_retVal_t writeToTiLockReg(void)
 #ifndef CLI_SENSOR
 static CRS_retVal_t saveTddLockStatus(uint32_t val)
 {
-    gLockChecker[lockType_tddLock] = val;
-    bool isLocked = gLockChecker[lockType_tddLock] == lockStatus_Locked;
-    gGettersArray[lockType_tddLock] = isLocked;
+    bool isLocked = val != lockStatus_Unlocked;
 
+    if (isLocked)
+    {
+     gLockChecker[lockType_tddLock] = lockStatus_Locked;
+    }
+    else
+    {
+     gLockChecker[lockType_tddLock] = lockStatus_Unlocked;
+    }
+
+
+    gGettersArray[lockType_tddLock] = isLocked;
+//    CLI_cliPrintf("\r\nis tdd locked %x", isLocked);
     return CRS_SUCCESS;
 }
 
 #else
 static CRS_retVal_t saveAdfLockStatus(uint32_t val)
 {
-    gLockChecker[lockType_adfLock] = val & BIT_0;
-    bool isLocked = gLockChecker[lockType_adfLock] == lockStatus_Locked;
-    gGettersArray[lockType_adfLock] = isLocked;
+    bool isLocked = ((val & BIT_0) == lockStatus_Unlocked) ? false :true;
+    if (isLocked)
+    {
+       gLockChecker[lockType_adfLock] = lockStatus_Locked;
+    }
+    else
+    {
+       gLockChecker[lockType_adfLock] = lockStatus_Unlocked;
+    }
 
+    gGettersArray[lockType_adfLock] = isLocked;
 
     return CRS_SUCCESS;
 }
@@ -388,8 +428,17 @@ static CRS_retVal_t saveAdfLockStatus(uint32_t val)
 
 static CRS_retVal_t saveTiLockStatus(uint32_t val)
 {
-    gLockChecker[lockType_tiLock] = val & BIT_1;
-    bool isLocked = gLockChecker[lockType_tiLock] == lockStatus_Locked;
+
+    bool isLocked = ((val & BIT_1) == lockStatus_Unlocked) ? false :true;
+    if (isLocked)
+    {
+        gLockChecker[lockType_tiLock] = lockStatus_Locked;
+    }
+    else
+    {
+        gLockChecker[lockType_tiLock] = lockStatus_Unlocked;
+    }
+
     gGettersArray[lockType_tiLock] = isLocked;
 
     return CRS_SUCCESS;

@@ -294,6 +294,7 @@ static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
 
 static CRS_retVal_t CLI_locksParsing(char *line);
+static void printLocksStatus(void);
 
 static CRS_retVal_t CLI_envUpdate(char *line);
 static CRS_retVal_t CLI_envRm(char *line);
@@ -4203,22 +4204,29 @@ static CRS_retVal_t CLI_locksParsing(char *line)
            return CRS_SUCCESS;
        }
    #endif
-#ifndef CLI_SENSOR
-       bool tddIsLocked = Locks_getTddLockVal();
-       char *answer = tddIsLocked == true ? "LOCKED" : "UNLOCKED";
-       CLI_cliPrintf("\r\nTDD LOCK: %s", answer);
-#else
-       bool adfIsLocked = Locks_getAdfLockVal();
-       char *answer = adfIsLocked == true ? "LOCKED" : "UNLOCKED";
-       CLI_cliPrintf("\r\nADF LOCK: %s", answer);
-#endif
-       bool tiIsLocked = Locks_getTiLockVal();
-       answer = tiIsLocked == true ? "LOCKED" : "UNLOCKED";
-       CLI_cliPrintf("\r\nTI LOCK: %s", answer);
 
-       CLI_startREAD();
+        Locks_checkLocks(printLocksStatus);
 
        return CRS_SUCCESS;
+}
+
+
+static void printLocksStatus(void)
+{
+#ifndef CLI_SENSOR
+    bool tddIsLocked = Locks_getTddLockVal();
+    char *answer = tddIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nTDD LOCK: %s", answer);
+#else
+    bool adfIsLocked = Locks_getAdfLockVal();
+    char *answer = adfIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nADF LOCK: %s", answer);
+#endif
+    bool tiIsLocked = Locks_getTiLockVal();
+    answer = tiIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nTI LOCK: %s", answer);
+
+    CLI_startREAD();
 }
 
 static CRS_retVal_t CLI_envRm(char *line)
