@@ -44,7 +44,7 @@
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "application/crs/crs_agc_management.h"
 
-#include "application/crs/snapshots/crs_yarden.h"
+#include "application/crs/snapshots/crs_script_rf.h"
 
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
@@ -132,7 +132,7 @@
 #define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
 #define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
 
-#define CLI_CRS_YARDEN  "yarden"
+#define CLI_CRS_RF_RUN  "rf run"
 
 
 #define CLI_CRS_TDD_TTG "tdd set ttg"
@@ -272,7 +272,7 @@ static CRS_retVal_t CLI_tddSetDl1Parsing(char *line);
 static CRS_retVal_t CLI_tddSetPeriod1Parsing(char *line);
 
 
-static CRS_retVal_t CLI_YardenParsing(char *line);
+static CRS_retVal_t CLI_RfRunParsing(char *line);
 
 static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
@@ -906,10 +906,10 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               inputBad = false;
           }
 
-          if (memcmp(CLI_CRS_YARDEN, line, sizeof(CLI_CRS_YARDEN) - 1) == 0)  //new
+          if (memcmp(CLI_CRS_RF_RUN, line, sizeof(CLI_CRS_RF_RUN) - 1) == 0)  //new
           {
 
-              if (CRS_SUCCESS == CLI_YardenParsing(line))
+              if (CRS_SUCCESS == CLI_RfRunParsing(line))
               {
                   is_async_command = true;
                   CLI_startREAD();
@@ -3719,8 +3719,8 @@ static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line)
     return retStatus;
 }
 
-//yarden 0xaabb filename
-static CRS_retVal_t CLI_YardenParsing(char *line)
+//rf run 0xaabb filename
+static CRS_retVal_t CLI_RfRunParsing(char *line)
 {
     const char s[2] = " ";
     char *token;
@@ -3729,7 +3729,7 @@ static CRS_retVal_t CLI_YardenParsing(char *line)
     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
     /* get the first token */
     //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_CRS_YARDEN)]), s);
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_RF_RUN)]), s);
 
     //shortAddr in decimal
     uint32_t shortAddr = CLI_convertStrUint(&(token[2]));
@@ -3834,7 +3834,7 @@ static CRS_retVal_t CLI_YardenParsing(char *line)
 
 //   token = strtok(NULL, s);    //filename
 
-   CRS_retVal_t retStatus = Yarden_runFile((uint8_t*)filename, nameVals, chipNumber, lineNumber);
+   CRS_retVal_t retStatus = scriptRf_runFile((uint8_t*)filename, nameVals, chipNumber, lineNumber);
    if (retStatus != CRS_SUCCESS)
    {
        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -5371,7 +5371,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
 
     CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
-    CLI_printCommInfo(CLI_CRS_YARDEN, strlen(CLI_CRS_YARDEN), "[shortAddr] [filename] [chipNumber] [lineNumber] [params]");
+    CLI_printCommInfo(CLI_CRS_RF_RUN, strlen(CLI_CRS_RF_RUN), "[shortAddr] [filename] [chipNumber] [lineNumber] [params]");
 
     //CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
