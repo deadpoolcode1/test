@@ -338,11 +338,10 @@ static CRS_retVal_t setAlarms(void)
     {
 #ifndef CLI_SENSOR
      TDDLock,
-     PLLLockPrimary
 #else
-     PLLLockPrimary,
-     SyncPLLLock
+     SyncPLLLock,
 #endif
+     PLLLockPrimary,
     };
 
 
@@ -351,10 +350,12 @@ static CRS_retVal_t setAlarms(void)
     {
         if (gLockChecker[i] == lockStatus_Unlocked)
         {
+//            CLI_cliPrintf("\r\nsetting alarm type %x",(uint32_t)alarm_types[i]);
             Alarms_setAlarm(alarm_types[i]);
         }
         else
         {
+//            CLI_cliPrintf("\r\nclearing alarm type %x",(uint32_t)alarm_types[i]);
             Alarms_clearAlarm(alarm_types[i], ALARM_INACTIVE);
         }
     }

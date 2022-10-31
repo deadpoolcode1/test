@@ -97,16 +97,16 @@ CRS_retVal_t Alarms_setAlarm(Alarms_alarmType_t alarmType)
     {
         return CRS_FAILURE;
     }
-    if (alarmType == PLLLockPrimary && (gIsPllPrimaryDiscoverd == false))
-    {
-        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
-        return CRS_SUCCESS;
-    }
-    if (alarmType == PLLLockSecondary && (gIsPllsecondaryDiscoverd == false))
-    {
-        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
-        return CRS_SUCCESS;
-    }
+//    if (alarmType == PLLLockPrimary && (gIsPllPrimaryDiscoverd == false))
+//    {
+//        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
+//        return CRS_SUCCESS;
+//    }
+//    if (alarmType == PLLLockSecondary && (gIsPllsecondaryDiscoverd == false))
+//    {
+//        gAlarmArr[alarmType] |= 1UL << ALARM_DISCOVERY_BIT_LOCATION; //turn on the failed discovery bit
+//        return CRS_SUCCESS;
+//    }
     gAlarmArr[alarmType] |= 1UL << ALARM_ACTIVE_BIT_LOCATION; //turn on the alarm active bit
     gAlarmArr[alarmType] |= 1UL << ALARM_STICKY_BIT_LOCATION; //turn on the alarm sticky bit
     return CRS_SUCCESS;
@@ -371,7 +371,7 @@ CRS_retVal_t Alarms_init(void *sem)
     collectorSem = sem;
     Alarms_temp_Init();
 #ifndef CLI_SENSOR
-    Alarms_TDDLock_Init();
+//    Alarms_TDDLock_Init();
 #endif
 //    Alarms_PLL_Check_Clock_Init((Clock_FuncPtr) Alarms_PLL_Check);
     return CRS_SUCCESS;
