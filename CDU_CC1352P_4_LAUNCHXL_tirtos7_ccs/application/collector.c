@@ -419,6 +419,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
     Alarms_init(sem);
     Agc_init(sem);
     Agc_ledEnv();
+    Locks_init(sem);
 //    if (CONFIG_AUTO_START)
 //    {
 //        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
