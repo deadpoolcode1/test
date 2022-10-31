@@ -30,14 +30,14 @@
 #define ONE_SECOND  1000
 #define LOCKS_LINE_SZ   30
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 #define READ_TDD_REG    "rd 0x23\r"
 #else
 #define READ_ADF_REG    "rd 0x41\r"
 #endif
 #define READ_TI_REG     "rd 0x41\r"
 
-#ifdef CRS_SENSOR
+#ifdef CLI_SENSOR
 #define BIT_0   0x1
 #endif
 
@@ -47,7 +47,7 @@
 
 enum lockType
 {
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
     lockType_tddLock,
 #else
     lockType_adfLock,
@@ -86,14 +86,14 @@ static bool gGettersArray[lockType_numOfLockTypes] = {
 };
 
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 static CRS_retVal_t writeToTddLockReg(void);
 #else
 static CRS_retVal_t writeToAdfLockReg(void);
 #endif
 static CRS_retVal_t writeToTiLockReg(void);
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 static CRS_retVal_t saveTddLockStatus(uint32_t val);
 #else
 static CRS_retVal_t saveAdfLockStatus(uint32_t val);
@@ -112,7 +112,7 @@ static CRS_retVal_t valsInit(void);
 
 static locks_WriteFpgafxn gFpgaWriteFunctionsTable [lockType_numOfLockTypes] =
 {
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
  writeToTddLockReg,
 #else
  writeToAdfLockReg,
@@ -123,7 +123,7 @@ static locks_WriteFpgafxn gFpgaWriteFunctionsTable [lockType_numOfLockTypes] =
 
 static locks_ReadValuefxn gSaveValueFunctionTable [lockType_numOfLockTypes] =
 {
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
  saveTddLockStatus,
 #else
  saveAdfLockStatus,
@@ -194,7 +194,7 @@ void Locks_checkLocks(void)
 }
 
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 bool Locks_getTddLockVal(void)
 {
     return gGettersArray[lockType_tddLock];
@@ -313,7 +313,7 @@ static CRS_retVal_t setAlarms(void)
 {
     Alarms_alarmType_t alarm_types[lockType_numOfLockTypes] =
     {
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
      TDDLock,
      PLLLockPrimary
 #else
@@ -336,7 +336,7 @@ static CRS_retVal_t setAlarms(void)
 
 }
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 static CRS_retVal_t writeToTddLockReg(void)
 {
     Fpga_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
@@ -359,7 +359,7 @@ static CRS_retVal_t writeToTiLockReg(void)
 }
 
 
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 static CRS_retVal_t saveTddLockStatus(uint32_t val)
 {
     gLockChecker[lockType_tddLock] = val;

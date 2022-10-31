@@ -20,7 +20,7 @@
 CRS_retVal_t Locks_init(void *sem);
 CRS_retVal_t Locks_process(void);
 void Locks_checkLocks(void);
-#ifndef CRS_SENSOR
+#ifndef CLI_SENSOR
 bool Locks_getTddLockVal(void);
 #else
 bool Locks_getAdfLockVal(void);

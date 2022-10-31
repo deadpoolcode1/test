@@ -27,6 +27,7 @@
 #include "application/util_timer.h"
 #include "mac/api_mac.h"
 #include "application/crs/crs_alarms.h"
+#include "application/crs/crs_locks.h"
 #include "crs.h"
 #ifndef CLI_SENSOR
 #include "application/collector.h"
@@ -129,6 +130,7 @@
 #define CLI_CRS_TDD_FRAME "tdd set frame"
 #define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
 #define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
+#define CLI_CRS_LOCKS "locks"
 
 
 
@@ -291,6 +293,8 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line);
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
 
+static CRS_retVal_t CLI_locksParsing(char *line);
+
 static CRS_retVal_t CLI_envUpdate(char *line);
 static CRS_retVal_t CLI_envRm(char *line);
 static CRS_retVal_t CLI_envLs(char *line);
@@ -336,7 +340,7 @@ static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
-
+static uint32_t MakeULFromHex(char *hex_str);
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
 static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right);
@@ -712,6 +716,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           inputBad = false;
       }
 
+
+
       if (memcmp(CLI_CRS_ENV_UPDATE, line, sizeof(CLI_CRS_ENV_UPDATE) - 1) == 0)
          {
 
@@ -951,6 +957,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
 
 
+      if (memcmp (CLI_CRS_LOCKS, line, sizeof(CLI_CRS_LOCKS) - 1) == 0)
+      {
+          CLI_locksParsing(line);
+
+          inputBad = false;
+      }
 
 
 
@@ -4150,6 +4162,63 @@ static CRS_retVal_t CLI_envUpdate(char *line)
 
 
 
+}
+
+
+static CRS_retVal_t CLI_locksParsing(char *line)
+{
+    const char s[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_LOCKS)]), s);
+    //token = strtok(NULL, s);
+    uint32_t commSize = sizeof(CLI_CRS_LOCKS);
+    uint32_t addrSize = strlen(token);
+    //shortAddr in decimal
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+   #ifndef CLI_SENSOR
+
+       uint16_t addr = 0;
+       Cllc_getFfdShortAddr(&addr);
+       if (addr != shortAddr)
+       {
+           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+           ApiMac_sAddr_t dstAddr;
+           dstAddr.addr.shortAddr = shortAddr;
+           dstAddr.addrMode = ApiMac_addrType_short;
+           Collector_status_t stat;
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+           if (stat != Collector_status_success)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                  }
+//           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+           return CRS_SUCCESS;
+       }
+   #endif
+#ifndef CLI_SENSOR
+       bool tddIsLocked = Locks_getTddLockVal();
+       char *answer = tddIsLocked == true ? "LOCKED" : "UNLOCKED";
+       CLI_cliPrintf("\r\nTDD LOCK: %s", answer);
+#else
+       bool adfIsLocked = Locks_getAdfLockVal();
+       char *answer = adfIsLocked == true ? "LOCKED" : "UNLOCKED";
+       CLI_cliPrintf("\r\nADF LOCK: %s", answer);
+#endif
+       bool tiIsLocked = Locks_getTiLockVal();
+       answer = tiIsLocked == true ? "LOCKED" : "UNLOCKED";
+       CLI_cliPrintf("\r\nTI LOCK: %s", answer);
+
+       CLI_startREAD();
+
+       return CRS_SUCCESS;
 }
 
 static CRS_retVal_t CLI_envRm(char *line)
