@@ -29,6 +29,8 @@
 #define CMD_EW  "ew "
 #define CMD_ER  "er "
 #define CMD_APPLY  "apply"
+#define CMD_PRINT   "print "
+#define CMD_DELAY   "delay "
 
 #define LINE_SEPARTOR   '\n'
 #define DECIMAL 10
@@ -56,6 +58,10 @@ enum command_type
     CmdType_ER, // er
     CmdType_APPLY,  // apply
     CmdType_LABEL,   // "label:"
+    CmdType_EMPTY_LINE, // empty lines
+    CmdType_PRINT,  // print
+    CmdType_ASSIGNMENT, // "="
+    CmdType_DELAY,  // "delay"
     CmdType_NUM_OF_COMMAND_TYPES
 };
 
@@ -84,27 +90,17 @@ typedef struct parsingStruct
 typedef CRS_retVal_t (*Line_Handler_fnx) (ScriptRf_parsingContainer_t *, char*);
 static CRS_retVal_t getNextLine(ScriptRf_parsingContainer_t *parsingContainer, char *next_line);
 static CRS_retVal_t handleLine(ScriptRf_parsingContainer_t *parsingContainer, char *line);
-//static void freeGFileBuffer(void);
 static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContainer, char *line, enum command_type cmd);
 static char *myStrTok(char *srcString,const char *delim);
 static uint8_t isDelim(char c, const char *delim);
 
 static CRS_retVal_t gotoGivenLabel(ScriptRf_parsingContainer_t *parsingContainer, char *label);
 
-/* this function returns the index of given param in
- * global array,
- * if not found in array return NOT_FOUND (-1)
- */
 static int8_t getParamIdx(ScriptRf_parsingContainer_t *parsingContainer, char *param);
-//static bool isGlobal(char *line);
-static bool isGlobal(ScriptRf_wrContainer_t *wrContainer);
 
-//static uint32_t getAddress(char *line);
-//static CRS_retVal_t getVal(char *line, char *ret);
-//static bool isInvalidAddr(char *line);
+static bool isGlobal(ScriptRf_wrContainer_t *wrContainer);
 static bool isInvalidAddr(ScriptRf_wrContainer_t *wrContainer);
 
-//static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber);
 static CRS_retVal_t getLutNumberFromWRContainer(ScriptRf_wrContainer_t *wrContainer, uint32_t *lutNumber);
 static CRS_retVal_t getLutRegFromWRContainer(ScriptRf_wrContainer_t *wrContainer, uint32_t *lutReg);
 static bool checkEquality(ScriptRf_parsingContainer_t *parsingContainer, char *p1, char *p2);
@@ -116,8 +112,6 @@ static CRS_retVal_t readLineMatrix(ScriptRf_parsingContainer_t *parsingContainer
 static CRS_retVal_t printGlobalArrayAndLineMatrix(ScriptRf_parsingContainer_t *parsingContainer);
 
 
-//static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg);
-//static CRS_retVal_t paramInit();
 static CRS_retVal_t saveNameVals(ScriptRf_parsingContainer_t *parsingContainer, CRS_nameValue_t givenNameVals[SCRIPT_RF_NAME_VALUES_SZ]);
 static bool isStarValue(char *val);
 static CRS_retVal_t handleStarLut(ScriptRf_parsingContainer_t *parsingContainer, uint32_t lutNumber, uint32_t lutReg, char *val);
@@ -133,6 +127,8 @@ static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr);
 static CRS_retVal_t writeGlobalsToFpga(ScriptRf_parsingContainer_t *parsingContainer);
 static CRS_retVal_t convertGlobalRegDataToStr(ScriptRf_parsingContainer_t *parsingContainer, uint32_t regIdx, char *data);
 static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr);
+static CRS_retVal_t delayRun(uint32_t time);
+
 
 
 // Command handlers
@@ -146,6 +142,12 @@ static CRS_retVal_t ewCommandHandler (ScriptRf_parsingContainer_t *parsingContai
 static CRS_retVal_t erCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
 static CRS_retVal_t applyCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
 static CRS_retVal_t labelCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t emptyLineCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t delayCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
+static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
+
+
 
 
 
@@ -165,7 +167,11 @@ static Line_Handler_fnx gFunctionsTable[CmdType_NUM_OF_COMMAND_TYPES] =
  ewCommandHandler,
  erCommandHandler,
  applyCommandHandler,
- labelCommandHandler
+ labelCommandHandler,
+ emptyLineCommandHandler,
+ assignmentCommandHandler,
+ printCommandHandler,
+ delayCommandHandler
 };
 
 
@@ -185,6 +191,33 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     ScriptRf_parsingContainer_t parsingContainer = {0};
     parsingContainer.chipNumber = chipNumber;
     parsingContainer.lineNumber = lineNumber;
+
+    // TODO make prettier
+    if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
+                  sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
+   {
+       CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
+
+   }
+   else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
+                   sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
+   {
+       CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
+
+   }
+   else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
+                   sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
+   {
+       CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
+
+   }
+   else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
+                   sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
+   {
+       CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
+
+   }
+
 
 //    CRS_nameValue_t parameters[SCRIPT_RF_NAME_VALUES_SZ] = {0};
 //    uint8_t parametersIdx = 0;
@@ -250,8 +283,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         retStatus = handleLine(&parsingContainer, line);
         if (CRS_SUCCESS != retStatus)
         {
-//            CLI_cliPrintf("Syntax Error\r\n");
-//            return CRS_FAILURE;
+            CLI_cliPrintf("Syntax Error\r\n");
+            return CRS_FAILURE;
         }
     }while (parsingContainer.idxOfFileBuffer < lenOfFile);
 
@@ -288,13 +321,6 @@ static CRS_retVal_t getNextLine(ScriptRf_parsingContainer_t *parsingContainer, c
 
     return CRS_SUCCESS;
 }
-
-//static void freeGFileBuffer(void)
-//{
-//    free (gFileBuffer);
-//    gFileBuffer = NULL;
-//
-//}
 
 
 static CRS_retVal_t handleLine(ScriptRf_parsingContainer_t *parsingContainer, char *line)
@@ -575,6 +601,64 @@ static CRS_retVal_t labelCommandHandler (ScriptRf_parsingContainer_t *parsingCon
     return CRS_SUCCESS;
 }
 
+
+static CRS_retVal_t emptyLineCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line)
+{
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line, CmdType_EMPTY_LINE))
+    {
+        return CRS_FAILURE;
+    }
+    CLI_cliPrintf("handling empty line command");
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t delayCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line)
+{
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line, CmdType_DELAY))
+    {
+        return CRS_FAILURE;
+    }
+
+    CLI_cliPrintf("handling delay command");
+
+    char *ptr = line;
+    ptr += sizeof(CMD_DELAY);
+    uint32_t time = strtoul(ptr, NULL, DECIMAL);
+    delayRun(time);
+
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line)
+{
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line, CmdType_PRINT))
+    {
+        return CRS_FAILURE;
+    }
+
+    CLI_cliPrintf("handling print command");
+
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line)
+{
+    if (CRS_SUCCESS != checkLineSyntax(parsingContainer, line, CmdType_ASSIGNMENT))
+    {
+        return CRS_FAILURE;
+    }
+
+    CLI_cliPrintf("handling assignment command");
+
+    return CRS_SUCCESS;
+}
+
+
+
+
 static CRS_retVal_t gotoGivenLabel(ScriptRf_parsingContainer_t *parsingContainer, char *label)
 {
     strcat(label,":");
@@ -839,21 +923,6 @@ static CRS_retVal_t getLutRegFromWRContainer(ScriptRf_wrContainer_t *wrContainer
     return CRS_SUCCESS;
 }
 
-//static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg)
-//{
-//    uint32_t addrVal = getAddress(line);
-//    if (addrVal >= 0x26)
-//    {
-//        *lutReg = addrVal - 0x26;
-//    }
-//    else
-//    {
-//        *lutReg = addrVal % 8;
-//    }
-//
-//    return CRS_SUCCESS;
-//}
-
 static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContainer, char *line, enum command_type cmd)
 {
     if (cmd == CmdType_COMMENT)
@@ -970,6 +1039,51 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
     {
         const char command [] = CMD_APPLY;
         if (0 != memcmp(line, command, strlen(line)))
+        {
+            return CRS_FAILURE;
+        }
+
+        return CRS_SUCCESS;
+    }
+
+    else if (cmd == CmdType_EMPTY_LINE)
+    {
+        if(line[0] != LINE_SEPARTOR)
+        {
+            return CRS_FAILURE;
+        }
+
+        return CRS_SUCCESS;
+    }
+
+    else if (cmd == CmdType_ASSIGNMENT)
+    {
+        if (line[0] == '=' || // first char in line is '='
+                parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer - 2] == '=' || // last char in line is '='
+                strchr(line, '=') == NULL // no '=' in line
+                )
+        {
+            return CRS_FAILURE;
+        }
+
+        return CRS_SUCCESS;
+    }
+
+    else if (cmd == CmdType_DELAY)
+    {
+        const char command [] = CMD_DELAY;
+        if (0 != memcmp(line, command, strlen(command)))
+        {
+            return CRS_FAILURE;
+        }
+
+        return CRS_SUCCESS;
+    }
+
+    else if (cmd == CmdType_PRINT)
+    {
+        const char command [] = CMD_PRINT;
+        if (0 != memcmp(line, command, strlen(command)))
         {
             return CRS_FAILURE;
         }
@@ -1556,5 +1670,8 @@ static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr)
     return (CRS_SUCCESS);
 }
 
-
+static CRS_retVal_t delayRun(uint32_t time)
+{
+    // implement time delay according to requirements
+}
 
