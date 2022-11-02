@@ -128,8 +128,8 @@ static CRS_retVal_t writeGlobalsToFpga(ScriptRf_parsingContainer_t *parsingConta
 static CRS_retVal_t convertGlobalRegDataToStr(ScriptRf_parsingContainer_t *parsingContainer, uint32_t regIdx, char *data);
 static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr);
 static CRS_retVal_t delayRun(uint32_t time);
-
-
+static CRS_retVal_t saveParamsToGainStateStruct(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT_RF_NAME_VALUES_SZ]);
+static CRS_retVal_t writeLineAndGlobalsToFpga(ScriptRf_parsingContainer_t* parsingContainer);
 
 // Command handlers
 static CRS_retVal_t ifCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
@@ -192,42 +192,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     parsingContainer.chipNumber = chipNumber;
     parsingContainer.lineNumber = lineNumber;
 
-    // TODO make prettier
-    if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
-                  sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
-   {
-       CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
+    saveParamsToGainStateStruct(filename, nameVals);
 
-   }
-   else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
-                   sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
-   {
-       CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
-
-   }
-   else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
-                   sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
-   {
-       CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
-
-   }
-   else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
-                   sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
-   {
-       CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
-
-   }
-
-
-//    CRS_nameValue_t parameters[SCRIPT_RF_NAME_VALUES_SZ] = {0};
-//    uint8_t parametersIdx = 0;
-//    uint16_t globalRegArray[NUM_GLOBAL_REG] = { 0 };
-//    uint16_t lineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
-//    char *fileBuffer = NULL;
-//    uint32_t idxOfFileBuffer = 0;
-
-
-//    paramInit();
     char chipNumStr [LINE_LENGTH] = {0};
     char lineNumStr[LINE_LENGTH] = {0};
 
@@ -235,7 +201,6 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
 
     printGlobalArrayAndLineMatrix(&parsingContainer);
-
     uint32_t rsp = 0;
     if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
     {
@@ -288,13 +253,15 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         }
     }while (parsingContainer.idxOfFileBuffer < lenOfFile);
 
-    uint32_t i = 0;
-    for (i = 0; i < NUM_LUTS; i++)
-    {
-        writeLutToFpga(&parsingContainer, i);
-    }
-
-    writeGlobalsToFpga(&parsingContainer);
+    writeLineAndGlobalsToFpga(&parsingContainer);
+//
+//    uint32_t i = 0;
+//    for (i = 0; i < NUM_LUTS; i++)
+//    {
+//        writeLutToFpga(&parsingContainer, i);
+//    }
+//
+//    writeGlobalsToFpga(&parsingContainer);
     printGlobalArrayAndLineMatrix(&parsingContainer);
 
     free (parsingContainer.fileBuffer);
@@ -587,6 +554,7 @@ static CRS_retVal_t applyCommandHandler (ScriptRf_parsingContainer_t *parsingCon
     }
     CLI_cliPrintf("handling apply command");
 
+    writeLineAndGlobalsToFpga(parsingContainer);
     return CRS_SUCCESS;
 }
 
@@ -641,6 +609,37 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
 
     CLI_cliPrintf("handling print command");
 
+    char *ptr = line;
+    ptr += sizeof(CMD_PRINT); // skip 'print '
+
+    if (*ptr == '"')
+    {
+        ptr ++;
+        while(*ptr != '"')
+        {
+            CLI_cliPrintf("%c", *ptr);
+            ptr++;
+        }
+        ptr += 2; // skip '" '
+    }
+
+    char param[NAMEVALUE_NAME_SZ] = {0};
+    uint8_t i = 0;
+    while (*ptr)
+    {
+        param[i] = *ptr;
+        ptr++;
+        i++;
+    }
+
+    int8_t idx = getParamIdx(parsingContainer, param);
+    if (idx == NOT_FOUND)
+    {
+        CLI_cliPrintf("\r\nparam %s not found");
+        return CRS_FAILURE;
+    }
+    CLI_cliPrintf("%x\r\n", parsingContainer->parameters[idx].value);
+
     return CRS_SUCCESS;
 }
 
@@ -652,6 +651,51 @@ static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsi
     }
 
     CLI_cliPrintf("handling assignment command");
+
+    char paramOne[NAMEVALUE_NAME_SZ] = {0};
+    char *ptr = line;
+    uint8_t i = 0;
+
+    while(*ptr != ' ')
+    {
+        paramOne[i] = *ptr;
+        ptr++;
+        i++;
+    }
+
+    int8_t idxParamOne = getParamIdx(parsingContainer, paramOne);
+    if (idxParamOne == NOT_FOUND)
+    {
+        CLI_cliPrintf("\r\nparam %s not found", paramOne);
+        return CRS_FAILURE;
+    }
+
+    ptr += strlen(" = ");
+    char paramTwo[NAMEVALUE_NAME_SZ] = {0};
+    i = 0;
+    while(*ptr && *ptr != LINE_SEPARTOR)
+    {
+        paramTwo[i] = *ptr;
+        ptr++;
+        i++;
+    }
+
+    if(isNumber(paramTwo))
+    {
+        int32_t paramTwoNum = strtol(paramTwo, NULL, DECIMAL);
+        parsingContainer->parameters[idxParamOne].value = paramTwoNum;
+
+        return CRS_SUCCESS;
+    }
+
+    int8_t idxParamTwo = getParamIdx(parsingContainer, paramTwo);
+    if (idxParamTwo == NOT_FOUND)
+    {
+        CLI_cliPrintf("\r\nparam %s not found", paramTwo);
+        return CRS_FAILURE;
+    }
+
+    parsingContainer->parameters[idxParamOne].value = parsingContainer->parameters[idxParamTwo].value;
 
     return CRS_SUCCESS;
 }
@@ -1086,6 +1130,23 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
         if (0 != memcmp(line, command, strlen(command)))
         {
             return CRS_FAILURE;
+        }
+
+        char *ptr = line;
+        ptr += strlen(CMD_PRINT);
+
+        if(*ptr == '"') // if starting brackets appear make sure of closing brackets
+        {
+            ptr ++;
+            while (*ptr != 0 && *ptr != LINE_SEPARTOR && *ptr != '"')
+            {
+                ptr++;
+            }
+
+            if (*ptr != '"')
+            {
+                return CRS_FAILURE;
+            }
         }
 
         return CRS_SUCCESS;
@@ -1672,6 +1733,50 @@ static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr)
 
 static CRS_retVal_t delayRun(uint32_t time)
 {
-    // implement time delay according to requirements
+    Task_sleep(time);
+    return CRS_SUCCESS;
 }
 
+
+static CRS_retVal_t saveParamsToGainStateStruct(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT_RF_NAME_VALUES_SZ])
+{
+    if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
+                     sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
+    {
+      CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
+                  sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
+    {
+      CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
+                  sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
+    {
+      CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
+
+    }
+    else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
+                  sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
+    {
+      CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
+
+    }
+
+    return CRS_SUCCESS;
+}
+static CRS_retVal_t writeLineAndGlobalsToFpga(ScriptRf_parsingContainer_t* parsingContainer)
+{
+
+    uint32_t i = 0;
+    for (i = 0; i < NUM_LUTS; i++)
+    {
+        writeLutToFpga(parsingContainer, i);
+    }
+
+    writeGlobalsToFpga(parsingContainer);
+
+    return CRS_SUCCESS;
+}
