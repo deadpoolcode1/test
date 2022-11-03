@@ -45,7 +45,7 @@
 #include "application/crs/crs_agc_management.h"
 
 #include "application/crs/snapshots/crs_script_rf.h"
-
+#include "application/crs/crs_tmp.h"
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
 #include "crs_env.h"
@@ -1893,10 +1893,18 @@ static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
     char *fpgaLine =
             &(line[sizeof(CLI_CRS_FPGA_WRITELINES) + strlen(token) + 1]);
     char lineToSend[CUI_NUM_UART_CHARS] = { 0 };
-    memcpy(lineToSend, fpgaLine, strlen(fpgaLine));
+    uint32_t len =  strlen(fpgaLine);
+    memcpy(lineToSend, fpgaLine, len);
 
-    CRS_retVal_t rspStatus = Fpga_writeMultiLine(lineToSend,
-                                                 fpgaMultiLineCallback);
+//    CRS_retVal_t rspStatus = Fpga_writeMultiLine(lineToSend,
+//                                                 fpgaMultiLineCallback);
+    uint32_t rsp = 0;
+    if (lineToSend[len - 1] != '\r')
+    {
+        lineToSend[len] = '\r';
+    }
+    CRS_retVal_t rspStatus = Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    CLI_startREAD();
 
     return CRS_SUCCESS;
 }
@@ -1941,11 +1949,34 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
     char *fpgaLine =
             &(line[sizeof(CLI_CRS_FPGA_READLINES) + strlen(token) + 1]);
     char lineToSend[CUI_NUM_UART_CHARS] = { 0 };
-    memcpy(lineToSend, fpgaLine, strlen(fpgaLine));
-
-    CRS_retVal_t rspStatus = Fpga_readMultiLine(lineToSend,
-                                                 fpgaMultiLineCallback);
-
+    uint32_t len =  strlen(fpgaLine);
+    memcpy(lineToSend, fpgaLine, len);
+//
+//    CRS_retVal_t rspStatus = Fpga_readMultiLine(lineToSend,
+//                                                 fpgaMultiLineCallback);
+    uint32_t rsp = 0;
+    if (lineToSend[len - 1] != '\r')
+    {
+        lineToSend[len] = '\r';
+    }
+    CRS_retVal_t rspStatus = Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    if (rspStatus == CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\n 0x");
+        char rspStr[CUI_NUM_UART_CHARS] = {0};
+        sprintf(rspStr,"%x",rsp);
+        uint32_t i = 0;
+        uint32_t len = strlen(rspStr);
+        for (i = len; i < 8; i++) // print 0 infront of number
+        {
+            CLI_cliPrintf("0");
+        }
+        for (i = 0; i < len ; i++)
+        {
+            CLI_cliPrintf("%c", rspStr[i]);
+        }
+    }
+    CLI_startREAD();
     return CRS_SUCCESS;
 }
 

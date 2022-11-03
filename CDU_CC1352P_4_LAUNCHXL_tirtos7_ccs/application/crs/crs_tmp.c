@@ -70,58 +70,125 @@ CRS_retVal_t Fpga_tmpInit()
     GPIO_write(CONFIG_FPGA_CS, 1);
 
 //    openSpi();
-    memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-    convertLineAsciToSpiFormat("wr 0x40 0x12345678", gMasterTxBuffer);
-
-    if (sendSpiBuf() != CRS_SUCCESS)
-    {
-//        closeSpi();
-        return CRS_FAILURE;
-    }
-
-    memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-    convertLineAsciToSpiFormat("rd 0x40", gMasterTxBuffer);
-
-    if (sendSpiBuf() != CRS_SUCCESS)
-    {
-//        closeSpi();
-        return CRS_FAILURE;
-    }
-
-    uint32_t val;
-    FPGA_getValFromBuf(gMasterRxBuffer, &val);
-
-    if (val != 0x12345678)
-    {
-        //return CRS_FAILURE;
-    }
-
-    int i = 0;
-
-//    for (i = 0; i < 100; i++)
+//    memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+//    convertLineAsciToSpiFormat("wr 0x40 0x12345678", gMasterTxBuffer);
+//
+//    if (sendSpiBuf() != CRS_SUCCESS)
 //    {
+////        closeSpi();
+//        return CRS_FAILURE;
+//    }
+//
+//    memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+//    convertLineAsciToSpiFormat("rd 0x40", gMasterTxBuffer);
+//
+//    if (sendSpiBuf() != CRS_SUCCESS)
+//    {
+////        closeSpi();
+//        return CRS_FAILURE;
+//    }
+//
+//    uint32_t val;
+//    FPGA_getValFromBuf(gMasterRxBuffer, &val);
+//
+//    if (val != 0x12345678)
+//    {
+//        //return CRS_FAILURE;
+//    }
+//
+//    int i = 0;
+//
+////    for (i = 0; i < 100; i++)
+////    {
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("wr 0xb 0x1", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        char tmp[30] = {0};
+////        memcpy(tmp, "wr 0xff 0x", strlen("wr 0xff 0x"));
+////        //tmp[strlen(tmp)] = (i % 8) + '0';
+////
+////        if ( i % 2  == 0)
+////        {
+////            tmp[strlen(tmp)] = '6';
+////        }
+////        else
+////        {
+////            tmp[strlen(tmp)] = '7';
+////        }
+////        convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("wr 0x50 0x071234", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("wr 0x51 0x70000", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("rd 0x51", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////
+////    }
+//    uint32_t counter = 0;
+//    char tmp[30] = {0};
+////"wr 0xb 0x1\n"
+//    for (i = 0; i < 10; i+=1)
+//    {
+//        CLI_cliPrintf("\r\n----------------START----------------");
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        convertLineAsciToSpiFormat("wr 0xb 0x1", gMasterTxBuffer);
+//           convertLineAsciToSpiFormat("wr 0xb 0x1", gMasterTxBuffer);
 //
-//        if (sendSpiBuf() != CRS_SUCCESS)
+//           if (sendSpiBuf() != CRS_SUCCESS)
+//           {
+//               //        closeSpi();
+//               return CRS_FAILURE;
+//           }
+//        memset(tmp, 0, sizeof(tmp));
+//       // if (i % 3 == 0)
 //        {
-//            //        closeSpi();
-//            return CRS_FAILURE;
-//        }
+//            memcpy(tmp, "wr 0xff 0x", strlen("wr 0xff 0x"));
+//            sprintf(&(tmp[strlen(tmp)]), "%x", i);
 //
+//        }
+//       // else if( i % 3 == 1)
+//        {
+//
+//        }
+//    //    else
+//        {
+//            //memcpy(tmp, "wr 0x42 0x", strlen("wr 0x42 0x"));
+//
+//        }
+////        tmp[strlen(tmp)] = i;
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        char tmp[30] = {0};
-//        memcpy(tmp, "wr 0xff 0x", strlen("wr 0xff 0x"));
-//        //tmp[strlen(tmp)] = (i % 8) + '0';
-//
-//        if ( i % 2  == 0)
-//        {
-//            tmp[strlen(tmp)] = '6';
-//        }
-//        else
-//        {
-//            tmp[strlen(tmp)] = '7';
-//        }
 //        convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
 //
 //        if (sendSpiBuf() != CRS_SUCCESS)
@@ -129,144 +196,77 @@ CRS_retVal_t Fpga_tmpInit()
 //            //        closeSpi();
 //            return CRS_FAILURE;
 //        }
-//
+//        memcpy(tmp, "wr 0x50 0x71234", strlen("wr 0x50 0x71234"));
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        convertLineAsciToSpiFormat("wr 0x50 0x071234", gMasterTxBuffer);
+//               convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
 //
-//        if (sendSpiBuf() != CRS_SUCCESS)
-//        {
-//            //        closeSpi();
-//            return CRS_FAILURE;
-//        }
+//               if (sendSpiBuf() != CRS_SUCCESS)
+//               {
+//                   //        closeSpi();
+//                   return CRS_FAILURE;
+//               }
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("wr 0x40 0x3", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
+////
+////        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+////        convertLineAsciToSpiFormat("wr 0x40 0x7", gMasterTxBuffer);
+////
+////        if (sendSpiBuf() != CRS_SUCCESS)
+////        {
+////            //        closeSpi();
+////            return CRS_FAILURE;
+////        }
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
+//
+////        if (i % 3 == 0)
+////        {
+////            convertLineAsciToSpiFormat("rd 0x0", gMasterTxBuffer);
+////        }
+////        else if (i % 3 == 1)
+////        {
+////            convertLineAsciToSpiFormat("rd 0x41", gMasterTxBuffer);
+////
+////        }
+////        else
+////        {
+////            convertLineAsciToSpiFormat("rd 0x42", gMasterTxBuffer);
+////
+////        }
 //        convertLineAsciToSpiFormat("wr 0x51 0x70000", gMasterTxBuffer);
-//
 //        if (sendSpiBuf() != CRS_SUCCESS)
-//        {
-//            //        closeSpi();
-//            return CRS_FAILURE;
-//        }
-//
+//                {
+//                    //        closeSpi();
+//                    return CRS_FAILURE;
+//                }
 //        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        convertLineAsciToSpiFormat("rd 0x51", gMasterTxBuffer);
+//
+//                    convertLineAsciToSpiFormat("rd 0x51", gMasterTxBuffer);
 //
 //        if (sendSpiBuf() != CRS_SUCCESS)
 //        {
 //            //        closeSpi();
 //            return CRS_FAILURE;
 //        }
+//        val = 0;
+//        FPGA_getValFromBuf(gMasterRxBuffer, &val);
+//
+//        if (val != i)
+//        {
+//            counter++;
+//            CLI_cliPrintf("\r\n!!ERROR!!: Sent 0x%x. Rec: 0x%x", i, val);
+//            //i--;
+//        }
+//        CLI_cliPrintf("\r\n----------------END----------------");
 //
 //    }
-    uint32_t counter = 0;
-    char tmp[30] = {0};
-//"wr 0xb 0x1\n"
-    for (i = 0; i < 10; i+=1)
-    {
-        CLI_cliPrintf("\r\n----------------START----------------");
-        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-           convertLineAsciToSpiFormat("wr 0xb 0x1", gMasterTxBuffer);
-
-           if (sendSpiBuf() != CRS_SUCCESS)
-           {
-               //        closeSpi();
-               return CRS_FAILURE;
-           }
-        memset(tmp, 0, sizeof(tmp));
-       // if (i % 3 == 0)
-        {
-            memcpy(tmp, "wr 0xff 0x", strlen("wr 0xff 0x"));
-            sprintf(&(tmp[strlen(tmp)]), "%x", i);
-
-        }
-       // else if( i % 3 == 1)
-        {
-
-        }
-    //    else
-        {
-            //memcpy(tmp, "wr 0x42 0x", strlen("wr 0x42 0x"));
-
-        }
-//        tmp[strlen(tmp)] = i;
-        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-        convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
-
-        if (sendSpiBuf() != CRS_SUCCESS)
-        {
-            //        closeSpi();
-            return CRS_FAILURE;
-        }
-        memcpy(tmp, "wr 0x50 0x71234", strlen("wr 0x50 0x71234"));
-        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-               convertLineAsciToSpiFormat(tmp, gMasterTxBuffer);
-
-               if (sendSpiBuf() != CRS_SUCCESS)
-               {
-                   //        closeSpi();
-                   return CRS_FAILURE;
-               }
-//        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        convertLineAsciToSpiFormat("wr 0x40 0x3", gMasterTxBuffer);
+//    CLI_cliPrintf("\r\nNum mistake: 0x%x", counter);
 //
-//        if (sendSpiBuf() != CRS_SUCCESS)
-//        {
-//            //        closeSpi();
-//            return CRS_FAILURE;
-//        }
-//
-//        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-//        convertLineAsciToSpiFormat("wr 0x40 0x7", gMasterTxBuffer);
-//
-//        if (sendSpiBuf() != CRS_SUCCESS)
-//        {
-//            //        closeSpi();
-//            return CRS_FAILURE;
-//        }
-        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-
-//        if (i % 3 == 0)
-//        {
-//            convertLineAsciToSpiFormat("rd 0x0", gMasterTxBuffer);
-//        }
-//        else if (i % 3 == 1)
-//        {
-//            convertLineAsciToSpiFormat("rd 0x41", gMasterTxBuffer);
-//
-//        }
-//        else
-//        {
-//            convertLineAsciToSpiFormat("rd 0x42", gMasterTxBuffer);
-//
-//        }
-        convertLineAsciToSpiFormat("wr 0x51 0x70000", gMasterTxBuffer);
-        if (sendSpiBuf() != CRS_SUCCESS)
-                {
-                    //        closeSpi();
-                    return CRS_FAILURE;
-                }
-        memset(gMasterTxBuffer, 0, sizeof(gMasterTxBuffer));
-
-                    convertLineAsciToSpiFormat("rd 0x51", gMasterTxBuffer);
-
-        if (sendSpiBuf() != CRS_SUCCESS)
-        {
-            //        closeSpi();
-            return CRS_FAILURE;
-        }
-        val = 0;
-        FPGA_getValFromBuf(gMasterRxBuffer, &val);
-
-        if (val != i)
-        {
-            counter++;
-            CLI_cliPrintf("\r\n!!ERROR!!: Sent 0x%x. Rec: 0x%x", i, val);
-            //i--;
-        }
-        CLI_cliPrintf("\r\n----------------END----------------");
-
-    }
-    CLI_cliPrintf("\r\nNum mistake: 0x%x", counter);
-
 
     return CRS_SUCCESS;
 
@@ -318,7 +318,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
             continue;
 
         }
-        CLI_cliPrintf("\r\n%s", token2);
+//        CLI_cliPrintf("\r\n%s", token2);
 
         if (sendSpiBuf() != CRS_SUCCESS)
         {
@@ -385,7 +385,7 @@ static CRS_retVal_t closeSpi()
 //TODO: check strstr returns
 static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
 {
-    CLI_cliPrintf("\r\n%s", line);
+//    CLI_cliPrintf("\r\n%s", line);
 
     if (line[0] == 'w' && line[1] == 'r' && line[2] == ' ')
     {
@@ -518,14 +518,14 @@ static CRS_retVal_t sendSpiBuf()
     transaction.rxBuf = (void*) gMasterRxBuffer;
     int i = 0;
 
-    CLI_cliPrintf("\r\nsending 0x");
+//    CLI_cliPrintf("\r\nsending 0x");
 
-    for (i =0; i < 6; i++)
-    {
-//        uint8_t val2 = gMasterTxBuffer[i];
-        CLI_cliPrintf("%x" , (uint32_t) gMasterTxBuffer[i]);
-
-    }
+//    for (i =0; i < 6; i++)
+//    {
+////        uint8_t val2 = gMasterTxBuffer[i];
+////        CLI_cliPrintf("%x" , (uint32_t) gMasterTxBuffer[i]);
+//
+//    }
 
 
     Task_sleep(100);
@@ -549,13 +549,13 @@ static CRS_retVal_t sendSpiBuf()
     {
         uint32_t val = 0;
         FPGA_getValFromBuf(gMasterRxBuffer, &val);
-        CLI_cliPrintf("\r\nread 0x%x", val);
+//        CLI_cliPrintf("\r\nread 0x%x", val);
     }
     else
     {
         uint32_t val = 0;
         FPGA_getValFromBuf(gMasterRxBuffer, &val);
-        CLI_cliPrintf("\r\nwrite. and returned from fpga: 0x%x", val<<1);
+//        CLI_cliPrintf("\r\nwrite. and returned from fpga: 0x%x", val<<1);
     }
     closeSpi();
     return CRS_SUCCESS;
