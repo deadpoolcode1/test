@@ -85,6 +85,7 @@ typedef struct parsingStruct
     uint32_t idxOfFileBuffer;
     uint32_t chipNumber;
     uint32_t lineNumber;
+    bool shouldUploadLine;
 }ScriptRf_parsingContainer_t;
 
 typedef CRS_retVal_t (*Line_Handler_fnx) (ScriptRf_parsingContainer_t *, char*);
@@ -191,6 +192,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     ScriptRf_parsingContainer_t parsingContainer = {0};
     parsingContainer.chipNumber = chipNumber;
     parsingContainer.lineNumber = lineNumber;
+    parsingContainer.shouldUploadLine = false;
 
     saveParamsToGainStateStruct(filename, nameVals);
 
@@ -222,7 +224,11 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     }
 
     Task_sleep(4000);
-    saveNameVals(&parsingContainer,nameVals);
+    if (nameVals != NULL)
+    {
+        saveNameVals(&parsingContainer,nameVals);
+    }
+
     printGlobalArrayAndLineMatrix(&parsingContainer);
 
     // read the file using nvs
@@ -396,7 +402,7 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     uint8_t size = 5;
     if (0 != memcmp(line, param_keyword,size))
     {
-        return CRS_FAILURE;
+        return CRS_SUCCESS;
     }
 
     // move after 'param' keyword
@@ -414,6 +420,7 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     // if can't save new param
     if (parsingContainer->parametersIdx == SCRIPT_RF_NAME_VALUES_SZ)
     {
+        CLI_cliPrintf("\r\nno of space for new param");
         return CRS_FAILURE;
     }
 
@@ -463,6 +470,13 @@ static CRS_retVal_t wCommandHandler (ScriptRf_parsingContainer_t *parsingContain
     // if address is not valid
     if(isInvalidAddr(&wrContainer))
     {
+        uint32_t addr = wrContainer.finalAddr;
+        if (addr == 7) // only register address ignored
+        {
+            return CRS_SUCCESS;
+        }
+        CLI_cliPrintf("\r\naddress %s is not valid", wrContainer.addr);
+
         return CRS_FAILURE;
     }
 
@@ -554,7 +568,10 @@ static CRS_retVal_t applyCommandHandler (ScriptRf_parsingContainer_t *parsingCon
     }
     CLI_cliPrintf("handling apply command");
 
-    writeLineAndGlobalsToFpga(parsingContainer);
+    parsingContainer->shouldUploadLine = true;
+
+//    writeLineAndGlobalsToFpga(parsingContainer);
+
     return CRS_SUCCESS;
 }
 
@@ -592,7 +609,7 @@ static CRS_retVal_t delayCommandHandler (ScriptRf_parsingContainer_t *parsingCon
     CLI_cliPrintf("handling delay command");
 
     char *ptr = line;
-    ptr += sizeof(CMD_DELAY);
+    ptr += strlen(CMD_DELAY);
     uint32_t time = strtoul(ptr, NULL, DECIMAL);
     delayRun(time);
 
@@ -610,11 +627,12 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
     CLI_cliPrintf("handling print command");
 
     char *ptr = line;
-    ptr += sizeof(CMD_PRINT); // skip 'print '
+    ptr += strlen(CMD_PRINT); // skip 'print '
 
     if (*ptr == '"')
     {
         ptr ++;
+        CLI_cliPrintf("\r\n");
         while(*ptr != '"')
         {
             CLI_cliPrintf("%c", *ptr);
@@ -625,7 +643,7 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
 
     char param[NAMEVALUE_NAME_SZ] = {0};
     uint8_t i = 0;
-    while (*ptr)
+    while (ptr != NULL && *ptr != 0 && *ptr != LINE_SEPARTOR)
     {
         param[i] = *ptr;
         ptr++;
@@ -638,7 +656,7 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
         CLI_cliPrintf("\r\nparam %s not found");
         return CRS_FAILURE;
     }
-    CLI_cliPrintf("%x\r\n", parsingContainer->parameters[idx].value);
+    CLI_cliPrintf("\r\n%d", parsingContainer->parameters[idx].value);
 
     return CRS_SUCCESS;
 }
@@ -1082,7 +1100,7 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
     else if (cmd == CmdType_APPLY)
     {
         const char command [] = CMD_APPLY;
-        if (0 != memcmp(line, command, strlen(line)))
+        if (0 != memcmp(line, command, strlen(command)))
         {
             return CRS_FAILURE;
         }
@@ -1092,7 +1110,7 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
 
     else if (cmd == CmdType_EMPTY_LINE)
     {
-        if(line[0] != LINE_SEPARTOR)
+        if(line[0] != 0)
         {
             return CRS_FAILURE;
         }
@@ -1579,7 +1597,6 @@ static CRS_retVal_t printGlobalArrayAndLineMatrix(ScriptRf_parsingContainer_t *p
     {
         CLI_cliPrintf("reg %x: %x, ",(uint32_t)i,(uint32_t)parsingContainer->globalRegArray[i]);
     }
-
     CLI_cliPrintf("\r\nPrinting Line Matrix\r\n");
 
     uint16_t j = 0;
@@ -1769,6 +1786,12 @@ static CRS_retVal_t saveParamsToGainStateStruct(uint8_t *filename, CRS_nameValue
 }
 static CRS_retVal_t writeLineAndGlobalsToFpga(ScriptRf_parsingContainer_t* parsingContainer)
 {
+    writeGlobalsToFpga(parsingContainer);
+
+    if (parsingContainer->shouldUploadLine == false)
+    {
+        return CRS_SUCCESS;
+    }
 
     uint32_t i = 0;
     for (i = 0; i < NUM_LUTS; i++)
@@ -1776,7 +1799,6 @@ static CRS_retVal_t writeLineAndGlobalsToFpga(ScriptRf_parsingContainer_t* parsi
         writeLutToFpga(parsingContainer, i);
     }
 
-    writeGlobalsToFpga(parsingContainer);
 
     return CRS_SUCCESS;
 }

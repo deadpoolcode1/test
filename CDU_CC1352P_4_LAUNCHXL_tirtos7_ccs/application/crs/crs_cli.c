@@ -3760,8 +3760,11 @@ static CRS_retVal_t CLI_RfRunParsing(char *line)
    token = strtok(NULL, s); // chipNumber
     if (token == NULL)
     {
+        CLI_cliPrintf("\r\nno chip number entered");
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
+
+        return CRS_FAILURE;
     }
     uint32_t chipNumber = 0;
     sscanf(token, "%x", &chipNumber);
@@ -3769,8 +3772,11 @@ static CRS_retVal_t CLI_RfRunParsing(char *line)
     token = strtok(NULL, s); // lineNumber
     if (token == NULL)
     {
+        CLI_cliPrintf("\r\nno line number entered");
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
+
+        return CRS_FAILURE;
     }
     uint32_t lineNumber = 0;
     sscanf(token, "%x", &lineNumber);
@@ -3780,38 +3786,33 @@ static CRS_retVal_t CLI_RfRunParsing(char *line)
    token = strtok(NULL, s); //nameVals
    CRS_nameValue_t nameVals[NAME_VALUES_SZ] = {0};
    memset(nameVals,0,sizeof(CRS_nameValue_t)*NAME_VALUES_SZ);
-   if(token==NULL)
+   if(token!=NULL)
    {
-       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-       CLI_startREAD();
+       char *ptr=token;
+       int idx=0;
+       while(*ptr)
+       {
+          char value[NAMEVALUE_NAME_SZ] = { 0 };
+          int j=0;
+          while(*ptr!='=')
+          {
+              nameVals[idx].name[j]=*ptr;
+              j++;
+              ptr++;
+          }
+          ptr++;//skip '='
+          j=0;
+          while(*ptr!=' ' && *ptr!=0)
+          {
+                          value[j]=*ptr;
+                         j++;
+                         ptr++;
+          }
+          nameVals[idx].value=strtol(value, NULL, 10);
+          idx++;
+          ptr++;//skip ' '
+       }
    }
-
-
-   char *ptr=token;
-   int idx=0;
-   while(*ptr)
-   {
-      char value[NAMEVALUE_NAME_SZ] = { 0 };
-      int j=0;
-      while(*ptr!='=')
-      {
-          nameVals[idx].name[j]=*ptr;
-          j++;
-          ptr++;
-      }
-      ptr++;//skip '='
-      j=0;
-      while(*ptr!=' ' && *ptr!=0)
-      {
-                      value[j]=*ptr;
-                     j++;
-                     ptr++;
-      }
-      nameVals[idx].value=strtol(value, NULL, 10);
-      idx++;
-      ptr++;//skip ' '
-   }
-
 
 
 //   CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
