@@ -254,7 +254,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         retStatus = handleLine(&parsingContainer, line);
         if (CRS_SUCCESS != retStatus)
         {
-            CLI_cliPrintf("Syntax Error\r\n");
+            CLI_cliPrintf("\r\nSyntax Error");
             return CRS_FAILURE;
         }
     }while (parsingContainer.idxOfFileBuffer < lenOfFile);
