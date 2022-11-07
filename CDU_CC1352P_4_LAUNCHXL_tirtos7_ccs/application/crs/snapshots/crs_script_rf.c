@@ -10,7 +10,7 @@
  Includes
  *****************************************************************************/
 #include <ctype.h> // isdigit
-#include <ti/sysbios/knl/Task.h> // TODO erase at the end
+#include <ti/sysbios/knl/Task.h> // Task_sleep for "delay"
 
 #include "application/crs/snapshots/crs_script_rf.h"
 #include "application/crs/crs_cli.h"
@@ -44,7 +44,7 @@
 
 #define GLOBAL_ADDR_START   0x3F
 #define GLOBAL_ADDR_FINAL   0x42
-
+#define DISCOVERY_ADDRESS   0x7
 
 enum command_type
 {
@@ -196,23 +196,33 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 
     saveParamsToGainStateStruct(filename, nameVals);
 
-    char chipNumStr [LINE_LENGTH] = {0};
-    char lineNumStr[LINE_LENGTH] = {0};
+    if (chipNumber == 0xff)
+    {
+        char lineNumStr[LINE_LENGTH] = {0};
 
-    sprintf(chipNumStr, "wr 0xff 0x%x\r", chipNumber);
-    sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
+        sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
+        uint32_t rsp = 0;
+
+        if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lineNumStr,&rsp))
+        {
+            return CRS_FAILURE;
+        }
+
+    }
+    else
+    {
+        char chipNumStr [LINE_LENGTH] = {0};
+        sprintf(chipNumStr, "wr 0xff 0x%x\r", chipNumber);
+        uint32_t rsp = 0;
+
+        if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
+        {
+            return CRS_FAILURE;
+        }
+
+    }
 
     printGlobalArrayAndLineMatrix(&parsingContainer);
-    uint32_t rsp = 0;
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
-    {
-        return CRS_FAILURE;
-    }
-
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lineNumStr,&rsp))
-    {
-        return CRS_FAILURE;
-    }
 
     if (CRS_SUCCESS != readGlobalRegArray(&parsingContainer))
     {
@@ -223,8 +233,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         return CRS_FAILURE;
     }
 
-    Task_sleep(4000);
-    if (nameVals != NULL)
+//    Task_sleep(4000);
+    if (nameVals != NULL && nameVals[0].name[0] != 0)
     {
         saveNameVals(&parsingContainer,nameVals);
     }
@@ -250,7 +260,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         memset(line, 0,sizeof(line));
         getNextLine(&parsingContainer,line);
         CLI_cliPrintf("\r\nline is %s",line);
-        Task_sleep(5000);
+//        Task_sleep(5000);
         retStatus = handleLine(&parsingContainer, line);
         if (CRS_SUCCESS != retStatus)
         {
@@ -461,6 +471,11 @@ static CRS_retVal_t wCommandHandler (ScriptRf_parsingContainer_t *parsingContain
 
             return CRS_SUCCESS;
         }
+        if (addrVal == DISCOVERY_ADDRESS)
+        {
+            // ignore
+            return CRS_SUCCESS;
+        }
         parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ] = strtoul(val, NULL, HEXADECIMAL);
         CLI_cliPrintf("\r\n Inserting into globals, reg %x value %x",  addrVal - GLOBAL_ADDR_START , (uint32_t) parsingContainer->globalRegArray[ addrVal - GLOBAL_ADDR_START ]);
 
@@ -470,11 +485,11 @@ static CRS_retVal_t wCommandHandler (ScriptRf_parsingContainer_t *parsingContain
     // if address is not valid
     if(isInvalidAddr(&wrContainer))
     {
-        uint32_t addr = wrContainer.finalAddr;
-        if (addr == 7) // only register address ignored
-        {
-            return CRS_SUCCESS;
-        }
+//        uint32_t addr = wrContainer.finalAddr;
+//        if (addr == 7) // only register address ignored
+//        {
+//            return CRS_SUCCESS;
+//        }
         CLI_cliPrintf("\r\naddress %s is not valid", wrContainer.addr);
 
         return CRS_FAILURE;
@@ -776,7 +791,7 @@ static bool isGlobal(ScriptRf_wrContainer_t *wrContainer)
 //    sscanf(wrContainer->addr, "%x", &addrVal);
     uint32_t addrVal = wrContainer->finalAddr;
 
-    if (addrVal >= GLOBAL_ADDR_START && addrVal <= GLOBAL_ADDR_FINAL)
+    if ((addrVal >= GLOBAL_ADDR_START && addrVal <= GLOBAL_ADDR_FINAL) || addrVal == DISCOVERY_ADDRESS)
     {
         return true;
     }
@@ -894,6 +909,8 @@ static bool isInvalidAddr(ScriptRf_wrContainer_t *wrContainer)
     //    uint32_t addrVal = 0;
     //    sscanf(wrContainer->addr, "%x", &addrVal);
         uint32_t addrVal = wrContainer->finalAddr;
+
+    if (addrVal == DISCOVERY_ADDRESS)
 
     if ((addrVal < 0x8 || addrVal > 0x27)
             && (addrVal < GLOBAL_ADDR_START || addrVal > GLOBAL_ADDR_FINAL))
@@ -1392,7 +1409,7 @@ static CRS_retVal_t initwrContainer(char *line, ScriptRf_wrContainer_t *ret)
     }
 
     CLI_cliPrintf("mode is %s\r\n addr is %s\r\n val is %s final address is %d", ret->mode, ret->addr, ret->val, ret->finalAddr);
-    Task_sleep(1000);
+//    Task_sleep(1000);
     return CRS_SUCCESS;
 }
 
@@ -1577,7 +1594,7 @@ static CRS_retVal_t readLineMatrix(ScriptRf_parsingContainer_t *parsingContainer
             }
 
             parsingContainer->lineMatrix[lutIdx][regIdx] = rsp;
-            Task_sleep(1000);
+//            Task_sleep(1000);
         }
     }
 
@@ -1758,25 +1775,25 @@ static CRS_retVal_t delayRun(uint32_t time)
 static CRS_retVal_t saveParamsToGainStateStruct(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT_RF_NAME_VALUES_SZ])
 {
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
-                     sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
+                     sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
     {
       CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
 
     }
     else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
-                  sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
+                  sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
     {
       CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
 
     }
     else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
-                  sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
+                  sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
     {
       CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
 
     }
     else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
-                  sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
+                  sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
     {
       CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
 

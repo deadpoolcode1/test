@@ -20,9 +20,14 @@
 #include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
 #include "application/crs/snapshots/crs_snapshot.h"
-#include "application/crs/snapshots/config_parsing.h"
+//#include "application/crs/snapshots/config_parsing.h"
+#include "application/crs/snapshots/crs_flat_parser_spi.h"
+#include "application/crs/snapshots/crs_multi_snapshots_spi.h"
+#include "application/crs/snapshots/crs_script_rf.h"
+#include "application/crs/snapshots/crs_script_dig_spi.h"
+
 #include "application/crs/snapshots/crs_multi_snapshots.h"
-#include "application/crs/snapshots/crs_snap_rf.h"
+#include "application/crs/snapshots/crs_snap_rf_spi.h"
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "crs/crs_tdd.h"
 #include "crs/crs_env.h"
@@ -118,16 +123,22 @@ void Collector_init()
     ApiMac_registerCallbacks(&Collector_macCallbacks);
 #ifdef CRS_TMP_SPI
     Fpga_tmpInit();
+    SPI_Config_configInit(sem);
+    MultiFilesSPI_multiFilesInit(sem);
+    DigSPI_init(sem);
+    SPI_RF_init(sem);
+//    scriptRf_init();
+#else
+    Config_configInit(sem);
+    MultiFiles_multiFilesInit(sem);
+    RF_init(sem);
+    DigInit(sem);
 #endif
     Nvs_init(sem);
     Env_init();
     Thresh_init();
     SnapInit(sem);
-    MultiFiles_multiFilesInit(sem);
-    RF_init(sem);
-    Config_configInit(sem);
     Fpga_initSem(sem);
-    DigInit(sem);
     Tdd_initSem(sem);
     CRS_init();
     Manage_initSem(sem);
@@ -154,12 +165,18 @@ void Collector_process(void)
         /* Clear the event */
         Util_clearEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
     }
+#ifdef CRS_TMP_SPI
+    SPI_Config_process();
+    MultiFilesSPI_process();
+    DigSPI_process();
+#else
     Config_process();
     MultiFiles_process();
+    DIG_process();
+#endif
     RF_process();
     Snap_process();
     Fpga_process();
-    DIG_process();
     Tdd_process();
     Agc_process();
 
@@ -175,6 +192,13 @@ void Csf_crsInitScript()
 {
 //    CRS_LOG(CRS_DEBUG, "Running script");
 
+#ifdef CRS_TMP_SPI
+    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
+    CLI_startREAD();
+    Alarms_init(sem);
+    Agc_init(sem);
+    Agc_ledEnv();
+#else
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
     {
@@ -183,6 +207,7 @@ void Csf_crsInitScript()
 
         fpgaCrsDoneCallback(cbArgs);
     }
+#endif
 }
 
 void Csf_processCliSendMsgUpdate()
@@ -386,7 +411,6 @@ void Cllc_getFfdShortAddr(uint16_t *shortAddr)
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-#ifndef CRS_TMP_SPI
     if (Fpga_isOpen() == CRS_SUCCESS)
     {
         CRS_retVal_t retStatus = Config_runConfigFile("flat",
@@ -394,11 +418,15 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 
     }
     else
-#endif
     {
         CLI_cliPrintf("\r\nUnable to run flat file");
         FPGA_cbArgs_t cbArgs={0};
         fpgaCrsDoneCallback(cbArgs);
+//        CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
+//        CLI_startREAD();
+//        Alarms_init(sem);
+//        Agc_init(sem);
+//        Agc_ledEnv();
     }
 
 }

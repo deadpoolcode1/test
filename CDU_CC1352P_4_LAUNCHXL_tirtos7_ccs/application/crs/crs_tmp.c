@@ -311,7 +311,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
         {
             token2[strlen(token2)-1] = 0;
         }
-        CRS_retVal_t retVal = convertLineAsciToSpiFormat(token2, gMasterTxBuffer);
+        CRS_retVal_t retVal = convertLineAsciToSpiFormat((uint8_t*)token2, gMasterTxBuffer);
         if (retVal != CRS_SUCCESS)
         {
             token2 = strtok(NULL, d);
@@ -331,7 +331,9 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
     uint32_t val;
 
     val = 0;
+    // Add special case for 0x50/51
     FPGA_getValFromBuf(gMasterRxBuffer, &val);
+
     *rsp = val;
     return CRS_SUCCESS;
 
