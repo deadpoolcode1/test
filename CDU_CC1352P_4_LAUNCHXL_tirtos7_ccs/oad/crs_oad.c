@@ -467,8 +467,9 @@ void* oadRadioAccessAllocMsg(uint32_t msgLen)
 
 CRS_retVal_t Oad_Reinit()
 {
-    oadInProgress = false;
+           oadInProgress = false;
           oadBNumBlocks = 0;
+          oadBlock=0;
           CLI_init(false);
           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
           CLI_startREAD();
