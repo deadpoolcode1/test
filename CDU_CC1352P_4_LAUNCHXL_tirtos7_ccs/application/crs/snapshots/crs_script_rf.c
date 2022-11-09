@@ -552,14 +552,25 @@ static CRS_retVal_t ewCommandHandler (ScriptRf_parsingContainer_t *parsingContai
     token = myStrTok(lineTemp, s); //wr
     token = myStrTok(NULL, s); //addr
     strcat(lineToSend, token);
-    token = strtok(NULL, s); //param or val
+    strcat(lineToSend, " ");
+    token = myStrTok(NULL, s); //param or val
     int8_t idx = getParamIdx(parsingContainer, token);
-    if (NOT_FOUND == idx)
+    if (NOT_FOUND == idx && isNumber(token + 2) == false)
     {
         return CRS_FAILURE;
     }
-    sprintf(lineToSend + strlen(lineToSend), " 0x%x",
-            parsingContainer->parameters[idx].value);
+    if (idx != NOT_FOUND)
+    {
+        sprintf(lineToSend + strlen(lineToSend), "0x%x",
+                parsingContainer->parameters[idx].value);
+    }
+    else
+    {
+        strcat(lineToSend, token);
+    }
+
+    uint32_t rsp = 0;
+    Fpga_tmpWriteMultiLine(lineToSend, &rsp);
 
     return CRS_SUCCESS;
 }
@@ -1493,7 +1504,7 @@ static bool isNumber(char* p)
 
     while(ptr != NULL && *ptr != 0 && *ptr != LINE_SEPARTOR)
     {
-        if(!isdigit(*ptr))
+        if(0 == isxdigit(*ptr))
         {
             return false;
         }

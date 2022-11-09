@@ -166,9 +166,9 @@ void Collector_process(void)
         Util_clearEvent(&Collector_events, COLLECTOR_SEND_MSG_EVT);
     }
 #ifdef CRS_TMP_SPI
-    SPI_Config_process();
-    MultiFilesSPI_process();
-    DigSPI_process();
+//    SPI_Config_process();
+//    MultiFilesSPI_process();
+//    DigSPI_process();
 #else
     Config_process();
     MultiFiles_process();

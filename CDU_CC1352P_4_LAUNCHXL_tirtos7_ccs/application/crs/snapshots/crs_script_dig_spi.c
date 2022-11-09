@@ -28,6 +28,20 @@
 #define FINISHED_FILE_EV 0x4
 #define CHANGE_DIG_CHIP_EV 0x8
 
+
+typedef struct scriptDigTraverser
+{
+    CRS_nameValue_t nameValues[NAME_VALUES_SZ];
+    uint32_t digAddr;
+    CRS_chipMode_t chipMode;
+    CRS_chipType_t chipType;
+    char fileToUpload[FILENAME_SZ];
+    char *fileContentCache;
+    uint32_t fileContentCacheIdx;
+    char starRdRespLine[LINE_SZ];
+    bool isFileDone;
+    char lineToSendArray[9][CRS_NVS_LINE_BYTES];
+}scriptDigTraverser_t;
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -66,44 +80,44 @@ static bool gIsFileDone = false;
 static void uploadSnapDigCb(void);
 //static void uploadSnapSlaveCb(const FPGA_cbArgs_t _cbArgs);
 //static void uploadSnapNativeCb(const FPGA_cbArgs_t _cbArgs);
-static void uploadSnapStarCb(char *line);
+static void uploadSnapStarCb(scriptDigTraverser_t *fileTraverser, char *line);
 
-static CRS_retVal_t zeroLineToSendArray();
-static CRS_retVal_t getPrevLine(char *line);
+static CRS_retVal_t zeroLineToSendArray(scriptDigTraverser_t *fileTraverser);
+static CRS_retVal_t getPrevLine(scriptDigTraverser_t *fileTraverser, char *line);
 
-static CRS_retVal_t getNextLine(char *line);
+static CRS_retVal_t getNextLine(scriptDigTraverser_t *fileTraverser, char *line);
 //static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
 //                                uint32_t numLines, char *respLine);
 
 //static void finishedFileCb(const FPGA_cbArgs_t _cbArgs);
 
-static CRS_retVal_t runLine(char *line);
+static CRS_retVal_t runLine(scriptDigTraverser_t *fileTraverser, char *line);
 static CRS_retVal_t runApplyCommand(char *line);
-static CRS_retVal_t runStarCommand(char *line);
-static CRS_retVal_t incermentParam(char *line);
-static CRS_retVal_t addParam(char *line);
-static CRS_retVal_t runSlashCommand(char *line);
-static CRS_retVal_t runGotoCommand(char *line); //expecting to accept 'goto label'
-static CRS_retVal_t runIfCommand(char *line);
-static CRS_retVal_t runPrintCommand(char *line);
+static CRS_retVal_t runStarCommand(scriptDigTraverser_t *fileTraverser, char *line);
+static CRS_retVal_t incermentParam(scriptDigTraverser_t *fileTraverser, char *line);
+static CRS_retVal_t addParam(scriptDigTraverser_t *fileTraverser, char *line);
+static CRS_retVal_t runSlashCommand(scriptDigTraverser_t *fileTraverser, char *line);
+static CRS_retVal_t runGotoCommand(scriptDigTraverser_t *fileTraverser, char *line); //expecting to accept 'goto label'
+static CRS_retVal_t runIfCommand(scriptDigTraverser_t *fileTraverser, char *line);
+static CRS_retVal_t runPrintCommand(scriptDigTraverser_t *fileTraverser, char *line);
 static CRS_retVal_t runWCommand(char *line);
 static CRS_retVal_t runRCommand(char *line);
-static CRS_retVal_t runEwCommand(char *line);
+static CRS_retVal_t runEwCommand(scriptDigTraverser_t *fileTraverser, char *line);
 static CRS_retVal_t runErCommand(char *line);
 static CRS_retVal_t getAddress(char *line, uint32_t *rsp);
 static CRS_retVal_t getVal(char *line, char *rsp);
 static CRS_retVal_t isNextLine(char *line, bool *rsp);
 static void setDigClock(uint32_t time);
 static void processDigTimeoutCallback(UArg a0);
-static CRS_retVal_t addEndOfFlieSequence();
+static CRS_retVal_t addEndOfFlieSequence(scriptDigTraverser_t *fileTraverser);
 static void uploadSnapRdDigCb(void);
 static void changedDigChipCb(void);
 static CRS_retVal_t runWrCommand(char *line);
 
 
-static CRS_retVal_t runNextLine(void);
-static CRS_retVal_t changeDigChip(void);
-static CRS_retVal_t starRsp(void);
+static CRS_retVal_t runNextLine(scriptDigTraverser_t *fileTraverser);
+static void changeDigChip(scriptDigTraverser_t *fileTraverser);
+static CRS_retVal_t starRsp(scriptDigTraverser_t *fileTraverser);
 
 /******************************************************************************
  Public Functions
@@ -132,29 +146,35 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 //        return CRS_FAILURE;
 
     }
-    CRS_LOG(CRS_DEBUG, "running file: %s", filename);
-    gDigAddr = chipNumber;
+
+    scriptDigTraverser_t fileTraverser = {0};
+    fileTraverser.digAddr = chipNumber;
+    fileTraverser.chipMode = chipMode;
+    fileTraverser.chipType = DIG;
+    fileTraverser.fileContentCache = NULL;
+//    gDigAddr = chipNumber;
 //    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = DIG;
+//    gMode = chipMode;
+//    gChipType = DIG;
     CLI_cliPrintf("\r\n");
     if (nameVals != NULL)
     {
         int i;
         for (i = 0; i < NAME_VALUES_SZ; ++i)
         {
-            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
+            memcpy(fileTraverser.nameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
+            fileTraverser.nameValues[i].value = nameVals[i].value;
         }
     }
     CRS_retVal_t rspStatus = CRS_SUCCESS;
 
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
+    memcpy(fileTraverser.fileToUpload, filename, FILENAME_SZ);
+    fileTraverser.fileContentCacheIdx = 0;
 
 //    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
+    fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
+//    gFileContentCache = Nvs_readFileWithMalloc(filename);
+    if (fileTraverser.fileContentCache == NULL)
     {
         return CRS_FAILURE;
     }
@@ -162,15 +182,14 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
     if (chipNumber != 0xff)
     {
 //        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-        changeDigChip();
+        changeDigChip(&fileTraverser);
     }
-    runNextLine();
+    runNextLine(&fileTraverser);
 //    else
 //    {
 //        Util_setEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
 
 //    }
-    Semaphore_post(collectorSem);
 
     return rspStatus;
 
@@ -189,35 +208,37 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
 //
     }
 //    gCbFn = cbFunc;
-    gMode = chipMode;
-    gChipType = UNKNOWN;
+    scriptDigTraverser_t fileTraverser = {0};
+    fileTraverser.chipMode = chipMode;
+    fileTraverser.chipType = UNKNOWN;
     CLI_cliPrintf("\r\n");
     if (nameVals != NULL)
     {
         int i;
         for (i = 0; i < NAME_VALUES_SZ; ++i)
         {
-            memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
+            memcpy(fileTraverser.nameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
+            fileTraverser.nameValues[i].value = nameVals[i].value;
         }
     }
     CRS_LOG(CRS_DEBUG, "running file: %s", filename);
 
     CRS_retVal_t rspStatus = CRS_SUCCESS;
 
-    memcpy(gFileToUpload, filename, FILENAME_SZ);
-    gFileContentCacheIdx = 0;
-    gIsFileDone = false;
-
+    memcpy(fileTraverser.fileToUpload, filename, FILENAME_SZ);
+    fileTraverser.fileContentCacheIdx = 0;
+    fileTraverser.isFileDone = false;
+    fileTraverser.fileContentCache = NULL;
 //    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
+    fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
+    if (fileTraverser.fileContentCache == NULL)
     {
         return CRS_FAILURE;
     }
-    runNextLine();
+    runNextLine(&fileTraverser);
+    CRS_free(fileTraverser.fileContentCache);
+    fileTraverser.fileContentCache = NULL;
 //    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
 
     return rspStatus;
 
@@ -225,105 +246,105 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
 void DigSPI_process(void)
 {
     CRS_retVal_t rspStatus;
-
-    if (gDigEvents & RUN_NEXT_LINE_EV)
-    {
-        char line[LINE_SZ] = { 0 };
-
-        rspStatus = getNextLine(line);
-        if (rspStatus == CRS_FAILURE)
-        {
-            if (gIsFileDone == false && gChipType != UNKNOWN)
-            {
-                gIsFileDone = true;
-                addEndOfFlieSequence();
+//
+//    if (gDigEvents & RUN_NEXT_LINE_EV)
+//    {
+//        char line[LINE_SZ] = { 0 };
+//
+////        rspStatus = getNextLine(line);
+//        if (rspStatus == CRS_FAILURE)
+//        {
+//            if (gIsFileDone == false && gChipType != UNKNOWN)
+//            {
+//                gIsFileDone = true;
+////                addEndOfFlieSequence();
+////                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+////                getNextLine(line);
+//            }
+//            else
+//            {
+//                gIsFileDone = false;
+//                CRS_free(gFileContentCache);
+//                gFileContentCache = NULL;
+////                const FPGA_cbArgs_t cbArgs={0};
+////                gCbFn(cbArgs);
+////                gCbFn();
 //                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-                getNextLine(line);
-            }
-            else
-            {
-                gIsFileDone = false;
-                CRS_free(gFileContentCache);
-                gFileContentCache = NULL;
-//                const FPGA_cbArgs_t cbArgs={0};
-//                gCbFn(cbArgs);
-//                gCbFn();
-                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-                return;
-            }
-
-        }
-
-        runLine(line);
-
-        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-        return;
-
+//                return;
+//            }
+//
+//        }
+//
+//        runLine(line);
+//
 //        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-    }
-
-    if (gDigEvents & STAR_RSP_EV)
-    {
-
-        char line[LINE_SZ] = { 0 };
-
-        rspStatus = getPrevLine(line);
-        if (rspStatus == CRS_FAILURE)
-        {
-            CRS_free(gFileContentCache);
-            gFileContentCache = NULL;
-
-//            const FPGA_cbArgs_t cbArgs={0};
-//            gCbFn(cbArgs);
-//            gCbFn();
-            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-            return;
-        }
-
-        char starParsedLine[LINE_SZ] = { 0 };
-        Convert_convertStar(line, gStarRdRespLine, starParsedLine);
-        zeroLineToSendArray();
-
-        if (gChipType == DIG)
-        {
-            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
-                                            gMode);
-        }
-        else if (gChipType == UNKNOWN)
-        {
-            rspStatus = Convert_readLineFpga(starParsedLine, gLineToSendArray);
-
-//            strcpy(gLineToSendArray[0], line);
-            rspStatus = CRS_SUCCESS;
-        }
-
-        if (rspStatus == CRS_NEXT_LINE)
-        {
-            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-            Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-
-            Semaphore_post(collectorSem);
-
-            return;
-        }
-
-        Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-        return;
-
-    }
-
-    //CHANGE_DIG_CHIP_EV
-    if (gDigEvents & CHANGE_DIG_CHIP_EV)
-    {
-        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
-        char line[100] = { 0 };
-        sprintf(line, "wr 0xff 0x%x", gDigAddr);
-//        Fpga_writeMultiLine(line, changedDigChipCb);
-        uint32_t rsp = 0;
-        Fpga_tmpWriteMultiLine(line, &rsp);
-        changedDigChipCb();
-        Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
-    }
+//        return;
+//
+////        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//    }
+//
+//    if (gDigEvents & STAR_RSP_EV)
+//    {
+//
+//        char line[LINE_SZ] = { 0 };
+//
+//        rspStatus = getPrevLine(line);
+//        if (rspStatus == CRS_FAILURE)
+//        {
+//            CRS_free(gFileContentCache);
+//            gFileContentCache = NULL;
+//
+////            const FPGA_cbArgs_t cbArgs={0};
+////            gCbFn(cbArgs);
+////            gCbFn();
+//            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+//            return;
+//        }
+//
+//        char starParsedLine[LINE_SZ] = { 0 };
+//        Convert_convertStar(line, gStarRdRespLine, starParsedLine);
+//        zeroLineToSendArray();
+//
+//        if (gChipType == DIG)
+//        {
+//            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
+//                                            gMode);
+//        }
+//        else if (gChipType == UNKNOWN)
+//        {
+//            rspStatus = Convert_readLineFpga(starParsedLine, gLineToSendArray);
+//
+////            strcpy(gLineToSendArray[0], line);
+//            rspStatus = CRS_SUCCESS;
+//        }
+//
+//        if (rspStatus == CRS_NEXT_LINE)
+//        {
+//            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+//            Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//
+//            Semaphore_post(collectorSem);
+//
+//            return;
+//        }
+//
+//        Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+//        return;
+//
+//    }
+//
+//    //CHANGE_DIG_CHIP_EV
+//    if (gDigEvents & CHANGE_DIG_CHIP_EV)
+//    {
+//        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
+//        char line[100] = { 0 };
+//        sprintf(line, "wr 0xff 0x%x", gDigAddr);
+////        Fpga_writeMultiLine(line, changedDigChipCb);
+//        uint32_t rsp = 0;
+//        Fpga_tmpWriteMultiLine(line, &rsp);
+//        changedDigChipCb();
+//        Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
+//    }
 
 }
 
@@ -336,19 +357,19 @@ static void changedDigChipCb(void)
     Semaphore_post(collectorSem);
 }
 
-static CRS_retVal_t runLine(char *line)
+static CRS_retVal_t runLine(scriptDigTraverser_t *fileTraverser, char *line)
 {
 
     CRS_retVal_t retVal = CRS_SUCCESS;
-    while (true)
-    {
+//    while (true)
+//    {
 
-        CRS_LOG(CRS_DEBUG, "Running line: %s", line);
+//        CRS_LOG(CRS_DEBUG, "Running line: %s", line);
 //        char rspLine[100] = { 0 };
 
         if (((strstr(line, "16b'")) || (strstr(line, "32b'"))))
         {
-            runStarCommand(line);
+            runStarCommand(fileTraverser, line);
             return CRS_SUCCESS;
         }
         else if (memcmp(line, "w ", 2) == 0)
@@ -375,7 +396,7 @@ static CRS_retVal_t runLine(char *line)
         }
         else if (memcmp(line, "ew", 2) == 0)
         {
-            runEwCommand(line);
+            runEwCommand(fileTraverser, line);
 //            CLI_cliPrintf("DIG after ew!!! %s", line);
             return CRS_SUCCESS;
         }
@@ -387,15 +408,18 @@ static CRS_retVal_t runLine(char *line)
         }
         else if (memcmp(line, "//@@", 4) == 0)
         {
-            runSlashCommand(line);
+            runSlashCommand(fileTraverser, line);
+            return CRS_SUCCESS;
         }
         else if (memcmp(line, "if", 2) == 0)
         {
-            runIfCommand(line);
+            runIfCommand(fileTraverser, line);
+            return CRS_SUCCESS;
         }
         else if (memcmp(line, "goto", 4) == 0)
         {
-            runGotoCommand(line);
+            runGotoCommand(fileTraverser, line);
+            return CRS_SUCCESS;
         }
         else if (memcmp(line, "apply", 5) == 0)
         {
@@ -410,47 +434,48 @@ static CRS_retVal_t runLine(char *line)
         }
         else if (memcmp(line, "print", 5) == 0)
         {
-            runPrintCommand(line);
-//        return CRS_SUCCESS;
+            runPrintCommand(fileTraverser, line);
+            return CRS_SUCCESS;
 
         }
         else if (strstr(line, "=") != NULL)
         {
             if (strstr(line, "+") == NULL)
             {
-                addParam(line);
+                addParam(fileTraverser, line);
             }
             else if (strstr(line, "(") == NULL)
             {
-                incermentParam(line);
+                incermentParam(fileTraverser, line);
             }
-
+            return CRS_SUCCESS;
         }
-        memset(line, 0, 100);
-        retVal = getNextLine(line);
-        if (retVal == CRS_FAILURE)
-        {
-            if (gIsFileDone == false && gChipType != UNKNOWN)
-            {
-                gIsFileDone = true;
-                addEndOfFlieSequence();
-                //                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-                getNextLine(line);
-            }
-            else
-            {
-                gIsFileDone = false;
-
-                CRS_free(gFileContentCache);
-                gFileContentCache = NULL;
-//                const FPGA_cbArgs_t cbArgs={0};
-//                gCbFn(cbArgs);
-//                gCbFn();
-                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-                return CRS_SUCCESS;
-            }
-        }
-    }
+//        memset(line, 0, 100);
+//        retVal = getNextLine(fileTraverser, line);
+//        if (retVal == CRS_FAILURE)
+//        {
+//            if (fileTraverser->isFileDone == false && gChipType != UNKNOWN)
+//            {
+//                fileTraverser->isFileDone = true;
+//                addEndOfFlieSequence(fileTraverser);
+//                //                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//                getNextLine(fileTraverser, line);
+//            }
+//            else
+//            {
+//                fileTraverser->isFileDone = false;
+//
+//                CRS_free(fileTraverser->fileContentCache);
+//                fileTraverser->fileContentCache = NULL;
+////                const FPGA_cbArgs_t cbArgs={0};
+////                gCbFn(cbArgs);
+////                gCbFn();
+////                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//                return CRS_SUCCESS;
+//            }
+//        }
+//    }
+        return CRS_SUCCESS;
 }
 
 static CRS_retVal_t runApplyCommand(char *line)
@@ -466,7 +491,7 @@ static CRS_retVal_t runApplyCommand(char *line)
 
 }
 
-static CRS_retVal_t runStarCommand(char *line)
+static CRS_retVal_t runStarCommand(scriptDigTraverser_t *fileTraverser, char *line)
 {
     uint32_t addrVal;
     char lineToSend[100] = { 0 };
@@ -486,13 +511,13 @@ static CRS_retVal_t runStarCommand(char *line)
 //    Fpga_writeMultiLine(lineToSend, uploadSnapStarCb);
     uint32_t rsp = 0;
     Fpga_tmpWriteMultiLine(lineToSend, &rsp);
-    uploadSnapStarCb(lineToSend);
+    uploadSnapStarCb(fileTraverser, lineToSend);
 
     return CRS_SUCCESS;
 
 }
 
-static CRS_retVal_t incermentParam(char *line)
+static CRS_retVal_t incermentParam(scriptDigTraverser_t *fileTraverser, char *line)
 {
     char *ptr = line;
     char varName[NAMEVALUE_NAME_SZ] = { 0 };
@@ -531,9 +556,9 @@ static CRS_retVal_t incermentParam(char *line)
         i = 0;
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, a, strlen(a)) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, a, strlen(a)) == 0)
             {
-                aInt = gNameValues[i].value;
+                aInt = fileTraverser->nameValues[i].value;
                 break;
             }
             i++;
@@ -548,9 +573,9 @@ static CRS_retVal_t incermentParam(char *line)
         i = 0;
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, b, strlen(b)) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, b, strlen(b)) == 0)
             {
-                bInt = gNameValues[i].value;
+                bInt = fileTraverser->nameValues[i].value;
                 break;
             }
             i++;
@@ -565,16 +590,16 @@ static CRS_retVal_t incermentParam(char *line)
     i = 0;
     while (i < NAME_VALUES_SZ)
     {
-        if (memcmp(gNameValues[i].name, varName, NAMEVALUE_NAME_SZ) == 0)
+        if (memcmp(fileTraverser->nameValues[i].name, varName, NAMEVALUE_NAME_SZ) == 0)
         {
-            gNameValues[i].value = result;
+            fileTraverser->nameValues[i].value = result;
             break;
         }
         i++;
     }
     return CRS_SUCCESS;
 }
-static CRS_retVal_t addParam(char *line)
+static CRS_retVal_t addParam(scriptDigTraverser_t *fileTraverser, char *line)
 {
     char *ptr = line;
     char varName[NAMEVALUE_NAME_SZ] = { 0 };
@@ -590,9 +615,9 @@ static CRS_retVal_t addParam(char *line)
     int idx = 0;
     while (1)
     {
-        if (*(gNameValues[idx].name) == 0)
+        if (*(fileTraverser->nameValues[idx].name) == 0)
         {
-            memcpy(gNameValues[idx].name, varName, NAMEVALUE_NAME_SZ);
+            memcpy(fileTraverser->nameValues[idx].name, varName, NAMEVALUE_NAME_SZ);
             break;
         }
         idx++;
@@ -609,10 +634,10 @@ static CRS_retVal_t addParam(char *line)
         i = 0;
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, varValue, NAMEVALUE_NAME_SZ) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, varValue, NAMEVALUE_NAME_SZ) == 0)
             {
 //                CLI_cliPrintf("gNameValues[idx].value: %d\r\ngNameValues[i].value: %d\r\n",gNameValues[idx].value,gNameValues[i].value);
-                gNameValues[idx].value = gNameValues[i].value;
+                fileTraverser->nameValues[idx].value = fileTraverser->nameValues[i].value;
                 break;
             }
             i++;
@@ -620,11 +645,11 @@ static CRS_retVal_t addParam(char *line)
     }
     else
     {
-        gNameValues[idx].value = strtol(varValue, NULL, 10);
+        fileTraverser->nameValues[idx].value = strtol(varValue, NULL, 10);
     }
     return CRS_SUCCESS;
 }
-static CRS_retVal_t runSlashCommand(char *line)
+static CRS_retVal_t runSlashCommand(scriptDigTraverser_t *fileTraverser, char *line)
 {
 
     char *ptr = line;
@@ -651,7 +676,7 @@ static CRS_retVal_t runSlashCommand(char *line)
         bool isExistParam = false;
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, varName, strlen(varName)) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, varName, strlen(varName)) == 0)
             {
                 isExistParam = true;
             }
@@ -662,9 +687,9 @@ static CRS_retVal_t runSlashCommand(char *line)
             while (1)
             {
 
-                if (*(gNameValues[idx].name) == 0)
+                if (*(fileTraverser->nameValues[idx].name) == 0)
                 {
-                    memcpy(gNameValues[idx].name, varName, NAMEVALUE_NAME_SZ);
+                    memcpy(fileTraverser->nameValues[idx].name, varName, NAMEVALUE_NAME_SZ);
                     break;
                 }
                 idx++;
@@ -677,7 +702,7 @@ static CRS_retVal_t runSlashCommand(char *line)
                 i++;
                 ptr++;
             }
-            gNameValues[idx].value = strtol(varValue, NULL, 10);
+            fileTraverser->nameValues[idx].value = strtol(varValue, NULL, 10);
             i = 0;
         }
 //        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
@@ -685,7 +710,7 @@ static CRS_retVal_t runSlashCommand(char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label'
+static CRS_retVal_t runGotoCommand(scriptDigTraverser_t *fileTraverser, char *line) //expecting to accept 'goto label'
 {
     char *ptr = line;
     ptr += 5;        //skip 'goto '
@@ -693,13 +718,14 @@ static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label
     strcat(label, "\n");
     strcat(label, ptr);
     strcat(label, ":");
-    char *ptrResp = strstr(gFileContentCache, label);
+    char *ptrResp = strstr(fileTraverser->fileContentCache, label);
     ptrResp += strlen(label) + 1;
-    gFileContentCacheIdx = ptrResp - gFileContentCache;
+    fileTraverser->fileContentCacheIdx = ptrResp - fileTraverser->fileContentCache;
+
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t runIfCommand(char *line)
+static CRS_retVal_t runIfCommand(scriptDigTraverser_t *fileTraverser, char *line)
 {
     char param[NAMEVALUE_NAME_SZ] = { 0 };
     char comparedVal[10] = { 0 };
@@ -727,7 +753,7 @@ static CRS_retVal_t runIfCommand(char *line)
     i = 0;
     while (1)
     {
-        if (memcmp(gNameValues[i].name, param, NAMEVALUE_NAME_SZ) == 0)
+        if (memcmp(fileTraverser->nameValues[i].name, param, NAMEVALUE_NAME_SZ) == 0)
         {
             break;
         }
@@ -735,14 +761,14 @@ static CRS_retVal_t runIfCommand(char *line)
     }
     ptr += 6;        //skip ' then '
     strcat(label, ptr);
-    if (gNameValues[i].value == comparedValInt)
+    if (fileTraverser->nameValues[i].value == comparedValInt)
     {
-        runGotoCommand(label);
+        runGotoCommand(fileTraverser, label);
     }
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t runPrintCommand(char *line)
+static CRS_retVal_t runPrintCommand(scriptDigTraverser_t *fileTraverser, char *line)
 {
     char lineTemp[50] = { 0 };
     strcat(lineTemp, line);
@@ -767,13 +793,13 @@ static CRS_retVal_t runPrintCommand(char *line)
     {
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, param, NAMEVALUE_NAME_SZ) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, param, NAMEVALUE_NAME_SZ) == 0)
             {
                 break;
             }
             i++;
         }
-        CLI_cliPrintf(" %d", gNameValues[i].value);
+        CLI_cliPrintf(" %d", fileTraverser->nameValues[i].value);
     }
     CLI_cliPrintf("\r\n");
 //ptr+=2;//skip '" '
@@ -841,7 +867,7 @@ static CRS_retVal_t runRCommand(char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t runEwCommand(char *line)
+static CRS_retVal_t runEwCommand(scriptDigTraverser_t *fileTraverser, char *line)
 {
     char lineToSend[100] = { 0 };
     char lineTemp[100] = { 0 };
@@ -865,10 +891,10 @@ static CRS_retVal_t runEwCommand(char *line)
         i = 0;
         while (i < NAME_VALUES_SZ)
         {
-            if (memcmp(gNameValues[i].name, token, strlen(token)) == 0)
+            if (memcmp(fileTraverser->nameValues[i].name, token, strlen(token)) == 0)
             {
                 sprintf(lineToSend + strlen(lineToSend), " 0x%x",
-                        gNameValues[i].value);
+                        fileTraverser->nameValues[i].value);
                 break;
             }
             i++;
@@ -903,11 +929,11 @@ static CRS_retVal_t runErCommand(char *line)
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t addEndOfFlieSequence()
+static CRS_retVal_t addEndOfFlieSequence(scriptDigTraverser_t *fileTraverser)
 {
-    CRS_free(gFileContentCache);
-    gFileContentCache = CRS_malloc(700);
-    if (gFileContentCache == NULL)
+    CRS_free(fileTraverser->fileContentCache);
+    fileTraverser->fileContentCache = CRS_malloc(700);
+    if (fileTraverser->fileContentCache == NULL)
     {
         CRS_LOG(CRS_ERR, "Malloc failed");
         return CRS_FAILURE;
@@ -918,27 +944,27 @@ static CRS_retVal_t addEndOfFlieSequence()
     char *tmp2 = "\nwr 0x50 0x47fc42";
     char *tmp3 = "\nwr 0x50 0x47fc43";
 
-    memset(gFileContentCache, 0, 700);
+    memset(fileTraverser->fileContentCache, 0, 700);
 
-    memcpy(gFileContentCache, &applyCommand[1], strlen(applyCommand) - 1);
-    strcat(gFileContentCache, delayCommand);
+    memcpy(fileTraverser->fileContentCache, &applyCommand[1], strlen(applyCommand) - 1);
+    strcat(fileTraverser->fileContentCache, delayCommand);
 
-    strcat(gFileContentCache, tmp2);
-    strcat(gFileContentCache, applyCommand);
-    strcat(gFileContentCache, delayCommand);
+    strcat(fileTraverser->fileContentCache, tmp2);
+    strcat(fileTraverser->fileContentCache, applyCommand);
+    strcat(fileTraverser->fileContentCache, delayCommand);
 
-    strcat(gFileContentCache, tmp3);
-    strcat(gFileContentCache, applyCommand);
-    strcat(gFileContentCache, delayCommand);
+    strcat(fileTraverser->fileContentCache, tmp3);
+    strcat(fileTraverser->fileContentCache, applyCommand);
+    strcat(fileTraverser->fileContentCache, delayCommand);
 
-    strcat(gFileContentCache, tmp2);
-    strcat(gFileContentCache, applyCommand);
-    strcat(gFileContentCache, delayCommand);
+    strcat(fileTraverser->fileContentCache, tmp2);
+    strcat(fileTraverser->fileContentCache, applyCommand);
+    strcat(fileTraverser->fileContentCache, delayCommand);
 
-    strcat(gFileContentCache, tmp3);
-    strcat(gFileContentCache, applyCommand);
+    strcat(fileTraverser->fileContentCache, tmp3);
+    strcat(fileTraverser->fileContentCache, applyCommand);
 
-    gFileContentCacheIdx = 0;
+    fileTraverser->fileContentCacheIdx = 0;
     return CRS_SUCCESS;
 
 }
@@ -1023,84 +1049,84 @@ static CRS_retVal_t isNextLine(char *line, bool *rsp)
 
 }
 
-static CRS_retVal_t getPrevLine(char *line)
+static CRS_retVal_t getPrevLine(scriptDigTraverser_t *fileTraverser, char *line)
 {
 //    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
 //    static uint32_t gFileContentCacheIdx = 0;
-    if (gFileContentCacheIdx == 0)
+    if (fileTraverser->fileContentCacheIdx == 0)
     {
         return CRS_FAILURE;
     }
-    gFileContentCacheIdx--;
-    while (gFileContentCache[gFileContentCacheIdx] == '\n')
+    fileTraverser->fileContentCacheIdx--;
+    while (fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] == '\n')
     {
-        if (gFileContentCacheIdx == 0)
+        if (fileTraverser->fileContentCacheIdx == 0)
         {
             break;
         }
-        gFileContentCacheIdx--;
+        fileTraverser->fileContentCacheIdx--;
     }
 
-    while (gFileContentCache[gFileContentCacheIdx] != '\n')
+    while (fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] != '\n')
     {
-        if (gFileContentCacheIdx == 0)
+        if (fileTraverser->fileContentCacheIdx == 0)
         {
             break;
         }
-        gFileContentCacheIdx--;
+        fileTraverser->fileContentCacheIdx--;
     }
-    if (gFileContentCache[gFileContentCacheIdx] == '\n')
+    if (fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] == '\n')
     {
-        gFileContentCacheIdx++;
+        fileTraverser->fileContentCacheIdx++;
     }
-    return getNextLine(line);
+    return getNextLine(fileTraverser, line);
 
 }
 
-static CRS_retVal_t getNextLine(char *line)
+static CRS_retVal_t getNextLine(scriptDigTraverser_t *fileTraverser, char *line)
 {
 //    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
 //    static uint32_t gFileContentCacheIdx = 0;
 
-    while (gFileContentCache[gFileContentCacheIdx] == '\n')
+    while (fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] == '\n')
     {
-        gFileContentCacheIdx++;
+        fileTraverser->fileContentCacheIdx++;
     }
 
-    if (gFileContentCache[gFileContentCacheIdx] == 0)
+    if (fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] == 0)
     {
         return CRS_FAILURE;
     }
 
-    char *endOfLine = strchr(&gFileContentCache[gFileContentCacheIdx], '\n');
+    char *endOfLine = strchr(&fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx], '\n');
     if (endOfLine == NULL)
     {
-        strcpy(line, &gFileContentCache[gFileContentCacheIdx]);
-        gFileContentCacheIdx += strlen(line);
+        strcpy(line, &fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx]);
+        fileTraverser->fileContentCacheIdx += strlen(line);
         return CRS_SUCCESS;
     }
 
     uint32_t lineIdx = 0;
 
-    while (&gFileContentCache[gFileContentCacheIdx] != endOfLine)
+    while (&fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx] != endOfLine)
     {
         if (lineIdx <= 95)
         {
-            line[lineIdx] = gFileContentCache[gFileContentCacheIdx];
+            line[lineIdx] = fileTraverser->fileContentCache[fileTraverser->fileContentCacheIdx];
         }
         lineIdx++;
-        gFileContentCacheIdx++;
+        fileTraverser->fileContentCacheIdx++;
     }
-    gFileContentCacheIdx++;
+    fileTraverser->fileContentCacheIdx++;
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t zeroLineToSendArray()
+static CRS_retVal_t zeroLineToSendArray(scriptDigTraverser_t *fileTraverser)
 {
     int i = 0;
     for (i = 0; i < 9; i++)
     {
-        memset(gLineToSendArray[i], 0, CRS_NVS_LINE_BYTES);
+        memset(fileTraverser->lineToSendArray[i], 0, CRS_NVS_LINE_BYTES);
     }
     return CRS_SUCCESS;
 }
@@ -1120,14 +1146,14 @@ static CRS_retVal_t zeroLineToSendArray()
 //    return CRS_SUCCESS;
 //}
 
-static void uploadSnapStarCb(char *line)
+static void uploadSnapStarCb(scriptDigTraverser_t *fileTraverser, char *line)
 {
 //    uint32_t size = _cbArgs.arg0;
 
 //    Util_setEvent(&gDigEvents, STAR_RSP_EV);
-    memset(gStarRdRespLine, 0, LINE_SZ);
+    memset(fileTraverser->starRdRespLine, 0, LINE_SZ);
 
-    int gTmpLine_idx = 0;
+    int tmpLine_idx = 0;
     int counter = 0;
     bool isNumber = false;
     bool isFirst = true;
@@ -1143,8 +1169,8 @@ static void uploadSnapStarCb(char *line)
 
             }
             isNumber = true;
-            gStarRdRespLine[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
+            fileTraverser->starRdRespLine[tmpLine_idx] = line[counter];
+            tmpLine_idx++;
             counter++;
             continue;
         }
@@ -1156,8 +1182,8 @@ static void uploadSnapStarCb(char *line)
 
         if (isNumber == true)
         {
-            gStarRdRespLine[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
+            fileTraverser->starRdRespLine[tmpLine_idx] = line[counter];
+            tmpLine_idx++;
             counter++;
             continue;
 
@@ -1165,7 +1191,7 @@ static void uploadSnapStarCb(char *line)
         counter++;
     }
     //    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
-    starRsp();
+    starRsp(fileTraverser);
     Semaphore_post(collectorSem);
 }
 
@@ -1223,29 +1249,30 @@ static void setDigClock(uint32_t time)
     }
 }
 
-static CRS_retVal_t runNextLine(void)
+static CRS_retVal_t runNextLine(scriptDigTraverser_t *fileTraverser)
 {
 
     while(true)
     {
 
-    char line[LINE_SZ] = { 0 };
+      char line[LINE_SZ] = { 0 };
+      memset(line, 0, LINE_SZ);
 
-      CRS_retVal_t rspStatus = getNextLine(line);
+      CRS_retVal_t rspStatus = getNextLine(fileTraverser, line);
       if (rspStatus == CRS_FAILURE)
       {
-          if (gIsFileDone == false && gChipType != UNKNOWN)
+          if (fileTraverser->isFileDone == false && fileTraverser->chipType != UNKNOWN)
           {
-              gIsFileDone = true;
-              addEndOfFlieSequence();
+              fileTraverser->isFileDone = true;
+              addEndOfFlieSequence(fileTraverser);
 //                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-              getNextLine(line);
+              getNextLine(fileTraverser, line);
           }
           else
           {
-              gIsFileDone = false;
-              CRS_free(gFileContentCache);
-              gFileContentCache = NULL;
+              fileTraverser->isFileDone = false;
+//              CRS_free(fileTraverser->fileContentCache);
+//              fileTraverser->fileContentCache = NULL;
 //                const FPGA_cbArgs_t cbArgs={0};
 //                gCbFn(cbArgs);
 //                gCbFn();
@@ -1255,22 +1282,22 @@ static CRS_retVal_t runNextLine(void)
 
       }
 
-      runLine(line);
+      runLine(fileTraverser, line);
     }
 
 
 //        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
 }
 
-static CRS_retVal_t starRsp(void)
+static CRS_retVal_t starRsp(scriptDigTraverser_t *fileTraverser)
 {
     char line[LINE_SZ] = { 0 };
 
-     CRS_retVal_t rspStatus = getPrevLine(line);
+     CRS_retVal_t rspStatus = getPrevLine(fileTraverser, line);
      if (rspStatus == CRS_FAILURE)
      {
-         CRS_free(gFileContentCache);
-         gFileContentCache = NULL;
+         CRS_free(fileTraverser->fileContentCache);
+         fileTraverser->fileContentCache = NULL;
 
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
@@ -1279,17 +1306,17 @@ static CRS_retVal_t starRsp(void)
      }
 
      char starParsedLine[LINE_SZ] = { 0 };
-     Convert_convertStar(line, gStarRdRespLine, starParsedLine);
-     zeroLineToSendArray();
+     Convert_convertStar(line, fileTraverser->starRdRespLine, starParsedLine);
+     zeroLineToSendArray(fileTraverser);
 
-     if (gChipType == DIG)
+     if (fileTraverser->chipType == DIG)
      {
-         rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
-                                         gMode);
+         rspStatus = Convert_readLineDig(starParsedLine,fileTraverser->lineToSendArray,
+                                         fileTraverser->chipMode);
      }
-     else if (gChipType == UNKNOWN)
+     else if (fileTraverser->chipType == UNKNOWN)
      {
-         rspStatus = Convert_readLineFpga(starParsedLine, gLineToSendArray);
+         rspStatus = Convert_readLineFpga(starParsedLine, fileTraverser->lineToSendArray);
 
 //            strcpy(gLineToSendArray[0], line);
          rspStatus = CRS_SUCCESS;
@@ -1300,7 +1327,6 @@ static CRS_retVal_t starRsp(void)
 //         Util_clearEvent(&gDigEvents, STAR_RSP_EV);
 //         Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
 
-         Semaphore_post(collectorSem);
 
          return CRS_SUCCESS;
      }
@@ -1311,13 +1337,10 @@ static CRS_retVal_t starRsp(void)
 
 }
 
-static CRS_retVal_t changeDigChip(void)
+static void changeDigChip(scriptDigTraverser_t *fileTraverser)
 {
     char line[100] = { 0 };
-    sprintf(line, "wr 0xff 0x%x\r", gDigAddr);
-//        Fpga_writeMultiLine(line, changedDigChipCb);
+    sprintf(line, "wr 0xff 0x%x\r", fileTraverser->digAddr);
     uint32_t rsp = 0;
     Fpga_tmpWriteMultiLine(line, &rsp);
-//    changedDigChipCb();
-//    Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
 }

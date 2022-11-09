@@ -20,13 +20,32 @@
  Constants and definitions
  *****************************************************************************/
 #define TEMP_SZ 200
+#define NAME_SIZE   30
+#define DISCOVERY_ARR_SIZE  30
 #define DISCSEQ_SZ 4
 #define PACKGES_SZ 5
 #define FILE_CACHE_SZ 100
 #define NONE 255
+#define INV_NAME    "NAME INV1"
+
 #define RUN_NEXT_LINE_EV 0x1
 #define FINISHED_DISCOVERY_EV 0x2
 #define FINISHED_SINGLE_LINE_EV 0x4
+
+typedef struct fileTraverser
+{
+    SPI_CRS_invLine_t invLineStruct;
+    char discRdRespLine[TEMP_SZ];
+    char invName[NAME_SIZE];
+    char discExpectVal[EXPECTEDVAL_SZ];
+    char *fileContentCache;
+    uint32_t invLineNumber;
+    bool isSingleLine;
+    bool isOnlyDiscovery;
+    uint32_t discoveryArr[DISCOVERY_ARR_SIZE];
+    uint32_t discoveryArrIdx;
+}flatFileTraverser_t;
+
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -56,7 +75,7 @@ static CRS_retVal_t convertDiscseqScript(SPI_CRS_invLine_t *invStruct,
 static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
                                 uint32_t numLines, char *respLine);
 //static void uploadDiscLinesCb(const FPGA_cbArgs_t _cbArgs); //TODO: replace
-static void uploadDiscLines(uint32_t rsp);
+static void uploadDiscLines(flatFileTraverser_t *fileTraverser, uint32_t rsp);
 
 //static void uploadPackageCb(const FPGA_cbArgs_t _cbArgs); //TODO: replace
 static void uploadPackageCb(void);
@@ -67,6 +86,10 @@ static CRS_retVal_t insertParam(char *paramValue,
                                 SPI_crs_fileInfo_t *respStructFileInfo, int index);
 
 static CRS_retVal_t isValInArr(uint32_t *arr, uint32_t arrLen, uint32_t expVal);
+
+static CRS_retVal_t runFile(flatFileTraverser_t *fileTraverser);
+CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser);
+
 
 /******************************************************************************
  Public Functions
@@ -135,12 +158,13 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 //        return CRS_FAILURE;
 //
 //    }
-    gIsOnlyDiscovery = false;
-    gIsSingleLine = false;
-    gInvLineNumber = 0;
-    memset(gInvName, 0, 30);
+    flatFileTraverser_t fileTraverser = {0};
+//    gIsOnlyDiscovery = false;
+//    gIsSingleLine = false;
+//    gInvLineNumber = 0;
+//    memset(gInvName, 0, 30);
 //    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    memset(&gInvLineStrct, 0, sizeof(SPI_CRS_invLine_t));
+//    memset(&gInvLineStrct, 0, sizeof(SPI_CRS_invLine_t));
     if (filename == NULL)
     {
         CLI_cliPrintf("\r\nfilename is null!");
@@ -148,8 +172,9 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 //        cbFunc(cbArgs);
         return CRS_FAILURE;
     }
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
+    fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
+//    gFileContentCache = Nvs_readFileWithMalloc(filename);
+    if (fileTraverser.fileContentCache == NULL)
     {
 //        const FPGA_cbArgs_t cbArgs = { 0 };
 //        cbFunc(cbArgs);
@@ -157,11 +182,19 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
         return CRS_FAILURE;
     }
 //    gCbFn = cbFunc;
-    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
-    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+//    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
+    memcpy(fileTraverser.invName,INV_NAME, strlen(INV_NAME));
+//    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+    CRS_retVal_t rspStatus = runFile(&fileTraverser);
+    CRS_free(fileTraverser.fileContentCache);
+    fileTraverser.fileContentCache = NULL;
+    if (rspStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nTraversing failed");
+        return CRS_FAILURE;
+    }
     CLI_cliPrintf("\r\n");
 
-    Semaphore_post(collectorSem);
     return CRS_SUCCESS;
 
 }
@@ -688,7 +721,7 @@ void SPI_Config_process(void)
 //        CLI_cliPrintf("\r\nsending command %s", newDiscScript);
 //        CLI_cliPrintf("\r\n recived %x", rsp);
 
-        uploadDiscLines(rsp);
+//        uploadDiscLines(rsp); // todo this is good
 //        }
 //        else
 //        {
@@ -842,9 +875,9 @@ static CRS_retVal_t cmpDiscRsp(char *rsp, char *expVal)
 {
 //    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[6],
 //               strlen(&gDiscExpectVal[2])) != 0)
-    uint32_t offset = strlen(gDiscRdRespLine) - 4; // compare last 4 bytes
-    if (memcmp(&gDiscExpectVal[2], &gDiscRdRespLine[offset],
-               strlen(&gDiscExpectVal[2])) != 0)
+    uint32_t offset = strlen(rsp) - 4; // compare last 4 bytes
+    if (memcmp(&expVal[2], &rsp[offset],
+               strlen(&expVal[2])) != 0)
     {
         if (((!strstr(expVal, "16b'")) && (!strstr(expVal, "32b'"))))
         {
@@ -1233,9 +1266,9 @@ static CRS_retVal_t insertParam(char *paramValue,
     return CRS_SUCCESS;
 }
 
-static void uploadDiscLines(uint32_t rsp)
+static void uploadDiscLines(flatFileTraverser_t *fileTraverser, uint32_t rsp)
 {
-    memset(gDiscRdRespLine, 0, TEMP_SZ);
+    memset(fileTraverser->discRdRespLine, 0, TEMP_SZ);
 
 //   int tmpLine_idx = 0;
 //   int counter = 0;
@@ -1276,12 +1309,219 @@ static void uploadDiscLines(uint32_t rsp)
 //   }
 
    //    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
-    gDiscRdRespLine[0] = '0';
-    gDiscRdRespLine[1] = 'x';
+    fileTraverser->discRdRespLine[0] = '0';
+    fileTraverser->discRdRespLine[1] = 'x';
 
-   sprintf(gDiscRdRespLine+2, "%x", rsp);
-   Util_setEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
+   sprintf(fileTraverser->discRdRespLine+2, "%x", rsp);
+//   Util_setEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
 
-   Semaphore_post(collectorSem);
+}
+
+static CRS_retVal_t runFile(flatFileTraverser_t *fileTraverser)
+{
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+    while(true)
+    {
+        char line[300] = { 0 };
+        memset(&fileTraverser->invLineStruct, 0, sizeof(SPI_CRS_invLine_t));
+        memset(fileTraverser->discExpectVal, 0, EXPECTEDVAL_SZ);
+
+        rspStatus = SPI_Config_getInvLine(fileTraverser->invName,fileTraverser->invLineNumber,
+                                                      fileTraverser->fileContentCache, line);
+        if (rspStatus != CRS_SUCCESS)
+        {
+            if (fileTraverser->isOnlyDiscovery == true)
+            {
+
+            }
+//            CRS_free(fileTraverser->fileContentCache);
+
+            return CRS_SUCCESS;
+        }
+
+
+        rspStatus = SPI_Config_parseInvLine(line,&fileTraverser->invLineStruct);
+        if (rspStatus != CRS_SUCCESS)
+        {
+//            CRS_free(fileTraverser->fileContentCache);
+
+            return CRS_FAILURE;
+        }
+
+        if (fileTraverser->invLineStruct.DiscSeq == NONE || fileTraverser->invLineStruct.Package == NONE)
+        {
+            fileTraverser->invLineNumber++;
+            continue;
+        }
+        //discovery
+
+        uint32_t classId = strtoul(fileTraverser->invLineStruct.ClassID, NULL, 0);
+        if (fileTraverser->isOnlyDiscovery == true && (isValInArr(fileTraverser->discoveryArr, fileTraverser->discoveryArrIdx, classId) == CRS_SUCCESS))
+        {
+            fileTraverser->invLineNumber++;
+            continue;
+        }
+
+        if (fileTraverser->isOnlyDiscovery == true)
+        {
+            fileTraverser->discoveryArr[fileTraverser->discoveryArrIdx] = classId;
+            fileTraverser->discoveryArrIdx++;
+        }
+
+
+        memset(line, 0, 300);
+        rspStatus = SPI_Config_getDiscoveryLine(fileTraverser->invLineStruct.DiscSeq,
+                                            fileTraverser->fileContentCache, line);
+        if (rspStatus != CRS_SUCCESS)
+        {
+//            CRS_free(fileTraverser->fileContentCache);
+//            const FPGA_cbArgs_t cbArgs={0};
+//            gCbFn(cbArgs);
+//                Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+            return CRS_FAILURE;
+        }
+
+        SPI_crs_discseqLine_t discLineStruct = {0};
+        rspStatus = SPI_Config_parseDiscoveryLine(line, &discLineStruct);
+        if (rspStatus != CRS_SUCCESS)
+        {
+//            CRS_free(fileTraverser->fileContentCache);
+//            const FPGA_cbArgs_t cbArgs={0};
+//            gCbFn(cbArgs);
+//                Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+            return CRS_FAILURE;
+        }
+        char newDiscScript[SCRIPT_SZ + 40] = { 0 };
+
+        convertDiscseqScript(&fileTraverser->invLineStruct, &discLineStruct, newDiscScript);
+        memcpy(fileTraverser->discExpectVal, discLineStruct.expectedVal, EXPECTEDVAL_SZ);
+//        if (gIsOnlyDiscovery == true)
+//        {
+//            Fpga_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb); //TODO: replace
+        uint32_t rsp = 0;
+        Fpga_tmpWriteMultiLine(newDiscScript, &rsp);
+//        CLI_cliPrintf("\r\nsending command %s", newDiscScript);
+//        CLI_cliPrintf("\r\n recived %x", rsp);
+
+        uploadDiscLines(fileTraverser, rsp);
+        if (finishedDiscovery(fileTraverser) != CRS_SUCCESS)
+        {
+            return CRS_FAILURE;
+        }
+    }
+}
+    //        }
+    //        else
+    //        {
+    //            Fpga_writeMultiLine(newDiscScript, uploadDiscLinesCb);//TODO: replaceQ
+    //
+    //        }
+
+CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
+{
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
+    if (cmpDiscRsp(fileTraverser->discRdRespLine,fileTraverser->discExpectVal) != CRS_SUCCESS)
+    {
+        if (fileTraverser->isOnlyDiscovery == true)
+        {
+            char lineInv[300] = { 0 };
+
+            rspStatus = SPI_Config_getInvLine(fileTraverser->invName,fileTraverser->invLineNumber,
+                                                  fileTraverser->fileContentCache, lineInv);
+            if (rspStatus != CRS_SUCCESS)
+            {
+
+//                CRS_free(fileTraverser->fileContentCache);
+
+//                    const FPGA_cbArgs_t cbArgs={0};
+//                    gCbFn(cbArgs);
+//                        Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
+                return CRS_FAILURE;
+            }
+            CLI_cliPrintf("\r\n%s,FAIL", lineInv);
+
+
+        }
+        else
+        {
+            CLI_cliPrintf("\r\nDiscovery didn't succeed for line %d in address %s",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Addr);
+
+        }
+        fileTraverser->invLineNumber++;
+
+//        Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+        return CRS_SUCCESS;
+    }
+
+
+    if (fileTraverser->isOnlyDiscovery == true)
+    {
+        char lineInv[300] = { 0 };
+
+        rspStatus = SPI_Config_getInvLine(fileTraverser->invName,fileTraverser->invLineNumber,
+                                      fileTraverser->fileContentCache, lineInv);
+        if (rspStatus != CRS_SUCCESS)
+        {
+
+//            CRS_free(fileTraverser->fileContentCache);
+
+//                const FPGA_cbArgs_t cbArgs={0};
+//                gCbFn(cbArgs);
+//            Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
+            return CRS_FAILURE;
+        }
+        CLI_cliPrintf("\r\n%s,PASS", lineInv);
+
+        fileTraverser->invLineNumber++;
+    }
+    CLI_cliPrintf("\r\nDiscovery success for line %d for address %s",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Addr);
+
+    char line[300] = { 0 };
+    rspStatus = SPI_Config_getPackageLine(fileTraverser->invLineStruct.Package,
+                                      fileTraverser->fileContentCache, line);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nConfig_getPackageLine didnt success");
+//        CRS_free(fileTraverser->fileContentCache);
+
+        return CRS_FAILURE;
+    }
+
+    SPI_crs_package_t packageLineStruct = { 0 };
+    rspStatus = SPI_Config_parsePackageLine(line, &packageLineStruct);
+    if (rspStatus != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nConfig_parsePackageLine didnt succeed");
+//        CRS_free(fileTraverser->fileContentCache);
+//            const FPGA_cbArgs_t cbArgs={0};
+//            gCbFn(cbArgs);
+        return CRS_FAILURE;
+    }
+
+    fileTraverser->invLineNumber++;
+    if (fileTraverser->isSingleLine == true)
+    {
+        rspStatus = MultiFilesSPI_runMultiFiles(&packageLineStruct,
+                                             fileTraverser->invLineStruct.ChipType,
+                                             fileTraverser->invLineStruct.Flavor);
+        if (rspStatus != CRS_SUCCESS)
+        {
+            return CRS_FAILURE;
+        }
+
+//        CRS_free(fileTraverser->fileContentCache);
+    }
+    else
+    {
+        rspStatus = MultiFilesSPI_runMultiFiles(&packageLineStruct,
+                                                fileTraverser->invLineStruct.ChipType,
+                                                fileTraverser->invLineStruct.Flavor);
+        if (rspStatus != CRS_SUCCESS)
+        {
+            return CRS_FAILURE;
+        }
+    }
+
+    return CRS_SUCCESS;
 }
 
