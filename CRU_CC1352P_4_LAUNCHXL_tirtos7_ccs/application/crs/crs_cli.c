@@ -96,7 +96,6 @@
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
 
-
 #else
 #define CLI_ASSOC "assoc"
 #define CLI_DISASSOC "disassoc"
@@ -131,7 +130,7 @@
 #define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
 #define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
 #define CLI_CRS_LOCKS "locks"
-
+#define CLI_CRS_SET_DIO "set dio" //ment to set a GPIO/DIO value
 
 
 
@@ -166,6 +165,9 @@
 #define CLI_CRS_CONFIG_DIRECT "config direct"
 #define CLI_CRS_CONFIG_LINE "config line"
 #define CLI_CRS_CONFIG_FILE "config file"
+#define CLI_AGC_SET_GAP "agc set gap"
+#define CLI_AGC_SET_TIME_MINMAX "agc set time"
+
 
 #define CLI_CRS_ENV_LS "env ls"
 #define CLI_CRS_ENV_UPDATE "env update"
@@ -292,6 +294,11 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line);
 static CRS_retVal_t CLI_sensorModeParsing(char *line);
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
+static CRS_retVal_t CLI_agcSetGapParsing(char *line);
+static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line);
+static CRS_retVal_t CLI_setDioParsing(char *line);
+
+
 
 static CRS_retVal_t CLI_locksParsing(char *line);
 static void printLocksStatus(void);
@@ -1158,7 +1165,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
                inputBad = false;
                  }
-
+      //set dio [shortAddr] [dioIdx] [value: 0x0 | 0x1]
+      if (memcmp(CLI_CRS_SET_DIO, line, sizeof(CLI_CRS_SET_DIO) - 1) == 0)
+                 {
+           CRS_retVal_t ret= CLI_setDioParsing(line);
+               inputBad = false;
+                 }
 
       if (memcmp(CLI_CRS_LED_ON, line, sizeof(CLI_CRS_LED_ON) - 1) == 0)
                {
@@ -1301,6 +1313,14 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       else if (memcmp(CLI_AGC_GET_MODE, line, sizeof(CLI_AGC_GET_MODE) - 1) == 0){
           CLI_sensorGetModeParsing(line);
+          inputBad = false;
+      }
+      else if (memcmp(CLI_AGC_SET_GAP, line, sizeof(CLI_AGC_SET_GAP) - 1) == 0){
+          CLI_agcSetGapParsing(line);
+          inputBad = false;
+      }
+  else if (memcmp(CLI_AGC_SET_TIME_MINMAX, line, sizeof(CLI_AGC_SET_TIME_MINMAX) - 1) == 0){
+      CLI_agcSetTimeMinMaxParsing(line);
           inputBad = false;
       }
 
@@ -1696,6 +1716,160 @@ static CRS_retVal_t CLI_unit(char *line)
         CLI_startREAD();
         return CRS_SUCCESS;
 }
+
+
+
+//agc set gap [shortAddr] [start/stop] [tx/rx] [us]
+static CRS_retVal_t CLI_agcSetGapParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        uint8_t isStart=0;
+        token = strtok(NULL, s); //[start/stop]
+        if (memcmp(token, "start", 5)==0) {
+            isStart=1;
+        }
+       uint8_t isTx=0;
+    token = strtok(NULL, s); //[tx/rx]
+    if (memcmp(token, "tx", 2)==0) {
+        isTx=1;
+    }
+    token = strtok(NULL, s); //[us]
+    uint16_t ms = strtoul((token), NULL, 10);
+    CRS_retVal_t retStatus=Agc_setGap(isStart,isTx, ms);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+//agc set time [shortAddr] [seconds]
+static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        uint8_t isStart=0;
+        token = strtok(NULL, s); //[seconds]
+    uint16_t seconds = strtoul((token), NULL, 10);
+    CRS_retVal_t retStatus=Agc_setTimeMinMax(seconds);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+
+//set dio [shortAddr] [dioIdx] [value: 0x0 | 0x1]
+static CRS_retVal_t CLI_setDioParsing(char *line)
+{
+uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_MODE) + 2]), NULL,
+                               16);
+#ifndef CLI_SENSOR
+  uint16_t addr = 0;
+  Cllc_getFfdShortAddr(&addr);
+  if (addr != shortAddr)
+  {
+      //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+      ApiMac_sAddr_t dstAddr;
+      dstAddr.addr.shortAddr = shortAddr;
+      dstAddr.addrMode = ApiMac_addrType_short;
+      Collector_status_t stat;
+      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+      if (stat != Collector_status_success)
+      {
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+      }
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+      return CRS_SUCCESS;
+  }
+#endif
+      const char s[2] = " ";
+     char *token;
+     char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+     /* get the first token */
+     token = strtok(&(tmpBuff[sizeof(CLI_CRS_LED_MODE)]), s); //shortAddr
+     token = strtok(NULL, s);//[dioIdx]
+     if (token == NULL) {
+      return CRS_FAILURE;
+  }
+     uint32_t dioIdxInt =0;
+     dioIdxInt=strtoul(token,NULL,10);
+     token = strtok(NULL, s);//[value: 0x0 | 0x1]
+     if (token == NULL) {
+           return CRS_FAILURE;
+       }
+     uint32_t value =0;
+    value=strtoul(token+2,NULL,16);
+  CRS_retVal_t retStatus =Agc_setDio(dioIdxInt,value);
+  Agc_readDio(dioIdxInt);
+  CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+  CLI_startREAD();
+  return retStatus;
+}
+
+
 
 //ledMode [shortAddr] [on/off: 0x1 | 0x0]
 static CRS_retVal_t CLI_ledModeParsing(char *line)
@@ -3184,162 +3358,14 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
            return CRS_SUCCESS;
        }
     #endif
-
-    uint16_t channel = Agc_getChannel();
-    uint16_t rfIf = 0;
-    uint16_t maxMinAvg = 0;
-
-    // get args for filtering by channel, DL/UL, RF/IF and max/average/min
-    token = strtok(NULL, s);
-    if(token){
-        if(!channel){
-            channel = strtoul(&(token[2]), NULL, 16);
-        }
-        token = strtok(NULL, s);
-        if(token){
-            if(!mode){
-                mode = strtoul(&(token[2]), NULL, 16);
-            }
-            token = strtok(NULL, s);
-            if(token){
-                rfIf = strtoul(&(token[2]), NULL, 16);
-                token = strtok(NULL, s);
-                if(token){
-                    maxMinAvg = strtoul(&(token[2]), NULL, 16);
-                    token = strtok(NULL, s);
-                }
-            }
-        }
-    }
-
-    CRS_retVal_t retStatus =  Agc_sample_debug();
-    AGC_results_t agcResults;
-    if(retStatus == CRS_SUCCESS){
-        agcResults = Agc_getResults();
-    }
-    else{
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-        // CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//#ifndef CLI_SENSOR
-//        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-//#else
-//        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-//#endif
-        CLI_startREAD();
-        return retStatus;
-    }
-    int i;
-    // print all channels results
-//    CLI_cliPrintf("\r\nSensorMode=0x%x",mode);
-    if(!channel){
-        for(i=0;i<4;i++){
-                if(mode == 0 || mode == 1){
-                    if(rfIf == 0 || rfIf == 1){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nRF DL max %i: %u", i+1, agcResults.adcMaxResults[i]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nRF DL avg %i: %u", i+1, agcResults.adcAvgResults[i]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nRF DL min %i: %u", i+1, agcResults.adcMinResults[i]);
-                        }
-                    }
-                    if(rfIf == 0 || rfIf == 2){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nIF DL max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nIF DL avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nIF DL min %i: %u", i+1, agcResults.adcMinResults[i+8]);
-                        }
-                    }
-                }
-                if (mode == 0 || mode == 2){
-                    if(rfIf == 0 || rfIf == 1){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nRF UL max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nRF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nRF UL min %i: %u", i+1, agcResults.adcMinResults[i+4]);
-                        }
-                    }
-                    if(rfIf == 0 || rfIf == 2){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nIF UL max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nIF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nIF UL min %i: %u", i+1, agcResults.adcMinResults[i+12]);
-                        }
-                    }
-                }
-        }
-    }
-    else{
-        if(mode == 0 || mode == 1){
-            if(rfIf == 0 || rfIf == 1){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nRF DL max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nRF DL avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nRF DL min %i: %u", channel, agcResults.adcMinResults[channel-1]);
-                }
-            }
-            if(rfIf == 0 || rfIf == 2){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nIF DL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nIF DL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nIF DL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
-                }
-            }
-//                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
-        }
-        if (mode == 0 || mode == 2){
-            if(rfIf == 0 || rfIf == 1){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nRF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nRF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nRF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
-                }
-            }
-            if(rfIf == 0 || rfIf == 2){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nIF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nIF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nIF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
-                }
-            }
-        }
-    }
+CRS_retVal_t retStatus=CRS_SUCCESS;
+     printADCOutput();
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 }
+
+
 
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
 {
