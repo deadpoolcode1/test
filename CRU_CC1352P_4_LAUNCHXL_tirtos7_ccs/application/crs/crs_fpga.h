@@ -38,6 +38,7 @@ CRS_retVal_t Fpga_wrCommand(void * _buffer, size_t _size, FPGA_cbFn_t _cbFn);
 CRS_retVal_t Fpga_rdCommand(void * _buffer, size_t _size, FPGA_cbFn_t _cbFn);
 CRS_retVal_t Fpga_transparentOpen();
 CRS_retVal_t Fpga_transparentClose();
+CRS_retVal_t Fpga_setPrint(bool isToPrint);
 CRS_retVal_t Fpga_transparentWrite(void * _buffer, size_t _size);
 CRS_retVal_t Fpga_writeCommand(void * _buffer, size_t _size, FPGA_cbFn_t _cbFn );
 CRS_retVal_t  Fpga_isOpen();

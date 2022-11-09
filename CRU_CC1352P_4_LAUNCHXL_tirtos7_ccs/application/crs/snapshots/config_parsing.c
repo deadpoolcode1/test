@@ -42,12 +42,12 @@ static bool gIsOnlyDiscovery = false;
 static uint32_t gDiscoveryArr[30] = {0};
 static uint32_t gDiscoveryArrIdx = 0;
 
+static bool gIsConfigSuccessful = true;
+static char gOutputMessage [TEMP_SZ] = {0};
+bool gIsConfigOk=false;
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
-static CRS_retVal_t parseBox(char *buff, crs_box_t *respStructBox);
-static CRS_retVal_t parseInv(char *buff, crs_inv_t respStructInv);
-static CRS_retVal_t parsePackages(char *buff, crs_package_t *respStructPackage);
 static CRS_retVal_t parseFileInfo(char *buff,
                                   crs_fileInfo_t *respStructFileInfo);
 static CRS_retVal_t convertDiscseqScript(CRS_invLine_t *invStruct,
@@ -61,7 +61,6 @@ static CRS_retVal_t cmpDiscRsp(char *rsp, char *expVal);
 static CRS_retVal_t insertParam(char *paramValue,
                                 crs_fileInfo_t *respStructFileInfo, int index);
 static void uploadPackageSingleLineCb(const FPGA_cbArgs_t _cbArgs);
-static CRS_retVal_t findScriptNameIdx(char *scriptName, int *respIdx);
 static CRS_retVal_t isValInArr(uint32_t *arr, uint32_t arrLen, uint32_t expVal);
 
 /******************************************************************************
@@ -70,7 +69,7 @@ static CRS_retVal_t isValInArr(uint32_t *arr, uint32_t arrLen, uint32_t expVal);
 CRS_retVal_t Config_configInit(void *sem)
 {
     collectorSem = sem;
-
+return CRS_SUCCESS;
 }
 
 CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
@@ -107,6 +106,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
     }
     gCbFn = cbFunc;
     memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
+    Fpga_setPrint(false);
     Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
     CLI_cliPrintf("\r\n");
     if (memcmp(type, "SN", 2) == 0)
@@ -119,6 +119,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
 //        Semaphore_post(collectorSem);
         return CRS_SUCCESS;
     }
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t Config_runConfigFile(char *filename, FPGA_cbFn_t cbFunc)
@@ -280,7 +281,7 @@ CRS_retVal_t Config_runConfigFileLine(char *filename, uint32_t lineNum,
 //
 //        Semaphore_post(collectorSem);
 //        return CRS_SUCCESS;
-
+return CRS_SUCCESS;
 }
 
 CRS_retVal_t Config_getInvLine(char *invName, uint32_t lineNum,
@@ -362,7 +363,7 @@ CRS_retVal_t Config_parseInvLine(char *buff, CRS_invLine_t *respStructInventory)
         buff++;
         i++;
     }
-    ret = strtoul(temp, NULL, 16);
+    ret = strtoul(temp, NULL, 10);
     respStructInventory->order = ret;
     buff++;
     i = 0;
@@ -512,7 +513,7 @@ CRS_retVal_t Config_parsePackageLine(char *buff,
 {
     char temp[TEMP_SZ] = { 0 };
     uint32_t i = 0;
-    uint32_t lineNum = 0;
+//    uint32_t lineNum = 0;
     while (*buff != 0)
     {
         temp[i] = (*buff);
@@ -590,7 +591,9 @@ void Config_process(void)
 
     if (gConfigEvents & RUN_NEXT_LINE_EV)
     {
+        Fpga_setPrint(false);
         CRS_LOG(CRS_DEBUG, "in run next line ev\r\n");
+        memset(gOutputMessage, 0, (TEMP_SZ));
         char line[300] = { 0 };
         memset(&gInvLineStrct, 0, sizeof(CRS_invLine_t));
         memset(gDiscExpectVal, 0, EXPECTEDVAL_SZ);
@@ -605,7 +608,16 @@ void Config_process(void)
             }
             CRS_free(gFileContentCache);
 
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
+            if (gIsConfigSuccessful != true)
+            {
+                CLI_cliPrintf("\r\nConfig Status: FAIL");
+            }
+            else
+            {
+                CLI_cliPrintf("\r\nConfig Status: OK");
+            }
+            Fpga_setPrint(true);
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
@@ -617,7 +629,7 @@ void Config_process(void)
         {
             CRS_free(gFileContentCache);
 
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
@@ -652,7 +664,7 @@ void Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CRS_free(gFileContentCache);
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
@@ -663,7 +675,7 @@ void Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CRS_free(gFileContentCache);
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
@@ -678,8 +690,7 @@ void Config_process(void)
         }
         else
         {
-            Fpga_writeMultiLine(newDiscScript, uploadDiscLinesCb);
-
+            Fpga_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb);
         }
 
         Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
@@ -702,7 +713,7 @@ void Config_process(void)
 
                     CRS_free(gFileContentCache);
 
-                    const FPGA_cbArgs_t cbArgs;
+                    const FPGA_cbArgs_t cbArgs={0};
                     gCbFn(cbArgs);
                     Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
                     return;
@@ -713,8 +724,8 @@ void Config_process(void)
             }
             else
             {
-                CLI_cliPrintf("\r\nDiscovery didnt success");
-
+                CLI_cliPrintf("\r\nLine %d: Module %s: Comm failed", gInvLineStrct.order, gInvLineStrct.Name);
+                gIsConfigSuccessful = false;
             }
             gInvLineNumber++;
 
@@ -736,7 +747,7 @@ void Config_process(void)
 
                 CRS_free(gFileContentCache);
 
-                const FPGA_cbArgs_t cbArgs;
+                const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
                 Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
                 return;
@@ -749,7 +760,7 @@ void Config_process(void)
             Semaphore_post(collectorSem);
             return;
         }
-        CLI_cliPrintf("\r\nDiscovery success");
+        sprintf(gOutputMessage, "\r\nLine %d, Module %s: Comm OK",gInvLineStrct.order, gInvLineStrct.Name);
 
         char line[300] = { 0 };
         rspStatus = Config_getPackageLine(gInvLineStrct.Package,
@@ -759,7 +770,7 @@ void Config_process(void)
             CLI_cliPrintf("\r\nConfig_getPackageLine didnt success");
             CRS_free(gFileContentCache);
 
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
             return;
@@ -769,9 +780,9 @@ void Config_process(void)
         rspStatus = Config_parsePackageLine(line, &packageLineStruct);
         if (rspStatus != CRS_SUCCESS)
         {
-            CLI_cliPrintf("\r\Config_parsePackageLine didnt success");
+            CLI_cliPrintf("\r\nConfig_parsePackageLine didnt success");
             CRS_free(gFileContentCache);
-            const FPGA_cbArgs_t cbArgs;
+            const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
             return;
@@ -798,7 +809,7 @@ void Config_process(void)
     if (gConfigEvents & FINISHED_SINGLE_LINE_EV)
     {
         CRS_free(gFileContentCache);
-        const FPGA_cbArgs_t cbArgs;
+        const FPGA_cbArgs_t cbArgs={0};
         gCbFn(cbArgs);
         Util_clearEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
 
@@ -850,7 +861,7 @@ static CRS_retVal_t cmpDiscRsp(char *rsp, char *expVal)
         for (i = 0; i < 16; i++)
         {
             uint16_t val = CLI_convertStrUint(&rsp[6]);
-            uint16_t valPrev = val;
+//            uint16_t valPrev = val;
             if (tokenValue[i] == '*')
             {
                 continue;
@@ -912,6 +923,15 @@ static CRS_retVal_t cmpDiscRsp(char *rsp, char *expVal)
 
 static void uploadPackageCb(const FPGA_cbArgs_t _cbArgs)
 {
+    if (gIsConfigOk == true)
+    {
+        strcat(gOutputMessage, ", Config OK");
+    }
+    else
+    {
+        strcat(gOutputMessage, ", Config FAIL");
+    }
+    CLI_cliPrintf(gOutputMessage);
     Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
     Semaphore_post(collectorSem);
 }
@@ -925,7 +945,7 @@ static void uploadPackageSingleLineCb(const FPGA_cbArgs_t _cbArgs)
 static void uploadDiscLinesCb(const FPGA_cbArgs_t _cbArgs)
 {
     char *line = _cbArgs.arg3;
-    uint32_t size = _cbArgs.arg0;
+//    uint32_t size = _cbArgs.arg0;
 
     memset(gDiscRdRespLine, 0, TEMP_SZ);
 
@@ -1200,21 +1220,6 @@ static CRS_retVal_t insertParam(char *paramValue,
 
         idx++;
     }
-}
-
-static CRS_retVal_t findScriptNameIdx(char *scriptName, int *respIdx)
-{
-//        int i = 0;
-//        while (i < NAME_VALUES_SZ)
-//        {
-//            if (memcmp(scriptName, gFileInfos, FILENAME_SZ) == 0)
-//            {
-//                *respIdx = i;
-//                return CRS_SUCCESS;
-//            }
-//            i++;
-//        }
-//        *respIdx = 0;
-//        return CRS_SUCCESS;
+    return CRS_SUCCESS;
 }
 

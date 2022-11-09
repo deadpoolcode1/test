@@ -20,8 +20,6 @@
 #include "crs_cli.h"
 #include "crs_fpga.h"
 #include "application/agc/agc.h"
-#include "application/crs/crs_locks.h"
-
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -287,37 +285,17 @@ CRS_retVal_t Tdd_isOpen()
 
 CRS_retVal_t Tdd_isLocked()
 {
-//#ifndef CLI_SENSOR
-//    GPIO_init();
-//    if(GPIO_read(CONFIG_GPIO_BTN1)){
-//        return CRS_TDD_NOT_LOCKED;
-//    }
-//    return CRS_SUCCESS;
-//#endif
-//    gIsLocked=Agc_getLock();
-//    if(gIsLocked){
-//        return CRS_SUCCESS;
-//    }else{
-//        return CRS_FAILURE;
-//    }
-
-
 #ifndef CLI_SENSOR
-    if(Locks_getTddLockVal())
-    {
-        return CRS_SUCCESS;
+    GPIO_init();
+    if(GPIO_read(CONFIG_GPIO_BTN1)){
+        return CRS_TDD_NOT_LOCKED;
     }
-
-    return CRS_TDD_NOT_LOCKED;
+    return CRS_SUCCESS;
 #endif
-
     gIsLocked=Agc_getLock();
-    if(gIsLocked)
-    {
+    if(gIsLocked){
         return CRS_SUCCESS;
-    }
-    else
-    {
+    }else{
         return CRS_FAILURE;
     }
 }
