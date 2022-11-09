@@ -21,13 +21,14 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define NAME_SZ 20
+#define MODULE_NAME_SZ 70
 #define ADDR_SZ 20
 #define CLASSID_SZ 12
 #define SCRIPT_SZ 80
 #define EXPECTEDVAL_SZ 20
 #define FILEINFO_SZ 5
 #define LUT_SZ 32
+#define LINE_MESSAGE_SZ 100
 
 typedef enum SPI_CRS_fileType
 {
@@ -61,13 +62,14 @@ typedef struct SPI_CRS_invLine
 {
     uint32_t order;
     char ClassID[CLASSID_SZ];
-    char Name[NAME_SZ];
+    char Name[MODULE_NAME_SZ];
     char Addr[ADDR_SZ];
     uint32_t DiscSeq;
     bool Mandatory;
     CRS_chipType_t ChipType;
     CRS_chipMode_t Flavor;
     uint32_t Package;
+    char LineMessage [LINE_MESSAGE_SZ];
 } SPI_CRS_invLine_t;
 
 typedef struct SPI_crs_inv

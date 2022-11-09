@@ -52,35 +52,23 @@ static Clock_Handle rfClkHandle;
 static uint32_t gRegIdx = 0;
 static uint32_t gLutIdx = 0;
 static uint32_t gGlobalIdx = 0;
-static uint16_t gLineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
-static uint16_t gGlobalReg[NUM_GLOBAL_REG] = { 0 };
 //static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
-static uint32_t gRfAddr = 0;
-static uint32_t gRFline = 0;
 //static CRS_chipMode_t gMode = MODE_NATIVE;
-static FPGA_cbFn_t gCbFn = NULL;
 static uint16_t gRFEvents = 0;
 static char gLutRegRdResp[LINE_SZ] = { 0 };
 static Semaphore_Handle collectorSem;
 
-static bool gIsInTheMiddleOfTheFile = false;
 
-static char *gFileContentCache = NULL;
-static uint32_t gFileContentCacheIdx = 0;
 
-static CRS_nameValue_t gNameValues[NAME_VALUES_SZ];
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
 
-static void changedActiveLineCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
                                 uint32_t numLines, char *respLine);
-static void readLutRegCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t initRfSnapValues(snapRfParsingStruct_t *fileTraverser);
 static CRS_retVal_t readLutReg(snapRfParsingStruct_t *fileTraverser);
 static CRS_retVal_t readGlobalReg(snapRfParsingStruct_t *fileTraverser);
-static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs);
 //static CRS_retVal_t getPrevLine(char *line);
 static CRS_retVal_t getNextLine(snapRfParsingStruct_t *fileTraverser, char *line);
 static CRS_retVal_t runFile(snapRfParsingStruct_t *fileTraverser);
@@ -104,19 +92,16 @@ static CRS_retVal_t runPrintCommand(snapRfParsingStruct_t *fileTraverser, char *
 static CRS_retVal_t initNameValues(snapRfParsingStruct_t *fileTraverser);
 static CRS_retVal_t writeLutToFpga(snapRfParsingStruct_t *fileTraverser, uint32_t lutNumber);
 static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr);
-static void writeLutCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t convertLutRegDataToStr(snapRfParsingStruct_t *fileTraverser, uint32_t regIdx, uint32_t lutNumber,
                                            char *data);
 
 static CRS_retVal_t printGlobalArrayAndLineMatrix(snapRfParsingStruct_t *fileTraverser);
 
 static CRS_retVal_t writeGlobalsToFpga();
-static void writeGlobalsCb(const FPGA_cbArgs_t _cbArgs);
 static CRS_retVal_t convertGlobalRegDataToStr(snapRfParsingStruct_t *fileTraverser, uint32_t regIdx, char *data);
 static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr);
 static void processRfTimeoutCallback(UArg a0);
 static void setRfClock(uint32_t time);
-static void changedRfChipCb(const FPGA_cbArgs_t _cbArgs);
 
 
 
@@ -424,7 +409,7 @@ static CRS_retVal_t runFile(snapRfParsingStruct_t *fileTraverser)
         memset(line, 0, 100);
 
     }
-    printGlobalArrayAndLineMatrix(fileTraverser);
+//    printGlobalArrayAndLineMatrix(fileTraverser);
 
     return CRS_SUCCESS;
 
@@ -964,11 +949,6 @@ static CRS_retVal_t writeGlobalsToFpga(snapRfParsingStruct_t *fileTraverser)
     return CRS_SUCCESS;
 }
 
-static void writeGlobalsCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gRFEvents, FINISHED_FILE_EV);
-    Semaphore_post(collectorSem);
-}
 
 static CRS_retVal_t convertGlobalRegDataToStr(snapRfParsingStruct_t *fileTraverser, uint32_t regIdx, char *data)
 {
@@ -1030,7 +1010,6 @@ static CRS_retVal_t writeLutToFpga(snapRfParsingStruct_t *fileTraverser, uint32_
         sprintf(&lines[strlen(lines)], "%s", endSeq);
 
         uint32_t rsp = 0;
-        CLI_cliPrintf("\r\nwriting to fpga %s",lines);
         Fpga_tmpWriteMultiLine(lines, &rsp);
         fileTraverser->lutIdx++;
         lutNumber = fileTraverser->lutIdx;
@@ -1039,12 +1018,7 @@ static CRS_retVal_t writeLutToFpga(snapRfParsingStruct_t *fileTraverser, uint32_
     return (CRS_SUCCESS);
 
 }
-static void writeLutCb(const FPGA_cbArgs_t _cbArgs)
-{
-    gLutIdx++;
-    Util_setEvent(&gRFEvents, WRITE_NEXT_LUT_EV);
-    Semaphore_post(collectorSem);
-}
+
 static CRS_retVal_t convertLutRegDataToStr(snapRfParsingStruct_t *fileTraverser, uint32_t regIdx, uint32_t lutNumber,
                                            char *data)
 {
@@ -1165,17 +1139,7 @@ static CRS_retVal_t getNextLine(snapRfParsingStruct_t *fileTraverser, char *line
     return CRS_SUCCESS;
 }
 
-static void changedActiveLineCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gRFEvents, READ_NEXT_REG_EV);
-    Semaphore_post(collectorSem);
-}
 
-static void changedRfChipCb(const FPGA_cbArgs_t _cbArgs)
-{
-    Util_setEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
-    Semaphore_post(collectorSem);
-}
 
 static CRS_retVal_t initRfSnapValues(snapRfParsingStruct_t *fileTraverser)
 {
@@ -1473,113 +1437,6 @@ static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
 //
 //}
 
-static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
-{
-    char *line = _cbArgs.arg3;
-//    uint32_t size = _cbArgs.arg0;
-
-    memset(gLutRegRdResp, 0, LINE_SZ);
-
-    int gTmpLine_idx = 0;
-    int counter = 0;
-    bool isNumber = false;
-    bool isFirst = true;
-    while (memcmp(&line[counter], "AP>", 3) != 0)
-    {
-        if (line[counter] == '0' && line[counter + 1] == 'x')
-        {
-            if (isFirst == true)
-            {
-                counter++;
-                isFirst = false;
-                continue;
-
-            }
-            isNumber = true;
-            gLutRegRdResp[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-        }
-
-        if (line[counter] == '\r' || line[counter] == '\n')
-        {
-            isNumber = false;
-        }
-
-        if (isNumber == true)
-        {
-            gLutRegRdResp[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-
-        }
-        counter++;
-    }
-
-    gLineMatrix[gLutIdx][gRegIdx] = strtoul(&gLutRegRdResp[6], NULL, 16);
-    gRegIdx++;
-
-//    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
-    Util_setEvent(&gRFEvents, READ_NEXT_REG_EV);
-
-    Semaphore_post(collectorSem);
-}
-
-static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs)
-{
-    char *line = _cbArgs.arg3;
-//    uint32_t size = _cbArgs.arg0;
-
-    memset(gLutRegRdResp, 0, LINE_SZ);
-
-    int gTmpLine_idx = 0;
-    int counter = 0;
-    bool isNumber = false;
-    bool isFirst = true;
-    while (memcmp(&line[counter], "AP>", 3) != 0)
-    {
-        if (line[counter] == '0' && line[counter + 1] == 'x')
-        {
-            if (isFirst == true)
-            {
-                counter++;
-                isFirst = false;
-                continue;
-
-            }
-            isNumber = true;
-            gLutRegRdResp[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-        }
-
-        if (line[counter] == '\r' || line[counter] == '\n')
-        {
-            isNumber = false;
-        }
-
-        if (isNumber == true)
-        {
-            gLutRegRdResp[gTmpLine_idx] = line[counter];
-            gTmpLine_idx++;
-            counter++;
-            continue;
-
-        }
-        counter++;
-    }
-
-    gGlobalReg[gGlobalIdx] = strtoul(&gLutRegRdResp[6], NULL, 16);
-    gGlobalIdx++;
-
-//    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
-    Util_setEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
-
-    Semaphore_post(collectorSem);
-}
 
 static void processRfTimeoutCallback(UArg a0)
 {
@@ -1663,7 +1520,7 @@ static void readNextGlobalReg(snapRfParsingStruct_t *fileTraverser)
         readGlobalReg(fileTraverser);
 
   }
-    printGlobalArrayAndLineMatrix(fileTraverser);
+//    printGlobalArrayAndLineMatrix(fileTraverser);
     startUploadFile(fileTraverser);
 }
 

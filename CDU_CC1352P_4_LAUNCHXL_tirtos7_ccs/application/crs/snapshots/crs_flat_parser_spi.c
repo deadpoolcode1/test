@@ -44,6 +44,7 @@ typedef struct fileTraverser
     bool isOnlyDiscovery;
     uint32_t discoveryArr[DISCOVERY_ARR_SIZE];
     uint32_t discoveryArrIdx;
+    bool isConfigStatusFail;
 }flatFileTraverser_t;
 
 /******************************************************************************
@@ -185,13 +186,18 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 //    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
     memcpy(fileTraverser.invName,INV_NAME, strlen(INV_NAME));
 //    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+    fileTraverser.isConfigStatusFail = false;
     CRS_retVal_t rspStatus = runFile(&fileTraverser);
     CRS_free(fileTraverser.fileContentCache);
     fileTraverser.fileContentCache = NULL;
-    if (rspStatus != CRS_SUCCESS)
+    if (rspStatus != CRS_SUCCESS || fileTraverser.isConfigStatusFail == true)
     {
-        CLI_cliPrintf("\r\nTraversing failed");
+        CLI_cliPrintf("\r\nConfig Status: FAIL");
         return CRS_FAILURE;
+    }
+    else
+    {
+        CLI_cliPrintf("\r\nConfig Status: OK");
     }
     CLI_cliPrintf("\r\n");
 
@@ -391,7 +397,7 @@ CRS_retVal_t SPI_Config_parseInvLine(char *buff, SPI_CRS_invLine_t *respStructIn
     // Order,ClassID,Name,Addr,DiscSeq,Mandatory(True|False),ChipType(RF|DIG),Flavor(SPI_SLAVE|SPI_NATIVE),Package(seperated by ; and uploaded to lines in brackets [seperated by |]
     memset(respStructInventory->Addr, 0, ADDR_SZ);
     memset(respStructInventory->ClassID, 0, CLASSID_SZ);
-    memset(respStructInventory->Name, 0, NAME_SZ);
+    memset(respStructInventory->Name, 0, MODULE_NAME_SZ);
     uint32_t ret = 0;
     char temp[TEMP_SZ] = { 0 };
     int i = 0;
@@ -1408,6 +1414,7 @@ static CRS_retVal_t runFile(flatFileTraverser_t *fileTraverser)
         {
             return CRS_FAILURE;
         }
+        CLI_cliPrintf("%s",fileTraverser->invLineStruct.LineMessage);
     }
 }
     //        }
@@ -1444,8 +1451,8 @@ CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
         }
         else
         {
-            CLI_cliPrintf("\r\nDiscovery didn't succeed for line %d in address %s",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Addr);
-
+            sprintf(fileTraverser->invLineStruct.LineMessage, "\r\nLine %d, Module %s: Comm failed",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Name);
+            fileTraverser->isConfigStatusFail = true;
         }
         fileTraverser->invLineNumber++;
 
@@ -1474,7 +1481,7 @@ CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
 
         fileTraverser->invLineNumber++;
     }
-    CLI_cliPrintf("\r\nDiscovery success for line %d for address %s",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Addr);
+    sprintf(fileTraverser->invLineStruct.LineMessage, "\r\nLine %d, Module %s: Comm OK",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Name);
 
     char line[300] = { 0 };
     rspStatus = SPI_Config_getPackageLine(fileTraverser->invLineStruct.Package,
@@ -1504,10 +1511,6 @@ CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
         rspStatus = MultiFilesSPI_runMultiFiles(&packageLineStruct,
                                              fileTraverser->invLineStruct.ChipType,
                                              fileTraverser->invLineStruct.Flavor);
-        if (rspStatus != CRS_SUCCESS)
-        {
-            return CRS_FAILURE;
-        }
 
 //        CRS_free(fileTraverser->fileContentCache);
     }
@@ -1516,12 +1519,16 @@ CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
         rspStatus = MultiFilesSPI_runMultiFiles(&packageLineStruct,
                                                 fileTraverser->invLineStruct.ChipType,
                                                 fileTraverser->invLineStruct.Flavor);
-        if (rspStatus != CRS_SUCCESS)
-        {
-            return CRS_FAILURE;
-        }
+    }
+    if (rspStatus != CRS_SUCCESS)
+    {
+        strcat(fileTraverser->invLineStruct.LineMessage,
+                ", Config Failed");
+        return CRS_FAILURE;
     }
 
+    strcat(fileTraverser->invLineStruct.LineMessage,
+            ", Config OK");
     return CRS_SUCCESS;
 }
 

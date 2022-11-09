@@ -266,7 +266,7 @@ void RF_process(void)
         if (gGlobalIdx == NUM_GLOBAL_REG)
         {
             Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
-            printGlobalArrayAndLineMatrix();
+//            printGlobalArrayAndLineMatrix();
             Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
             Semaphore_post(collectorSem);
             return;
@@ -397,7 +397,7 @@ static CRS_retVal_t runFile()
         memset(line, 0, 100);
 
     }
-    printGlobalArrayAndLineMatrix();
+//    printGlobalArrayAndLineMatrix();
 
     return CRS_SUCCESS;
 

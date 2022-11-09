@@ -135,6 +135,7 @@
 #define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
 
 #define CLI_CRS_RF_RUN  "rf run"
+#define CLI_CRS_READ_RF_LINE    "read rf line"
 
 
 #define CLI_CRS_TDD_TTG "tdd set ttg"
@@ -282,6 +283,7 @@ static CRS_retVal_t CLI_tddSetPeriod1Parsing(char *line);
 
 
 static CRS_retVal_t CLI_RfRunParsing(char *line);
+static CRS_retVal_t CLI_readRfLineParsing(char *line);
 
 static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
@@ -943,6 +945,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               inputBad = false;
           }
 
+          if (memcmp(CLI_CRS_READ_RF_LINE, line, strlen(CLI_CRS_READ_RF_LINE)) == 0)
+          {
+//              CLI_readRfLineParsing(line);
+              inputBad = false;
+          }
+
 
 
           if (memcmp(CLI_CRS_TDD_HOL, line, sizeof(CLI_CRS_TDD_HOL) - 1) == 0)
@@ -1390,6 +1398,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                inputBad = false;
            }
 
+      if (memcmp (CLI_CRS_CONFIG_FILE, line, sizeof(CLI_CRS_CONFIG_FILE) - 1) == 0)
+      {
+          CLI_config_file(line);
+         inputBad = false;
+      }
       if (memcmp(CLI_DISCOVER_MODULES_SPI, line, sizeof(CLI_DISCOVER_MODULES_SPI) - 1) == 0)
                 {
 
@@ -3886,6 +3899,42 @@ static CRS_retVal_t CLI_RfRunParsing(char *line)
           ptr++;//skip ' '
        }
    }
+
+// read rf line [shortAddr] [chipNumber] [lineNumber]
+//static CRS_retVal_t CLI_readRfLineParsing(char *line)
+//{
+//    const char s[2] = " ";
+//       char *token;
+//       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//       /* get the first token */
+//       //0xaabb shortAddr
+//       token = strtok(&(tmpBuff[sizeof(CLI_CRS_READ_RF_LINE)]), s);
+//       uint32_t shortAddr = CLI_convertStrUint(&(token[2]));
+//#ifndef CLI_SENSOR
+//       uint16_t addr = 0;
+//       Cllc_getFfdShortAddr(&addr);
+//       if (addr != shortAddr)
+//       {
+//           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//           ApiMac_sAddr_t dstAddr;
+//           dstAddr.addr.shortAddr = shortAddr;
+//           dstAddr.addrMode = ApiMac_addrType_short;
+//           Collector_status_t stat;
+//           stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+//           if (stat != Collector_status_success)
+//           {
+//              CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//              CLI_startREAD();
+//           }
+//           return CRS_SUCCESS;
+//       }
+//#endif
+//       token = strtok(NULL, s); // chipNumber 0x...
+//       uint32_t chipNumber = CLI_convertStrUint(&(token[2]));
+//
+//}
 
 
 //   CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
