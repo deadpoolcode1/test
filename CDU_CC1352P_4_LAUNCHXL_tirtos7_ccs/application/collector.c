@@ -20,15 +20,19 @@
 #include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
 #include "application/crs/snapshots/crs_snapshot.h"
-//#include "application/crs/snapshots/config_parsing.h"
+#ifdef CRS_TMP_SPI
 #include "application/crs/snapshots/crs_flat_parser_spi.h"
 #include "application/crs/snapshots/crs_multi_snapshots_spi.h"
 #include "application/crs/snapshots/crs_script_rf.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
-
-#include "application/crs/snapshots/crs_multi_snapshots.h"
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
+#include "crs_tmp.h"
+#else
+#include "application/crs/snapshots/config_parsing.h"
+#include "application/crs/snapshots/crs_multi_snapshots.h"
 #include "application/crs/snapshots/crs_script_dig.h"
+#endif
+
 #include "crs/crs_tdd.h"
 #include "crs/crs_env.h"
 #include "crs/crs_thresholds.h"
@@ -37,7 +41,6 @@
 #include "agc/agc.h"
 #include "application/crs/crs_management.h"
 #include "oad/crs_oad.h"
-#include "crs_tmp.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -173,9 +176,9 @@ void Collector_process(void)
     Config_process();
     MultiFiles_process();
     DIG_process();
-#endif
     RF_process();
     Snap_process();
+#endif
     Fpga_process();
     Tdd_process();
     Agc_process();

@@ -16,5 +16,6 @@
 #define CRS_GLOBAL_COLLECTOR_SHORT_ADDR 0xaabb
 
 #define CLI_SENSOR
+#define CRS_TMP_SPI
 
 #endif /* CRS_GLOBAL_DEFINES_H_ */

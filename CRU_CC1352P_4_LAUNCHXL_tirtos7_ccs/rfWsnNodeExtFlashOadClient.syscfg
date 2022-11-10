@@ -19,6 +19,7 @@ const GPIO3       = GPIO.addInstance();
 const GPIO4       = GPIO.addInstance();
 const GPIO5       = GPIO.addInstance();
 const GPIO6       = GPIO.addInstance();
+const GPIO15      = GPIO.addInstance();
 const NVS         = scripting.addModule("/ti/drivers/NVS");
 const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
@@ -74,6 +75,9 @@ scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373
 
 GPIO6.$name = "CONFIG_RJ_MAIN_LED1";
 GPIO6.pull  = "Pull Up";
+
+GPIO15.$name = "CONFIG_FPGA_CS";
+GPIO15.mode  = "Output";
 
 NVS1.$hardware                      = system.deviceData.board.components.MX25R8035F;
 NVS1.$name                          = "OAD_NVS";
@@ -183,6 +187,7 @@ GPIO2.gpioPin.$suggestSolution                = "boosterpack.13";
 GPIO3.gpioPin.$suggestSolution                = "boosterpack.8";
 GPIO4.gpioPin.$suggestSolution                = "boosterpack.40";
 GPIO6.gpioPin.$suggestSolution                = "boosterpack.10";
+GPIO15.gpioPin.$suggestSolution               = "boosterpack.18";
 UART1.uart.$suggestSolution                   = "UART1";
 UART1.uart.txPin.$suggestSolution             = "boosterpack.4";
 UART1.uart.rxPin.$suggestSolution             = "boosterpack.3";

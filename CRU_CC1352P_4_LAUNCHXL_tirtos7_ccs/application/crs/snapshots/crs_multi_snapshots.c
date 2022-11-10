@@ -113,6 +113,7 @@ void MultiFiles_process(void)
             const FPGA_cbArgs_t cbArgs={0};
             Util_clearEvent(&gMultiFilesEvents, RUN_NEXT_FILE_EV);
             gCbFn(cbArgs);
+
             return;
         }
         Util_clearEvent(&gMultiFilesEvents, RUN_NEXT_FILE_EV);
@@ -148,6 +149,7 @@ void MultiFiles_process(void)
             const FPGA_cbArgs_t cbArgs={0};
             Util_clearEvent(&gMultiFilesEvents, RUN_NEXT_LINE_EV);
             gCbFn(cbArgs);
+
             return;
         }
         gLutLineIdx++;

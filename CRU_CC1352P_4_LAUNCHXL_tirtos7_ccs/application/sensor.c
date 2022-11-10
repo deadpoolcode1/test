@@ -17,13 +17,22 @@
 #include "smsgs.h"
 #include "mac/api_mac.h"
 #include "crs/crs_cli.h"
-#include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
+#ifdef CRS_TMP_SPI
+#include "application/crs/snapshots/crs_flat_parser_spi.h"
+#include "application/crs/snapshots/crs_multi_snapshots_spi.h"
+#include "application/crs/snapshots/crs_script_rf.h"
+#include "application/crs/snapshots/crs_script_dig_spi.h"
+#include "application/crs/snapshots/crs_snap_rf_spi.h"
+#include "crs_tmp.h"
+#else
+#include "crs/crs_fpga.h"
 #include "application/crs/snapshots/crs_snapshot.h"
 #include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_multi_snapshots.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
+#endif
 #include "crs/crs_tdd.h"
 #include "crs/crs_env.h"
 #include "crs/crs_thresholds.h"
@@ -31,6 +40,8 @@
 #include "crs/crs_thresholds.h"
 #include "crs/crs_agc_management.h"
 #include "crs_msgs.h"
+
+
 
 #include "easylink/EasyLink.h"
 #include "application/crs/crs_alarms.h"
@@ -159,17 +170,25 @@ void Sensor_init( )
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
 
-    Nvs_init(sem);
-    Thresh_init();
-    Env_init();
+#ifdef CRS_TMP_SPI
+    Fpga_tmpInit();
+    SPI_Config_configInit(sem);
+    MultiFilesSPI_multiFilesInit(sem);
+    DigSPI_init(sem);
+    SPI_RF_init(sem);
+#else
     SnapInit(sem);
     //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);
     Config_configInit(sem);
     Fpga_initSem(sem);
-    //    AGCinit(sem);
     DigInit(sem);
+#endif
+    Nvs_init(sem);
+    Thresh_init();
+    Env_init();
+    //    AGCinit(sem);
     Tdd_initSem(sem);
     CRS_init();
     OadClient_init(sem);
@@ -205,13 +224,17 @@ void Sensor_process(void)
         /* Clear the event */
         Util_clearEvent(&Sensor_events, SENSOR_CRS_REQUEST_EVT);
     }
-
+#ifdef CRS_TMP_SPI
+    // do spi processes
+#else
     Config_process();
     MultiFiles_process();
     RF_process();
     Snap_process();
-    Fpga_process();
     DIG_process();
+#endif
+    Fpga_process();
+
     Agc_process();
     Tdd_process();
     Alarms_process();
@@ -227,6 +250,10 @@ void Ssf_crsInitScript()
 {
 //    CRS_LOG(CRS_DEBUG, "Running script");
 
+#ifdef CRS_TMP_SPI
+    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
+    CLI_startREAD();
+#else
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
     {
@@ -235,10 +262,12 @@ void Ssf_crsInitScript()
 
         fpgaCrsDoneCallback(cbArgs);
     }
+#endif
 }
 
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
+
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
     if (Fpga_isOpen() == CRS_SUCCESS)
     {

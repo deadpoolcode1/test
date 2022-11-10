@@ -28,6 +28,7 @@ static NVS_Attrs gRegionAttrs;
 //static Semaphore_Handle collectorSem;
 static uint8_t gFAT_sector_sz;
 static uint32_t gNumFiles;
+static bool gIsMoudleInit = false;
 
 /******************************************************************************
  Local Function Prototypes
@@ -37,6 +38,10 @@ static CRS_retVal_t Nvs_readFAT(CRS_FAT_t *fat);
 static CRS_retVal_t Nvs_writeFAT(CRS_FAT_t *fat);
 static CRS_retVal_t Nvs_readFATNumFiles(CRS_FAT_t *fat, uint32_t start,
                                         uint32_t numFiles);
+
+static CRS_retVal_t nvsInit();
+static CRS_retVal_t nvsClose();
+
 static CRS_FAT_t FATcache[FAT_CACHE_SZ + 1] = { 0 };
 
 /******************************************************************************
@@ -45,29 +50,29 @@ static CRS_FAT_t FATcache[FAT_CACHE_SZ + 1] = { 0 };
 CRS_retVal_t Nvs_init(void *sem)
 {
 //    collectorSem = sem;
-    NVS_Params nvsParams;
+//    NVS_Params nvsParams;
     NVS_init();
-    NVS_Params_init(&nvsParams);
-    gNvsHandle = NVS_open(FS_NVS_0, &nvsParams);
-
-    if (gNvsHandle == NULL)
-    {
-        CLI_cliPrintf("NVS_open() failed.\r\n");
-
-        return (CRS_FAILURE);
-    }
-    /*
-     * This will populate a NVS_Attrs structure with properties specific
-     * to a NVS_Handle such as region base address, region size,
-     * and sector size.
-     */
-    NVS_getAttrs(gNvsHandle, &gRegionAttrs);
-    uint32_t numFiles = (gRegionAttrs.regionSize / gRegionAttrs.sectorSize);
-    gFAT_sector_sz = (numFiles * sizeof(CRS_FAT_t)
-            + (gRegionAttrs.sectorSize - 1)) / gRegionAttrs.sectorSize;
-    gFAT_sector_sz++;
-    gNumFiles = numFiles - gFAT_sector_sz;
-    Nvs_readFATNumFiles(FATcache, 0, FAT_CACHE_SZ);
+//    NVS_Params_init(&nvsParams);
+//    gNvsHandle = NVS_open(FS_NVS_0, &nvsParams);
+//
+//    if (gNvsHandle == NULL)
+//    {
+//        CLI_cliPrintf("NVS_open() failed.\r\n");
+//
+//        return (CRS_FAILURE);
+//    }
+//    /*
+//     * This will populate a NVS_Attrs structure with properties specific
+//     * to a NVS_Handle such as region base address, region size,
+//     * and sector size.
+//     */
+//    NVS_getAttrs(gNvsHandle, &gRegionAttrs);
+//    uint32_t numFiles = (gRegionAttrs.regionSize / gRegionAttrs.sectorSize);
+//    gFAT_sector_sz = (numFiles * sizeof(CRS_FAT_t)
+//            + (gRegionAttrs.sectorSize - 1)) / gRegionAttrs.sectorSize;
+//    gFAT_sector_sz++;
+//    gNumFiles = numFiles - gFAT_sector_sz;
+//    Nvs_readFATNumFiles(FATcache, 0, FAT_CACHE_SZ);
 
     return CRS_SUCCESS;
 
@@ -79,6 +84,10 @@ CRS_retVal_t Nvs_ls(uint8_t page)
     /* Display the NVS region attributes. */
 //    CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
 //    CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     char strlenStr[STRLEN_BYTES] = { 0 };
@@ -125,11 +134,15 @@ CRS_retVal_t Nvs_ls(uint8_t page)
 //        CLI_cliPrintf("\r\nAvblFilesSlots=0x%x", gNumFiles - numfiles);
 //    }
     if(moreFiles){
+        nvsClose();
+
         return CRS_NEXT;
     }
     CLI_cliPrintf("\r\nMaxFileSize=0x%x", gRegionAttrs.sectorSize);
     CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
     CLI_cliPrintf("\r\nMaxFilesNum=0x%x", gNumFiles);
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
@@ -137,6 +150,10 @@ CRS_retVal_t Nvs_ls(uint8_t page)
 
 CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     // currently set maximum filename length to 32 chars
     if (strlen(filename) > STRLEN_BYTES){
         return CRS_FAILURE;
@@ -191,6 +208,8 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
             if (i == MAX_FILES)
             {
                 CLI_cliPrintf("no available slots!\r\n");
+                nvsClose();
+
                 return CRS_FAILURE;
             }
         }
@@ -210,6 +229,8 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
         fat[i].index = i + 1;
         fat[i].isExist = true;
         Nvs_writeFAT(fat);
+        nvsClose();
+
         return CRS_SUCCESS;
     }
     //we append to the existing file
@@ -225,6 +246,8 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
         uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
         if (strlenPrev + strlen(buff) > 4000)
         {
+            nvsClose();
+
             return CRS_FAILURE;
         }
         NVS_read(
@@ -248,12 +271,18 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
         NVS_write(gNvsHandle, startFile, (void*) fileContent, newStrlen, 0);
 //        fat[i].len += strlen(temp);
     }
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
 
 CRS_retVal_t Nvs_cat(char *filename)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     char strlenStr[STRLEN_BYTES] = { 0 };
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
@@ -269,6 +298,8 @@ CRS_retVal_t Nvs_cat(char *filename)
     if (i == MAX_FILES)
     {
         //CLI_cliPrintf("\r\nfile not found!\r\n");
+        nvsClose();
+
         return CRS_FAILURE;
     }
     char fileContent[4096] = { 0 };
@@ -291,11 +322,18 @@ CRS_retVal_t Nvs_cat(char *filename)
         Task_sleep(100);
         token = strtok(NULL, s);
     }
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
+
     char strlenStr[STRLEN_BYTES] = { 0 };
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
@@ -311,6 +349,8 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
     if (i == MAX_FILES)
     {
         //CLI_cliPrintf("\r\nfile not found!\r\n");
+        nvsClose();
+
         return CRS_FAILURE;
     }
     char fileContent[4096] = { 0 };
@@ -345,11 +385,17 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
 //        Task_sleep(100);
 //        token = strtok(NULL, s);
 //    }
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Nvs_rm(char *filename)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
@@ -364,25 +410,29 @@ CRS_retVal_t Nvs_rm(char *filename)
     if (i == gNumFiles)
     {
         //CLI_cliPrintf("\r\nno such file\r\n");
+        nvsClose();
+
         return CRS_FAILURE;
     }
     fat[i].isExist = false;
     memset(fat[i].filename, 0, FILENAME_SZ);
     Nvs_writeFAT(fat);
+    nvsClose();
+
     //CLI_cliPrintf("\r\n%s deleted\r\n", filename);
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t Nvs_debug()
 {
-    CRS_FAT_t *fat={0};
-
-    NVS_read(gNvsHandle, 0, (void*) fat, sizeof(CRS_FAT_t));
-
-    char fileContent[4096] = { 0 };
-    NVS_read(gNvsHandle,
-             ((fat)->index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) fileContent, (fat)->len);
+//    CRS_FAT_t *fat={0};
+//
+//    NVS_read(gNvsHandle, 0, (void*) fat, sizeof(CRS_FAT_t));
+//
+//    char fileContent[4096] = { 0 };
+//    NVS_read(gNvsHandle,
+//             ((fat)->index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
+//             (void*) fileContent, (fat)->len);
 //    readJson(fileContent);
 //    int_fast16_t retStatus = NVS_write(gNvsHandle, (4096 * 2), (void* )buff, sizeof(buff),
 //    NVS_WRITE_ERASE | NVS_WRITE_POST_VERIFY);
@@ -398,7 +448,13 @@ CRS_retVal_t Nvs_debug()
 
 CRS_retVal_t Nvs_format()
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     int_fast16_t retStatus = NVS_erase(gNvsHandle, 0, gRegionAttrs.regionSize);
+    nvsClose();
+
     //printStatus(retStatus);
     if (retStatus==NVS_STATUS_SUCCESS ) {
         return CRS_SUCCESS;
@@ -410,6 +466,10 @@ CRS_retVal_t Nvs_format()
 
 CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     CRS_FAT_t fat;
     uint32_t i = 0;
 //    CLI_cliPrintf("filenameme:%s, sizeme:0x%x", respLine, strlen(respLine));
@@ -448,6 +508,8 @@ CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
     if (i == MAX_FILES)
     {
         CRS_LOG(CRS_ERR, "File not found");
+        nvsClose();
+
         return CRS_FAILURE;
     }
 //    CLI_cliPrintf("filenamefat:%s, filenameme:%s, sizeme:0x%x", fat.filename, filename, strlen(filename));
@@ -460,6 +522,8 @@ CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
     size_t startFile = ((fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize)
             + (STRLEN_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) respLine, strlen_f);
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
@@ -467,6 +531,10 @@ CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
 
 CRS_retVal_t Nvs_isFileExists(char *filename)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     CRS_FAT_t fat;
     uint32_t i = 0;
     //    CLI_cliPrintf("filenameme:%s, sizeme:0x%x", respLine, strlen(respLine));
@@ -504,14 +572,22 @@ CRS_retVal_t Nvs_isFileExists(char *filename)
 
     if (i == MAX_FILES)
     {
+        nvsClose();
+
         return CRS_FAILURE;
     }
+    nvsClose();
+
     return CRS_SUCCESS;
 
 }
 
 CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
     CRS_FAT_t fat;
     uint32_t i = 0;
     Nvs_readFATNumFiles(FATcache, 0, FAT_CACHE_SZ);
@@ -534,6 +610,8 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
     if (i == MAX_FILES)
     {
         CLI_cliPrintf("\r\nfile not found!\r\n");
+        nvsClose();
+
         return CRS_FAILURE;
     }
     char strlenStr[STRLEN_BYTES] = { 0 };
@@ -556,6 +634,8 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
         if (i == lineNumber)
         {
             memcpy(respLine, token, strlen(token));
+            nvsClose();
+
             return CRS_SUCCESS;
         }
         token = strtok(NULL, s);
@@ -565,14 +645,22 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
     {
 //        OsalPort_free(bufCache);
         memcpy(respLine, "FAILURE", CRS_NVS_LINE_BYTES);
+        nvsClose();
+
         return CRS_EOF;
     }
     memcpy(respLine, "FAILURE", CRS_NVS_LINE_BYTES);
+    nvsClose();
+
     return CRS_FAILURE;
 }
 
 char* Nvs_readFileWithMalloc(char *filename)
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
 //    CLI_printHeapStatus();
     CRS_FAT_t fat;
     char *respLine = NULL;
@@ -613,6 +701,7 @@ char* Nvs_readFileWithMalloc(char *filename)
     if (i == MAX_FILES)
     {
         CRS_LOG(CRS_ERR, "File %s not found",filename);
+        nvsClose();
 
         return NULL;
     }
@@ -630,12 +719,15 @@ char* Nvs_readFileWithMalloc(char *filename)
     if (respLine == NULL)
     {
         CRS_LOG(CRS_ERR, "Malloc failed");
+        nvsClose();
 
         return NULL;
 
     }
     memset(respLine, 0, strlen_f + 100);
     NVS_read(gNvsHandle, startFile, (void*) respLine, strlen_f);
+    nvsClose();
+
     return respLine;
 }
 
@@ -643,7 +735,52 @@ char* Nvs_readFileWithMalloc(char *filename)
  Local Functions
  *****************************************************************************/
 
+static CRS_retVal_t nvsInit()
+{
+    if (gIsMoudleInit == true)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_Params nvsParams;
+    NVS_Params_init(&nvsParams);
 
+    gNvsHandle = NVS_open(FS_NVS_0, &nvsParams);
+
+    if (gNvsHandle == NULL)
+    {
+        CLI_cliPrintf("\r\nNVS_open() failed");
+
+        return (CRS_FAILURE);
+    }
+    /*
+     * This will populate a NVS_Attrs structure with properties specific
+     * to a NVS_Handle such as region base address, region size,
+     * and sector size.
+     */
+    NVS_getAttrs(gNvsHandle, &gRegionAttrs);
+    uint32_t numFiles = (gRegionAttrs.regionSize / gRegionAttrs.sectorSize);
+    gFAT_sector_sz = (numFiles * sizeof(CRS_FAT_t)
+            + (gRegionAttrs.sectorSize - 1)) / gRegionAttrs.sectorSize;
+    gFAT_sector_sz++;
+    gNumFiles = numFiles - gFAT_sector_sz;
+
+    gIsMoudleInit = true;
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t nvsClose()
+{
+    gIsMoudleInit = false;
+
+    if (gNvsHandle == NULL)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_close(gNvsHandle);
+    gNvsHandle = NULL;
+    return CRS_SUCCESS;
+}
 
 
 static CRS_retVal_t Nvs_readFAT(CRS_FAT_t *fat)

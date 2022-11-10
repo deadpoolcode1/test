@@ -233,7 +233,7 @@ void OADClient_open(OADClient_Params_t *params)
 
 //    oadClockInitialize();
 
-    OADStorage_init();
+//    OADStorage_init();
 }
 
 /*!
@@ -246,6 +246,7 @@ CRS_retVal_t OadClient_process(void)
     /* Is it time to send the next sensor data message? */
     if ( Oad_clientEvents & OAD_CLIENT_REQ_EVT)
     {
+        OADStorage_init();
         CLI_cliPrintf("\roadBlock #%d",oadBlock);
         OADProtocol_sendOadImgBlockReq(&oadServerAddr, 0, oadBlock, 1);
         Util_clearEvent(&Oad_clientEvents, OAD_CLIENT_REQ_EVT);
@@ -255,7 +256,7 @@ CRS_retVal_t OadClient_process(void)
         oadInProgress=false;
         oadBNumBlocks=0;
         OADStorage_Status_t status = OADStorage_imgFinalise();
-//        OADStorage_close();
+        OADStorage_close();
         if (status == OADStorage_Status_Success) {
             CLI_cliPrintf("\r\nOAD completed successfully");
 //            SysCtrlSystemReset();
@@ -290,7 +291,7 @@ void OADClient_invalidateHeader(void)
 CRS_retVal_t Oad_flashFormat(){
     OADStorage_init();
     OADStorage_flashErase();
-//    OADStorage_close();
+    OADStorage_close();
 }
 
 
