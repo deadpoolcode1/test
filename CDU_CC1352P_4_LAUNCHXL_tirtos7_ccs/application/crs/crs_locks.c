@@ -156,18 +156,21 @@ CRS_retVal_t Locks_process(void)
 {
 if (Locks_events & LOCKS_CHECKLOCK_EV)
 {
+    if (Fpga_isOpen()==CRS_SUCCESS) {
+
+
 //    CLI_cliPrintf("\r\nLOCKS_CHECKLOCK_EV");
     AGCM_runTask(startCheckingLocks);
-
+    }
     Util_clearEvent(&Locks_events, LOCKS_CHECKLOCK_EV);
 }
 
 if (Locks_events & LOCKS_READ_NEXT_REG_EV)
 {
 //    CLI_cliPrintf("\r\nLOCKS_READ_NEXT_REG_EV");
-
+    if (Fpga_isOpen()==CRS_SUCCESS) {
     MoveIdxToNextLockIdx();
-
+    }
     Util_clearEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
 }
 
@@ -367,8 +370,9 @@ static CRS_retVal_t setAlarms(void)
 #ifndef CLI_SENSOR
 static CRS_retVal_t writeToTddLockReg(void)
 {
+    if (Fpga_isOpen()==CRS_SUCCESS) {
     Fpga_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
-
+    }
     return CRS_SUCCESS;
 }
 #else
@@ -381,8 +385,9 @@ static CRS_retVal_t writeToAdfLockReg(void)
 #endif
 static CRS_retVal_t writeToTiLockReg(void)
 {
+    if (Fpga_isOpen()==CRS_SUCCESS) {
     Fpga_writeMultiLineNoPrint(READ_TI_REG, getLockValueCallback);
-
+    }
     return CRS_SUCCESS;
 }
 

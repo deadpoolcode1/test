@@ -36,7 +36,7 @@ typedef enum Alarms_alarmType
     SyncPLLLock,
     NumberOfAlarms
 } Alarms_alarmType_t;
-#define ALARMS_NUM 11
+#define ALARMS_NUM 12
 typedef enum Alarms_alarmMode
 {
     ALARM_INACTIVE,
