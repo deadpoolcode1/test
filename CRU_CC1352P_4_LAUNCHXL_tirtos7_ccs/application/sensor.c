@@ -24,6 +24,7 @@
 #include "application/crs/snapshots/crs_multi_snapshots.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
+#include "application/crs/crs_locks.h"
 #include "crs/crs_tdd.h"
 #include "crs/crs_env.h"
 #include "crs/crs_thresholds.h"
@@ -217,6 +218,7 @@ void Sensor_process(void)
     Alarms_process();
     OadClient_process();
     Msgs_process();
+    Locks_process();
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
@@ -277,6 +279,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
     Alarms_init(sem);
     Agc_init(sem);
     Agc_ledEnv();
+    Locks_init(sem);
 //    if (CONFIG_AUTO_START)
 //    {
 //        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");

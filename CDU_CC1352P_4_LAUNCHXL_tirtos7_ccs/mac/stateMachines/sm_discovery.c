@@ -23,6 +23,7 @@
 #include "mac/mac_util.h"
 #include "cp_cli.h"
 #include "easylink/EasyLink.h"
+#include "application/crs/crs_tdd.h" // TODO earse in the future
 
 /******************************************************************************
  Constants and definitions
@@ -223,7 +224,8 @@ static bool sendNextDiscovery()
 
     pkt.isNeedAck = 1;
     GPIO_init();
-    pkt.payload[0] = !(GPIO_read(CONFIG_GPIO_BTN1));
+//    pkt.payload[0] = !(GPIO_read(CONFIG_GPIO_BTN1));
+    pkt.payload[0] = Tdd_isLocked(); // TODO change to recive status of tdd as message from app layer
     pkt.len = 1;
 //    int i = 0;
 //

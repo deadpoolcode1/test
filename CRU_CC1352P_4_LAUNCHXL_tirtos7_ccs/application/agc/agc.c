@@ -19,6 +19,7 @@
 #include <ti/devices/DeviceFamily.h>
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/hal/Seconds.h>
+#include <ti/drivers/GPIO.h>
 
 #include <math.h>
 #include <float.h>
@@ -59,14 +60,19 @@ static AGC_max_stored_t gAgcMaxStored = {.dbValues={0}, .times={0}};
 static int gAgcInitialized =0;
 static int gAgcReady=0;
 static uint32_t gCurrentMaxResults [SAMPLE_TYPES] = {0xffffffff, 0x0, 0xffffffff, 0xffffffff};
+static Clock_Params gClkParamsTimeMinMaxAvgInit;
+static Clock_Handle gClkHandleTimeMinMaxAvgInit;
+static Clock_Struct gClkStructTimeMinMaxAvgInit;
+
+
 static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
 static void* gSem;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
 static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
-
-
+static adc_output_t outputValues[4][4]={0};
+static uint64_t cntrAlerts=0;
 #ifdef CLI_SENSOR
 static uint16_t gCounterInc=0;
 static uint16_t gCounterDec=0;
@@ -77,7 +83,8 @@ static bool gCruTDDLocked=0;
 static void processAgcTimeoutCallback(UArg a0);
 static void processAgcSample();
 static void Agc_updateMaxStored(int db, AGC_sampleType_t type);
-
+static void timeMinMaxAvgInitClockCb(xdc_UArg arg);
+//From Sensor Controller: ALERT wakes up the System CPU if currently in standby mode, and generates a callback (interrupt)
 void scTaskAlertCallback(void) {
     //Log_info0("callback");
     // Wake up the OS task
@@ -87,9 +94,11 @@ void scTaskAlertCallback(void) {
         gAgcReady = 1;
     }
 
+
+
 } // taskAlertCallback
 
-
+//To Sensor Controller: CTRL initiates a control operation that starts or stops Sensor Controller tasks
 void scCtrlReadyCallback(void) {
 
 } // ctrlReadyCallback
@@ -118,11 +127,12 @@ CRS_retVal_t Agc_init(void * sem){
         return CRS_SUCCESS;
     }
     gSem = sem;
-    scifOsalInit();
-    scifOsalRegisterCtrlReadyCallback(scCtrlReadyCallback);
-    scifOsalRegisterTaskAlertCallback(scTaskAlertCallback);
-    scifInit(&scifDriverSetup);
-
+    scifOsalInit(); //Construct Sensor Controller framework semaphore.
+    scifOsalRegisterCtrlReadyCallback(scCtrlReadyCallback); //Interrupt handlers are registered. To Sensor Controller: CTRL initiates a control operation that starts or stops Sensor Controller tasks
+    scifOsalRegisterTaskAlertCallback(scTaskAlertCallback); //Interrupt handlers are registered. From Sensor Controller: ALERT wakes up the System CPU if currently in standby mode, and generates a callback (interrupt)
+    scifInit(&scifDriverSetup); //Load Sensor Controller program image to the Sensor Controller RAM and configure the complete driver setup which includes IO Mapping, Domain Clocks, control and data variables, HWI's and more. For more details refer to the source code.
+    //the Sensor Controller wakes up every 125 ms, because  (0x00010000 / 8) = 8192. divide it by 65536(0x10000) you'll get 0.125 in seconds.
+    //scifStartRtcTicksNow(0x00010000 / 8);
     int i;
 
     uint32_t randomNumber;
@@ -158,17 +168,77 @@ CRS_retVal_t Agc_init(void * sem){
         agcInterval = AGC_INTERVAL;
     }
     // start task.
-    scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID));
+    scifStartTasksNbl(BV(SCIF_SYSTEM_AGC_TASK_ID)); //The Sensor Controller task is started and the initialization code will run once.
     agcClkHandle = UtilTimer_construct(&agcClkStruct, processAgcTimeoutCallback,
                                        agcInterval, 0, true, 0);
+
+        Clock_Params_init(&gClkParamsTimeMinMaxAvgInit);
+        gClkParamsTimeMinMaxAvgInit.period = 1 * 100000;
+        gClkParamsTimeMinMaxAvgInit.startFlag = FALSE;
+
+        Clock_construct(&gClkStructTimeMinMaxAvgInit, NULL, 11000 / Clock_tickPeriod, &gClkParamsTimeMinMaxAvgInit);
+
+        gClkHandleTimeMinMaxAvgInit = Clock_handle(&gClkStructTimeMinMaxAvgInit);
+
+        Clock_setFunc(gClkHandleTimeMinMaxAvgInit, timeMinMaxAvgInitClockCb, 0);
+        Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, 1 * 100000);//
+        Clock_start(gClkHandleTimeMinMaxAvgInit);
+
+
     gAgcInitialized = 1;
     return CRS_SUCCESS;
 }
+static void timeMinMaxAvgInitClockCb(xdc_UArg arg){
+
+
+         scifTaskData.systemAgc.output.TxDetMax[0]=0;
+         scifTaskData.systemAgc.output.TxDetMin[0]=UINT16_MAX;
+         scifTaskData.systemAgc.output.TxDetMax[1]=0;
+         scifTaskData.systemAgc.output.TxDetMin[1]=UINT16_MAX;
+         scifTaskData.systemAgc.output.TxDetMax[2]=0;
+         scifTaskData.systemAgc.output.TxDetMin[2]=UINT16_MAX;
+         scifTaskData.systemAgc.output.TxDetMax[3]=0;
+         scifTaskData.systemAgc.output.TxDetMin[3]=UINT16_MAX;
+
+         scifTaskData.systemAgc.output.RxDetMax[0]=0;
+         scifTaskData.systemAgc.output.RxDetMin[0]=UINT16_MAX;
+         scifTaskData.systemAgc.output.RxDetMax[1]=0;
+         scifTaskData.systemAgc.output.RxDetMin[1]=UINT16_MAX;
+         scifTaskData.systemAgc.output.RxDetMax[2]=0;
+         scifTaskData.systemAgc.output.RxDetMin[2]=UINT16_MAX;
+         scifTaskData.systemAgc.output.RxDetMax[3]=0;
+         scifTaskData.systemAgc.output.RxDetMin[3]=UINT16_MAX;
+
+
+
+         scifTaskData.systemAgc.output.IFDetDLMax[0]=0;
+         scifTaskData.systemAgc.output.IFDetDLMin[0]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetDLMax[1]=0;
+         scifTaskData.systemAgc.output.IFDetDLMin[1]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetDLMax[2]=0;
+         scifTaskData.systemAgc.output.IFDetDLMin[2]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetDLMax[3]=0;
+         scifTaskData.systemAgc.output.IFDetDLMin[3]=UINT16_MAX;
+
+         scifTaskData.systemAgc.output.IFDetULMax[0]=0;
+         scifTaskData.systemAgc.output.IFDetULMin[0]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetULMax[1]=0;
+         scifTaskData.systemAgc.output.IFDetULMin[1]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetULMax[2]=0;
+         scifTaskData.systemAgc.output.IFDetULMin[2]=UINT16_MAX;
+         scifTaskData.systemAgc.output.IFDetULMax[3]=0;
+         scifTaskData.systemAgc.output.IFDetULMin[3]=UINT16_MAX;
+
+
+}
+
 
 void Agc_process(void)
 {
     // Agc_process: get the samples, check for alarms, update interval.
     if (Agc_events & AGC_GET_SAMPLE_EVT){
+
+//        printADCOutput();
 
        Agc_sample();
         char envFile[4096]={0};
@@ -266,10 +336,6 @@ void Agc_process(void)
         /* Clear the event */
         Util_clearEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
 
-
-
-
-
     }
 }
 
@@ -329,6 +395,38 @@ int Agc_convert(float voltage, AGC_sampleType_t type, AGC_unitType_t unitType){
     return result;
 }
 
+
+
+
+CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t detType, uint16_t ms){
+if (isStart) {
+    if (detType==1) {
+        scifTaskData.systemAgc.input.gapStartTx=ms;
+    }else{
+        scifTaskData.systemAgc.input.gapStartRx=ms;
+    }
+}else{
+    if (detType==1) {
+         scifTaskData.systemAgc.input.gapStopTx=ms;
+     }else{
+         scifTaskData.systemAgc.input.gapStopRx=ms;
+     }
+
+
+}
+return CRS_SUCCESS;
+}
+
+
+
+CRS_retVal_t Agc_setTimeMinMax(uint16_t seconds){
+    Clock_stop(gClkHandleTimeMinMaxAvgInit);
+    Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, seconds * 100000);
+    Clock_start(gClkHandleTimeMinMaxAvgInit);
+    return CRS_SUCCESS;
+}
+
+
 CRS_retVal_t Agc_setChannel(AGC_channels_t channel){
     scifTaskData.systemAgc.cfg.channelsSwitch = channel;
     gAgcChannel = channel;
@@ -336,6 +434,31 @@ CRS_retVal_t Agc_setChannel(AGC_channels_t channel){
         return CRS_SUCCESS;
     }
     return CRS_FAILURE;
+}
+
+CRS_retVal_t Agc_setDio(uint32_t dioIdx,uint8_t value){
+    switch (dioIdx) {
+            case 21:
+                GPIO_init();
+                GPIO_write(dioIdx, value);
+                break;
+        case 26:
+            scifTaskData.systemAgc.cfg.Dio26= value;
+            break;
+        case 27:
+            scifTaskData.systemAgc.cfg.Dio27= value;
+            break;
+        default:
+            return CRS_FAILURE;
+    }
+return CRS_SUCCESS;
+}
+
+
+CRS_retVal_t Agc_readDio(uint32_t dioIdx){
+    GPIO_init();
+        CLI_cliPrintf("\r\nread dio %d : %d",dioIdx,GPIO_read(dioIdx));
+            return CRS_SUCCESS;
 }
 
 AGC_channels_t Agc_getChannel(){
@@ -425,256 +548,351 @@ AGC_sensorMode_t Agc_getMode(){
 }
 
 CRS_retVal_t Agc_sample_debug(){
-    // Check for TDD open and lock
-    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
-        return CRS_FAILURE;
-    }
-    // Clear the ALERT interrupt source
-    scifClearAlertIntSource();
-
-    int i;
-    int j;
-    // values to correct adc conversion offset
-    int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
-    int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
-    int32_t adcValue, adcCorrectedValue, adcValueMicroVolt;
-
-
-    // maxTX , minTX, maxRX, minRX,
-    uint16_t adcSums [SAMPLE_TYPES] = {0};
-
-    AGC_results_t newAgcResults = {0};
-
-    // for each channel, calculate max average
-    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
-        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMaxRFDL[i];
-        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
-        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMaxIFDL[i];
-        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMaxIFUL[i];
-        for(j=0;j<SAMPLE_TYPES;j++){
-            // number of results in top 20% and bottom 20% for each channel
-            adcValue = adcSums[j]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-
-            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            newAgcResults.adcMaxResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
-
-        }
-    }
-    // for each channel, calculate min average
-    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
-        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[i];
-        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMinRFUL[i];
-        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[i];
-        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
-        for(j=0;j<SAMPLE_TYPES;j++){
-            // modesChannel = number of results in top 20% and bottom 20% for each channel
-            adcValue = adcSums[j]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            newAgcResults.adcMinResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
-        }
-    }
-    // for each channel calculate average
-    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
-        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsAverage[i];
-        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsAverage[i+SAMPLE_TYPES];
-        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsAverage[i+(SAMPLE_TYPES*2)];
-        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsAverage[i+(SAMPLE_TYPES*3)];
-        for(j=0;j<SAMPLE_TYPES;j++){
-            // divide the sum of the results by 90% of total samples (because we discard the top and bottom 5% of samples)
-            adcValue = adcSums[j]/ ( (SCIF_SYSTEM_AGC_BUFFER_SIZE*SCIF_SYSTEM_AGC_SAMPLE_SIZE) -
-                    ((SCIF_SYSTEM_AGC_MODES_CHANNEL_SIZE - SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE)*2) );
-            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-            newAgcResults.adcAvgResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
-
-        }
-    }
-
-    gAgcResults = newAgcResults;
-    uint32_t randomNumber;
-    TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
-    uint16_t period = tdArgs.period;
-    uint16_t dl1 = tdArgs.dl1;
-    // uint16_t period = 5000;
-    // uint16_t dl1 = 3714;
-    for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
-        // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
-        randomNumber = (Random_getNumber() % (period - dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
-        dl1 = 1286;
-        randomNumber = (Random_getNumber() % (dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
-    }
-
-    gAgcReady = 0;
-
-    // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
-    // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
-    scifAckAlertEvents();
-    // re-enable ALERT generation (on buffer half full)
-    scifTaskData.systemAgc.state.alertEnabled = 1;
-    //Semaphore_post(collectorSem);
-
-    return CRS_SUCCESS;
+//    // Check for TDD open and lock
+//    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
+//        return CRS_FAILURE;
+//    }
+//    // Clear the ALERT interrupt source
+//    scifClearAlertIntSource();
+//
+//    int i;
+//    int j;
+//    // values to correct adc conversion offset
+//    int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
+//    int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
+//    int32_t adcValue, adcCorrectedValue, adcValueMicroVolt;
+//
+//
+//    // maxTX , minTX, maxRX, minRX,
+//    uint16_t adcSums [SAMPLE_TYPES] = {0};
+//
+//    AGC_results_t newAgcResults = {0};
+//
+//    // for each channel, calculate max average
+//    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
+//        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMaxRFDL[i];
+//        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
+//        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMaxIFDL[i];
+//        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMaxIFUL[i];
+//        for(j=0;j<SAMPLE_TYPES;j++){
+//            // number of results in top 20% and bottom 20% for each channel
+//            adcValue = adcSums[j]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//
+//            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//            newAgcResults.adcMaxResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
+//
+//        }
+//    }
+//    // for each channel, calculate min average
+//    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
+//        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[i];
+//        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMinRFUL[i];
+//        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[i];
+//        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
+//        for(j=0;j<SAMPLE_TYPES;j++){
+//            // modesChannel = number of results in top 20% and bottom 20% for each channel
+//            adcValue = adcSums[j]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//            newAgcResults.adcMinResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
+//        }
+//    }
+//    // for each channel calculate average
+//    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
+//        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsAverage[i];
+//        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsAverage[i+SAMPLE_TYPES];
+//        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsAverage[i+(SAMPLE_TYPES*2)];
+//        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsAverage[i+(SAMPLE_TYPES*3)];
+//        for(j=0;j<SAMPLE_TYPES;j++){
+//            // divide the sum of the results by 90% of total samples (because we discard the top and bottom 5% of samples)
+//            adcValue = adcSums[j]/ ( (SCIF_SYSTEM_AGC_BUFFER_SIZE*SCIF_SYSTEM_AGC_SAMPLE_SIZE) -
+//                    ((SCIF_SYSTEM_AGC_MODES_CHANNEL_SIZE - SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE)*2) );
+//            adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//            adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//            newAgcResults.adcAvgResults[i+(j*SAMPLE_TYPES)] = adcValueMicroVolt;
+//
+//        }
+//    }
+//
+//    gAgcResults = newAgcResults;
+//    uint32_t randomNumber;
+//    TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
+//    uint16_t period = tdArgs.period;
+//    uint16_t dl1 = tdArgs.dl1;
+//    // uint16_t period = 5000;
+//    // uint16_t dl1 = 3714;
+//    for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
+//        // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
+//        randomNumber = (Random_getNumber() % (period - dl1 - 800));
+//        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
+//        dl1 = 1286;
+//        randomNumber = (Random_getNumber() % (dl1 - 800));
+//        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
+//    }
+//
+//    gAgcReady = 0;
+//
+//    // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
+//    // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
+//    scifAckAlertEvents();
+//    // re-enable ALERT generation (on buffer half full)
+//    scifTaskData.systemAgc.state.alertEnabled = 1;
+//    //Semaphore_post(collectorSem);
+//
+//    return CRS_SUCCESS;
 }
 
 
 CRS_retVal_t Agc_sample(){
-    // Check for TDD open and lock
-    int i = 0;
-    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
-        AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
-        gAgcMaxResults = gAgcNewResults;
-        for(i=0; i<SAMPLE_TYPES; i++){
-            if(i!=UL_RF){
-                gCurrentMaxResults[i] = 0xffffffff;
-            }
-            else{
-                gCurrentMaxResults[i] = 0x0;
-            }
-        }
-        return CRS_FAILURE;
-    }
-
     // Clear the ALERT interrupt source
-    scifClearAlertIntSource();
+        scifClearAlertIntSource();
+        cntrAlerts++;
+//        if ((!gAgcReady)) {
+//return CRS_FAILURE;
+//        }
 
-    // values to correct ADC conversion offset
-    int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
-    int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
-    int32_t adcValue, adcCorrectedValue, adcValueMicroVolt;
+        // values to correct ADC conversion offset
+               int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
+               int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
+               int32_t adcValue, adcCorrectedValue, adcValueMicroVolt;
 
-    // DL_RF , UL_RF, DL_IF, UL_IF,
-    uint32_t adcSums [SAMPLE_TYPES] = {0xffffffff, 0x0, 0xffffffff, 0xffffffff};
+               uint16_t channelIdx=scifTaskData.systemAgc.output.channelsIdx;
+        //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+        //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+        //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+        //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
 
-    // get the highest channel
-    // for some values lower voltage means higher dB
-    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
-        if(adcSums[DL_RF] > scifTaskData.systemAgc.output.channelsMinRFDL[i]){
-            adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[i];
-        }
-        if(adcSums[UL_RF] < scifTaskData.systemAgc.output.channelsMaxRFUL[i]){
-            adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
-        }
-        if(adcSums[DL_IF] > scifTaskData.systemAgc.output.channelsMinIFDL[i]){
-            adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[i];
-        }
-        if(adcSums[UL_IF] > scifTaskData.systemAgc.output.channelsMinIFUL[i]){
-            adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
-        }
-    }
 
-    if(scifTaskData.systemAgc.cfg.channelsSwitch != AGC_ALL_CHANNELS){
-        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
-        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
-        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
-        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
-    }
-//    else{
-//        // for now take only from channel 1 for testing
-//        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
-//        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
-//        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
-//        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
+
+       //pAccValueBuffer[8]-pAccValueBuffer[9]: Rx channel 0
+       //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+       //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+       //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+        //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+        //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+        //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+        //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+
+        //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+        //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+        //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+        //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+
+
+        volatile uint32_t* pAccValues = (uint32_t*) scifTaskData.systemAgc.output.pAccValueBuffer;
+        pAccValues+=channelIdx;
+        int j=0;
+        for ( j = 0;  j < 4; j++) {
+        adcValue=*pAccValues;
+        adcValue/=(SCIF_SYSTEM_AGC_SAMPLE_SZ);
+        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+        outputValues[j][channelIdx].avg= AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+        pAccValues+=4;
+        }
+
+
+
+
+
+
+    adcValue=scifTaskData.systemAgc.output.TxDetMax[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[0][channelIdx].max = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+    adcValue=scifTaskData.systemAgc.output.TxDetMin[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[0][channelIdx].min = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+
+    adcValue=scifTaskData.systemAgc.output.RxDetMax[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[1][channelIdx].max = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+    adcValue=scifTaskData.systemAgc.output.RxDetMin[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[1][channelIdx].min = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+
+    adcValue=scifTaskData.systemAgc.output.IFDetDLMax[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[2][channelIdx].max = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+    adcValue=scifTaskData.systemAgc.output.IFDetDLMin[channelIdx];
+    adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+    outputValues[2][channelIdx].min = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+
+
+
+
+
+     adcValue=scifTaskData.systemAgc.output.IFDetULMax[channelIdx];
+     adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+     outputValues[3][channelIdx].max = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+     adcValue=scifTaskData.systemAgc.output.IFDetULMin[channelIdx];
+     adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+     outputValues[3][channelIdx].min = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+
+
+
+
+     gAgcReady = 0;
+
+         scifAckAlertEvents();
+        // re-enable ALERT generation (on buffer half full)
+        scifTaskData.systemAgc.state.alertEnabled = 1;
+        return CRS_SUCCESS;
+    /**TOMER*/
+//    // Check for TDD open and lock
+//    int i = 0;
+//    if( ( (gAgcMode == AGC_AUTO)&&( !Agc_getLock() ) ) || (!gAgcReady) ){
+//        AGC_max_results_t gAgcNewResults  ={.IfMaxDL="N/A", .IfMaxUL="N/A", .RfMaxDL="N/A", .RfMaxUL="N/A"};
+//        gAgcMaxResults = gAgcNewResults;
+//        for(i=0; i<SAMPLE_TYPES; i++){
+//            if(i!=UL_RF){
+//                gCurrentMaxResults[i] = 0xffffffff;
+//            }
+//            else{
+//                gCurrentMaxResults[i] = 0x0;
+//            }
+//        }
+//        return CRS_FAILURE;
 //    }
-
-
-    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_DL){
-        // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[DL_RF]/  SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-        gCurrentMaxResults[DL_RF] = adcValueMicroVolt;
-        #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CDU), DL_RF);
-        #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CRU), DL_RF);
-        #endif
-        sprintf(gAgcMaxResults.RfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_RF][0]);
-
-        // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[DL_IF]/  SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-        gCurrentMaxResults[DL_IF] = adcValueMicroVolt;
-        #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CDU), DL_IF);
-        #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CRU), DL_IF);
-        #endif
-        sprintf(gAgcMaxResults.IfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_IF][0]);
-    }
-    else{
-        //        // for now take only from channel 1 for testing
-        //        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
-        //        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
-        //        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
-        //        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
-        strcpy(gAgcMaxResults.RfMaxDL, "N/A");
-        strcpy(gAgcMaxResults.IfMaxDL, "N/A");
-        gCurrentMaxResults[0] = 0xffffffff;
-        gCurrentMaxResults[2] = 0xffffffff;
-    }
-
-    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_UL){
-        // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[UL_RF]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-        gCurrentMaxResults[UL_RF] = adcValueMicroVolt;
-        #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CDU), UL_RF);
-        #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CRU), UL_RF);
-        #endif
-        sprintf(gAgcMaxResults.RfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_RF][0]);
-
-        // modesChannel = number of results in top 20% and bottom 20% for each channel
-        adcValue = adcSums[UL_IF]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
-        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
-        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
-        gCurrentMaxResults[UL_IF] = adcValueMicroVolt;
-        #ifndef CLI_SENSOR
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CDU), UL_IF);
-        #else
-            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CRU), UL_IF);
-        #endif
-        sprintf(gAgcMaxResults.IfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_IF][0]);
-    }
-    else{
-        strcpy(gAgcMaxResults.RfMaxUL, "N/A");
-        strcpy(gAgcMaxResults.IfMaxUL, "N/A");
-        gCurrentMaxResults[1] = 0x0;
-        gCurrentMaxResults[3] = 0xffffffff;
-    }
-
-    uint32_t randomNumber;
-    TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
-    uint16_t period = tdArgs.period;
-    uint16_t dl1 = tdArgs.dl1;
-    //uint16_t period = 5000;
-    //uint16_t dl1 = 3714;
-    for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
-        // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
-        randomNumber = (Random_getNumber() % (period - dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
-        dl1 = 1286;
-        randomNumber = (Random_getNumber() % (dl1 - 800));
-        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
-    }
-
-    gAgcReady = 0;
-
-    // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
-    // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
-    scifAckAlertEvents();
-    // re-enable ALERT generation (on buffer half full)
-    scifTaskData.systemAgc.state.alertEnabled = 1;
-    //Semaphore_post(collectorSem);
-
-    return CRS_SUCCESS;
+//
+//    // Clear the ALERT interrupt source
+//    scifClearAlertIntSource();
+//
+//    // values to correct ADC conversion offset
+//    int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
+//    int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
+//    int32_t adcValue, adcCorrectedValue, adcValueMicroVolt;
+//
+//    // DL_RF , UL_RF, DL_IF, UL_IF,
+//    uint32_t adcSums [SAMPLE_TYPES] = {0xffffffff, 0x0, 0xffffffff, 0xffffffff};
+//
+//    // get the highest channel
+//    // for some values lower voltage means higher dB
+//    for(i=0;i<SCIF_SYSTEM_AGC_CHANNELS_NUMBER;i++){
+//        if(adcSums[DL_RF] > scifTaskData.systemAgc.output.channelsMinRFDL[i]){
+//            adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[i];
+//        }
+//        if(adcSums[UL_RF] < scifTaskData.systemAgc.output.channelsMaxRFUL[i]){
+//            adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[i];
+//        }
+//        if(adcSums[DL_IF] > scifTaskData.systemAgc.output.channelsMinIFDL[i]){
+//            adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[i];
+//        }
+//        if(adcSums[UL_IF] > scifTaskData.systemAgc.output.channelsMinIFUL[i]){
+//            adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[i];
+//        }
+//    }
+//
+//    if(scifTaskData.systemAgc.cfg.channelsSwitch != AGC_ALL_CHANNELS){
+//        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+//        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+//        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+//        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[scifTaskData.systemAgc.cfg.channelsSwitch-1];
+//    }
+////    else{
+////        // for now take only from channel 1 for testing
+////        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
+////        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
+////        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
+////        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
+////    }
+//
+//
+//    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_DL){
+//        // modesChannel = number of results in top 20% and bottom 20% for each channel
+//        adcValue = adcSums[DL_RF]/  SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//        gCurrentMaxResults[DL_RF] = adcValueMicroVolt;
+//        #ifndef CLI_SENSOR
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CDU), DL_RF);
+//        #else
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_RF, TYPE_CRU), DL_RF);
+//        #endif
+//        sprintf(gAgcMaxResults.RfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_RF][0]);
+//
+//        // modesChannel = number of results in top 20% and bottom 20% for each channel
+//        adcValue = adcSums[DL_IF]/  SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//        gCurrentMaxResults[DL_IF] = adcValueMicroVolt;
+//        #ifndef CLI_SENSOR
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CDU), DL_IF);
+//        #else
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, DL_IF, TYPE_CRU), DL_IF);
+//        #endif
+//        sprintf(gAgcMaxResults.IfMaxDL,"%i" ,gAgcMaxStored.dbValues[DL_IF][0]);
+//    }
+//    else{
+//        //        // for now take only from channel 1 for testing
+//        //        adcSums[DL_RF] = scifTaskData.systemAgc.output.channelsMinRFDL[0];
+//        //        adcSums[UL_RF] = scifTaskData.systemAgc.output.channelsMaxRFUL[0];
+//        //        adcSums[DL_IF] = scifTaskData.systemAgc.output.channelsMinIFDL[0];
+//        //        adcSums[UL_IF] = scifTaskData.systemAgc.output.channelsMinIFUL[0];
+//        strcpy(gAgcMaxResults.RfMaxDL, "N/A");
+//        strcpy(gAgcMaxResults.IfMaxDL, "N/A");
+//        gCurrentMaxResults[0] = 0xffffffff;
+//        gCurrentMaxResults[2] = 0xffffffff;
+//    }
+//
+//    if(gAgcMode==AGC_AUTO || gAgcMode==AGC_UL){
+//        // modesChannel = number of results in top 20% and bottom 20% for each channel
+//        adcValue = adcSums[UL_RF]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//        gCurrentMaxResults[UL_RF] = adcValueMicroVolt;
+//        #ifndef CLI_SENSOR
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CDU), UL_RF);
+//        #else
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_RF, TYPE_CRU), UL_RF);
+//        #endif
+//        sprintf(gAgcMaxResults.RfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_RF][0]);
+//
+//        // modesChannel = number of results in top 20% and bottom 20% for each channel
+//        adcValue = adcSums[UL_IF]/ SCIF_SYSTEM_AGC_MIN_MAX_CHANNELS_SIZE;
+//        adcCorrectedValue = AUXADCAdjustValueForGainAndOffset((int32_t) adcValue, adcGainError, adcOffset);
+//        adcValueMicroVolt = AUXADCValueToMicrovolts(AUXADC_FIXED_REF_VOLTAGE_NORMAL,adcCorrectedValue);
+//        gCurrentMaxResults[UL_IF] = adcValueMicroVolt;
+//        #ifndef CLI_SENSOR
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CDU), UL_IF);
+//        #else
+//            Agc_updateMaxStored(Agc_convert(adcValueMicroVolt, UL_IF, TYPE_CRU), UL_IF);
+//        #endif
+//        sprintf(gAgcMaxResults.IfMaxUL,"%i" ,gAgcMaxStored.dbValues[UL_IF][0]);
+//    }
+//    else{
+//        strcpy(gAgcMaxResults.RfMaxUL, "N/A");
+//        strcpy(gAgcMaxResults.IfMaxUL, "N/A");
+//        gCurrentMaxResults[1] = 0x0;
+//        gCurrentMaxResults[3] = 0xffffffff;
+//    }
+//
+//    uint32_t randomNumber;
+//    TDD_tdArgs_t tdArgs = Tdd_getTdArgs();
+//    uint16_t period = tdArgs.period;
+//    uint16_t dl1 = tdArgs.dl1;
+//    //uint16_t period = 5000;
+//    //uint16_t dl1 = 3714;
+//    for(i=0;i<SCIF_SYSTEM_AGC_SAMPLE_SIZE;i++){
+//        // generate random delays for both TX and RX samples to start measuring from. In order to prevent overflow, the ranges are between 0 to TX/RX time minus 800ms.
+//        randomNumber = (Random_getNumber() % (period - dl1 - 800));
+//        scifTaskData.systemAgc.input.randomDelayUL[i] = randomNumber;
+//        dl1 = 1286;
+//        randomNumber = (Random_getNumber() % (dl1 - 800));
+//        scifTaskData.systemAgc.input.randomDelayDL[i] = randomNumber;
+//    }
+//
+//    gAgcReady = 0;
+//
+//    // Acknowledge the ALERT event. Note that there are no event flags for this task since the Sensor
+//    // Controller uses fwGenQuickAlertInterrupt(), but this function must be called nonetheless.
+//    scifAckAlertEvents();
+//    // re-enable ALERT generation (on buffer half full)
+//    scifTaskData.systemAgc.state.alertEnabled = 1;
+//    //Semaphore_post(collectorSem);
+//
+//    return CRS_SUCCESS;
 }
 
 
@@ -716,8 +934,15 @@ static void processAgcTimeoutCallback(UArg a0)
     //gAgcTimeout = true;
 }
 
+
+
+
 static void processAgcSample()
 {
+//    memcpy(&outputArrayLostTest1,&scifTaskData.systemAgc.output.RxDetSamples,SCIF_SYSTEM_AGC_SAMPLE_SZ);
+//    memcpy(&outputArrayLostTest2,&scifTaskData.systemAgc.output.TxDetSamples,SCIF_SYSTEM_AGC_SAMPLE_SZ);
+//    memcpy(&outputArrayLostTest3,&scifTaskData.systemAgc.output.IFDetULSamples,SCIF_SYSTEM_AGC_SAMPLE_SZ);
+//    memcpy(&outputArrayLostTest4,&scifTaskData.systemAgc.output.IFDetDLSamples,SCIF_SYSTEM_AGC_SAMPLE_SZ);
     Util_setEvent(&Agc_events, AGC_GET_SAMPLE_EVT);
 
        /* Wake up the application thread when it waits for clock event */
@@ -775,6 +1000,69 @@ static void Agc_updateMaxStored(int db, AGC_sampleType_t type){
 
 }
 
+
+void printADCOutput(){
+int channelIdx=0;
+int detIdx=0; // 0: ADC0_DIO23_Tx_Det, 1 : ADC1_DIO24_Rx_Det, 2 : ADC2_DIO25_IF_Det_DL, 3: ADC2_DIO25_IF_Det_UL
+for (detIdx = 0; detIdx < 4; detIdx++) {
+    if ((gAgcMode==AGC_DL && detIdx==0) || (gAgcMode==AGC_DL && detIdx==3)) {
+continue;
+           }
+
+    if ((gAgcMode==AGC_UL && detIdx==1) || (gAgcMode==AGC_UL && detIdx==2)) {
+continue;
+           }
+    for (channelIdx = 0; channelIdx < 4; channelIdx++) {
+
+//      CLI_cliPrintf("\r\n*****");
+      switch (detIdx) {
+        case 0:
+                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
+                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
+                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+            break;
+        case 1:
+                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
+                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
+                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
+        case 2:
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
+        case 3:
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
+    }
+    }
+
+}
+
+//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Average: %u uV", (outputValues[0].avg));
+//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Max: %u uV", outputValues[0].max);
+//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Min: %u uV", outputValues[0].min);
+////    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Total Samples: %u ", outputValues[0].totalSamples);
+//    CLI_cliPrintf("\r\n*****");
+//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Average: %u uV",  (outputValues[1].avg));
+//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Max: %u uV", outputValues[1].max);
+//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Min: %u uV", outputValues[1].min);
+////    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Total Samples: %u ", outputValues[1].totalSamples);
+//    CLI_cliPrintf("\r\n*****");
+//
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL  Average: %u uV", (outputValues[2].avg));
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL  Max: %u uV", outputValues[2].max);
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL Min: %u uV", outputValues[2].min);
+//    //    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det  Total Samples: %u ", outputValues[2].totalSamples);
+//
+//    CLI_cliPrintf("\r\n*****");
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL  Average: %u uV", (outputValues[3].avg));
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL  Max: %u uV", outputValues[3].max);
+//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL Min: %u uV", outputValues[3].min);
+}
+
 bool Agc_getLock(){
 #ifndef CLI_SENSOR
     CRS_retVal_t retVal = Tdd_isLocked();
@@ -788,6 +1076,7 @@ bool Agc_getLock(){
     return gCruTDDLocked;
 #endif
 }
+
 
 
 #ifdef CLI_SENSOR

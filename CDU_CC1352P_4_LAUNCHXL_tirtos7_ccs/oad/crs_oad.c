@@ -38,10 +38,6 @@
 #define OAD_UART_NEXT_BLOCK_EVT 0x0001
 #define OAD_RF_NEXT_BLOCK_EVT 0x0002
 #define OAD_RF_FINISHED_OAD_EVT 0x0004
-#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0008
-#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x00010
-#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0020
-#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0040
 
 /******************************************************************************
  Local variables
@@ -467,8 +463,9 @@ void* oadRadioAccessAllocMsg(uint32_t msgLen)
 
 CRS_retVal_t Oad_Reinit()
 {
-    oadInProgress = false;
+           oadInProgress = false;
           oadBNumBlocks = 0;
+          oadBlock=0;
           CLI_init(false);
           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
           CLI_startREAD();

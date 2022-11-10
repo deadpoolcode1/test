@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="System AGC" version="2.9.0.208">
+<project name="System AGC nizan" version="2.9.0.208">
     <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
     <pattr name="Apply default power mode">0</pattr>
@@ -18,59 +18,56 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <task name="System AGC">
         <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
-        <tattr name="AVERAGE_SIZE" desc="The size of the array of the sums of the samples results (for each channel sum of samples from DLRF, ULRF, DLIF, ULIF)." type="expr" content="const" scope="task" min="0" max="65535">CHANNELS_NUMBER*4</tattr>
+        <tattr name="ACC_VALUE_BUFFER_SIZE" desc="Size of the accumulator value buffers (one 32-bit value per ADC channel)" type="expr" content="const" scope="task" min="0" max="65535">CHANNEL_COUNT * 8</tattr>
+        <tattr name="ADC_SAMPLE_RATE" desc="ADC sample rate, in Hz (divide by channel count to get sample rate per channel)" type="expr" content="const" scope="task" min="0" max="65535">100000</tattr>
+        <tattr name="AVERAGE_SIZE" type="expr" content="const" scope="task" min="0" max="65535">20</tattr>
         <tattr name="BUFFER_SIZE" desc="Number of measures on each channel from one sample cycle (one DL/UL period)" type="expr" content="const" scope="task" min="0" max="65535">10</tattr>
         <tattr name="CHANNELS_NUMBER" desc="Number of channels" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
-        <tattr name="MIN_MAX_CHANNELS_SIZE" desc="15% of results from all samples across cycles for a given channel" type="expr" content="const" scope="task" min="0" max="65535">(MODES_SIZE - (MODES_SIZE/4))/CHANNELS_NUMBER</tattr>
-        <tattr name="MODES_CHANNEL_SIZE" desc="20% of results from all samples across cycles for a given channel" type="expr" content="const" scope="task" min="0" max="65535">MODES_SIZE / CHANNELS_NUMBER</tattr>
-        <tattr name="MODES_SIZE" desc="20% of sample across all cycles and channels" type="expr" content="const" scope="task" min="0" max="65535">(MULTI_RESULT_SIZE / 10) * 2</tattr>
-        <tattr name="MULTI_BUFFER_SIZE" desc="Number of samples from all channels in each sample cycle" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE * CHANNELS_NUMBER</tattr>
-        <tattr name="MULTI_RESULT_SIZE" desc="Total number of measures from all channels across all samples cycles" type="expr" content="const" scope="task" min="0" max="65535">SAMPLE_SIZE*MULTI_BUFFER_SIZE</tattr>
-        <tattr name="RESULTS" desc="Number of measures for a channel across all sample cycles" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
+        <tattr name="CHANNEL_COUNT" desc="Number of ADC channels" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="SAMPLE_SIZE" desc="Number of sample cycles" type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
+        <tattr name="SAMPLE_SZ" type="expr" content="const" scope="task" min="0" max="65535">75</tattr>
+        <tattr name="TP_CHANNEL_COUNT" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
+        <tattr name="cfg.Dio26" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.Dio27" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.eventCounter" desc="counts transitons number from event b(UL) to c(DL)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="cfg.tddMode" desc="TDD mode - 0: ManualDL, 1: ManualUL, 2: Auto" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="cfg.tddMode" desc="TDD mode - 0: Auto , 1: ManualDL, 2: ManualUL" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayDL" desc="Random delay period after interrupt wakeup and before starting to perform measures(DL event). Contains multiple numbers for each sample cylce." size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="input.randomDelayUL" desc="Random delay period after interrupt wakeup and before starting to perform measures(UL event). Contains multiple numbers for each sample cylce." size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.Period1" desc="TDD env variable " type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.gapStartRx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
+        <tattr name="input.gapStartTx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
+        <tattr name="input.gapStopRx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
+        <tattr name="input.gapStopTx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
+        <tattr name="input.randomDelayDL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="input.randomDelayUL" size="SAMPLE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.tddLock" desc="TDD lock status" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsAverage" desc="Contains sums of 90% of results of measures for each channel and type of measure: [sumsChannel1-4DLRF, sumsChannel1-4ULRF, sumsChannel1-4DLIF,  sumsChannel1-4ULIF]." size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsAverageTemp" desc="Stores the average sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="AVERAGE_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFDL" desc="Contains sums of the 15% max results from downlink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFDLTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFUL" desc="Contains sums of the 15% max results from uplink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxIFULTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFDL" desc="Contains sums of the 15% max results from downlink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFDLTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFUL" desc="Contains sums of the 15% max results from uplink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMaxRFULTemp" desc="Stores the max sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFDL" desc="Contains sums of the 15% min results from downlink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFDLTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFUL" desc="Contains sums of the 15% min results from uplink IF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinIFULTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFDL" desc="Contains sums of the 15% min results from downlink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFDLTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFUL" desc="Contains sums of the 15% min results from uplink RF of channels 1-4." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.channelsMinRFULTemp" desc="Stores the min sums between calculations, is not accessed by the CPU and copied into the non-temp array after calculation is done." size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.IFDetDLMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.IFDetDLMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.IFDetDLSamples" size="SAMPLE_SZ" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.IFDetULMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.IFDetULMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.IFDetULSamples" size="SAMPLE_SZ" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.RxDetMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.RxDetMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.RxDetSamples" size="SAMPLE_SZ" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.TxDetMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.TxDetMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
+        <tattr name="output.TxDetSamples" size="SAMPLE_SZ" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.adcValue" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.channelsIdx" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.cruLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesIFUL" desc="Contains the 20% top reasults for each channel from all smaple cycles for IF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFDL" desc="Contains the 20% top reasults for each channel from all smaple cycles for RF downlink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.maxSamplesRFUL" desc="Contains the 20% top reasults for each channel from all smaple cycles for RF uplink: [channel1MaxSamples,  channel2MaxSamples, channel3MaxSamples, channel4MaxSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.minSamplesIFDL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for IF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesIFUL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for IF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFDL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for RF downlink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.minSamplesRFUL" desc="Contains the 20% bottom reasults for each channel from all smaple cycles for RF uplink [channel1MinSamples,  channel2MinSamples, channel3MinSamples, channel4MinSamples]." size="MODES_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
-        <tattr name="output.pSamplesMultiChannelIF" desc="Stores IF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="output.pSamplesMultiChannelRF" desc="Stores RF samples of each sample cycle from each channel" size="MULTI_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="output.pAccValueBuffer" desc="32-bit accumulator value for each ADC channel (L[0], H[0], ..., L[n], H[n]), to be accessed as a uint32_t array in the System CPU application" size="ACC_VALUE_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="dec" content="struct" scope="task" min="0" max="65535">1</tattr>
+        <tattr name="state.channelsIdx" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="state.exit" desc="Set to exit the ADC data streamer" type="dec" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="state.invalid" desc="signal that results of current sample cycle should be discarded and not copied to the results arrays." type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.headSamplesCountIFDLDet" desc="ADC sample buffer (input) head index" size="CHANNEL_COUNT" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.headSamplesCountIFULDet" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.headSamplesCountRxDet" size="CHANNEL_COUNT" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.headSamplesCountTxDet" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.invalid" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledCounter" desc="Determines which LED will turn on in Auto mode" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.ledOn" desc="bool variable to decide weather we light led or ont" type="expr" content="struct" scope="task" min="0" max="1">1</tattr>
-        <tattr name="state.samplesCount" desc="The sample cycles counter" type="expr" content="struct" scope="task" min="0" max="65535">SAMPLE_SIZE</tattr>
+        <tattr name="state.pAccValueBuffer" desc="32-bit accumulator value for each ADC channel (L[0], H[0], ..., L[n], H[n]), for storage while accumulating sample values" size="ACC_VALUE_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tddMode" desc="TDD mode - 0: Auto, 1: ManualDL, 2: ManualUL  (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.unitType" desc="Type of unit - 0 : CDU, 1: CRU  (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <resource_ref name="ADC" enabled="1"/>
@@ -388,17 +385,31 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
                 <uattr name="TX pin/0000"></uattr>
             </io_usage>
         </resource_ref>
-        <sccode name="event0" init_power_mode="0"><![CDATA[//cancel all scheduled event triggers
-//evhCancelTrigger(0);
-evhCancelTrigger(1);
-//evhCancelTrigger(2);
+        <sccode name="event0" init_power_mode="0"><![CDATA[//evhCancelTrigger(#evIndex)
+//Cancels a previous call to an event trigger setup procedure (for example evhSetupGpioTrigger() ) with matching event index, including any pending Event Handler Code execution if the trigger already has occurred. This procedure should be called from the Termination Code if the task can be stopped by the application while an event trigger is enabled.
+evhCancelTrigger(1); //cancel event B trigger
+
+
+if(cfg.Dio26==1){
+    gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+}else{
+    gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+}
+
+if(cfg.Dio27==1){
+    gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+
+}else{
+    gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 23-->DIO 26
+}
+
 
 // update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
-if(state.samplesCount == SAMPLE_SIZE){
+if(state.headSamplesCountRxDet[0] == 0){
     state.tddMode = cfg.tddMode;
-    state.channelsSwitch = cfg.channelsSwitch;
     state.unitType = cfg.unitType;
 }
+
 
 // check if the TDD mode was changed in the middle of the sampling cycles
 if(state.tddMode == cfg.tddMode){
@@ -407,13 +418,17 @@ if(state.tddMode == cfg.tddMode){
     // if it was, mark currently stored result as invalid, advance the sample counter to the last cycle
     // and trigger the next event so results will get discarded
     state.invalid = 1;
-    state.samplesCount = 1;
+    state.headSamplesCountRxDet[0] = (SAMPLE_SZ-1);
     evhSetupTimer0Trigger(1, 1, 2);
     fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
 }
 
+
 // if tdd mode is auto
+//state.unitType = 0;
 if(state.tddMode == 0){
+
+    //**Led logic**//
     if(state.ledCounter == 0){
         gpioSetOutput(AUXIO_O_RED_LED);
         gpioSetOutput(AUXIO_O_GREEN_LED);
@@ -432,6 +447,9 @@ if(state.tddMode == 0){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
+    //**Led logic**//
+
+
     //get the TDD lock
     U16 lock;
     if(state.unitType == 0){
@@ -443,29 +461,30 @@ if(state.tddMode == 0){
         // CRU gets lock status via a meassage from CDU, checks and updates periodically
         lock = input.tddLock;
     }
-
     //if locked, activate the rising edge interrupt on event B
     if(lock == 1){
-        evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE);
+        //evhSetupGpioTrigger(#evIndex, #auxio, #level, #type)
+        //Sets up a GPIO pin to generate an Event Handler Code trigger. Event indexes are mapped to event handlers in the task panel. The trigger is one-shot.
+        //The trigger occurs as soon as the GPIO pin matches or transitions to the selected level. The Event Handler Code block that matches the specified event index then starts when the Sensor Controller is idle or in standby mode.
+        //Parameter value(s)
+        //#evIndex : Event index to be triggered
+        //#auxio : The GPIO pin that shall generate the trigger (index of AUX I/O pin)
+        //#level : The pin level that shall generate the trigger (1 = high level / rising edge, 0 = low level / falling edge)
+        //#type : GPIO trigger type (EVH_GPIO_TRIG_ON_MATCH to trigger immediately on match, or EVH_GPIO_TRIG_ON_EDGE to wait for a transition to the leve
+        evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_EDGE); //trigeer event B on Rising edge of TDD Sync pin(Tx/Rx control)
     }
-    //Activate timer trigger on event A, so if interrupt does not occur or there is no lock then
-    //event runs again from the start
-    //timer of 100 ms
+    //Activate timer trigger on event A, so if interrupt does not occur or there is no lock then event runs again from the start . timer of 100 ms
     evhSetupTimer0Trigger(0, 100, 2);
 
 }else{
     // if mode is not auto, trigger event B immediately
     evhSetupTimer0Trigger(1, 1, 2);
-}
-//evhSetupGpioTrigger(1, AUXIO_I_TDD_SYNCH, 1, EVH_GPIO_TRIG_ON_MATCH);]]></sccode>
-        <sccode name="event1" init_power_mode="0"><![CDATA[//DownLink
-//cancel all scheduled event triggers
-evhCancelTrigger(0);
-cfg.eventCounter += 1;
-//evhCancelTrigger(1);
-//evhCancelTrigger(2);
-//enter event code only if Manual DL mode or Auto(skip if Manual UL)
+}]]></sccode>
+        <sccode name="event1" init_power_mode="0"><![CDATA[//rising edge - Rx det(Rf DL)/IF det (DL)
+evhCancelTrigger(0);//cancel event A trigger
+//enter event code only if Manual DL mode(1) or Auto(0)(skip if Manual UL)
 if(state.tddMode != 2){
+    //**Led logic**//
     // turn DL LED on (in auto mode it stays on only half the time)
     if(state.tddMode == 0){
         if(state.ledCounter < 50){
@@ -482,769 +501,907 @@ if(state.tddMode != 2){
         gpioClearOutput(AUXIO_O_RED_LED);
         gpioClearOutput(AUXIO_O_GREEN_LED);
     }
+    //**Led logic**//
+
+
+    //channel switch config
+    U16 z;
+    z = state.channelsIdx;
+    utilIncrAndWrap(z, TP_CHANNEL_COUNT; state.channelsIdx);
+    if(cfg.channelsSwitch==0){
+        if(state.channelsIdx==0){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==1){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==2){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==3){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        output.channelsIdx=state.channelsIdx;
+    }else{
+        output.channelsIdx=cfg.channelsSwitch;
+        state.channelsIdx=cfg.channelsSwitch;
+    }
+    // Calculate the memory offset between the accumulator value buffer in the output and state data structures.
+    // We'll use this to quickly move the pointer back and forth (saves 3 instructions per move).
+    //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+    //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+    //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+    //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
+
+    //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+    //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+    //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+    //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+    //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+    //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+    //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+    //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+    //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+    //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+    //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+    //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    //To create a pointer to a data structure member, use the # operator.
+    U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
+    U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[8];
+    }
+    if(state.channelsIdx == 1){
+        pAccValueBuffer = #state.pAccValueBuffer[10];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer = #state.pAccValueBuffer[12];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer = #state.pAccValueBuffer[14];
+    }
     U16 n = 0;
-    n = state.samplesCount;
-    // randomDelay to wait on in microseconds that is delivered by application.
-    fwDelayUs(input.randomDelayDL[n]);
-
-    // start the ADC driver
-    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // manual sampling, 2.7 us sample time
-
-    // Initialize variables, only 6 are available
-    U16 a = 0;
-    S16 b = 0;
-    U16 c = 0;
-    U16 d = 0;
-
-    n = 0;
-    while (n < MULTI_BUFFER_SIZE) {
-        // select the correct channel according to cfg variable.
-        // select the first channel in case channelsSwitch is set to all channels
-        while(a < CHANNELS_NUMBER){
-            // Select channel
-            // a = channel
-            // when channelsSwitch is 0 we switch between all channels using the iterator a
-            if(state.channelsSwitch==0){
-                b = a + 1;
-            } else{
-                // if it is not 0, we measure only the selected channel
-                b = state.channelsSwitch;
-            }
-            // first we set both pin to select the first channel (in cdu both pins 1, in cru both pins 0)
-            if(state.unitType == 0){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            if(state.unitType == 1){
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            // then we toggle the correct pins according to the chosen channel
-            c = b ^ 1;
-            c = c & 1;
-            if(c==1){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-            }
-
-            if(b >= 3){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-
-            // select the correct pin according to unit type. For CDU we select
-            // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
-            if(state.unitType == 0){
-                adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
-            }else{
-                adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
-            }
-            // this triggers the driver to start a measure and place the result in the output array
-            adcGenManualTrigger();
-            adcReadFifo(output.pSamplesMultiChannelRF[n]);
-            // select the IF pin
-            adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            // IF requires same PIN setup as RX Detect, so for CRU (who have TX detect selected)
-            // we toggle the channel select pins (as for TX Detect they are exact opposites)
-            if(state.unitType == 1){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            adcGenManualTrigger();
-            adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            // toggle channel select PINs back
-            if(state.unitType == 1){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-
-            // copy n value to temp variable, we do this because n is the only variable that can access arrays,
-            // but we also use it as the loop counter so we need to save it's value.
-            b = n;
-
-            // add IF and RF results to the average arrays for later average calulation
-            // the average array is arranged as: 0-3: RFDL, 4-7: RFUL, 8-11: IFDL, 12-15: IFUL (4 of each type for each channel)
-            // for accessing RFDL sums we don't add anything to n so we get positions 0-3, for IFDL we add 8 to n to get to positions 8-11
-            c = output.pSamplesMultiChannelRF[n];
-            d = output.pSamplesMultiChannelIF[n];
-            n = a;
-            output.channelsAverageTemp[n] += c;
-            n = a + 8;
-            output.channelsAverageTemp[n] += d;
-            n = b;
-
-            n += 1;
-            a += 1;
-            // Select channel again
+    U16 accExt=0;
+    U16 accValueL=0;
+    U16 accValueH=0;
+    // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+    U16 flagAccReset=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountRxDet[0] == 0) {
+            accReset();
+            flagAccReset=1;
         }
-        a = 0;
     }
-    // Disable the ADC driver after use
+
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountRxDet[1] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountRxDet[2] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountRxDet[3] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+
+    if(flagAccReset==0) {
+        U16 accValueL = *(pAccValueBuffer++);
+        U16 accValueH = *(pAccValueBuffer++);
+        accSet32u(accValueH, accValueL);
+        pAccValueBuffer -= 2;
+    }
+    flagAccReset=0;
+    //fwDelayUs(#delay, #range)
+    //Delays execution of the next line by the specified number of microseconds.
+    //To avoid busy waiting, the delay is implemented using AUX Timer 0.
+    //Parameter value(s)
+    //#delay : Delay value in microseconds
+    //#range : Delay range (FW_DELAY_RANGE_N_US or FW_DELAY_RANGE_N_MS), for example FW_DELAY_RANGE_5_MS allows for a delay between 1 and 5000 microseconds
+    fwDelayUs(input.gapStartTx);
+    // select the correct pin according to unit type. For CDU we select
+    // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
+    if(state.unitType == 0){
+        //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
+        adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 25--->DIO 24 RX det
+    }else{
+        adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
+
+    }
+
+    //adcEnableSync(#refSource, #sampleTime, #trigger)
+    //Enables the ADC for synchronous operation, with a fixed sampling period before each conversion.
+    //The ADC is idle between conversions, and the ADC trigger starts the sampling period before the conversion.
+    //This procedure must only be called when the ADC is disabled. To change ADC configuration, call adcDisable() before re-enabling the ADC.
+    //Parameter value(s)
+    //#refSource : ADC reference source, either ADC_REF_FIXED or ADC_REF_VDDS_REL
+    //#sampleTime : ADC sampling time before each conversion, ADC_SAMPLE_TIME_N_US or ADC_SAMPLE_TIME_N_MS
+    //#trigger : ADC trigger (ADC_TRIGGER_XYZ)
+    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // manual sampling, 2.7 us sample time, the fastest possible
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
+    adcFlushFifo();
+    // Start ADC timer trigger at the configured period (rounded up)
+    timer1Start(TIMER1_MODE_PERIODICAL, (24000000 + (ADC_SAMPLE_RATE - 1)) / ADC_SAMPLE_RATE, 0);
+    // Wait for the ADC trigger (start of conversion)
+    timer1Wait();
+
+    if(state.channelsIdx==0){
+        n = state.headSamplesCountRxDet[0];
+    }
+    if(state.channelsIdx==1){
+        n = state.headSamplesCountRxDet[1];
+    }
+    if(state.channelsIdx==2){
+        n = state.headSamplesCountRxDet[2];
+    }
+    if(state.channelsIdx==3){
+        n = state.headSamplesCountRxDet[3];
+    }
+    adcReadFifo(output.RxDetSamples[n]); //ADC FIFO can store between between 0 and 4 samples.
+    output.adcValue=output.RxDetSamples[n];
+
+
+    // Add the ADC value to the accumulator
+    accAdd16u(output.adcValue);
+    accGetAll(accExt, accValueH, accValueL);
+    // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+    // state.pAccValueBuffer[], so it can be restored in the next iteration
+    U16 flagLastCycle=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountRxDet[0] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountRxDet[1] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountRxDet[2] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountRxDet[3] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(flagLastCycle==1){
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+    }
+    // When the accumulator contains the wanted number of samples: Save the accumulator value to
+    // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+    if(flagLastCycle==0) {
+        pAccValueBuffer += accValueBufferOutputOffset;//moves the ptr to output structure
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+        pAccValueBuffer -= accValueBufferOutputOffset; //move the ptr back to state structure
+    }
+    // Update the head index
+    if(state.channelsIdx==0){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[0]);
+    }
+    if(state.channelsIdx==1){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[1]);
+    }
+    if(state.channelsIdx==2){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[2]);
+    }
+    if(state.channelsIdx==3){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[3]);
+    }
+
+
+    n=state.channelsIdx;
+    //min, max, sum calculations
+    if(output.adcValue<output.RxDetMin[n]){
+        output.RxDetMin[n]=output.adcValue;
+    }
+    if(output.adcValue>output.RxDetMax[n]){
+        output.RxDetMax[n]=output.adcValue;
+    }
+
+
+
+
+
+    //     If ALERT interrupt generation is enabled
+    if (state.alertEnabled == 1) {
+        if(state.headSamplesCountRxDet[n] == (SAMPLE_SZ)){
+
+            fwGenQuickAlertInterrupt();
+            output.RxDetMax[n]=0;
+            output.RxDetMin[n]=65535;
+
+
+
+            // Disable further generation to avoid unnecessary interrupts. It will be reenabled
+            // by the application after handling the ALERT interrupt.
+            state.alertEnabled = 0;
+
+        }
+    }
+
     adcDisable();
-    // reset all variables and decalre the rest of necessary variables
-    U16 e = 0;
-    U16 f = 0;
-    a = 0;
-    b = 0;
-    c = 0;
-    n = 0;
 
-    // in this loop we get top and bottom 20% of results from samples
-    while(f < CHANNELS_NUMBER){
-        while(n<BUFFER_SIZE){
-            // samples array is arranged as [channelSample1, channelSample2, channelSample3, channelSample4, channelSample1...] (channels alternating)
-            // the max/min arrays are arranged by channels and sorted smallest to biggest/ biggest to smallest:
-            // [channelSample1, channelSampleBigger1, channelSampleBiggest1, channelSample2, channelSampleBigger2...](for min arrays -> bigger to smallest)
-            // we iterate on each channel, taking and comparing the channels samples currently in the buffer to the ones in the max/min arrays.
-            // If any of the samples is bigger/smaller than the ones stored in the max/min array, we move all samples in the array down/up and insert the new sample.
-            c = n;
-            // make jumps of CHANNELS_NUMBER on samples array - multiply n by iterator and add the current channel number
-            accMul16s16u(n, CHANNELS_NUMBER);
-            accGet16(0; n);
-            n += f;
-            a = output.pSamplesMultiChannelRF[n];
-            // check if this sample is greater/lesser than the ones already stored in the max/min
-            // because these array start with values of 0(for max)/0xffff(for min), first results will always get into the array
-            b = MODES_CHANNEL_SIZE - 1;
-            while( b >= 0){
-                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.maxSamplesRFDL[n];
-                // check if smaple is greater than any of the samples in maxSamples
-                if(d < a){
-                    // insert current sample to new position
-                    output.maxSamplesRFDL[n] = a;
-                    // here we 'move' all smaller samples down the array (deleting the first smallest sample)
-                    // this makes it so array will be sorted samller -> biggest
-                    while(0 < b){
-                        n -= 1;
-                        b -= 1;
-                        e = output.maxSamplesRFDL[n];
-                        output.maxSamplesRFDL[n] = d;
-                        d = e;
-                    }
-                    // set b to 0 so loop will break
-                    b = 0;
-                }
-                b -=1;
-            }
+    //move to sample IF det DL
+    //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+    //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+    //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+    //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
 
-            // repeat this for minimum array
-            b = 0;
-            b = 0;
-            while( b < MODES_CHANNEL_SIZE){
-                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.minSamplesRFDL[n];
-                // check if smaple is lesser than any of the samples in minSamples
-                if(d > a){
-                    // insert current sample to new position
-                    output.minSamplesRFDL[n] = a;
-                    // here we 'move' all bigger samples up the array (deleting the last biggest sample)
-                    // this makes it so array will be sorted bigger -> smallest
-                    while(b < (MODES_CHANNEL_SIZE-1)){
-                        n += 1;
-                        b += 1;
-                        e = output.minSamplesRFDL[n];
-                        output.minSamplesRFDL[n] = d;
-                        d = e;
-                    }
-                    b = MODES_CHANNEL_SIZE; // so loop will break
-                }
-                b +=1;
-            }
-            // repeat whole process for the IF samples
-            n = c;
-            accMul16s16u(n, CHANNELS_NUMBER);
-            accGet16(0; n);
-            n += f;
-            a = output.pSamplesMultiChannelIF[n];
-            b = MODES_CHANNEL_SIZE - 1;
+    //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+    //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+    //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+    //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
 
-            while(b >= 0){
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.maxSamplesIFDL[n];
-                if(d < a){
-                    output.maxSamplesIFDL[n] = a;
-                    while(0 < b){
-                        n -= 1;
-                        b -= 1;
-                        e = output.maxSamplesIFDL[n];
-                        output.maxSamplesIFDL[n] = d;
-                        d = e;
-                    }
-                    b = 0; // so loop will break
-                }
-                b -=1;
-            }
+    //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+    //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+    //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+    //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
 
-            b = 0;
-            while( b < MODES_CHANNEL_SIZE){
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.minSamplesIFDL[n];
-                if(d > a){
-                    output.minSamplesIFDL[n] = a;
-                    while(b < (MODES_CHANNEL_SIZE-1)){
-                        n += 1;
-                        b += 1;
-                        e = output.minSamplesIFDL[n];
-                        output.minSamplesIFDL[n] = d;
-                        d = e;
-                    }
-                    b = MODES_CHANNEL_SIZE; // so loop will break
-                }
-                b +=1;
-            }
-
-            n = c;
-            n += 1;
+    //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+    //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+    //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+    //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[16];
+    }
+    if(state.channelsIdx == 1){
+        pAccValueBuffer = #state.pAccValueBuffer[18];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer = #state.pAccValueBuffer[20];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer = #state.pAccValueBuffer[22];
+    }
+    // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+    flagAccReset=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountIFDLDet[0] == 0) {
+            accReset();
+            flagAccReset=1;
         }
-        n = 0;
-        f += 1;
-
     }
 
-    // decrease the sample cycle counter
-    state.samplesCount -= 1;
-
-    // reset variables
-    n = 0;
-    a = 0;
-    b = 0;
-    c = 0;
-    d = 0;
-    e = 0;
-    f = 0;
-
-    // if this is the last cylce of measures, process the result
-    if(state.samplesCount == 0){
-        // clear values in temp Samples arrays (there we put the sums of results)
-        while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFDLTemp[n] = 0;
-            output.channelsMaxIFDLTemp[n] = 0;
-            output.channelsMinRFDLTemp[n] = 0;
-            output.channelsMinIFDLTemp[n] = 0;
-            n +=1;
-        }
-        // we now have in the output.maxSamples array the top 20% of results from each channel (for RF and IF).
-        // in output.minSamples we got bottom 20% of results from each channel (for RF and IF).
-        // we want to discard top 5% bottom and top from all sums - min max and average (get rid of the outliers).
-        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin arrays
-        // we also subtruct those 5% top/bottom results from the sums in the average arrays.
-
-        n = 0;
-        while(f<CHANNELS_NUMBER){
-            // we iterate on each channel results
-            while(a<MODES_CHANNEL_SIZE){
-                // for each channel, we sum it's first/last 15% samples (out of total 20% we got in the array),
-                // the remaining 5% we subtract from the average sum array (as they were added to the total sum)
-                b = n;
-                c = output.maxSamplesRFDL[n];
-                d = output.maxSamplesIFDL[n];
-                n = f;
-                if(a<MIN_MAX_CHANNELS_SIZE){
-                    // if results are within the 15%, add them to the sums array
-                    output.channelsMaxRFDLTemp[n] += c;
-                    output.channelsMaxIFDLTemp[n] += d;
-                }else{
-                    // otherwise subtruct the 5% from the average sum
-                    // RFDL positions 0-3
-                    output.channelsAverageTemp[n] -= c;
-                    // to get to IFDL we add 8: positions 8-11
-                    n += 8;
-                    output.channelsAverageTemp[n] -= d;
-                }
-                n = b;
-                // repeat for min
-                c = output.minSamplesRFDL[n];
-                d = output.minSamplesIFDL[n];
-                n = f;
-                if(a<MIN_MAX_CHANNELS_SIZE){
-                    // if results are within the 15%, add them to the sums array
-                    output.channelsMinRFDLTemp[n] += c;
-                    output.channelsMinIFDLTemp[n] += d;
-                }else{
-                    // RFDL positions 0-3
-                    output.channelsAverageTemp[n] -= c;
-                    // to get to IFDL we add 8: positions 8-11
-                    n += 8;
-                    output.channelsAverageTemp[n] -= d;
-                }
-                n = b;
-                a+=1;
-                n+=1;
-            }
-            a = 0;
-            f += 1;
-        }
-
-        // clear values in maxSamples/minSamples arrays
-        n = 0;
-        while(n<MODES_SIZE){
-            output.maxSamplesRFDL[n] = 0;
-            output.maxSamplesIFDL[n] = 0;
-            output.minSamplesRFDL[n] = 65535;
-            output.minSamplesIFDL[n] = 65535;
-            n += 1;
-        }
-
-        if(state.invalid != 1){
-            // copy the results from the temp array to the 'real' array
-            n = 0;
-            while(n<CHANNELS_NUMBER){
-                output.channelsMaxRFDL[n] = output.channelsMaxRFDLTemp[n];
-                output.channelsMaxIFDL[n] = output.channelsMaxIFDLTemp[n];
-                output.channelsMinRFDL[n] = output.channelsMinRFDLTemp[n];
-                output.channelsMinIFDL[n] = output.channelsMinIFDLTemp[n];
-                n += 1;
-            }
-        }
-        // copy average sums vaules from the temp array to the 'real' array and clear temp array
-        n = 0;
-        a = 0;
-        while(n<CHANNELS_NUMBER){
-            a = n;
-            if(state.invalid != 1){
-                output.channelsAverage[n] = output.channelsAverageTemp[n];
-            }
-            output.channelsAverageTemp[n] = 0;
-            n += 8;
-            if(state.invalid != 1){
-                output.channelsAverage[n] = output.channelsAverageTemp[n];
-            }
-            output.channelsAverageTemp[n] = 0;
-            n = a;
-            n += 1;
-        }
-        if(state.invalid != 1){
-            // if TDD mode is manual DL, results are ready and an interrupt is sent to main CPU
-            n = 0;
-            if(state.tddMode == 1){
-                state.samplesCount = SAMPLE_SIZE;
-                rtlLogStructs(BV_RTL_LOG_OUTPUT);
-                // if interrupt flag is enabled, raises the interrupt for application to process results
-                if(state.alertEnabled == 1) {
-                    state.alertEnabled = 0;
-                    fwGenQuickAlertInterrupt();
-                }
-            }
-        } else{
-            state.samplesCount = SAMPLE_SIZE;
-            evhSetupTimer0Trigger(2, 1, 2);
-            fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountIFDLDet[1] == 0) {
+            accReset();
+            flagAccReset=1;
         }
     }
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountIFDLDet[2] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountIFDLDet[3] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    U16 accExt_2=0;
+    U16  accValueL_2 =0;
+    U16  accValueH_2 =0;
+    if(flagAccReset==0) {
+        accValueL_2 = *(pAccValueBuffer++);
+        accValueH_2 = *(pAccValueBuffer++);
+        accSet32u(accValueH_2 ,accValueL_2);
+        pAccValueBuffer -= 2;
+    }
+    flagAccReset=0;
+
+
+    // select the IF pin
+    adcSelectGpioInput(cfg.pAuxioASensorOutput[2]); //AUX Mapping 24--->DIO 25 IF det
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
+    adcFlushFifo();
+    // Wait for the ADC trigger (start of conversion)
+    timer1Wait();
+    adcFlushFifo();
+    fwDelayUs(input.gapStartRx);
+    if(state.channelsIdx==0){
+        n = state.headSamplesCountIFDLDet[0];
+    }
+    if(state.channelsIdx==1){
+        n = state.headSamplesCountIFDLDet[1];
+    }
+    if(state.channelsIdx==2){
+        n = state.headSamplesCountIFDLDet[2];
+    }
+    if(state.channelsIdx==3){
+        n = state.headSamplesCountIFDLDet[3];
+    }
+    adcReadFifo(output.IFDetDLSamples[n]); //ADC FIFO can store between between 0 and 4 samples.
+    output.adcValue=output.IFDetDLSamples[n];
+    // Add the ADC value to the accumulator
+    accAdd16u(output.adcValue);
+    accGetAll(accExt_2, accValueH_2, accValueL_2);
+    // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+    // state.pAccValueBuffer[], so it can be restored in the next iteration
+    flagLastCycle=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountIFDLDet[0] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountIFDLDet[1] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountIFDLDet[2] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountIFDLDet[3] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(flagLastCycle==1){
+        *(pAccValueBuffer++) = accValueL_2;
+        *(pAccValueBuffer++) = accValueH_2;
+    }
+    // When the accumulator contains the wanted number of samples: Save the accumulator value to
+    // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+    if(flagLastCycle==0) {
+        pAccValueBuffer += accValueBufferOutputOffset;//moves the ptr to output structure
+        *(pAccValueBuffer++) = accValueL_2;
+        *(pAccValueBuffer++) = accValueH_2;
+        pAccValueBuffer -= accValueBufferOutputOffset; //move the ptr back to state structure
+    }
+
+    // Update the head index
+    if(state.channelsIdx==0){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFDLDet[0]);
+    }
+    if(state.channelsIdx==1){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFDLDet[1]);
+    }
+    if(state.channelsIdx==2){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFDLDet[2]);
+    }
+    if(state.channelsIdx==3){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFDLDet[3]);
+    }
+
+    n=state.channelsIdx;
+    //min, max, sum calculations
+    if(output.adcValue<output.IFDetDLMin[n]){
+        output.IFDetDLMin[n]=output.adcValue;
+    }
+    if(output.adcValue>output.IFDetDLMax[n]){
+        output.IFDetDLMax[n]=output.adcValue;
+    }
+
+
+
+
+    // If ALERT interrupt generation is enabled
+    if (state.alertEnabled == 1) {
+        if(state.headSamplesCountIFDLDet[n]==(SAMPLE_SZ)){
+
+            fwGenQuickAlertInterrupt();
+
+
+            output.IFDetDLMax[n]=0;
+            output.IFDetDLMin[n]=65535;
+            // Disable further generation to avoid unnecessary interrupts. It will be reenabled
+            // by the application after handling the ALERT interrupt.
+            state.alertEnabled = 0;
+
+        }
+    }
+    // Stop the ADC trigger and flush the ADC FIFO
+    timer1Stop();
+    fwDelayUs(3);// wait for any ongoing conversion (taking ~2.3 us) to finish
+    adcFlushFifo();
+    adcDisable();    //Disable the ADC driver after use
+    //    evhSetupGpioTrigger(2, AUXIO_I_TDD_SYNCH, 0, EVH_GPIO_TRIG_ON_EDGE); //trigeer event c on falling edge of TDD Sync pin(Tx/Rx control)
     // if TDD mode is auto, trigger the next falling edge interrupt for UL Event C
     if(state.tddMode == 0){
-        evhSetupGpioTrigger(2, AUXIO_I_TDD_SYNCH, 0, EVH_GPIO_TRIG_ON_EDGE);
+        evhSetupGpioTrigger(2, AUXIO_I_TDD_SYNCH, 0, EVH_GPIO_TRIG_ON_EDGE); //trigeer event c on falling edge of TDD Sync pin(Tx/Rx control)
         evhSetupTimer0Trigger(0, 100, 2);
     }else{
         // if not, immediately trigger event A
-        evhSetupTimer0Trigger(2, 1, 2);
+        evhSetupTimer0Trigger(0, 1, 2);
     }
 }else{
     // if mode is not Manual DL/ Auto, immediately trigger event C
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
-        <sccode name="event2" init_power_mode="0"><![CDATA[//UpLink
-//cancel all scheduled event triggers
-evhCancelTrigger(0);
-cfg.eventCounter -= 1;
-//evhCancelTrigger(1);
-//evhCancelTrigger(2);
-//enter event code only if Manual UL mode or Auto(skip if Manual DL)
-if(state.tddMode != 1){
-    // turn UL LED on (in auto mode it stays on only half the time)
-    if(state.tddMode == 0){
-        if(state.ledCounter > 50){
-            gpioClearOutput(AUXIO_O_GREEN_LED);
-            gpioSetOutput(AUXIO_O_RED_LED);
-            //set cruLock
-            output.cruLock=1;
-        }
-    }else{
+        <sccode name="event2" init_power_mode="0"><![CDATA[//faling edge - Tx det(Rf UL)/IF det (UL)
+evhCancelTrigger(0);//cancel event A trigger
+//**Led logic**//
+// turn UL LED on (in auto mode it stays on only half the time)
+if(state.tddMode == 0){
+    if(state.ledCounter > 50){
         gpioClearOutput(AUXIO_O_GREEN_LED);
         gpioSetOutput(AUXIO_O_RED_LED);
+        //set cruLock
+        output.cruLock=1;
     }
-    if(state.ledOn==0){
-        gpioClearOutput(AUXIO_O_RED_LED);
-        gpioClearOutput(AUXIO_O_GREEN_LED);
+}else{
+    gpioClearOutput(AUXIO_O_GREEN_LED);
+    gpioSetOutput(AUXIO_O_RED_LED);
+}
+if(state.ledOn==0){
+    gpioClearOutput(AUXIO_O_RED_LED);
+    gpioClearOutput(AUXIO_O_GREEN_LED);
+}
+//**Led logic**//
+
+//enter event code only if Manual UL mode(2) or Auto(0)(skip if Manual DL)
+if(state.tddMode != 1){
+    //channel switch config
+    U16 z;
+    z = state.channelsIdx;
+    if(cfg.channelsSwitch==0){
+
+        if(state.channelsIdx==3){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==2){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==1){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==0){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        output.channelsIdx=state.channelsIdx;
+    }else{
+        output.channelsIdx=cfg.channelsSwitch;
+        state.channelsIdx=cfg.channelsSwitch;
+    }
+
+
+
+
+    // Calculate the memory offset between the accumulator value buffer in the output and state data structures.
+    // We'll use this to quickly move the pointer back and forth (saves 3 instructions per move).
+    //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+    //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+    //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+    //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
+
+    //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+    //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+    //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+    //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+    //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+    //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+    //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+    //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+    //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+    //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+    //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+    //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    //To create a pointer to a data structure member, use the # operator.
+    U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
+    U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[0];
+    }
+    if(state.channelsIdx == 1){
+        pAccValueBuffer = #state.pAccValueBuffer[2];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer = #state.pAccValueBuffer[4];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer = #state.pAccValueBuffer[6];
     }
     U16 n = 0;
-    n = state.samplesCount;
-    // randomDelay to wait on in microseconds that is delivered by application.
-    fwDelayUs(input.randomDelayUL[n]);
-
-    // start the ADC driver
-    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // manual sampling, 2.7 us sample time
-
-    // Initialize variables, only 6 are available
-    U16 a = 0;
-    S16 b = 0;
-    U16 c = 0;
-    U16 d = 0;
-
-    n = 0;
-    while (n < MULTI_BUFFER_SIZE) {
-        // select the correct channel according to cfg variable.
-        // select the first channel in case channelsSwitch is set to all channels
-        while(a < CHANNELS_NUMBER){
-            // Select channel
-            // a = channel
-            // when channelsSwitch is 0 we switch between all channels using the iterator a
-            if(state.channelsSwitch==0){
-                b = a + 1;
-            } else{
-                // if it is not 0, we measure only the selected channel
-                b = state.channelsSwitch;
-            }
-            // first we set both pin to select the first channel (in cdu both pins 1, in cru both pins 0)
-            if(state.unitType == 1){
-                gpioSetOutput(cfg.pAuxioOChannelControl[0]);
-                gpioSetOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            if(state.unitType == 0){
-                gpioClearOutput(cfg.pAuxioOChannelControl[0]);
-                gpioClearOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            // then we toggle the correct pins according to the chosen channel
-            c = b ^ 1;
-            c = c & 1;
-            if(c==1){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-            }
-
-            if(b >= 3){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-
-            // select the correct pin according to unit type. For CRU we select
-            // Rx detect PIN(Tal's card), for CDU we select Tx detect PIN(FEM card)
-            if(state.unitType == 0){
-                adcSelectGpioInput(cfg.pAuxioASensorOutput[1]);
-            }else{
-                adcSelectGpioInput(cfg.pAuxioASensorOutput[0]);
-            }
-            // this triggers the driver to start a measure and place the result in the output array
-            adcGenManualTrigger();
-            adcReadFifo(output.pSamplesMultiChannelRF[n]);
-            // select the IF pin
-            adcSelectGpioInput(cfg.pAuxioASensorOutput[2]);
-            // IF requires same PIN setup as RX Detect, so for CDU (who have TX detect selected)
-            // we toggle the channel select pins (as for TX Detect they are exact opposites)
-            if(state.unitType == 0){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-            adcGenManualTrigger();
-            adcReadFifo(output.pSamplesMultiChannelIF[n]);
-            // toggle channel select PINs back
-            if(state.unitType == 0){
-                gpioToggleOutput(cfg.pAuxioOChannelControl[0]);
-                gpioToggleOutput(cfg.pAuxioOChannelControl[1]);
-            }
-
-            // copy n value to temp variable, we do this because n is the only variable that can access arrays,
-            // but we also use it as the loop counter so we need to save it's value.
-            b = n;
-
-            // add IF and RF results to the average arrays for later average calulation
-            // the average array is arranged as: 0-3: RFDL, 4-7: RFUL, 8-11: IFDL, 12-15: IFUL (4 of each type for each channel)
-            // here we add 4 to n before adding the RF to sums to get to positions 4-7 and 12 to n before adding the IF sums to get 13-15
-            c = output.pSamplesMultiChannelRF[n];
-            d = output.pSamplesMultiChannelIF[n];
-            n = a + 4;
-            output.channelsAverageTemp[n] += c;
-            n = a + 12;
-            output.channelsAverageTemp[n] += d;
-            n = b;
-
-            n += 1;
-            a += 1;
+    U16 accExt;
+    U16 accValueL;
+    U16 accValueH;
+    // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+    U16 flagAccReset=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountTxDet[0] == 0) {
+            accReset();
+            flagAccReset=1;
         }
-        a = 0;
     }
-    // Disable the ADC driver after use
+
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountTxDet[1] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountTxDet[2] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountTxDet[3] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+
+    if(flagAccReset==0) {
+        U16 accValueL = *(pAccValueBuffer++);
+        U16 accValueH = *(pAccValueBuffer++);
+        accSet32u(accValueH, accValueL);
+        pAccValueBuffer -= 2;
+    }
+    flagAccReset=0;
+
+        // select the correct pin according to unit type. For CDU we select
+    // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
+    if(state.unitType == 0){
+        //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
+        adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
+
+    }else{
+        adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 25--->DIO 24 RX det
+
+    }
+    //U16 adcValue;
+    fwDelayUs(input.gapStartRx);
+    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // period sampling, 2.7 us sample time, the fastest possible
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
+    adcFlushFifo();
+    // Start ADC timer trigger at the configured period (rounded up)
+    timer1Start(TIMER1_MODE_PERIODICAL, (24000000 + (ADC_SAMPLE_RATE - 1)) / ADC_SAMPLE_RATE, 0);
+
+
+    if(state.channelsIdx==0){
+        n = state.headSamplesCountTxDet[0];
+    }
+    if(state.channelsIdx==1){
+        n = state.headSamplesCountTxDet[1];
+    }
+    if(state.channelsIdx==2){
+        n = state.headSamplesCountTxDet[2];
+    }
+    if(state.channelsIdx==3){
+        n = state.headSamplesCountTxDet[3];
+    }
+
+    adcReadFifo(output.TxDetSamples[n]);
+    output.adcValue=output.TxDetSamples[n];
+    // Add the ADC value to the accumulator
+    accAdd16u(output.adcValue);
+    accGetAll(accExt, accValueH, accValueL);
+    // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+    // state.pAccValueBuffer[], so it can be restored in the next iteration
+    U16 flagLastCycle=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountTxDet[0] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountTxDet[1] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountTxDet[2] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountTxDet[3] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(flagLastCycle==1){
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+    }
+    // When the accumulator contains the wanted number of samples: Save the accumulator value to
+    // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+    if(flagLastCycle==0) {
+        pAccValueBuffer += accValueBufferOutputOffset;//moves the ptr to output structure
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+        pAccValueBuffer -= accValueBufferOutputOffset; //move the ptr back to state structure
+    }
+    // Update the head index
+    if(state.channelsIdx==0){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[0]);
+    }
+    if(state.channelsIdx==1){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[1]);
+    }
+    if(state.channelsIdx==2){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[2]);
+    }
+    if(state.channelsIdx==3){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[3]);
+    }
+
+    n=state.channelsIdx;
+    //min, max, sum calculations
+    if(output.adcValue<output.TxDetMin[n]){
+        output.TxDetMin[n]=output.adcValue;
+    }
+    if(output.adcValue>output.TxDetMax[n]){
+        output.TxDetMax[n]=output.adcValue;
+    }
+
+    if (state.alertEnabled == 1) {
+        if(state.headSamplesCountTxDet[n] == (SAMPLE_SZ)){
+
+            fwGenQuickAlertInterrupt();
+            output.TxDetMax[n]=0;
+            output.TxDetMin[n]=65535;
+
+            // Disable further generation to avoid unnecessary interrupts. It will be reenabled
+            // by the application after handling the ALERT interrupt.
+            state.alertEnabled = 0;
+        }
+    }
     adcDisable();
-    // reset all variables and decalre the rest of necessary variables
-    U16 e = 0;
-    U16 f = 0;
-    a = 0;
-    b = 0;
-    c = 0;
-    n = 0;
-
-    // in this loop we get top and bottom 20% of results from samples
-    while(f < CHANNELS_NUMBER){
-        while(n<BUFFER_SIZE){
-            // samples array is arranged as [channelSample1, channelSample2, channelSample3, channelSample4, channelSample1...] (channels alternating)
-            // the max/min arrays are arranged by channels and sorted smallest to biggest/ biggest to smallest:
-            // [channelSample1, channelSampleBigger1, channelSampleBiggest1, channelSample2, channelSampleBigger2...]
-            // we iterate on each channel, taking and comparing the channels samples currently in the buffer to the ones in the max/min arrays.
-            // If any of the samples is bigger/smaller than the ones stored in the max/min array, we move all samples in the array down/up and insert the new sample.
-            c = n;
-            // make jumps of CHANNELS_NUMBER on samples array - multiply n by iterator and add the current channel number
-            accMul16s16u(n, CHANNELS_NUMBER);
-            accGet16(0; n);
-            n += f;
-            a = output.pSamplesMultiChannelRF[n];
-            // check if this sample is greater/lesser than the ones already stored in the max/min
-            // because these array start with values of 0(for max)/0xffff(for min), first results will always get into the array
-            b = MODES_CHANNEL_SIZE - 1;
-            while( b >= 0){
-                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.maxSamplesRFUL[n];
-                // check if smaple is greater than any of the samples in maxSamples
-                if(d < a){
-                    // insert current sample to new position
-                    output.maxSamplesRFUL[n] = a;
-                    // here we 'move' all smaller samples down the array (deleting the first smallest sample)
-                    // this makes it so array will be sorted samller -> biggest
-                    while(0 < b){
-                        n -= 1;
-                        b -= 1;
-                        e = output.maxSamplesRFUL[n];
-                        output.maxSamplesRFUL[n] = d;
-                        d = e;
-                    }
-                    // set b to 0 so loop will break
-                    b = 0;
-                }
-                b -=1;
-            }
-
-            // repeat this for minimum array
-            b = 0;
-            // check if smaple is lesser than any of the samples in minmodes
-            while( b < MODES_CHANNEL_SIZE){
-                // multiply current channel(f) by the number of results stored for each channel to get the channel's position in the max/min array
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.minSamplesRFUL[n];
-                // check if smaple is lesser than any of the samples in minSamples
-                if(d > a){
-                    // insert current sample to new position
-                    output.minSamplesRFUL[n] = a;
-                    // here we 'move' all bigger samples up the array (deleting the last biggest sample)
-                    // this makes it so array will be sorted bigger -> smallest
-                    while(b < (MODES_CHANNEL_SIZE-1)){
-                        n += 1;
-                        b += 1;
-                        e = output.minSamplesRFUL[n];
-                        output.minSamplesRFUL[n] = d;
-                        d = e;
-                    }
-                    b = MODES_CHANNEL_SIZE; // so loop will break
-                }
-                b +=1;
-            }
-
-            // repeat whole process for the IF samples
-            n = c;
-            accMul16s16u(n, CHANNELS_NUMBER);
-            accGet16(0; n);
-            n += f;
-            a = output.pSamplesMultiChannelIF[n];
-            b = MODES_CHANNEL_SIZE - 1;
-            while(b >= 0){
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.maxSamplesIFUL[n];
-                if(d < a){
-                    output.maxSamplesIFUL[n] = a;
-                    while(0 < b){
-                        n -= 1;
-                        b -= 1;
-                        e = output.maxSamplesIFUL[n];
-                        output.maxSamplesIFUL[n] = d;
-                        d = e;
-                    }
-                    b = 0; // so loop will break
-                }
-                b -=1;
-            }
-
-            b = 0;
-            // check if smaple is lesser than any of the samples in minmodes
-            while( b < MODES_CHANNEL_SIZE){
-                accMul16s16u(f, MODES_CHANNEL_SIZE);
-                accGet16(0; n);
-                n += b;
-                d = output.minSamplesIFUL[n];
-                if(d > a){
-                    output.minSamplesIFUL[n] = a;
-                    while(b < (MODES_CHANNEL_SIZE-1)){
-                        n += 1;
-                        b += 1;
-                        e = output.minSamplesIFUL[n];
-                        output.minSamplesIFUL[n] = d;
-                        d = e;
-                    }
-                    b = MODES_CHANNEL_SIZE; // so loop will break
-                }
-                b +=1;
-            }
-
-            n = c;
-            n += 1;
+    //move to sample IF det UL
+    if(cfg.channelsSwitch==0){
+        if(state.channelsIdx==0){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
         }
-        n = 0;
-        f += 1;
-
+        if(state.channelsIdx==1){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioSetOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==2){
+            gpioSetOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        if(state.channelsIdx==3){
+            gpioClearOutput(cfg.pAuxioOChannelControl[0]);//aux 23-->DIO 26
+            gpioClearOutput(cfg.pAuxioOChannelControl[1]);//aux 22-->DIO 27
+        }
+        output.channelsIdx=state.channelsIdx;
+    }else{
+        output.channelsIdx=cfg.channelsSwitch;
     }
 
-    // decrease the sample cycle counter only if mode is manualUL(if we are in auto the counter was already changed by UL event).
-    if(state.tddMode == 2){
-        state.samplesCount -= 1;
+    //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+    //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+    //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+    //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
+
+    //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+    //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+    //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+    //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+    //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+    //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+    //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+    //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+    //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+    //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+    //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+    //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[24];
     }
-
-    n = 0;
-    a = 0;
-    b = 0;
-    c = 0;
-    d = 0;
-    e = 0;
-    f = 0;
-    // if this is the last cylce of measures, process the result
-    if(state.samplesCount == 0){
-        // clear values in temp Samples arrays (there we put the sums of results)
-        while(n<CHANNELS_NUMBER){
-            output.channelsMaxRFULTemp[n] = 0;
-            output.channelsMaxIFULTemp[n] = 0;
-            output.channelsMinRFULTemp[n] = 0;
-            output.channelsMinIFULTemp[n] = 0;
-            n +=1;
-        }
-        // we now have in the output.maxSamples array the top 20% of results from each channel (for RF and IF).
-        // in output.minSamples we got bottom 20% of results from each channel (for RF and IF).
-        // we want to discard top 5% bottom and top from all sums - min max and average (get rid of the outliers).
-        // the remaining 15% top/bottom of results we sum and copy into output.channelsMax/output.channelsMin arrays
-        // we also subtruct those 5% top/bottom results from the sums in the average arrays.
-
-        n = 0;
-        while(f<CHANNELS_NUMBER){
-            // we iterate on each channel results
-            while(a<MODES_CHANNEL_SIZE){
-                // for each channel, we sum it's first/last 15% samples (out of total 20% we got in the array),
-                // the remaining 5% we subtract from the average sum array (as they were added to the total sum)
-                b = n;
-                c = output.maxSamplesRFUL[n];
-                d = output.maxSamplesIFUL[n];
-                n = f;
-                if(a<MIN_MAX_CHANNELS_SIZE){
-                    // if results are within the 15%, add them to the sums array
-                    output.channelsMaxRFULTemp[n] += c;
-                    output.channelsMaxIFULTemp[n] += d;
-                }else{
-                    // otherwise subtruct the 5% from the average sum
-                    n += 4;
-                    output.channelsAverageTemp[n] -= c;
-                    n += 8;
-                    output.channelsAverageTemp[n] -= d;
-                }
-
-                n = b;
-                // repeat for min
-                c = output.minSamplesRFUL[n];
-                d = output.minSamplesIFUL[n];
-                n = f;
-                if(a<MIN_MAX_CHANNELS_SIZE){
-                    // if results are within the 15%, add them to the sums array
-                    output.channelsMinRFULTemp[n] += c;
-                    output.channelsMinIFULTemp[n] += d;
-                }else{
-                    // to get to RFUL we add 4: positions 4-7
-                    n += 4;
-                    output.channelsAverageTemp[n] -= c;
-                    // to get to IFUL we add 8: positions 12-15
-                    n += 8;
-                    output.channelsAverageTemp[n] -= d;
-                }
-
-                n = b;
-                a+=1;
-                n+=1;
-            }
-            a = 0;
-            f += 1;
-        }
-
-        // clear values in maxSamples/minSamples arrays
-        n = 0;
-        while(n<MODES_SIZE){
-            output.maxSamplesRFUL[n] = 0;
-            output.maxSamplesIFUL[n] = 0;
-            output.minSamplesRFUL[n] = 65535;
-            output.minSamplesIFUL[n] = 65535;
-            n += 1;
-        }
-        if(state.invalid != 1){
-            // copy the results from the temp array to the 'real' array
-            n = 0;
-            while(n<CHANNELS_NUMBER){
-                output.channelsMaxRFUL[n] = output.channelsMaxRFULTemp[n];
-                output.channelsMaxIFUL[n] = output.channelsMaxIFULTemp[n];
-                output.channelsMinRFUL[n] = output.channelsMinRFULTemp[n];
-                output.channelsMinIFUL[n] = output.channelsMinIFULTemp[n];
-                n += 1;
-            }
-        }
-
-        // copy average sums vaules from the temp array to the 'real' array and clear temp array
-        n = 0;
-        a = 0;
-        while(n<CHANNELS_NUMBER){
-            a = n;
-            n += 4;
-            if(state.invalid != 1){
-                output.channelsAverage[n] = output.channelsAverageTemp[n];
-            }
-            output.channelsAverageTemp[n] = 0;
-            n += 8;
-            if(state.invalid != 1){
-                output.channelsAverage[n] = output.channelsAverageTemp[n];
-            }
-            output.channelsAverageTemp[n] = 0;
-            n = a;
-            n += 1;
-        }
-        if(state.invalid != 1){
-            // if TDD mode is manual UL or Auto, results are ready and an interrupt is sent to main CPU
-            n = 0;
-            state.samplesCount = SAMPLE_SIZE;
-            rtlLogStructs(BV_RTL_LOG_OUTPUT);
-            // if interrupt flag is enabled, raises the interrupt for application to process results
-            if(state.alertEnabled == 1) {
-                state.alertEnabled = 0;
-                fwGenQuickAlertInterrupt();
-            }
-        } else{
-            state.samplesCount = SAMPLE_SIZE;
-            evhSetupTimer0Trigger(0, 1, 2);
-            fwWaitForEvSignal(FW_WAIT_SIGNAL_TIMER0_EV, 1);
+    if(state.channelsIdx == 1){
+        pAccValueBuffer = #state.pAccValueBuffer[26];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer = #state.pAccValueBuffer[28];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer = #state.pAccValueBuffer[30];
+    }
+    // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+    flagAccReset=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountIFULDet[0] == 0) {
+            accReset();
+            flagAccReset=1;
         }
     }
 
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountIFULDet[1] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountIFULDet[2] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountIFULDet[3] == 0) {
+            accReset();
+            flagAccReset=1;
+        }
+    }
+
+    if(flagAccReset==0) {
+        U16 accValueL = *(pAccValueBuffer++);
+        U16 accValueH = *(pAccValueBuffer++);
+        accSet32u(accValueH, accValueL);
+        pAccValueBuffer -= 2;
+    }
+    flagAccReset=0;
+
+    // select the IF pin
+    adcSelectGpioInput(cfg.pAuxioASensorOutput[2]); //AUX Mapping 24--->DIO 25 IF det
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
+    adcFlushFifo();
+    // Wait for the ADC trigger (start of conversion)
+    timer1Wait();
+    adcFlushFifo();
+    fwDelayUs(input.gapStartRx);
+    if(state.channelsIdx==0){
+        n = state.headSamplesCountIFULDet[0];
+    }
+    if(state.channelsIdx==1){
+        n = state.headSamplesCountIFULDet[1];
+    }
+    if(state.channelsIdx==2){
+        n = state.headSamplesCountIFULDet[2];
+    }
+    if(state.channelsIdx==3){
+        n = state.headSamplesCountIFULDet[3];
+    }
+    adcReadFifo(output.IFDetULSamples[n]);
+    output.adcValue=output.IFDetULSamples[n];
+
+    // Add the ADC value to the accumulator
+    accAdd16u(output.adcValue);
+    accGetAll(accExt, accValueH, accValueL);
+    // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+    // state.pAccValueBuffer[], so it can be restored in the next iteration
+    flagLastCycle=0;
+    if(state.channelsIdx==0){
+        if (state.headSamplesCountIFULDet[0] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+    if(state.channelsIdx==1){
+        if (state.headSamplesCountIFULDet[1] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==2){
+        if (state.headSamplesCountIFULDet[2] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(state.channelsIdx==3){
+        if (state.headSamplesCountIFULDet[3] != (SAMPLE_SZ - 1)) {
+            flagLastCycle=1;
+        }
+    }
+
+    if(flagLastCycle==1){
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+    }
+    // When the accumulator contains the wanted number of samples: Save the accumulator value to
+    // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+    if(flagLastCycle==0) {
+        pAccValueBuffer += accValueBufferOutputOffset;//moves the ptr to output structure
+        *(pAccValueBuffer++) = accValueL;
+        *(pAccValueBuffer++) = accValueH;
+        pAccValueBuffer -= accValueBufferOutputOffset; //move the ptr back to state structure
+    }
+
+    // Update the head index
+    if(state.channelsIdx==0){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFULDet[0]);
+    }
+    if(state.channelsIdx==1){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFULDet[1]);
+    }
+    if(state.channelsIdx==2){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFULDet[2]);
+    }
+    if(state.channelsIdx==3){
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountIFULDet[3]);
+    }
+
+    n=state.channelsIdx;
+    //min, max, sum calculations
+    if(output.adcValue<output.IFDetULMin[n]){
+        output.IFDetULMin[n]=output.adcValue;
+    }
+    if(output.adcValue>output.IFDetULMax[n]){
+        output.IFDetULMax[n]=output.adcValue;
+    }
+
+    // If ALERT interrupt generation is enabled
+    if (state.alertEnabled == 1) {
+        if(state.headSamplesCountIFULDet[n] == (SAMPLE_SZ)){
+
+            fwGenQuickAlertInterrupt();
+            output.IFDetULMax[n]=0;
+            output.IFDetULMin[n]=65535;
+
+
+            // Disable further generation to avoid unnecessary interrupts. It will be reenabled
+            // by the application after handling the ALERT interrupt.
+            state.alertEnabled = 0;
+        }
+
+    }
+    // Stop the ADC trigger and flush the ADC FIFO
+    timer1Stop();
+    fwDelayUs(3);// wait for any ongoing conversion (taking ~2.3 us) to finish
+    adcFlushFifo();
+    adcDisable();    //Disable the ADC driver after use
 }
+
 // trigger event A
 evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
-        <sccode name="initialize" init_power_mode="0"><![CDATA[//immediately start event A code
-gpioClearOutput(AUXIO_O_RED_LED);
-gpioClearOutput(AUXIO_O_GREEN_LED);
-evhSetupTimer0Trigger(0, 1, 0);]]></sccode>
+        <sccode name="initialize" init_power_mode="0"><![CDATA[  //read docs here - https://software-dl.ti.com/lprf/sensor_controller_studio/docs/cc13x0_cc26x0_help/html/scs_overview.html
+
+
+//evhSetupTimer0Trigger(#evIndex, mant, #exp)
+//Sets up AUX Timer 0 to trigger execution of the Event Handler Code after a specified delay.
+//The timer runs off 4 kHz ticks (4096 Hz) generated by the RTC. Note the following limitations:
+//The timeout is rounded up to the closest number of 4 kHz ticks
+//The 4 kHz tick rate is matched to the RTC rate, which may be adjusted dynamically if running off RCOSC LF
+//The trigger occurs after the delay. The specified Event Handler Code then starts when the Sensor Controller is idle or in standby.
+gpioClearOutput(AUXIO_O_RED_LED);//clear leds
+gpioClearOutput(AUXIO_O_GREEN_LED);//clear leds
+evhSetupTimer0Trigger(0, 1, 0); // start event A right away
+
+
+//TX det DIO 23 (CDU) (AUX MAPING: 26)
+//RX det DIO 24 (CDU) (AUX MAPING: 25)
+//IF det DIO 25 (AUX MAPING: 24)
+
+//CDU: TDD SYNC PIN rising-Rx,IF DL
+//     TDD SYNC PIN falling-Tx,IF UL
+//CRU: TDD SYNC PIN rising-Tx,IF
+//     TDD SYNC PIN falling-Rx,IF]]></sccode>
         <sccode name="terminate" init_power_mode="0"><![CDATA[// cancel events trigger on termination
 gpioClearOutput(AUXIO_O_RED_LED);
 gpioClearOutput(AUXIO_O_GREEN_LED);
@@ -1253,7 +1410,7 @@ evhCancelTrigger(1);
 evhCancelTrigger(2);]]></sccode>
         <event_trigger active_count="3">0,1,2,3</event_trigger>
         <tt_iter>run_event0,run_event1,run_event2</tt_iter>
-        <tt_struct>output.pSamplesMultiChannelIF.[0],output.pSamplesMultiChannelIF.[1],output.pSamplesMultiChannelIF.[2],output.pSamplesMultiChannelIF.[3],output.pSamplesMultiChannelIF.[4],output.pSamplesMultiChannelIF.[5],output.pSamplesMultiChannelIF.[6],output.pSamplesMultiChannelIF.[7],output.pSamplesMultiChannelIF.[8],output.pSamplesMultiChannelIF.[9],output.pSamplesMultiChannelIF.[10],output.pSamplesMultiChannelIF.[11],output.pSamplesMultiChannelIF.[12],output.pSamplesMultiChannelIF.[13],output.pSamplesMultiChannelIF.[14],output.pSamplesMultiChannelIF.[15],output.pSamplesMultiChannelIF.[16],output.pSamplesMultiChannelIF.[17],output.pSamplesMultiChannelIF.[18],output.pSamplesMultiChannelIF.[19],output.pSamplesMultiChannelIF.[20],output.pSamplesMultiChannelIF.[21],output.pSamplesMultiChannelIF.[22],output.pSamplesMultiChannelIF.[23],output.pSamplesMultiChannelIF.[24],output.pSamplesMultiChannelIF.[25],output.pSamplesMultiChannelIF.[26],output.pSamplesMultiChannelIF.[27],output.pSamplesMultiChannelIF.[28],output.pSamplesMultiChannelIF.[29],output.pSamplesMultiChannelIF.[30],output.pSamplesMultiChannelIF.[31],output.pSamplesMultiChannelIF.[32],output.pSamplesMultiChannelIF.[33],output.pSamplesMultiChannelIF.[34],output.pSamplesMultiChannelIF.[35],output.pSamplesMultiChannelIF.[36],output.pSamplesMultiChannelIF.[37],output.pSamplesMultiChannelIF.[38],output.pSamplesMultiChannelIF.[39]</tt_struct>
+        <tt_struct>state.channelsIdx</tt_struct>
         <rtl_struct>cfg.tddMode</rtl_struct>
         <rtl_task_sel en="1" struct_log_list="output,cfg"/>
     </task>

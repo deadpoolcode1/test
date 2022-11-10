@@ -75,6 +75,7 @@ void MultiFiles_process(void)
 {
     if (gMultiFilesEvents & RUN_NEXT_FILE_EV)
     {
+        gIsConfigOk = true;
         CRS_LOG(CRS_DEBUG, "in MultiFiles_process RUN_NEXT_FILE_EV");
 
         if (gFileIdx >= gPackage.numFileInfos)

@@ -67,7 +67,12 @@ typedef struct
 } AGC_ctrlPins_t;
 
 
-
+typedef struct adc_output {
+int32_t avg;
+uint32_t max;
+uint32_t min;
+uint32_t totalSamples;
+}adc_output_t;
 
 
 /******************************************************************************
@@ -75,6 +80,7 @@ typedef struct
  *****************************************************************************/
 CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, AGC_ctrlPins_t *pins);
 CRS_retVal_t Agc_setChannel(AGC_channels_t channel);
+CRS_retVal_t Agc_setDio(uint32_t dioIdx,uint8_t value);
 CRS_retVal_t Agc_init(void * sem);
 void Agc_process(void);
 bool Agc_getLock();
@@ -94,6 +100,10 @@ CRS_retVal_t Agc_ledEnv();
 CRS_retVal_t Agc_ledMode(uint16_t ledModeInt);
 CRS_retVal_t Agc_ledOn();
 CRS_retVal_t Agc_ledOff();
+void printADCOutput();
+void Agc_avgCalc(uint16_t* outputArray,int32_t* avg,uint8_t channelNum);
+CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t detType, uint16_t ms);
+CRS_retVal_t Agc_setTimeMinMax(uint16_t seconds);
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock);
 #endif

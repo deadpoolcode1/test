@@ -33,6 +33,7 @@
 #include "application/crs/crs_management.h"
 #include "oad/crs_oad.h"
 #include "easylink/EasyLink.h"
+#include "application/crs/crs_locks.h"
 
 /******************************************************************************
  Constants and definitions
@@ -161,6 +162,7 @@ void Collector_process(void)
 
     Alarms_process();
     Oad_process();
+    Locks_process();
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
@@ -419,6 +421,7 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
     Alarms_init(sem);
     Agc_init(sem);
     Agc_ledEnv();
+    Locks_init(sem);
 //    if (CONFIG_AUTO_START)
 //    {
 //        CLI_cliPrintf("\r\nCollector\r\nForming nwk...");
