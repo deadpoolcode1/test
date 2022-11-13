@@ -257,6 +257,8 @@ extern uint8_t OADStorage_createFactoryImageBackup(void);
 extern bool OADStorage_checkFactoryImage(void);
 
 
+
+
 #ifdef __cplusplus
 }
 #endif

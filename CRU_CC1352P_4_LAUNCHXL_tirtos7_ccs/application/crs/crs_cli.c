@@ -207,6 +207,8 @@
 #define CLI_CRS_OAD_RCV_FACTORY_IMG "oad rcv factory img" //sending via UART a img into the extFlash factory slot
 #endif
 #define CLI_CRS_OAD_FACTORY_IMG "oad factory img" //backing up the current running img into extFlash factory slot
+#define CLI_CRS_OAD_FACTORY_CHECK "oad factory check" //checking if factory img exists or not on extFlash
+
 #define CLI_CRS_OAD_INVALID "oad invalid img" //making the current running img be invalid for the next boot
 #define CLI_CRS_OAD_FORMAT "oad format"
 
@@ -1136,12 +1138,72 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 #endif
       if (memcmp(CLI_CRS_OAD_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_FACTORY_IMG) - 1) == 0)
                {
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FACTORY_IMG) + 2]), NULL,
+                                                  16);
+                 #ifndef CLI_SENSOR
 
+                     uint16_t addr = 0;
+                     Cllc_getFfdShortAddr(&addr);
+                     if (addr != shortAddr)
+                     {
+                         //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                         ApiMac_sAddr_t dstAddr;
+                         dstAddr.addr.shortAddr = shortAddr;
+                         dstAddr.addrMode = ApiMac_addrType_short;
+                         Collector_status_t stat;
+                         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                         if (stat != Collector_status_success)
+                         {
+                             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                             CLI_startREAD();
+                         }
+
+                 //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                         return CRS_SUCCESS;
+                     }
+                 #endif
           CRS_retVal_t rsp=  Oad_createFactoryImageBackup();
           CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
                    inputBad = false;
                    CLI_startREAD();
                }
+      //oad factory check [shortAddr]
+      if (memcmp(CLI_CRS_OAD_FACTORY_CHECK, line, sizeof(CLI_CRS_OAD_FACTORY_CHECK) - 1) == 0)
+               {
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FACTORY_CHECK) + 2]), NULL,
+                                         16);
+        #ifndef CLI_SENSOR
+
+            uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != shortAddr)
+            {
+                //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                ApiMac_sAddr_t dstAddr;
+                dstAddr.addr.shortAddr = shortAddr;
+                dstAddr.addrMode = ApiMac_addrType_short;
+                Collector_status_t stat;
+                stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                if (stat != Collector_status_success)
+                {
+                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                    CLI_startREAD();
+                }
+
+        //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                return CRS_SUCCESS;
+            }
+        #endif
+           bool rspBool= OADStorage_checkFactoryImage();
+           CRS_retVal_t rsp=CRS_FAILURE;
+           if (rspBool==true) {
+               rsp=CRS_SUCCESS;
+        }
+          CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                   inputBad = false;
+                   CLI_startREAD();
+               }
+
 
       if (memcmp(CLI_CRS_OAD_INVALID, line, sizeof(CLI_CRS_OAD_INVALID) - 1) == 0)
                {
@@ -2013,7 +2075,7 @@ static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
 
 static CRS_retVal_t CLI_fpgaCloseParsing(char *line)
 {
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_OPEN) + 2]), NULL,
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_CLOSE) + 2]), NULL,
                                  16);
 #ifndef CLI_SENSOR
 
@@ -5311,7 +5373,11 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_OAD_RCV_IMG, strlen(CLI_CRS_OAD_RCV_IMG), "");
     CLI_printCommInfo(CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG), "[shortAddr] [reset](0x0:False, 0x1:True) [factory](0x0:False, 0x1:True)");
     CLI_printCommInfo(CLI_CRS_UPDATE_IMG, strlen(CLI_CRS_UPDATE_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
+    CLI_printCommInfo(CLI_CRS_OAD_RCV_FACTORY_IMG, strlen(CLI_CRS_OAD_RCV_FACTORY_IMG), "");
 #endif
+    CLI_printCommInfo(CLI_CRS_OAD_FACTORY_IMG, strlen(CLI_CRS_OAD_FACTORY_IMG), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_OAD_FACTORY_CHECK, strlen(CLI_CRS_OAD_FACTORY_CHECK), "[shortAddr]");
+
 
     CLI_printCommInfo(CLI_CRS_RESET, strlen(CLI_CRS_RESET), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
