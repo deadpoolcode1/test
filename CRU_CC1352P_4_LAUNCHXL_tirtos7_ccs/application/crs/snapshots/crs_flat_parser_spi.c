@@ -234,15 +234,10 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 //    gFileContentCache = Nvs_readFileWithMalloc(filename);
     if (fileTraverser.fileContentCache == NULL)
     {
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
         CLI_cliPrintf("\r\nfilename not found!");
         return CRS_FAILURE;
     }
-//    gCbFn = cbFunc;
-//    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
     memcpy(fileTraverser.invName,INV_NAME, strlen(INV_NAME));
-//    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
     fileTraverser.isConfigStatusFail = false;
     CRS_retVal_t rspStatus = runFile(&fileTraverser);
     CRS_free(fileTraverser.fileContentCache);
@@ -264,47 +259,36 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 
 CRS_retVal_t SPI_Config_runConfigFileDiscovery(char *filename)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nOpen Fpga first");
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
-        return CRS_FAILURE;
-
-    }
-    memset(gDiscoveryArr, 0, sizeof(gDiscoveryArr));
-    gDiscoveryArrIdx = 0;
-    gIsOnlyDiscovery = true;
-
-    gIsSingleLine = false;
-    gInvLineNumber = 0;
-    memset(gInvName, 0, 30);
-//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    memset(&gInvLineStrct, 0, sizeof(SPI_CRS_invLine_t));
+    flatFileTraverser_t fileTraverser = {0};
     if (filename == NULL)
-    {
-        CLI_cliPrintf("\r\nfilename is null!");
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
-        return CRS_FAILURE;
-    }
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
-    {
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
-        CLI_cliPrintf("\r\nfilename not found!");
+   {
+       CLI_cliPrintf("\r\nfilename is null!");
+       return CRS_FAILURE;
+   }
+   fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
+   if (fileTraverser.fileContentCache == NULL)
+   {
+       CLI_cliPrintf("\r\nfilename not found!");
+       return CRS_FAILURE;
+   }
+   memcpy(fileTraverser.invName,INV_NAME, strlen(INV_NAME));
+   fileTraverser.isConfigStatusFail = false;
+   fileTraverser.isOnlyDiscovery = true;
+   CRS_retVal_t rspStatus = runFile(&fileTraverser);
+   CRS_free(fileTraverser.fileContentCache);
+   fileTraverser.fileContentCache = NULL;
+   if (rspStatus != CRS_SUCCESS || fileTraverser.isConfigStatusFail == true)
+   {
+       CLI_cliPrintf("\r\nConfig Status: FAIL");
+       return CRS_FAILURE;
+   }
+   else
+   {
+       CLI_cliPrintf("\r\nConfig Status: OK");
+   }
+   CLI_cliPrintf("\r\n");
 
-        return CRS_FAILURE;
-    }
-//    gCbFn = cbFunc;
-    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
-    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
-    //CLI_cliPrintf("\r\n");
-
-    Semaphore_post(collectorSem);
-    return CRS_SUCCESS;
-
+   return CRS_SUCCESS;
 }
 
 
@@ -1514,6 +1498,8 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
         CLI_cliPrintf("\r\n%s,PASS", lineInv);
 
         fileTraverser->invLineNumber++;
+        return CRS_SUCCESS;
+
     }
     sprintf(fileTraverser->invLineStruct.LineMessage, "\r\nLine %d, Module %s: Comm OK",fileTraverser->invLineStruct.order, fileTraverser->invLineStruct.Name);
 

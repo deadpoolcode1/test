@@ -199,7 +199,6 @@
 #define CLI_CRS_RSSI_CHECK "rssi check"
 
 #define CLI_DISCOVER_MODULES "discover modules"
-#define CLI_DISCOVER_MODULES_SPI    "discover modules spi"
 
 
 #ifndef CLI_SENSOR
@@ -1399,12 +1398,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_config_file(line);
          inputBad = false;
       }
-      if (memcmp(CLI_DISCOVER_MODULES_SPI, line, sizeof(CLI_DISCOVER_MODULES_SPI) - 1) == 0)
-                {
 
-          CLI_discoverModules_spi(line);
-                    inputBad = false;
-                }
+      if (memcmp(CLI_DISCOVER_MODULES, line, sizeof(CLI_DISCOVER_MODULES) - 1) == 0)
+      {
+          CLI_discoverModules(line);
+          inputBad = false;
+      }
+
       if (memcmp(CLI_CRS_TMP, line, sizeof(CLI_CRS_TMP) - 1) == 0)
       {
 
@@ -4315,9 +4315,20 @@ static CRS_retVal_t CLI_discoverModules(char *line)
 
        //filename
        token = strtok(NULL, s);
+       if (token == NULL)
+       {
+           CLI_cliPrintf("\r\n no file name entered");
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
+#ifdef CRS_TMP_SPI
+      SPI_Config_runConfigFileDiscovery(filename);
+#else
        Config_runConfigFileDiscovery(filename, fpgaMultiLineCallback);
+#endif
+       CLI_startREAD();
        return CRS_SUCCESS;
 }
 

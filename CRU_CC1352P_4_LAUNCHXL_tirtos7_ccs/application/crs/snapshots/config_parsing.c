@@ -744,7 +744,7 @@ void Config_process(void)
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
             Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             Semaphore_post(collectorSem);
-
+            return;
         }
         CLI_cliPrintf("\r\nDiscovery success");
 
