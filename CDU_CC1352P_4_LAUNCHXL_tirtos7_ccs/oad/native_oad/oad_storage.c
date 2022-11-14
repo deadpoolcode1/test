@@ -104,7 +104,7 @@ static uint32_t candidateImageType = 0xFFFFFFFF;
 static bool useExternalFlash = false;
 
 static uint32_t flashPageSize;
-
+static bool gIsFactoryStorage=false;
 #ifndef FEATURE_OAD_SERVER_ONLY
     static uint32_t flashNumPages;
 #endif
@@ -239,9 +239,7 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 
     // Validate the ID
     idStatus = oadCheckImageID(idPld);
-if (isFactory) {
-    idPld->softVer[0]='F';
-}
+    gIsFactoryStorage=isFactory;
 
     // If image ID is accepted, set variables and pre-erase flash pages
     if(idStatus == OADStorage_Status_Success)
@@ -524,10 +522,12 @@ OADStorage_Status_t OADStorage_imgFinalise(void)
             extFlMetaHdr.fixedHdr.imgCpStat = NEED_COPY;
             }
             //if its factory
-            if(extFlMetaHdr.fixedHdr.softVer[0]=='F'){
+            if(gIsFactoryStorage==true){
                 extFlMetaHdr.fixedHdr.imgCpStat = DEFAULT_STATE;
                 extFlMetaHdr.fixedHdr.imgType = OAD_IMG_TYPE_FACTORY;
                         }
+
+
             extFlMetaHdr.fixedHdr.crcStat = CRC_VALID;
         }
         //Erase the old meta data

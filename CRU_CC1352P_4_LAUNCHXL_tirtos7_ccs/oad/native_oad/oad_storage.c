@@ -104,7 +104,7 @@ static uint32_t candidateImageType = 0xFFFFFFFF;
 static bool useExternalFlash = false;
 
 static uint32_t flashPageSize;
-
+static bool gIsFactoryStorage=false;
 #ifndef FEATURE_OAD_SERVER_ONLY
     static uint32_t flashNumPages;
 #endif
@@ -244,6 +244,7 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
         isFactory=true;
         idPld->imgType=OAD_IMG_TYPE_APPSTACKLIB;
     }
+    gIsFactoryStorage=isFactory;
     // Validate the ID
     idStatus = oadCheckImageID(idPld);
 
@@ -263,10 +264,10 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
                 metaPage = EFL_ADDR_META;
                       }else{
                           imageAddress = oadFindExtFlImgAddr(idPld->imgType);
-                          imagePage = EXT_FLASH_PAGE(imageAddress);
+                          metaPage = oadFindExtFlMetaPage();
                       }
+            imagePage = EXT_FLASH_PAGE(imageAddress);
 
-            metaPage = oadFindExtFlMetaPage();
         }
 
         // Calculate total number of OAD blocks, round up if needed
@@ -523,6 +524,10 @@ OADStorage_Status_t OADStorage_imgFinalise(void)
         {
             extFlMetaHdr.fixedHdr.imgCpStat = NEED_COPY;
             extFlMetaHdr.fixedHdr.crcStat = CRC_VALID;
+        }
+        if (gIsFactoryStorage) {
+            extFlMetaHdr.fixedHdr.imgCpStat = DEFAULT_STATE;
+            extFlMetaHdr.fixedHdr.imgType = OAD_IMG_TYPE_FACTORY;
         }
         //Erase the old meta data
         eraseFlashPg(metaPage);

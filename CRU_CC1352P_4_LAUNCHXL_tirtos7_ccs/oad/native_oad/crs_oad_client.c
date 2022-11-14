@@ -233,7 +233,7 @@ void OADClient_open(OADClient_Params_t *params)
 
 //    oadClockInitialize();
 
-    OADStorage_init();
+//    OADStorage_init();
 }
 
 /*!
@@ -255,7 +255,7 @@ CRS_retVal_t OadClient_process(void)
         oadInProgress=false;
         oadBNumBlocks=0;
         OADStorage_Status_t status = OADStorage_imgFinalise();
-//        OADStorage_close();
+        OADStorage_close();
         if (status == OADStorage_Status_Success) {
             CLI_cliPrintf("\r\nOAD completed successfully");
 //            SysCtrlSystemReset();
@@ -372,7 +372,7 @@ static void oadFwVersionReqCb(void *pSrcAddr)
 static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
                                 uint8_t *imgMetaData)
 {
-
+    OADStorage_init();
 //    CLI_cliPrintf("\r\noadImgIdentifyReqCb");
     /*
      * Ignore imgId - its not used in this

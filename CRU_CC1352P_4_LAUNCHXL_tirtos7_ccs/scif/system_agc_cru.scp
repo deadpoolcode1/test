@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="System AGC nizan" version="2.9.0.208">
+<project name="System AGC CRU CODE" version="2.9.0.208">
     <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
     <pattr name="Apply default power mode">0</pattr>
@@ -11,7 +11,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <pattr name="Code prefix"></pattr>
     <pattr name="Default power mode">0</pattr>
     <pattr name="Operating system">TI-RTOS</pattr>
-    <pattr name="Output directory">C:\Users\cellium\workspace_v12\crs_tirtos_test\CDU_CC1352P_4_LAUNCHXL_tirtos7_ccs\scif</pattr>
+    <pattr name="Output directory">C:\Users\Amitg\workspace_v11\crs_tirtos_test\CRU_CC1352P_4_LAUNCHXL_tirtos7_ccs\scif</pattr>
     <pattr name="RTC tick interval (16.16 format)">2000</pattr>
     <pattr name="Run-time logging UART RX pin"></pattr>
     <pattr name="Run-time logging UART TX pin"></pattr>
@@ -25,7 +25,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="CHANNELS_NUMBER" desc="Number of channels" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="CHANNEL_COUNT" desc="Number of ADC channels" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="SAMPLE_SIZE" desc="Number of sample cycles" type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
-        <tattr name="SAMPLE_SZ" type="expr" content="const" scope="task" min="0" max="65535">75</tattr>
+        <tattr name="SAMPLE_SZ" type="expr" content="const" scope="task" min="0" max="65535">70</tattr>
         <tattr name="TP_CHANNEL_COUNT" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="cfg.Dio26" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.Dio27" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
@@ -481,6 +481,7 @@ if(state.tddMode == 0){
     evhSetupTimer0Trigger(1, 1, 2);
 }]]></sccode>
         <sccode name="event1" init_power_mode="0"><![CDATA[//rising edge - Rx det(Rf DL)/IF det (DL)
+// CRU Tx
 evhCancelTrigger(0);//cancel event A trigger
 //enter event code only if Manual DL mode(1) or Auto(0)(skip if Manual UL)
 if(state.tddMode != 2){
@@ -530,6 +531,7 @@ if(state.tddMode != 2){
         output.channelsIdx=cfg.channelsSwitch;
         state.channelsIdx=cfg.channelsSwitch;
     }
+
     // Calculate the memory offset between the accumulator value buffer in the output and state data structures.
     // We'll use this to quickly move the pointer back and forth (saves 3 instructions per move).
     //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
@@ -555,44 +557,44 @@ if(state.tddMode != 2){
     U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
     U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
     if(state.channelsIdx == 0){
-        pAccValueBuffer = #state.pAccValueBuffer[8];
+        pAccValueBuffer = #state.pAccValueBuffer[0];
     }
     if(state.channelsIdx == 1){
-        pAccValueBuffer = #state.pAccValueBuffer[10];
+        pAccValueBuffer = #state.pAccValueBuffer[2];
     }
     if(state.channelsIdx == 2){
-        pAccValueBuffer = #state.pAccValueBuffer[12];
+        pAccValueBuffer = #state.pAccValueBuffer[4];
     }
     if(state.channelsIdx == 3){
-        pAccValueBuffer = #state.pAccValueBuffer[14];
+        pAccValueBuffer = #state.pAccValueBuffer[6];
     }
     U16 n = 0;
-    U16 accExt=0;
-    U16 accValueL=0;
-    U16 accValueH=0;
+    U16 accExt;
+    U16 accValueL;
+    U16 accValueH;
     // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
     U16 flagAccReset=0;
     if(state.channelsIdx==0){
-        if (state.headSamplesCountRxDet[0] == 0) {
+        if (state.headSamplesCountTxDet[0] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
 
     if(state.channelsIdx==1){
-        if (state.headSamplesCountRxDet[1] == 0) {
+        if (state.headSamplesCountTxDet[1] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
     if(state.channelsIdx==2){
-        if (state.headSamplesCountRxDet[2] == 0) {
+        if (state.headSamplesCountTxDet[2] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
     if(state.channelsIdx==3){
-        if (state.headSamplesCountRxDet[3] == 0) {
+        if (state.headSamplesCountTxDet[3] == 0) {
             accReset();
             flagAccReset=1;
         }
@@ -605,6 +607,7 @@ if(state.tddMode != 2){
         pAccValueBuffer -= 2;
     }
     flagAccReset=0;
+
     //fwDelayUs(#delay, #range)
     //Delays execution of the next line by the specified number of microseconds.
     //To avoid busy waiting, the delay is implemented using AUX Timer 0.
@@ -621,39 +624,30 @@ if(state.tddMode != 2){
         adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
 
     }
-
-    //adcEnableSync(#refSource, #sampleTime, #trigger)
-    //Enables the ADC for synchronous operation, with a fixed sampling period before each conversion.
-    //The ADC is idle between conversions, and the ADC trigger starts the sampling period before the conversion.
-    //This procedure must only be called when the ADC is disabled. To change ADC configuration, call adcDisable() before re-enabling the ADC.
-    //Parameter value(s)
-    //#refSource : ADC reference source, either ADC_REF_FIXED or ADC_REF_VDDS_REL
-    //#sampleTime : ADC sampling time before each conversion, ADC_SAMPLE_TIME_N_US or ADC_SAMPLE_TIME_N_MS
-    //#trigger : ADC trigger (ADC_TRIGGER_XYZ)
-    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // manual sampling, 2.7 us sample time, the fastest possible
+   //U16 adcValue;
+    fwDelayUs(input.gapStartRx);
+    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // period sampling, 2.7 us sample time, the fastest possible
     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
     adcFlushFifo();
     // Start ADC timer trigger at the configured period (rounded up)
     timer1Start(TIMER1_MODE_PERIODICAL, (24000000 + (ADC_SAMPLE_RATE - 1)) / ADC_SAMPLE_RATE, 0);
-    // Wait for the ADC trigger (start of conversion)
-    timer1Wait();
+
 
     if(state.channelsIdx==0){
-        n = state.headSamplesCountRxDet[0];
+        n = state.headSamplesCountTxDet[0];
     }
     if(state.channelsIdx==1){
-        n = state.headSamplesCountRxDet[1];
+        n = state.headSamplesCountTxDet[1];
     }
     if(state.channelsIdx==2){
-        n = state.headSamplesCountRxDet[2];
+        n = state.headSamplesCountTxDet[2];
     }
     if(state.channelsIdx==3){
-        n = state.headSamplesCountRxDet[3];
+        n = state.headSamplesCountTxDet[3];
     }
-    adcReadFifo(output.RxDetSamples[n]); //ADC FIFO can store between between 0 and 4 samples.
-    output.adcValue=output.RxDetSamples[n];
 
-
+    adcReadFifo(output.TxDetSamples[n]);
+    output.adcValue=output.TxDetSamples[n];
     // Add the ADC value to the accumulator
     accAdd16u(output.adcValue);
     accGetAll(accExt, accValueH, accValueL);
@@ -661,24 +655,24 @@ if(state.tddMode != 2){
     // state.pAccValueBuffer[], so it can be restored in the next iteration
     U16 flagLastCycle=0;
     if(state.channelsIdx==0){
-        if (state.headSamplesCountRxDet[0] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountTxDet[0] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
     if(state.channelsIdx==1){
-        if (state.headSamplesCountRxDet[1] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountTxDet[1] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
 
     if(state.channelsIdx==2){
-        if (state.headSamplesCountRxDet[2] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountTxDet[2] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
 
     if(state.channelsIdx==3){
-        if (state.headSamplesCountRxDet[3] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountTxDet[3] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
@@ -697,51 +691,40 @@ if(state.tddMode != 2){
     }
     // Update the head index
     if(state.channelsIdx==0){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[0]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[0]);
     }
     if(state.channelsIdx==1){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[1]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[1]);
     }
     if(state.channelsIdx==2){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[2]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[2]);
     }
     if(state.channelsIdx==3){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[3]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[3]);
     }
-
 
     n=state.channelsIdx;
     //min, max, sum calculations
-    if(output.adcValue<output.RxDetMin[n]){
-        output.RxDetMin[n]=output.adcValue;
+    if(output.adcValue<output.TxDetMin[n]){
+        output.TxDetMin[n]=output.adcValue;
     }
-    if(output.adcValue>output.RxDetMax[n]){
-        output.RxDetMax[n]=output.adcValue;
+    if(output.adcValue>output.TxDetMax[n]){
+        output.TxDetMax[n]=output.adcValue;
     }
 
-
-
-
-
-    //     If ALERT interrupt generation is enabled
     if (state.alertEnabled == 1) {
-        if(state.headSamplesCountRxDet[n] == (SAMPLE_SZ)){
+        if(state.headSamplesCountTxDet[n] == (SAMPLE_SZ)){
 
             fwGenQuickAlertInterrupt();
-            output.RxDetMax[n]=0;
-            output.RxDetMin[n]=65535;
-
-
+            output.TxDetMax[n]=0;
+            output.TxDetMin[n]=65535;
 
             // Disable further generation to avoid unnecessary interrupts. It will be reenabled
             // by the application after handling the ALERT interrupt.
             state.alertEnabled = 0;
-
         }
     }
-
     adcDisable();
-
     //move to sample IF det DL
     //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
     //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
@@ -936,7 +919,8 @@ if(state.tddMode != 2){
     // if mode is not Manual DL/ Auto, immediately trigger event C
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
-        <sccode name="event2" init_power_mode="0"><![CDATA[//faling edge - Tx det(Rf UL)/IF det (UL)
+        <sccode name="event2" init_power_mode="0"><![CDATA[//faling edge -cdu Tx det(Rf UL)/IF det (UL)
+//             cru  Rx det(Rf UL)/IF det (UL)
 evhCancelTrigger(0);//cancel event A trigger
 //**Led logic**//
 // turn UL LED on (in auto mode it stays on only half the time)
@@ -989,7 +973,7 @@ if(state.tddMode != 1){
 
 
 
-    // Calculate the memory offset between the accumulator value buffer in the output and state data structures.
+   // Calculate the memory offset between the accumulator value buffer in the output and state data structures.
     // We'll use this to quickly move the pointer back and forth (saves 3 instructions per move).
     //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
     //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
@@ -1014,44 +998,44 @@ if(state.tddMode != 1){
     U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
     U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
     if(state.channelsIdx == 0){
-        pAccValueBuffer = #state.pAccValueBuffer[0];
+        pAccValueBuffer = #state.pAccValueBuffer[8];
     }
     if(state.channelsIdx == 1){
-        pAccValueBuffer = #state.pAccValueBuffer[2];
+        pAccValueBuffer = #state.pAccValueBuffer[10];
     }
     if(state.channelsIdx == 2){
-        pAccValueBuffer = #state.pAccValueBuffer[4];
+        pAccValueBuffer = #state.pAccValueBuffer[12];
     }
     if(state.channelsIdx == 3){
-        pAccValueBuffer = #state.pAccValueBuffer[6];
+        pAccValueBuffer = #state.pAccValueBuffer[14];
     }
     U16 n = 0;
-    U16 accExt;
-    U16 accValueL;
-    U16 accValueH;
+    U16 accExt=0;
+    U16 accValueL=0;
+    U16 accValueH=0;
     // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
     U16 flagAccReset=0;
     if(state.channelsIdx==0){
-        if (state.headSamplesCountTxDet[0] == 0) {
+        if (state.headSamplesCountRxDet[0] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
 
     if(state.channelsIdx==1){
-        if (state.headSamplesCountTxDet[1] == 0) {
+        if (state.headSamplesCountRxDet[1] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
     if(state.channelsIdx==2){
-        if (state.headSamplesCountTxDet[2] == 0) {
+        if (state.headSamplesCountRxDet[2] == 0) {
             accReset();
             flagAccReset=1;
         }
     }
     if(state.channelsIdx==3){
-        if (state.headSamplesCountTxDet[3] == 0) {
+        if (state.headSamplesCountRxDet[3] == 0) {
             accReset();
             flagAccReset=1;
         }
@@ -1064,8 +1048,16 @@ if(state.tddMode != 1){
         pAccValueBuffer -= 2;
     }
     flagAccReset=0;
+    //fwDelayUs(#delay, #range)
+    //Delays execution of the next line by the specified number of microseconds.
+    //To avoid busy waiting, the delay is implemented using AUX Timer 0.
+    //Parameter value(s)
+    //#delay : Delay value in microseconds
+    //#range : Delay range (FW_DELAY_RANGE_N_US or FW_DELAY_RANGE_N_MS), for example FW_DELAY_RANGE_5_MS allows for a delay between 1 and 5000 microseconds
+    fwDelayUs(input.gapStartTx);
 
-        // select the correct pin according to unit type. For CDU we select
+
+    // select the correct pin according to unit type. For CDU we select
     // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
     if(state.unitType == 0){
         //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
@@ -1075,30 +1067,40 @@ if(state.tddMode != 1){
         adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 25--->DIO 24 RX det
 
     }
-    //U16 adcValue;
-    fwDelayUs(input.gapStartRx);
-    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // period sampling, 2.7 us sample time, the fastest possible
+
+
+     //adcEnableSync(#refSource, #sampleTime, #trigger)
+    //Enables the ADC for synchronous operation, with a fixed sampling period before each conversion.
+    //The ADC is idle between conversions, and the ADC trigger starts the sampling period before the conversion.
+    //This procedure must only be called when the ADC is disabled. To change ADC configuration, call adcDisable() before re-enabling the ADC.
+    //Parameter value(s)
+    //#refSource : ADC reference source, either ADC_REF_FIXED or ADC_REF_VDDS_REL
+    //#sampleTime : ADC sampling time before each conversion, ADC_SAMPLE_TIME_N_US or ADC_SAMPLE_TIME_N_MS
+    //#trigger : ADC trigger (ADC_TRIGGER_XYZ)
+    //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // manual sampling, 2.7 us sample time, the fastest possible
     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
     adcFlushFifo();
     // Start ADC timer trigger at the configured period (rounded up)
     timer1Start(TIMER1_MODE_PERIODICAL, (24000000 + (ADC_SAMPLE_RATE - 1)) / ADC_SAMPLE_RATE, 0);
-
+    // Wait for the ADC trigger (start of conversion)
+    timer1Wait();
 
     if(state.channelsIdx==0){
-        n = state.headSamplesCountTxDet[0];
+        n = state.headSamplesCountRxDet[0];
     }
     if(state.channelsIdx==1){
-        n = state.headSamplesCountTxDet[1];
+        n = state.headSamplesCountRxDet[1];
     }
     if(state.channelsIdx==2){
-        n = state.headSamplesCountTxDet[2];
+        n = state.headSamplesCountRxDet[2];
     }
     if(state.channelsIdx==3){
-        n = state.headSamplesCountTxDet[3];
+        n = state.headSamplesCountRxDet[3];
     }
+    adcReadFifo(output.RxDetSamples[n]); //ADC FIFO can store between between 0 and 4 samples.
+    output.adcValue=output.RxDetSamples[n];
 
-    adcReadFifo(output.TxDetSamples[n]);
-    output.adcValue=output.TxDetSamples[n];
+
     // Add the ADC value to the accumulator
     accAdd16u(output.adcValue);
     accGetAll(accExt, accValueH, accValueL);
@@ -1106,24 +1108,24 @@ if(state.tddMode != 1){
     // state.pAccValueBuffer[], so it can be restored in the next iteration
     U16 flagLastCycle=0;
     if(state.channelsIdx==0){
-        if (state.headSamplesCountTxDet[0] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountRxDet[0] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
     if(state.channelsIdx==1){
-        if (state.headSamplesCountTxDet[1] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountRxDet[1] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
 
     if(state.channelsIdx==2){
-        if (state.headSamplesCountTxDet[2] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountRxDet[2] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
 
     if(state.channelsIdx==3){
-        if (state.headSamplesCountTxDet[3] != (SAMPLE_SZ - 1)) {
+        if (state.headSamplesCountRxDet[3] != (SAMPLE_SZ - 1)) {
             flagLastCycle=1;
         }
     }
@@ -1142,40 +1144,51 @@ if(state.tddMode != 1){
     }
     // Update the head index
     if(state.channelsIdx==0){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[0]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[0]);
     }
     if(state.channelsIdx==1){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[1]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[1]);
     }
     if(state.channelsIdx==2){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[2]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[2]);
     }
     if(state.channelsIdx==3){
-        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountTxDet[3]);
+        utilIncrAndWrap(n, SAMPLE_SZ; state.headSamplesCountRxDet[3]);
     }
+
 
     n=state.channelsIdx;
     //min, max, sum calculations
-    if(output.adcValue<output.TxDetMin[n]){
-        output.TxDetMin[n]=output.adcValue;
+    if(output.adcValue<output.RxDetMin[n]){
+        output.RxDetMin[n]=output.adcValue;
     }
-    if(output.adcValue>output.TxDetMax[n]){
-        output.TxDetMax[n]=output.adcValue;
+    if(output.adcValue>output.RxDetMax[n]){
+        output.RxDetMax[n]=output.adcValue;
     }
 
+
+
+
+
+    //     If ALERT interrupt generation is enabled
     if (state.alertEnabled == 1) {
-        if(state.headSamplesCountTxDet[n] == (SAMPLE_SZ)){
+        if(state.headSamplesCountRxDet[n] == (SAMPLE_SZ)){
 
             fwGenQuickAlertInterrupt();
-            output.TxDetMax[n]=0;
-            output.TxDetMin[n]=65535;
+            output.RxDetMax[n]=0;
+            output.RxDetMin[n]=65535;
+
+
 
             // Disable further generation to avoid unnecessary interrupts. It will be reenabled
             // by the application after handling the ALERT interrupt.
             state.alertEnabled = 0;
+
         }
     }
+
     adcDisable();
+
     //move to sample IF det UL
     if(cfg.channelsSwitch==0){
         if(state.channelsIdx==0){
@@ -1380,7 +1393,7 @@ if(state.tddMode != 1){
 evhSetupTimer0Trigger(0, 1, 2);]]></sccode>
         <sccode name="event3" init_power_mode="0"><![CDATA[]]></sccode>
         <sccode name="execute" init_power_mode="0"><![CDATA[]]></sccode>
-        <sccode name="initialize" init_power_mode="0"><![CDATA[  //read docs here - https://software-dl.ti.com/lprf/sensor_controller_studio/docs/cc13x0_cc26x0_help/html/scs_overview.html
+        <sccode name="initialize" init_power_mode="0"><![CDATA[//read docs here - https://software-dl.ti.com/lprf/sensor_controller_studio/docs/cc13x0_cc26x0_help/html/scs_overview.html
 
 
 //evhSetupTimer0Trigger(#evIndex, mant, #exp)
