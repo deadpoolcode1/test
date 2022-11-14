@@ -141,17 +141,18 @@ CRS_retVal_t Oad_init(void *sem)
 
 }
 CRS_retVal_t Oad_checkImgEnvVar(){
-    OADStorage_init();
-    /* get Available FW version*/
-    OADStorage_imgIdentifyPld_t remoteAppImageId;
-    /* get Available FW version*/
-    OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteAppImageId);
-    if(remoteAppImageId.softVer[0]=='C'){
+
+    uint8_t page=0;
+        uint32_t offset=0;
+        uint8_t pBuf[100]={0};
+        uint16_t len=80;
+        readInternalbimFlashPg(page, offset, pBuf, len);
+    if(pBuf[32]=='C'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
         char ver[4]={0};
-        memcpy(ver,&remoteAppImageId.softVer[1],3);
+        memcpy(ver,&pBuf[33],3);
         uint32_t imgExtFlash=strtol(ver,NULL,10);
         //if this is a collector img - update the img env var
 //        if ((imgExtFlash>imgPrev)) {
@@ -160,7 +161,6 @@ CRS_retVal_t Oad_checkImgEnvVar(){
             Env_write(currImg);
 //        }
     }
-    OADStorage_close();
     return CRS_SUCCESS;
 }
 
