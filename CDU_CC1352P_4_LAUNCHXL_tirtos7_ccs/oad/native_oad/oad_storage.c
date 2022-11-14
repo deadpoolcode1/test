@@ -224,9 +224,9 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  */
 uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 {
-    eraseFlashPg(0); //erase metaData
-    eraseFlashPg(1); //erase metaData
-    eraseFlashPg(2); //erase metaData
+//    eraseFlashPg(0); //erase metaData
+//    eraseFlashPg(1); //erase metaData
+//    eraseFlashPg(2); //erase metaData
 
     uint8_t idStatus;
 
@@ -239,6 +239,9 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 
     // Validate the ID
     idStatus = oadCheckImageID(idPld);
+if (isFactory) {
+    idPld->softVer[0]='F';
+}
 
     // If image ID is accepted, set variables and pre-erase flash pages
     if(idStatus == OADStorage_Status_Success)
@@ -252,12 +255,14 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
         else
         {
             if (isFactory) {
-                imageAddress = oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                imageAddress = oadFindFactImgAddr();// oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                metaPage = EFL_ADDR_META;
             }else{
                 imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+                metaPage = oadFindExtFlMetaPage();
             }
             imagePage = EXT_FLASH_PAGE(imageAddress);
-            metaPage = oadFindExtFlMetaPage();
+
         }
 
         // Calculate total number of OAD blocks, round up if needed
@@ -518,6 +523,11 @@ OADStorage_Status_t OADStorage_imgFinalise(void)
             }else{
             extFlMetaHdr.fixedHdr.imgCpStat = NEED_COPY;
             }
+            //if its factory
+            if(extFlMetaHdr.fixedHdr.softVer[0]=='F'){
+                extFlMetaHdr.fixedHdr.imgCpStat = DEFAULT_STATE;
+                extFlMetaHdr.fixedHdr.imgType = OAD_IMG_TYPE_FACTORY;
+                        }
             extFlMetaHdr.fixedHdr.crcStat = CRC_VALID;
         }
         //Erase the old meta data

@@ -192,7 +192,7 @@ CRS_retVal_t OadClient_init(void *sem)
 
 CRS_retVal_t Oad_checkImgEnvVar(){
     //if this is a sensor img - update the img env var
-    if( _imgHdr.fixedHdr.softVer[0]=='S'){
+    if( _imgHdr.fixedHdr.softVer[0]=='S' || _imgHdr.fixedHdr.softVer[0]=='F'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);

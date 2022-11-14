@@ -147,7 +147,7 @@ CRS_retVal_t Oad_checkImgEnvVar(){
         uint8_t pBuf[100]={0};
         uint16_t len=80;
         readInternalbimFlashPg(page, offset, pBuf, len);
-    if(pBuf[32]=='C'){
+    if(pBuf[32]=='C' || pBuf[32]=='F'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
@@ -388,6 +388,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
         oadBNumBlocks = OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteImgId);
         if (isFactory) {
             remoteImgId.imgType=OAD_IMG_TYPE_FACTORY;
+            remoteImgId.imgCpStat = DEFAULT_STATE;
         }
         /*
          * Hard code imgId to 0 - its not used in this

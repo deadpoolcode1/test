@@ -259,11 +259,13 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData)
         else
         {
             if (isFactory) {
-                          imageAddress = oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                imageAddress = oadFindFactImgAddr();// oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                metaPage = EFL_ADDR_META;
                       }else{
                           imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+                          imagePage = EXT_FLASH_PAGE(imageAddress);
                       }
-            imagePage = EXT_FLASH_PAGE(imageAddress);
+
             metaPage = oadFindExtFlMetaPage();
         }
 
