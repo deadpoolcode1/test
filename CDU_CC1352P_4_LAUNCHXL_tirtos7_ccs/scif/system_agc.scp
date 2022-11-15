@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="System AGC nizan" version="2.9.0.208">
+<project name="System AGC CDU CODE" version="2.9.0.208">
     <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
     <pattr name="Apply default power mode">0</pattr>
@@ -962,6 +962,7 @@ if(state.tddMode != 1){
     //channel switch config
     U16 z;
     z = state.channelsIdx;
+    utilIncrAndWrap(z, TP_CHANNEL_COUNT; state.channelsIdx);
     if(cfg.channelsSwitch==0){
 
         if(state.channelsIdx==3){
@@ -1065,7 +1066,7 @@ if(state.tddMode != 1){
     }
     flagAccReset=0;
 
-        // select the correct pin according to unit type. For CDU we select
+    // select the correct pin according to unit type. For CDU we select
     // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
     if(state.unitType == 0){
         //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
