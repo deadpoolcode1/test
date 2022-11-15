@@ -62,7 +62,7 @@
 #include <oad/native_oad/oad_protocol.h>
 #include <common/cc26xx/oad/ext_flash_layout.h>
 #include <common/cc26xx/flash_interface/flash_interface.h>
-
+#include "application/crs/crs_cli.h"
 /*********************************************************************
  * CONSTANTS
  */
@@ -1266,6 +1266,7 @@ bool OADStorage_checkFactoryImage(void)
             (metadataHdr.fixedHdr.crcStat != CRC_INVALID) )  /* Not an invalid CRC */
         {
             rtn = true; /* Factory image exists return from here */
+            CLI_cliPrintf("\r\nFactory img loaded successfully sv:%c%c%c bv:%02x",metadataHdr.fixedHdr.softVer[1], metadataHdr.fixedHdr.softVer[2],metadataHdr.fixedHdr.softVer[3], metadataHdr.fixedHdr.bimVer);
         }
         //close flash
         flash_close();

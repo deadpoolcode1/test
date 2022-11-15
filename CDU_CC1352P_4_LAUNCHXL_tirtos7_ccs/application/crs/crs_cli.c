@@ -1256,9 +1256,34 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
-                  Oad_flashFormat();
-                   inputBad = false;
-                   CLI_startREAD();
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FORMAT) + 2]), NULL,
+                                                  16);
+                 #ifndef CLI_SENSOR
+
+                     uint16_t addr = 0;
+                     Cllc_getFfdShortAddr(&addr);
+                     if (addr != shortAddr)
+                     {
+                         //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                         ApiMac_sAddr_t dstAddr;
+                         dstAddr.addr.shortAddr = shortAddr;
+                         dstAddr.addrMode = ApiMac_addrType_short;
+                         Collector_status_t stat;
+                         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                         if (stat != Collector_status_success)
+                         {
+                             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                             CLI_startREAD();
+                         }
+
+                 //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                         return CRS_SUCCESS;
+                     }
+                 #endif
+                    CRS_retVal_t ret= Oad_flashFormat();
+                   CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+                            inputBad = false;
+                            CLI_startREAD();
                }
 
 
