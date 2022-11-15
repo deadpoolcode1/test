@@ -82,6 +82,7 @@
 #define CONTROL_CH_STOP_TRANS '%'
 
 #define CLI_CRS_HELP "help"
+#define CLI_CRS_HELP_2  "help 2"
 
 #ifndef CLI_SENSOR
 
@@ -350,6 +351,7 @@ static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
+static CRS_retVal_t CLI_help2Parsing(char *line);
 static uint32_t MakeULFromHex(char *hex_str);
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
@@ -1457,11 +1459,17 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
 
 
-      if (memcmp(CLI_CRS_HELP, line, sizeof(CLI_CRS_HELP) - 1) == 0)
+      if ((memcmp(CLI_CRS_HELP, line, sizeof(CLI_CRS_HELP) - 1) == 0) && memcmp(CLI_CRS_HELP_2, line, sizeof(CLI_CRS_HELP_2) - 1) != 0 )
          {
              CLI_helpParsing(line);
              inputBad = false;
          }
+
+      if (memcmp(CLI_CRS_HELP_2, line, sizeof(CLI_CRS_HELP_2) - 1) == 0)
+          {
+              CLI_help2Parsing(line);
+              inputBad = false;
+          }
 
       if (inputBad && strlen(line) > 0)
       {
@@ -5329,7 +5337,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo("\r\nCOMMAND", strlen("COMMAND"), "PARAMS");
 
     CLI_cliPrintf("\r\n");
-
+    CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
+    CLI_printCommInfo(CLI_CRS_HELP_2, strlen(CLI_CRS_HELP_2),"");
     CLI_printCommInfo(CLI_LIST_ALARMS_LIST, strlen(CLI_LIST_ALARMS_LIST), "[shortAddr]");
     CLI_printCommInfo(CLI_LIST_ALARMS_SET, strlen(CLI_LIST_ALARMS_SET), "[shortAddr] [id] [state]");
     //CLI_printCommInfo(CLI_LIST_ALARMS_START, strlen(CLI_LIST_ALARMS_START), "");
@@ -5346,9 +5355,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_FPGA_CLOSE, strlen(CLI_CRS_FPGA_CLOSE), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FPGA_OPEN, strlen(CLI_CRS_FPGA_OPEN), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FPGA_WRITELINES, strlen(CLI_CRS_FPGA_WRITELINES), "[shortAddr] [lines seperated by new line char]");
-
-    CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
-
+    CLI_printCommInfo(CLI_CRS_FPGA_READLINES, strlen(CLI_CRS_FPGA_READLINES),"[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_START, strlen(CLI_CRS_FPGA_TRANSPARENT_START), "[shortAddr]");
     //CLI_cliPrintf("%");
     //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_END, strlen(CLI_CRS_FPGA_TRANSPARENT_END), "[shortAddr]");
@@ -5417,16 +5424,29 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 
     CLI_printCommInfo(CLI_CRS_TMP, strlen(CLI_CRS_TMP), "[shortAddr]");
 
-    CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
+
     //CLI_printCommInfo(CLI_CRS_LED_ON, strlen(CLI_CRS_LED_ON), "[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_LED_OFF, strlen(CLI_CRS_LED_OFF), "[shortAddr]");
 
     //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
 
+    CLI_cliPrintf("\r\n");
+
+    CLI_startREAD();
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t CLI_help2Parsing(char *line)
+{
+    CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
 #ifndef CLI_SENSOR
     CLI_printCommInfo(CLI_LIST_SENSORS, strlen(CLI_LIST_SENSORS), "");
 #endif
     CLI_printCommInfo(CLI_DEVICE, strlen(CLI_DEVICE), "");
+    CLI_printCommInfo(CLI_DISCOVER_MODULES, strlen(CLI_DISCOVER_MODULES), "[shortAddr] [fileName]");
+    CLI_printCommInfo(CLI_CRS_MODEM_TEST, strlen(CLI_CRS_MODEM_TEST), "[time]");
+    CLI_printCommInfo(CLI_CRS_LOCKS, strlen(CLI_CRS_LOCKS), "[shortAddr]");
 
 
     CLI_cliPrintf("\r\n");
@@ -5434,6 +5454,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_startREAD();
     return CRS_SUCCESS;
 }
+
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description)
 {

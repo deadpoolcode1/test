@@ -32,7 +32,6 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="cfg.channelsSwitch" desc="Channel select - 0: measure all channels, 1 - 4: measure only this channel" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.eventCounter" desc="counts transitons number from event b(UL) to c(DL)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.tddMode" desc="TDD mode - 0: Auto , 1: ManualDL, 2: ManualUL" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="cfg.unitType" desc="Type of unit - 0 : CDU, 1: CRU" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.Period1" desc="TDD env variable " type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="input.gapStartRx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
         <tattr name="input.gapStartTx" type="expr" content="struct" scope="task" min="0" max="65535">130</tattr>
@@ -69,7 +68,6 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="state.ledOn" desc="bool variable to decide weather we light led or ont" type="expr" content="struct" scope="task" min="0" max="1">1</tattr>
         <tattr name="state.pAccValueBuffer" desc="32-bit accumulator value for each ADC channel (L[0], H[0], ..., L[n], H[n]), for storage while accumulating sample values" size="ACC_VALUE_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.tddMode" desc="TDD mode - 0: Auto, 1: ManualDL, 2: ManualUL  (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
-        <tattr name="state.unitType" desc="Type of unit - 0 : CDU, 1: CRU  (copied from cfg in Event A)" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <resource_ref name="ADC" enabled="1"/>
         <resource_ref name="AON Domain Functionality" enabled="0"/>
         <resource_ref name="Accumulator-Based Math" enabled="1"/>
@@ -407,7 +405,6 @@ if(cfg.Dio27==1){
 // update state's TDD mode, channels select and unit Type from the cfg (only on the start of a new sampling cycle)
 if(state.headSamplesCountRxDet[0] == 0){
     state.tddMode = cfg.tddMode;
-    state.unitType = cfg.unitType;
 }
 
 
@@ -452,15 +449,8 @@ if(state.tddMode == 0){
 
     //get the TDD lock
     U16 lock;
-    if(state.unitType == 0){
-        // in CDU we get it directly from the PIN
-        gpioGetInputValue(AUXIO_I_TDD_LOCK; lock);
-        // lock detect PIN: 0-locked, 1-not locked (XOR to flip it)
-        lock ^= 1;
-    }else{
-        // CRU gets lock status via a meassage from CDU, checks and updates periodically
-        lock = input.tddLock;
-    }
+    // CRU gets lock status via a meassage from CDU, checks and updates periodically
+    lock = input.tddLock;
     //if locked, activate the rising edge interrupt on event B
     if(lock == 1){
         //evhSetupGpioTrigger(#evIndex, #auxio, #level, #type)
@@ -480,7 +470,8 @@ if(state.tddMode == 0){
     // if mode is not auto, trigger event B immediately
     evhSetupTimer0Trigger(1, 1, 2);
 }]]></sccode>
-        <sccode name="event1" init_power_mode="0"><![CDATA[//rising edge - Rx det(Rf DL)/IF det (DL)
+        <sccode name="event1" init_power_mode="0"><![CDATA[//rising edge - CDU: Tx det(Rf DL)/IF det (DL)
+//              CRU: Rx det(Rf DL)/IF det (DL)
 evhCancelTrigger(0);//cancel event A trigger
 adcDisable();
 //enter event code only if Manual DL mode(1) or Auto(0)(skip if Manual UL)
@@ -612,16 +603,11 @@ if(state.tddMode != 2){
     //Parameter value(s)
     //#delay : Delay value in microseconds
     //#range : Delay range (FW_DELAY_RANGE_N_US or FW_DELAY_RANGE_N_MS), for example FW_DELAY_RANGE_5_MS allows for a delay between 1 and 5000 microseconds
-    fwDelayUs(input.gapStartTx);
+    fwDelayUs(input.gapStartRx);
     // select the correct pin according to unit type. For CDU we select
     // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
-    if(state.unitType == 0){
-        //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
-        adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 25--->DIO 24 RX det
-    }else{
-        adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 26--->DIO 23 TX det
-
-    }
+        //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection   (index of AUX I/O pin))
+        adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 25--->DIO 24 RX det
 
     //adcEnableSync(#refSource, #sampleTime, #trigger)
     //Enables the ADC for synchronous operation, with a fixed sampling period before each conversion.
@@ -937,7 +923,8 @@ if(state.tddMode != 2){
     // if mode is not Manual DL/ Auto, immediately trigger event C
     evhSetupTimer0Trigger(2, 1, 2);
 }]]></sccode>
-        <sccode name="event2" init_power_mode="0"><![CDATA[//faling edge - Tx det(Rf UL)/IF det (UL)
+        <sccode name="event2" init_power_mode="0"><![CDATA[//faling edge - CDU: Rx det(Rf UL)/IF det (UL)
+//              CRU: Tx det(Rf UL)/IF det (UL)
 evhCancelTrigger(0);//cancel event A trigger
 adcDisable();
 //**Led logic**//
@@ -1069,16 +1056,11 @@ if(state.tddMode != 1){
 
     // select the correct pin according to unit type. For CDU we select
     // Rx detect PIN(Tal's card), for CRU we select Tx detect PIN(FEM card)
-    if(state.unitType == 0){
-        //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
-        adcSelectGpioInput(cfg.pAuxioASensorOutput[0]); //AUX Mapping 26--->DIO 23 TX det
+    //Selects a GPIO pin as input for the ADC. Note that calling this procedure also selects the same input for COMPB. adcSelectGpioInput(auxio) -->(auxio : External input selection (index of AUX I/O pin))
+     adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
 
-    }else{
-        adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 25--->DIO 24 RX det
-
-    }
     //U16 adcValue;
-    fwDelayUs(input.gapStartRx);
+    fwDelayUs(input.gapStartTx);
     //adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // period sampling, 2.7 us sample time, the fastest possible
     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
     adcFlushFifo();
@@ -1275,7 +1257,7 @@ if(state.tddMode != 1){
     // Wait for the ADC trigger (start of conversion)
     timer1Wait();
     adcFlushFifo();
-    fwDelayUs(input.gapStartRx);
+    fwDelayUs(input.gapStartTx);
     if(state.channelsIdx==0){
         n = state.headSamplesCountIFULDet[0];
     }
