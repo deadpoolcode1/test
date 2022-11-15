@@ -5628,8 +5628,9 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
         Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
     }
 #endif
-
+if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
+}
     return CRS_SUCCESS;
 }
 
