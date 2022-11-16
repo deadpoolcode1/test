@@ -104,7 +104,8 @@ void printADCOutput();
 void Agc_avgCalc(uint16_t* outputArray,int32_t* avg,uint8_t channelNum);
 CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t detType, uint16_t ms);
 CRS_retVal_t Agc_getGap(uint8_t isStart,uint8_t detType, uint16_t* result);
-CRS_retVal_t Agc_setTimeMinMax(uint16_t seconds);
+CRS_retVal_t Agc_setTimeMinMax(uint32_t seconds);
+CRS_retVal_t Agc_getTimeMinMax(uint32_t* seconds);
 #ifdef CLI_SENSOR
 CRS_retVal_t Agc_setLock(bool lock);
 #endif

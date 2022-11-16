@@ -169,6 +169,7 @@
 #define CLI_AGC_SET_GAP "agc set gap"
 #define CLI_AGC_GET_GAP "agc get gap"
 #define CLI_AGC_SET_TIME_MINMAX "agc set time"
+#define CLI_AGC_GET_TIME_MINMAX "agc get time"
 
 
 #define CLI_CRS_ENV_LS "env ls"
@@ -301,6 +302,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line);
 static CRS_retVal_t CLI_agcSetGapParsing(char *line);
 static CRS_retVal_t CLI_agcGetGapParsing(char *line);
 static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line);
+static CRS_retVal_t CLI_agcGetTimeMinMaxParsing(char *line);
 static CRS_retVal_t CLI_setDioParsing(char *line);
 
 
@@ -1420,6 +1422,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           inputBad = false;
       }
 
+  else if (memcmp(CLI_AGC_GET_TIME_MINMAX, line, sizeof(CLI_AGC_GET_TIME_MINMAX) - 1) == 0){
+      CLI_agcGetTimeMinMaxParsing(line);
+          inputBad = false;
+      }
+
       else if (memcmp(CLI_AGC_CHANNEL, line, sizeof(CLI_AGC_CHANNEL) - 1) == 0){
           CLI_sensorChannelParsing(line);
           inputBad = false;
@@ -1821,7 +1828,7 @@ static CRS_retVal_t CLI_unit(char *line)
 
 
 
-//agc set gap [shortAddr] [start/stop] [tx/rx] [us]
+//agc set gap [shortAddr] [start/stop] [rising/falling] [us]
 static CRS_retVal_t CLI_agcSetGapParsing(char *line)
 {
      const char s[2] = " ";
@@ -1862,10 +1869,15 @@ static CRS_retVal_t CLI_agcSetGapParsing(char *line)
             isStart=1;
         }
        uint8_t isTx=0;
-    token = strtok(NULL, s); //[tx/rx]
-    if (memcmp(token, "tx", 2)==0) {
+    token = strtok(NULL, s); //[rising/falling]
+    if (memcmp(token, "rising", 6)==0) {
         isTx=1;
     }
+#ifdef CLI_SENSOR
+if(isTx){
+    isTx=0;
+}
+#endif
     token = strtok(NULL, s); //[us]
     uint16_t ms = strtoul((token), NULL, 10);
     CRS_retVal_t retStatus=Agc_setGap(isStart,isTx, ms);
@@ -1875,7 +1887,7 @@ static CRS_retVal_t CLI_agcSetGapParsing(char *line)
 }
 
 
-//agc get gap [shortAddr] [start/stop] [tx/rx]
+//agc get gap [shortAddr] [start/stop] [rising/falling]
 static CRS_retVal_t CLI_agcGetGapParsing(char *line)
 {
      const char s[2] = " ";
@@ -1885,7 +1897,7 @@ static CRS_retVal_t CLI_agcGetGapParsing(char *line)
        memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
        /* get the first token */
        //0xaabb shortAddr
-       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_GAP)]), s);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -1916,10 +1928,15 @@ static CRS_retVal_t CLI_agcGetGapParsing(char *line)
             isStart=1;
         }
        uint8_t isTx=0;
-    token = strtok(NULL, s); //[tx/rx]
-    if (memcmp(token, "tx", 2)==0) {
+    token = strtok(NULL, s); //[rising/falling]
+    if (memcmp(token, "rising", 6)==0) {
         isTx=1;
     }
+#ifdef CLI_SENSOR
+if(isTx){
+    isTx=0;
+}
+#endif
     uint32_t result;
     CRS_retVal_t retStatus=Agc_getGap(isStart,isTx,&result);
     CLI_cliPrintf("\r\nGap Value: 0x%x", result);
@@ -1938,7 +1955,7 @@ static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)
        memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
        /* get the first token */
        //0xaabb shortAddr
-       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_TIME_MINMAX)]), s);
        uint32_t addrSize = strlen(token);
        //shortAddr in decimal
        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
@@ -1963,15 +1980,57 @@ static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)
             return CRS_SUCCESS;
         }
     #endif
-        uint8_t isStart=0;
         token = strtok(NULL, s); //[seconds]
-    uint16_t seconds = strtoul((token), NULL, 10);
+    uint32_t seconds = strtoul((token), NULL, 10);
     CRS_retVal_t retStatus=Agc_setTimeMinMax(seconds);
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 }
 
+
+//agc get time [shortAddr]
+static CRS_retVal_t CLI_agcGetTimeMinMaxParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_TIME_MINMAX)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+    uint32_t seconds= 0;
+    CRS_retVal_t retStatus=Agc_getTimeMinMax(&seconds);
+    CLI_cliPrintf("\r\nTime Value: 0x%x", seconds);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
 
 
 //set dio [shortAddr] [dioIdx] [value: 0x0 | 0x1]
@@ -5474,11 +5533,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_RESET, strlen(CLI_CRS_RESET), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
 
-    CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
-    CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
-    CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
-    CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
-    CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
+
 
     CLI_printCommInfo(CLI_CRS_TDD_ALLOC, strlen(CLI_CRS_TDD_ALLOC), "[shortAddr] [alloc]");
     CLI_printCommInfo(CLI_CRS_TDD_CLOSE, strlen(CLI_CRS_TDD_CLOSE), "[shortAddr]");
@@ -5533,7 +5588,13 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_MODEM_TEST, strlen(CLI_CRS_MODEM_TEST), "[time]");
     CLI_printCommInfo(CLI_CRS_LOCKS, strlen(CLI_CRS_LOCKS), "[shortAddr]");
 
-
+    CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
+    CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
+    CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
+    CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
+    CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
+    CLI_printCommInfo(CLI_AGC_SET_GAP, strlen(CLI_AGC_SET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling'] [0xus]");
+    CLI_printCommInfo(CLI_AGC_GET_GAP, strlen(CLI_AGC_GET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling']");
     CLI_cliPrintf("\r\n");
 
     CLI_startREAD();

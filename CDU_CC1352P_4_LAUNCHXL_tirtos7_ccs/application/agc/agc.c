@@ -67,6 +67,7 @@ static Clock_Struct gClkStructTimeMinMaxAvgInit;
 
 static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
+static uint32_t gTimeMinMaxAvgseconds=0;
 static void* gSem;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
@@ -183,7 +184,7 @@ CRS_retVal_t Agc_init(void * sem){
         Clock_setFunc(gClkHandleTimeMinMaxAvgInit, timeMinMaxAvgInitClockCb, 0);
         Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, 1 * 100000);//
         Clock_start(gClkHandleTimeMinMaxAvgInit);
-
+        gTimeMinMaxAvgseconds=1;
 
     gAgcInitialized = 1;
     return CRS_SUCCESS;
@@ -435,13 +436,18 @@ return CRS_SUCCESS;
 }
 
 
-CRS_retVal_t Agc_setTimeMinMax(uint16_t seconds){
+CRS_retVal_t Agc_setTimeMinMax(uint32_t seconds){
     Clock_stop(gClkHandleTimeMinMaxAvgInit);
     Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, seconds * 100000);
     Clock_start(gClkHandleTimeMinMaxAvgInit);
+    gTimeMinMaxAvgseconds=seconds;
     return CRS_SUCCESS;
 }
 
+CRS_retVal_t Agc_getTimeMinMax(uint32_t* seconds){
+    *seconds=gTimeMinMaxAvgseconds;
+    return CRS_SUCCESS;
+}
 
 CRS_retVal_t Agc_setChannel(AGC_channels_t channel){
     scifTaskData.systemAgc.cfg.channelsSwitch = channel;
