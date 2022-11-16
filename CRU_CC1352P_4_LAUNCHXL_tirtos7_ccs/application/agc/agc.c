@@ -156,11 +156,6 @@ CRS_retVal_t Agc_init(void * sem){
     // update cfg struct of sensor controller
     AGC_sensorMode_t mode = Agc_getMode();
     scifTaskData.systemAgc.cfg.tddMode = mode;
-    #ifndef CLI_SENSOR
-        scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
-    #else
-        scifTaskData.systemAgc.cfg.unitType = TYPE_CRU;
-    #endif
     // get AGC interval time from thresholds file
     char thrshFile[4096]={0};
     Thresh_read("AgcInterval", thrshFile);
@@ -246,11 +241,6 @@ void Agc_process(void)
         // update cfg struct for next sample
         scifTaskData.systemAgc.cfg.tddMode = Agc_getMode();
         scifTaskData.systemAgc.cfg.channelsSwitch = gAgcChannel;
-        #ifndef CLI_SENSOR
-            scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
-        #else
-            scifTaskData.systemAgc.cfg.unitType = TYPE_CRU;
-        #endif
         // this is the mode the sample we got was on
         AGC_sensorMode_t mode = (AGC_sensorMode_t)scifTaskData.systemAgc.state.tddMode;
         // check alarms

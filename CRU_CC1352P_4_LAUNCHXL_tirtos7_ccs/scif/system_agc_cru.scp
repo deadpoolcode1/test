@@ -11,7 +11,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <pattr name="Code prefix"></pattr>
     <pattr name="Default power mode">0</pattr>
     <pattr name="Operating system">TI-RTOS</pattr>
-    <pattr name="Output directory">C:/Users/cellium/workspace_v12/crs_tirtos_test/CRU_CC1352P_4_LAUNCHXL_tirtos7_ccs/scif</pattr>
+    <pattr name="Output directory">C:\Users\yarden\Desktop\up_to_date_commit\crs_tirtos_test\CRU_CC1352P_4_LAUNCHXL_tirtos7_ccs\scif</pattr>
     <pattr name="RTC tick interval (16.16 format)">2000</pattr>
     <pattr name="Run-time logging UART RX pin"></pattr>
     <pattr name="Run-time logging UART TX pin"></pattr>
