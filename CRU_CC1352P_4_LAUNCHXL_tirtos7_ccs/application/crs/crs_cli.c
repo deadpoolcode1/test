@@ -167,6 +167,7 @@
 #define CLI_CRS_CONFIG_LINE "config line"
 #define CLI_CRS_CONFIG_FILE "config file"
 #define CLI_AGC_SET_GAP "agc set gap"
+#define CLI_AGC_GET_GAP "agc get gap"
 #define CLI_AGC_SET_TIME_MINMAX "agc set time"
 
 
@@ -298,6 +299,7 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line);
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
 static CRS_retVal_t CLI_agcSetGapParsing(char *line);
+static CRS_retVal_t CLI_agcGetGapParsing(char *line);
 static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line);
 static CRS_retVal_t CLI_setDioParsing(char *line);
 
@@ -1256,9 +1258,34 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
-                  Oad_flashFormat();
-                   inputBad = false;
-                   CLI_startREAD();
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FORMAT) + 2]), NULL,
+                                                  16);
+                 #ifndef CLI_SENSOR
+
+                     uint16_t addr = 0;
+                     Cllc_getFfdShortAddr(&addr);
+                     if (addr != shortAddr)
+                     {
+                         //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                         ApiMac_sAddr_t dstAddr;
+                         dstAddr.addr.shortAddr = shortAddr;
+                         dstAddr.addrMode = ApiMac_addrType_short;
+                         Collector_status_t stat;
+                         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                         if (stat != Collector_status_success)
+                         {
+                             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                             CLI_startREAD();
+                         }
+
+                 //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                         return CRS_SUCCESS;
+                     }
+                 #endif
+                    CRS_retVal_t ret= Oad_flashFormat();
+                   CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+                            inputBad = false;
+                            CLI_startREAD();
                }
 
 
@@ -1383,6 +1410,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_agcSetGapParsing(line);
           inputBad = false;
       }
+
+      else if (memcmp(CLI_AGC_GET_GAP, line, sizeof(CLI_AGC_GET_GAP) - 1) == 0){
+                    CLI_agcGetGapParsing(line);
+                    inputBad = false;
+                }
   else if (memcmp(CLI_AGC_SET_TIME_MINMAX, line, sizeof(CLI_AGC_SET_TIME_MINMAX) - 1) == 0){
       CLI_agcSetTimeMinMaxParsing(line);
           inputBad = false;
@@ -1842,6 +1874,59 @@ static CRS_retVal_t CLI_agcSetGapParsing(char *line)
     return retStatus;
 }
 
+
+//agc get gap [shortAddr] [start/stop] [tx/rx]
+static CRS_retVal_t CLI_agcGetGapParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        uint8_t isStart=0;
+        token = strtok(NULL, s); //[start/stop]
+        if (memcmp(token, "start", 5)==0) {
+            isStart=1;
+        }
+       uint8_t isTx=0;
+    token = strtok(NULL, s); //[tx/rx]
+    if (memcmp(token, "tx", 2)==0) {
+        isTx=1;
+    }
+    uint32_t result;
+    CRS_retVal_t retStatus=Agc_getGap(isStart,isTx,&result);
+    CLI_cliPrintf("\r\nGap Value: 0x%x", result);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
 
 //agc set time [shortAddr] [seconds]
 static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)

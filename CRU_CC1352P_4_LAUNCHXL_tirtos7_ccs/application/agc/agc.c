@@ -157,6 +157,7 @@ CRS_retVal_t Agc_init(void * sem){
     scifTaskData.systemAgc.cfg.tddMode = mode;
     #ifndef CLI_SENSOR
         scifTaskData.systemAgc.cfg.unitType = TYPE_CDU;
+
     #endif
     // get AGC interval time from thresholds file
     char thrshFile[4096]={0};
@@ -413,6 +414,22 @@ if (isStart) {
 return CRS_SUCCESS;
 }
 
+CRS_retVal_t Agc_getGap(uint8_t isStart,uint8_t detType, uint16_t* result){
+if (isStart) {
+    if (detType==1) {
+        *result = scifTaskData.systemAgc.input.gapStartTx;
+    }else{
+        *result =    scifTaskData.systemAgc.input.gapStartRx;
+    }
+}else{
+    if (detType==1) {
+        *result =      scifTaskData.systemAgc.input.gapStopTx;
+     }else{
+         *result =    scifTaskData.systemAgc.input.gapStopRx;
+     }
+}
+return CRS_SUCCESS;
+}
 
 
 CRS_retVal_t Agc_setTimeMinMax(uint16_t seconds){
