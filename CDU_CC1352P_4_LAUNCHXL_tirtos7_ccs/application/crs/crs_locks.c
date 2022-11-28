@@ -395,7 +395,9 @@ static CRS_retVal_t writeToTiLockReg(void)
 #ifndef CLI_SENSOR
 static CRS_retVal_t saveTddLockStatus(uint32_t val)
 {
-    bool isLocked = val != lockStatus_Unlocked;
+    // The logic in the TDD lock is reverse - 0 is locked and 1 is unlocked
+    // therefore - isLocked is true when val equals 0
+    bool isLocked = (val == lockStatus_Unlocked);
 
     if (isLocked)
     {
