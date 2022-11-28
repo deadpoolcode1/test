@@ -287,7 +287,7 @@ CRS_retVal_t Tdd_isLocked()
 {
 #ifndef CLI_SENSOR
     GPIO_init();
-    if(GPIO_read(CONFIG_GPIO_BTN1)){
+    if(!(GPIO_read(CONFIG_GPIO_BTN1))){
         return CRS_TDD_NOT_LOCKED;
     }
     return CRS_SUCCESS;

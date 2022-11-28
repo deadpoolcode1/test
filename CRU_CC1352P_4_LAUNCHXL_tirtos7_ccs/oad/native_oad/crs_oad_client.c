@@ -192,7 +192,7 @@ CRS_retVal_t OadClient_init(void *sem)
 
 CRS_retVal_t Oad_checkImgEnvVar(){
     //if this is a sensor img - update the img env var
-    if( _imgHdr.fixedHdr.softVer[0]=='S'){
+    if( _imgHdr.fixedHdr.softVer[0]=='S' || _imgHdr.fixedHdr.softVer[0]=='F'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
@@ -233,7 +233,7 @@ void OADClient_open(OADClient_Params_t *params)
 
 //    oadClockInitialize();
 
-    OADStorage_init();
+//    OADStorage_init();
 }
 
 /*!
@@ -255,7 +255,7 @@ CRS_retVal_t OadClient_process(void)
         oadInProgress=false;
         oadBNumBlocks=0;
         OADStorage_Status_t status = OADStorage_imgFinalise();
-//        OADStorage_close();
+        OADStorage_close();
         if (status == OADStorage_Status_Success) {
             CLI_cliPrintf("\r\nOAD completed successfully");
 //            SysCtrlSystemReset();
@@ -372,7 +372,7 @@ static void oadFwVersionReqCb(void *pSrcAddr)
 static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
                                 uint8_t *imgMetaData)
 {
-
+    OADStorage_init();
 //    CLI_cliPrintf("\r\noadImgIdentifyReqCb");
     /*
      * Ignore imgId - its not used in this
