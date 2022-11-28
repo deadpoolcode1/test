@@ -525,7 +525,7 @@ static OADProtocol_Status_t oadRadioAccessPacketSend(void *pDstAddr,
 //    ConcentratorRadioTask_sendNodeMsg( (uint8_t*) pDstAddr, pMsg, msgLen + 2);
 
 //free the memory allocated in oadRadioAccessAllocMsg
-    CRS_free(pMsg);
+    CRS_free(&pMsg);
 
     return status;
 }

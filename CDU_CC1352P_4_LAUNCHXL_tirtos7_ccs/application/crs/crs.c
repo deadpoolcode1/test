@@ -99,8 +99,12 @@ void* CRS_calloc(uint16_t num ,size_t size)
 
 void* CRS_realloc(void* ptr, uint16_t size)
 {
+    if(ptr == NULL)
+    {
+        ptr = malloc(size);
+        return ptr;
+    }
     return realloc(ptr, size);
-
 }
 
 /*!
@@ -108,13 +112,13 @@ void* CRS_realloc(void* ptr, uint16_t size)
 
  Public function defined in csf.h
  */
-void CRS_free(void *ptr)
+void CRS_free(char **ptr)
 {
 //    CRS_LOG(CRS_DEBUG, "FREEE");
-    if (ptr != NULL)
+    if (*ptr != NULL)
     {
-        free(ptr);
-
+        free(*ptr);
+        *ptr = NULL;
     }
 }
 

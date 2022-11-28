@@ -18,11 +18,11 @@
  Function Prototypes
  *****************************************************************************/
 
-CRS_retVal_t Env_init();
+CRS_retVal_t Env_init(void);
 CRS_retVal_t Env_read(char *vars, char *returnedVars);
 CRS_retVal_t Env_write(char *vars);
 CRS_retVal_t Env_delete(char *vars);
-CRS_retVal_t Env_format();
-CRS_retVal_t Env_restore();
+CRS_retVal_t Env_format(void);
+CRS_retVal_t Env_restore(void);
 
 #endif /* APPLICATION_CRS_CRS_ENV_H_ */
