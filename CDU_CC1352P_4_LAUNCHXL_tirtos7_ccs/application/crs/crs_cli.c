@@ -2972,8 +2972,12 @@ static CRS_retVal_t CLI_tddGetLockParsing(char *line)
              return CRS_SUCCESS;
          }
      #endif
+#ifdef CLI_SENSOR
+         CRS_retVal_t retStatus = (Tdd_isLocked());
 
-         CRS_retVal_t retStatus = Tdd_isLocked();
+#else
+         CRS_retVal_t retStatus = !(Tdd_isLocked());
+#endif
          if(retStatus == CRS_SUCCESS){
              CLI_cliPrintf("\r\nLOCKED");
          }
