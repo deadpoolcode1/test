@@ -296,6 +296,8 @@ void Agc_process(void)
               }else{
                   gCruTDDLocked=true;
               }
+          }else{
+              gCruTDDLocked=false;
           }
 #endif
 
