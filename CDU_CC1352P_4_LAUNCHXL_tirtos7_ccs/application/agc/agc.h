@@ -78,14 +78,12 @@ uint32_t totalSamples;
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t Agc_getControlPins(AGC_sensorMode_t mode, AGC_channels_t channel, AGC_ctrlPins_t *pins);
 CRS_retVal_t Agc_setChannel(AGC_channels_t channel);
 CRS_retVal_t Agc_setDio(uint32_t dioIdx,uint8_t value);
 CRS_retVal_t Agc_init(void * sem);
 void Agc_process(void);
 bool Agc_getLock();
 CRS_retVal_t Agc_sample();
-CRS_retVal_t Agc_sample_debug();
 void scTaskAlertCallback(void);
 void scCtrlReadyCallback(void);
 int Agc_isInitialized();
@@ -102,8 +100,8 @@ CRS_retVal_t Agc_ledOn();
 CRS_retVal_t Agc_ledOff();
 void printADCOutput();
 void Agc_avgCalc(uint16_t* outputArray,int32_t* avg,uint8_t channelNum);
-CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t detType, uint16_t ms);
-CRS_retVal_t Agc_getGap(uint8_t isStart,uint8_t detType, uint16_t* result);
+CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t isRising, uint16_t us);
+CRS_retVal_t Agc_getGap(uint8_t isStart,uint8_t isRising, uint16_t* result);
 CRS_retVal_t Agc_setTimeMinMax(uint32_t seconds);
 CRS_retVal_t Agc_getTimeMinMax(uint32_t* seconds);
 #ifdef CLI_SENSOR

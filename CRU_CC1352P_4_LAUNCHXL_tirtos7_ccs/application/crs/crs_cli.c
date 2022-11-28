@@ -1898,19 +1898,15 @@ static CRS_retVal_t CLI_agcSetGapParsing(char *line)
         if (memcmp(token, "start", 5)==0) {
             isStart=1;
         }
-       uint8_t isTx=0;
-    token = strtok(NULL, s); //[rising/falling]
+       uint8_t isRising=0;
+    token = strtok(NULL, s);// [rising/falling]
     if (memcmp(token, "rising", 6)==0) {
-        isTx=1;
+        isRising=1;
     }
-#ifdef CLI_SENSOR
-if(isTx){
-    isTx=0;
-}
-#endif
+
     token = strtok(NULL, s); //[us]
-    uint16_t ms = strtoul((token), NULL, 10);
-    CRS_retVal_t retStatus=Agc_setGap(isStart,isTx, ms);
+    uint16_t us = strtoul((token), NULL, 10);
+    CRS_retVal_t retStatus=Agc_setGap(isStart,isRising, us);
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
@@ -1957,23 +1953,20 @@ static CRS_retVal_t CLI_agcGetGapParsing(char *line)
         if (memcmp(token, "start", 5)==0) {
             isStart=1;
         }
-       uint8_t isTx=0;
-    token = strtok(NULL, s); //[rising/falling]
+       uint8_t isRising=0;
+    token = strtok(NULL, s); //[tx/rx]
     if (memcmp(token, "rising", 6)==0) {
-        isTx=1;
+        isRising=1;
     }
-#ifdef CLI_SENSOR
-if(isTx){
-    isTx=0;
-}
-#endif
-    uint32_t result;
-    CRS_retVal_t retStatus=Agc_getGap(isStart,isTx,&result);
+    uint16_t result;
+    CRS_retVal_t retStatus=Agc_getGap(isStart,isRising,&result);
     CLI_cliPrintf("\r\nGap Value: 0x%x", result);
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 }
+
+
 
 //agc set time [shortAddr] [seconds]
 static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)
