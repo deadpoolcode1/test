@@ -78,6 +78,26 @@ typedef struct
     int uc_rf_high_freq_hb_tx;
     int uc_if_low_freq_rx;
 
+    int dc_if_low_freq_tx_chip_1;
+    int dc_rf_high_freq_hb_rx_chip_0;
+    int uc_if_low_freq_rx_chip_1;
+    int uc_rf_high_freq_hb_tx_chip_0;
+
+    int dc_if_low_freq_tx_chip_3;
+    int dc_rf_high_freq_hb_rx_chip_2;
+    int uc_if_low_freq_rx_chip_3;
+    int uc_rf_high_freq_hb_tx_chip_2;
+
+    int dc_if_low_freq_tx_chip_5;
+    int dc_rf_high_freq_hb_rx_chip_4;
+    int uc_if_low_freq_rx_chip_5;
+    int uc_rf_high_freq_hb_tx_chip_4;
+
+    int dc_if_low_freq_tx_chip_7;
+    int dc_rf_high_freq_hb_rx_chip_6;
+    int uc_if_low_freq_rx_chip_7;
+    int uc_rf_high_freq_hb_tx_chip_6;
+
 } CRS_cb_gain_states_t;
 
 extern CRS_cb_gain_states_t CRS_cbGainStates;

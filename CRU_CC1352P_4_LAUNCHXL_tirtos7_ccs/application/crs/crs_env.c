@@ -168,7 +168,7 @@ CRS_retVal_t Env_restore(void)
     if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
     {
         CRS_free(&envCache);
-//        envCache = NULL;
+        envCache = NULL;
 //        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
 //        if (!envCache)
 //        {

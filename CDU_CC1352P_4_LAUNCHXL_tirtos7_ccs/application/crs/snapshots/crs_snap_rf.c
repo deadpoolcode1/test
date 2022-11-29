@@ -35,15 +35,15 @@ static Clock_Handle rfClkHandle;
 static uint32_t gRegIdx = 0;
 static uint32_t gLutIdx = 0;
 static uint32_t gGlobalIdx = 0;
-static uint16_t gLineMatrix[NUM_LUTS][LUT_REG_NUM] = { 0 };
-static uint16_t gGlobalReg[NUM_GLOBAL_REG] = { 0 };
-//static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
+static uint16_t gLineMatrix[NUM_LUTS][LUT_REG_NUM] = {0};
+static uint16_t gGlobalReg[NUM_GLOBAL_REG] = {0};
+// static char gLineToSendArray[9][CRS_NVS_LINE_BYTES] = { 0 };
 static uint32_t gRfAddr = 0;
 static uint32_t gRFline = 0;
-//static CRS_chipMode_t gMode = MODE_NATIVE;
+// static CRS_chipMode_t gMode = MODE_NATIVE;
 static FPGA_cbFn_t gCbFn = NULL;
 static uint16_t gRFEvents = 0;
-static char gLutRegRdResp[LINE_SZ] = { 0 };
+static char gLutRegRdResp[LINE_SZ] = {0};
 static Semaphore_Handle collectorSem;
 
 static bool gIsInTheMiddleOfTheFile = false;
@@ -64,7 +64,7 @@ static CRS_retVal_t initRfSnapValues();
 static CRS_retVal_t readLutReg();
 static CRS_retVal_t readGlobalReg();
 static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs);
-//static CRS_retVal_t getPrevLine(char *line);
+// static CRS_retVal_t getPrevLine(char *line);
 static CRS_retVal_t getNextLine(char *line);
 static CRS_retVal_t runFile();
 static CRS_retVal_t getVal(char *line, char *rsp);
@@ -109,7 +109,7 @@ CRS_retVal_t RF_init(void *sem)
                                       0,
                                       false,
                                       0);
-return CRS_SUCCESS;
+    return CRS_SUCCESS;
 }
 
 CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
@@ -119,41 +119,117 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
     if (Fpga_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
-        const FPGA_cbArgs_t cbArgs = { 0 };
+        const FPGA_cbArgs_t cbArgs = {0};
         cbFunc(cbArgs);
         return CRS_FAILURE;
     }
 
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
-               sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL)
+               sizeof("DC_RF_HIGH_FREQ_HB_RX") - 1) == 0 &&
+        nameVals != NULL)
     {
-        CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value;
-
+        switch (rfAddr)
+        {
+        case 0:
+            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
+            break;
+        case 2:
+            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
+            break;
+        case 4:
+            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = nameVals[0].value;
+            break;
+        case 6:
+            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = nameVals[0].value;
+            break;
+        default:
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+            return CRS_FAILURE; // INVALID!
+            break;
+        }
+        CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value; // legacy value
     }
     else if (memcmp(filename, "DC_IF_LOW_FREQ_TX",
-                    sizeof("DC_IF_LOW_FREQ_TX") -1) == 0 && nameVals != NULL)
+                    sizeof("DC_IF_LOW_FREQ_TX") - 1) == 0 &&
+             nameVals != NULL)
     {
+        switch (rfAddr)
+        {
+        case 1:
+            CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = nameVals[0].value;
+            break;
+        case 3:
+            CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = nameVals[0].value;
+            break;
+        case 5:
+            CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = nameVals[0].value;
+            break;
+        case 7:
+            CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = nameVals[0].value;
+            break;
+        default:
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+            return CRS_FAILURE; // INVALID!
+            break;
+        }
         CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
-
     }
     else if (memcmp(filename, "UC_RF_HIGH_FREQ_HB_TX",
-                    sizeof("UC_RF_HIGH_FREQ_HB_TX")-1) == 0 && nameVals != NULL)
+                    sizeof("UC_RF_HIGH_FREQ_HB_TX") - 1) == 0 &&
+             nameVals != NULL)
     {
+        switch (rfAddr)
+        {
+        case 0:
+            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = nameVals[0].value;
+            break;
+        case 2:
+            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = nameVals[0].value;
+            break;
+        case 4:
+            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = nameVals[0].value;
+            break;
+        case 6:
+            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = nameVals[0].value;
+            break;
+        default:
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+            return CRS_FAILURE; // INVALID!
+            break;
+        }
         CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
-
     }
     else if (memcmp(filename, "UC_IF_LOW_FREQ_RX",
-                    sizeof("UC_IF_LOW_FREQ_RX")-1) == 0 && nameVals != NULL)
+                    sizeof("UC_IF_LOW_FREQ_RX") - 1) == 0 &&
+             nameVals != NULL)
     {
+        switch (rfAddr)
+        {
+        case 1:
+            CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = nameVals[0].value;
+            break;
+        case 3:
+            CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = nameVals[0].value;
+            break;
+        case 5:
+            CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = nameVals[0].value;
+            break;
+        case 7:
+            CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = nameVals[0].value;
+            break;
+        default:
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+            return CRS_FAILURE; // INVALID!
+            break;
+        }
         CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
-
     }
 
     initRfSnapValues();
 
     gCbFn = cbFunc;
     gRFline = RfLineNum;
-//    gMode = chipMode;
+    //    gMode = chipMode;
     gRfAddr = rfAddr;
     if (nameVals != NULL)
     {
@@ -176,7 +252,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         return CRS_FAILURE;
     }
 
-//filling up local rf line
+    // filling up local rf line
     if (rfAddr == 0xff)
     {
         Util_setEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
@@ -196,10 +272,10 @@ void RF_process(void)
     if (gRFEvents & READ_NEXT_REG_EV)
     {
 
-        //last lut only 28 bits
+        // last lut only 28 bits
         if (gLutIdx == 3)
         {
-            //finished reading
+            // finished reading
 
             if (gRegIdx == 2)
             {
@@ -215,12 +291,10 @@ void RF_process(void)
             gRegIdx = 0;
             gLutIdx++;
             readLutReg();
-
         }
         else
         {
             readLutReg();
-
         }
 
         Util_clearEvent(&gRFEvents, READ_NEXT_REG_EV);
@@ -229,7 +303,7 @@ void RF_process(void)
     if (gRFEvents & CHANGE_ACTIVE_LINE_EV)
     {
         CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
-        char line[100] = { 0 };
+        char line[100] = {0};
         sprintf(line, "wr 0xa 0x%x", gRFline);
         Fpga_writeMultiLineNoPrint(line, changedActiveLineCb);
         Util_clearEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
@@ -238,7 +312,7 @@ void RF_process(void)
     if (gRFEvents & CHANGE_RF_CHIP_EV)
     {
         CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
-        char line[100] = { 0 };
+        char line[100] = {0};
         sprintf(line, "wr 0xff 0x%x", gRfAddr);
         Fpga_writeMultiLineNoPrint(line, changedRfChipCb);
         Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
@@ -246,8 +320,8 @@ void RF_process(void)
 
     if (gRFEvents & START_UPLOAD_FILE_EV)
     {
-//        sprintf("wr 0xa 0x%x", gRFline);
-//        Fpga_writeMultiLineNoPrint(line, changedActiveLineCb);
+        //        sprintf("wr 0xa 0x%x", gRFline);
+        //        Fpga_writeMultiLineNoPrint(line, changedActiveLineCb);
         Util_clearEvent(&gRFEvents, START_UPLOAD_FILE_EV);
         CRS_retVal_t rsp = runFile();
         if (rsp == CRS_SUCCESS)
@@ -257,7 +331,6 @@ void RF_process(void)
             gGlobalIdx = 0;
             writeLutToFpga(gLutIdx);
         }
-
     }
 
     if (gRFEvents & READ_NEXT_GLOBAL_REG_EV)
@@ -272,7 +345,6 @@ void RF_process(void)
         else
         {
             readGlobalReg();
-
         }
 
         Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
@@ -287,12 +359,11 @@ void RF_process(void)
         else
         {
             writeGlobalsToFpga();
-
         }
         Util_clearEvent(&gRFEvents, WRITE_NEXT_LUT_EV);
     }
-    //WRITE_NEXT_LUT_EV
-//    FINISHED_FILE_EV
+    // WRITE_NEXT_LUT_EV
+    //    FINISHED_FILE_EV
     if (gRFEvents & FINISHED_FILE_EV)
     {
         if (gIsInTheMiddleOfTheFile == true)
@@ -304,13 +375,12 @@ void RF_process(void)
         else
         {
             CRS_free(&gFileContentCache);
-            const FPGA_cbArgs_t cbArgs={0};
+            const FPGA_cbArgs_t cbArgs = {0};
             gCbFn(cbArgs);
         }
 
         Util_clearEvent(&gRFEvents, FINISHED_FILE_EV);
     }
-
 }
 
 /******************************************************************************
@@ -319,16 +389,15 @@ void RF_process(void)
 static CRS_retVal_t runFile()
 {
 
-    char line[100] = { 0 };
+    char line[100] = {0};
     while (getNextLine(line) == CRS_SUCCESS)
     {
         CRS_LOG(CRS_DEBUG, "Running line: %s", line);
-        char rspLine[100] = { 0 };
+        char rspLine[100] = {0};
 
         if (((strstr(line, "16b'")) || (strstr(line, "32b'"))))
         {
             runStarCommand(line, rspLine);
-
         }
         else if (memcmp(line, "w ", 2) == 0)
         {
@@ -363,8 +432,8 @@ static CRS_retVal_t runFile()
             gIsInTheMiddleOfTheFile = true;
             return CRS_SUCCESS;
 
-//            runWCommand("wr 0x50 0x000000");
-//            runWCommand("wr 0x50 0x000001");
+            //            runWCommand("wr 0x50 0x000000");
+            //            runWCommand("wr 0x50 0x000001");
         }
         else if (memcmp(line, "delay", 5) == 0)
         {
@@ -388,21 +457,19 @@ static CRS_retVal_t runFile()
             }
         }
 
-        //isGlobal
-        //w 0x1a10601c 0x8888
-        //convert the line to the lut num and lut reg. and get the val to put into there.
-        //matrix[lut][reg] = val
+        // isGlobal
+        // w 0x1a10601c 0x8888
+        // convert the line to the lut num and lut reg. and get the val to put into there.
+        // matrix[lut][reg] = val
         memset(line, 0, 100);
-
     }
     return CRS_SUCCESS;
-
 }
 
 static CRS_retVal_t runStarCommand(char *line, char *rspLine)
 {
     bool rsp = false;
-    //if its a global reg
+    // if its a global reg
     isGlobal(line, &rsp);
     if (rsp == true)
     {
@@ -434,7 +501,7 @@ static CRS_retVal_t runStarCommand(char *line, char *rspLine)
         return CRS_SUCCESS;
     }
 
-    //if its next line
+    // if its next line
     isNextLine(line, &rsp);
     if (rsp == true)
     {
@@ -476,19 +543,19 @@ static CRS_retVal_t runStarCommand(char *line, char *rspLine)
 static CRS_retVal_t runWCommand(char *line)
 {
     bool rsp = false;
-    //if its a global reg
+    // if its a global reg
     isGlobal(line, &rsp);
     if (rsp == true)
     {
         uint32_t addrVal = 0;
-        char val[20] = { 0 };
+        char val[20] = {0};
         getAddress(line, &addrVal);
         getVal(line, val);
         gGlobalReg[addrVal - 0x3f] = strtoul(val, NULL, 16);
         return CRS_SUCCESS;
     }
 
-    //if its next line
+    // if its next line
     isNextLine(line, &rsp);
     if (rsp == true)
     {
@@ -500,7 +567,7 @@ static CRS_retVal_t runWCommand(char *line)
     getLutNumberFromLine(line, &lutNumber);
     getLutRegFromLine(line, &lutReg);
 
-    char val[20] = { 0 };
+    char val[20] = {0};
     getVal(line, val);
 
     gLineMatrix[lutNumber][lutReg] = strtoul(val, NULL, 16);
@@ -524,8 +591,8 @@ static CRS_retVal_t runRCommand(char *line)
 
 static CRS_retVal_t runEwCommand(char *line)
 {
-    char lineToSend[100] = { 0 };
-    char lineTemp[100] = { 0 };
+    char lineToSend[100] = {0};
+    char lineTemp[100] = {0};
     memcpy(lineTemp, line, 100);
     //    memcpy(lineToSend, line, 100);
 
@@ -534,10 +601,10 @@ static CRS_retVal_t runEwCommand(char *line)
     lineToSend[2] = ' ';
     const char s[2] = " ";
     char *token;
-    token = strtok(lineTemp, s); //wr
-    token = strtok(NULL, s); //addr
+    token = strtok(lineTemp, s); // wr
+    token = strtok(NULL, s);     // addr
     strcat(lineToSend, token);
-    token = strtok(NULL, s); //param or val
+    token = strtok(NULL, s); // param or val
     int i = 0;
     if (*token == '_')
     {
@@ -567,13 +634,13 @@ static CRS_retVal_t runErCommand(char *line)
 static CRS_retVal_t incermentParam(char *line)
 {
     char *ptr = line;
-    char varName[NAMEVALUE_NAME_SZ] = { 0 };
-    char a[NAMEVALUE_NAME_SZ] = { 0 };
+    char varName[NAMEVALUE_NAME_SZ] = {0};
+    char a[NAMEVALUE_NAME_SZ] = {0};
     int32_t aInt = 0;
-    char b[NAMEVALUE_NAME_SZ] = { 0 };
+    char b[NAMEVALUE_NAME_SZ] = {0};
     int32_t bInt = 0;
     int32_t result = 0;
-//    char varValue[10] = { 0 };
+    //    char varValue[10] = { 0 };
     int i = 0;
     while (*ptr != ' ')
     {
@@ -581,7 +648,7 @@ static CRS_retVal_t incermentParam(char *line)
         i++;
         ptr++;
     }
-    ptr += 3;        //skip ' = '
+    ptr += 3; // skip ' = '
     i = 0;
     while (*ptr != ' ')
     {
@@ -589,7 +656,7 @@ static CRS_retVal_t incermentParam(char *line)
         i++;
         ptr++;
     }
-    ptr += 3;        //skip ' + '
+    ptr += 3; // skip ' + '
     i = 0;
     while (*ptr)
     {
@@ -649,8 +716,8 @@ static CRS_retVal_t incermentParam(char *line)
 static CRS_retVal_t addParam(char *line)
 {
     char *ptr = line;
-    char varName[NAMEVALUE_NAME_SZ] = { 0 };
-    char varValue[NAMEVALUE_NAME_SZ] = { 0 };
+    char varName[NAMEVALUE_NAME_SZ] = {0};
+    char varValue[NAMEVALUE_NAME_SZ] = {0};
     int i = 0;
     while (*ptr != ' ')
     {
@@ -658,7 +725,7 @@ static CRS_retVal_t addParam(char *line)
         i++;
         ptr++;
     }
-    ptr += 3;        //skip ' = '
+    ptr += 3; // skip ' = '
     int idx = 0;
     while (1)
     {
@@ -683,7 +750,7 @@ static CRS_retVal_t addParam(char *line)
         {
             if (memcmp(gNameValues[i].name, varValue, NAMEVALUE_NAME_SZ) == 0)
             {
-//                CLI_cliPrintf("gNameValues[idx].value: %d\r\ngNameValues[i].value: %d\r\n",gNameValues[idx].value,gNameValues[i].value);
+                //                CLI_cliPrintf("gNameValues[idx].value: %d\r\ngNameValues[i].value: %d\r\n",gNameValues[idx].value,gNameValues[i].value);
                 gNameValues[idx].value = gNameValues[i].value;
                 break;
             }
@@ -700,8 +767,8 @@ static CRS_retVal_t runSlashCommand(char *line)
 {
 
     char *ptr = line;
-    char varName[NAMEVALUE_NAME_SZ] = { 0 };
-    char varValue[NAMEVALUE_NAME_SZ] = { 0 };
+    char varName[NAMEVALUE_NAME_SZ] = {0};
+    char varValue[NAMEVALUE_NAME_SZ] = {0};
     int i = 0;
     while (*ptr != ' ')
     {
@@ -710,7 +777,7 @@ static CRS_retVal_t runSlashCommand(char *line)
     ptr++;
     if (memcmp(ptr, "param", 5) == 0)
     {
-        ptr += 6;        //skip 'param '
+        ptr += 6; // skip 'param '
         while (*ptr != ',')
         {
             varName[i] = *ptr;
@@ -752,16 +819,16 @@ static CRS_retVal_t runSlashCommand(char *line)
             gNameValues[idx].value = strtol(varValue, NULL, 10);
             i = 0;
         }
-//        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
+        //        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
     }
     return CRS_SUCCESS;
 }
 
-static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label'
+static CRS_retVal_t runGotoCommand(char *line) // expecting to accept 'goto label'
 {
     char *ptr = line;
-    ptr += 5;        //skip 'goto '
-    char label[10] = { 0 };
+    ptr += 5; // skip 'goto '
+    char label[10] = {0};
     strcat(label, "\n");
     strcat(label, ptr);
     strcat(label, ":");
@@ -773,13 +840,13 @@ static CRS_retVal_t runGotoCommand(char *line) //expecting to accept 'goto label
 
 static CRS_retVal_t runIfCommand(char *line)
 {
-    char param[NAMEVALUE_NAME_SZ] = { 0 };
-    char comparedVal[10] = { 0 };
-    char label[20] = { 0 };
+    char param[NAMEVALUE_NAME_SZ] = {0};
+    char comparedVal[10] = {0};
+    char label[20] = {0};
     strcat(label, "goto ");
     int32_t comparedValInt = 0;
     char *ptr = line;
-    ptr += 3;        //skip 'if '
+    ptr += 3; // skip 'if '
     int i = 0;
     while (*ptr != ' ')
     {
@@ -788,7 +855,7 @@ static CRS_retVal_t runIfCommand(char *line)
         i++;
     }
     i = 0;
-    ptr += 4;        //skip ' == '
+    ptr += 4; // skip ' == '
     while (*ptr != ' ')
     {
         comparedVal[i] = *ptr;
@@ -805,7 +872,7 @@ static CRS_retVal_t runIfCommand(char *line)
         }
         i++;
     }
-    ptr += 6;        //skip ' then '
+    ptr += 6; // skip ' then '
     strcat(label, ptr);
     if (gNameValues[i].value == comparedValInt)
     {
@@ -816,17 +883,17 @@ static CRS_retVal_t runIfCommand(char *line)
 
 static CRS_retVal_t runPrintCommand(char *line)
 {
-    char lineTemp[50] = { 0 };
+    char lineTemp[50] = {0};
     strcat(lineTemp, line);
     char *ptr = lineTemp;
-    char param[NAMEVALUE_NAME_SZ] = { 0 };
-    ptr += 7;        //skip 'print "'
+    char param[NAMEVALUE_NAME_SZ] = {0};
+    ptr += 7; // skip 'print "'
     while (*ptr != '"')
     {
         CLI_cliPrintf("%c", *ptr);
         ptr++;
     }
-    ptr += 2;        //skip '" '
+    ptr += 2; // skip '" '
     int i = 0;
     while (*ptr)
     {
@@ -848,19 +915,19 @@ static CRS_retVal_t runPrintCommand(char *line)
         CLI_cliPrintf(" %d", gNameValues[i].value);
     }
     CLI_cliPrintf("\r\n");
-//ptr+=2;//skip '" '
+    // ptr+=2;//skip '" '
     return CRS_SUCCESS;
 }
 
 static CRS_retVal_t writeGlobalsToFpga()
 {
 
-    char lines[600] = { 0 };
+    char lines[600] = {0};
     int x = 0;
     for (x = 0; x < 4; x++)
     {
-        char addr[11] = { 0 };
-        char val[11] = { 0 };
+        char addr[11] = {0};
+        char val[11] = {0};
 
         convertGlobalRegToAddrStr(x, addr);
         convertGlobalRegDataToStr(x, val);
@@ -880,10 +947,10 @@ static void writeGlobalsCb(const FPGA_cbArgs_t _cbArgs)
 
 static CRS_retVal_t convertGlobalRegDataToStr(uint32_t regIdx, char *data)
 {
-    char valStr[10] = { 0 };
+    char valStr[10] = {0};
     memset(valStr, '0', 4);
     uint16_t val = gGlobalReg[regIdx];
-    char tmp[11] = { 0 };
+    char tmp[11] = {0};
     sprintf(tmp, "%x", val);
     sprintf(&valStr[4 - strlen(tmp)], "%s", tmp);
     memcpy(data, valStr, 4);
@@ -906,7 +973,6 @@ static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr)
     case 3:
         memcpy(addr, "42", 2);
         break;
-
     }
     return (CRS_SUCCESS);
 }
@@ -914,16 +980,16 @@ static CRS_retVal_t convertGlobalRegToAddrStr(uint32_t regIdx, char *addr)
 static CRS_retVal_t writeLutToFpga(uint32_t lutNumber)
 {
     char *startSeq = "wr 0x50 0x430000\nwr 0x50 0x000001\nwr 0x50 0x000000";
-    char endSeq[100] = { 0 };
+    char endSeq[100] = {0};
     sprintf(endSeq, "\nwr 0x50 0x430%x0%x\nwr 0x50 0x000001\nwr 0x50 0x000000",
             gRFline, (1 << lutNumber));
-    char lines[600] = { 0 };
+    char lines[600] = {0};
     memcpy(lines, startSeq, strlen(startSeq));
     int x = 0;
     for (x = 0; x < 8; x++)
     {
-        char addr[11] = { 0 };
-        char val[11] = { 0 };
+        char addr[11] = {0};
+        char val[11] = {0};
 
         convertLutRegToAddrStr(x, addr);
         convertLutRegDataToStr(x, lutNumber, val);
@@ -934,7 +1000,6 @@ static CRS_retVal_t writeLutToFpga(uint32_t lutNumber)
     Fpga_writeMultiLineNoPrint(lines, writeLutCb);
 
     return (CRS_SUCCESS);
-
 }
 static void writeLutCb(const FPGA_cbArgs_t _cbArgs)
 {
@@ -945,10 +1010,10 @@ static void writeLutCb(const FPGA_cbArgs_t _cbArgs)
 static CRS_retVal_t convertLutRegDataToStr(uint32_t regIdx, uint32_t lutNumber,
                                            char *data)
 {
-    char valStr[10] = { 0 };
+    char valStr[10] = {0};
     memset(valStr, '0', 4);
     uint16_t val = gLineMatrix[lutNumber][regIdx];
-    char tmp[11] = { 0 };
+    char tmp[11] = {0};
     sprintf(tmp, "%x", val);
     sprintf(&valStr[4 - strlen(tmp)], "%s", tmp);
     memcpy(data, valStr, 4);
@@ -987,9 +1052,8 @@ static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr)
     return (CRS_SUCCESS);
 }
 
-
 //
-//static CRS_retVal_t getPrevLine(char *line)
+// static CRS_retVal_t getPrevLine(char *line)
 //{
 ////    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
 ////    static uint32_t gFileContentCacheIdx = 0;
@@ -1027,8 +1091,8 @@ static CRS_retVal_t convertLutRegToAddrStr(uint32_t regIdx, char *addr)
 
 static CRS_retVal_t getNextLine(char *line)
 {
-//    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
-//    static uint32_t gFileContentCacheIdx = 0;
+    //    static char gFileContentCache[FILE_CACHE_SZ] = { 0 };
+    //    static uint32_t gFileContentCacheIdx = 0;
 
     while (gFileContentCache[gFileContentCacheIdx] == '\n')
     {
@@ -1080,7 +1144,7 @@ static CRS_retVal_t initRfSnapValues()
     initNameValues();
 
     gCbFn = NULL;
-//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
+    //    memset(gFileContentCache, 0, FILE_CACHE_SZ);
 
     gFileContentCacheIdx = 0;
 
@@ -1109,7 +1173,6 @@ static CRS_retVal_t isGlobal(char *line, bool *rsp)
     *rsp = false;
 
     return (CRS_SUCCESS);
-
 }
 
 static CRS_retVal_t isNextLine(char *line, bool *rsp)
@@ -1132,27 +1195,26 @@ static CRS_retVal_t isNextLine(char *line, bool *rsp)
     *rsp = false;
 
     return (CRS_SUCCESS);
-
 }
 
-//w 0x1a10601c 0x0003
-//returns 1c/4
+// w 0x1a10601c 0x0003
+// returns 1c/4
 static CRS_retVal_t getAddress(char *line, uint32_t *rsp)
 {
     const char s[2] = " ";
     char *token;
     /* get the first token */
-    char tokenMode[5] = { 0 }; //w r ew er
-    char tokenAddr[15] = { 0 }; //0x1a10601c
-    char tokenValue[10] = { 0 }; //0x0003
-    char baseAddr[15] = { 0 };
+    char tokenMode[5] = {0};   // w r ew er
+    char tokenAddr[15] = {0};  // 0x1a10601c
+    char tokenValue[10] = {0}; // 0x0003
+    char baseAddr[15] = {0};
     memset(baseAddr, '0', 8);
 
-    char tmpReadLine[CRS_NVS_LINE_BYTES + 1] = { 0 };
+    char tmpReadLine[CRS_NVS_LINE_BYTES + 1] = {0};
     memcpy(tmpReadLine, line, CRS_NVS_LINE_BYTES);
-    token = strtok((tmpReadLine), s); //w or r
+    token = strtok((tmpReadLine), s); // w or r
     memcpy(tokenMode, token, 2);
-    token = strtok(NULL, s); //addr
+    token = strtok(NULL, s); // addr
     memcpy(tokenAddr, &token[2], 8);
     memcpy(baseAddr, &token[2], 5);
 
@@ -1166,27 +1228,26 @@ static CRS_retVal_t getAddress(char *line, uint32_t *rsp)
 
     *rsp = addrVal;
     return CRS_SUCCESS;
-
 }
 
-//w 0x1a10601c 0x0003
-//returns 0003
+// w 0x1a10601c 0x0003
+// returns 0003
 static CRS_retVal_t getVal(char *line, char *rsp)
 {
     const char s[2] = " ";
     char *token;
     /* get the first token */
-    char tokenMode[5] = { 0 }; //w r ew er
-    char tokenAddr[15] = { 0 }; //0x1a10601c
-//    char tokenValue[10] = { 0 }; //0x0003
-    char baseAddr[15] = { 0 };
+    char tokenMode[5] = {0};  // w r ew er
+    char tokenAddr[15] = {0}; // 0x1a10601c
+    //    char tokenValue[10] = { 0 }; //0x0003
+    char baseAddr[15] = {0};
     memset(baseAddr, '0', 8);
 
-    char tmpReadLine[CRS_NVS_LINE_BYTES + 1] = { 0 };
+    char tmpReadLine[CRS_NVS_LINE_BYTES + 1] = {0};
     memcpy(tmpReadLine, line, CRS_NVS_LINE_BYTES);
-    token = strtok((tmpReadLine), s); //w or r
+    token = strtok((tmpReadLine), s); // w or r
     memcpy(tokenMode, token, 2);
-    token = strtok(NULL, s); //addr
+    token = strtok(NULL, s); // addr
     memcpy(tokenAddr, &token[2], 8);
     memcpy(baseAddr, &token[2], 5);
 
@@ -1196,8 +1257,8 @@ static CRS_retVal_t getVal(char *line, char *rsp)
     addrVal = ((addrVal - baseAddrVal) / 4);
 
     token = strtok(NULL, s); // value | param
-    //TODO: verify with michael how do we set params in files.
-    if (*token == '_')    //if token is param
+    // TODO: verify with michael how do we set params in files.
+    if (*token == '_') // if token is param
     {
         int i = 0;
         while (i < NAME_VALUES_SZ)
@@ -1210,13 +1271,12 @@ static CRS_retVal_t getVal(char *line, char *rsp)
             i++;
         }
     }
-    else    //if token is a value
+    else // if token is a value
     {
         memcpy(rsp, &token[2], 4);
     }
 
     return CRS_SUCCESS;
-
 }
 
 static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber)
@@ -1227,7 +1287,6 @@ static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber)
     {
         *lutNumber = 0;
         return (CRS_SUCCESS);
-
     }
 
     if ((addrVal >= 0x10 && addrVal <= 0x17))
@@ -1248,7 +1307,6 @@ static CRS_retVal_t getLutNumberFromLine(char *line, uint32_t *lutNumber)
         return (CRS_SUCCESS);
     }
     return (CRS_FAILURE);
-
 }
 
 static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg)
@@ -1293,29 +1351,28 @@ static CRS_retVal_t getLutRegFromLine(char *line, uint32_t *lutReg)
         break;
     }
     return (CRS_SUCCESS);
-
 }
 
 static CRS_retVal_t readLutReg()
 {
-//b'wr 0x50 0x390062\r'
-//b'wr 0x50 0x000001\r'
-//b'wr 0x50 0x000000\r'
-//b'wr 0x51 0x510000\r'
-//b'rd 0x51\r'
+    // b'wr 0x50 0x390062\r'
+    // b'wr 0x50 0x000001\r'
+    // b'wr 0x50 0x000000\r'
+    // b'wr 0x51 0x510000\r'
+    // b'rd 0x51\r'
 
-//    char addr[15] = { 0 };
-//    char convertedRdResp[2][CRS_NVS_LINE_BYTES] = { 0 };
-//    Convert_wr(addr, gMode, gRfAddr, convertedRdResp);
+    //    char addr[15] = { 0 };
+    //    char convertedRdResp[2][CRS_NVS_LINE_BYTES] = { 0 };
+    //    Convert_wr(addr, gMode, gRfAddr, convertedRdResp);
 
-    char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
+    char lines[9][CRS_NVS_LINE_BYTES] = {0};
     sprintf(lines[0], "wr 0x50 0x3900%x%x", gRegIdx, gLutIdx);
     memcpy(lines[1], "wr 0x50 0x000001", strlen("wr 0x50 0x000001"));
     memcpy(lines[2], "wr 0x50 0x000000", strlen("wr 0x50 0x000000"));
     memcpy(lines[3], "wr 0x51 0x510000", strlen("wr 0x51 0x510000"));
     memcpy(lines[4], "rd 0x51", strlen("rd 0x51"));
 
-    char line[200] = { 0 };
+    char line[200] = {0};
     flat2DArray(lines, 5, line);
     Fpga_writeMultiLineNoPrint(line, readLutRegCb);
     return CRS_SUCCESS;
@@ -1323,18 +1380,18 @@ static CRS_retVal_t readLutReg()
 
 static CRS_retVal_t readGlobalReg()
 {
-//b'wr 0x50 0x390062\r'
-//b'wr 0x50 0x000001\r'
-//b'wr 0x50 0x000000\r'
-//b'wr 0x51 0x510000\r'
-//b'rd 0x51\r'
+    // b'wr 0x50 0x390062\r'
+    // b'wr 0x50 0x000001\r'
+    // b'wr 0x50 0x000000\r'
+    // b'wr 0x51 0x510000\r'
+    // b'rd 0x51\r'
 
-//from 0x3f to 0x42
-    char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
+    // from 0x3f to 0x42
+    char lines[9][CRS_NVS_LINE_BYTES] = {0};
     sprintf(lines[0], "wr 0x51 0x%x0000", gGlobalIdx + 0x3f);
     memcpy(lines[1], "rd 0x51", strlen("rd 0x51"));
 
-    char line[200] = { 0 };
+    char line[200] = {0};
     flat2DArray(lines, 2, line);
     Fpga_writeMultiLineNoPrint(line, readGlobalRegCb);
     return CRS_SUCCESS;
@@ -1353,11 +1410,10 @@ static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
         strcat(respLine, lines[i]);
     }
     return CRS_SUCCESS;
-
 }
 
-//static CRS_retVal_t convertRfRegLut(uint32_t regIdx, uint32_t lutIdx,
-//                                    char *resp)
+// static CRS_retVal_t convertRfRegLut(uint32_t regIdx, uint32_t lutIdx,
+//                                     char *resp)
 //{
 ////    wr 0x50 0x3900  0   0
 ////                  reg  lut
@@ -1368,7 +1424,7 @@ static CRS_retVal_t flat2DArray(char lines[9][CRS_NVS_LINE_BYTES],
 static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
 {
     char *line = _cbArgs.arg3;
-//    uint32_t size = _cbArgs.arg0;
+    //    uint32_t size = _cbArgs.arg0;
 
     memset(gLutRegRdResp, 0, LINE_SZ);
 
@@ -1385,7 +1441,6 @@ static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
                 counter++;
                 isFirst = false;
                 continue;
-
             }
             isNumber = true;
             gLutRegRdResp[gTmpLine_idx] = line[counter];
@@ -1405,7 +1460,6 @@ static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
             gTmpLine_idx++;
             counter++;
             continue;
-
         }
         counter++;
     }
@@ -1413,7 +1467,7 @@ static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
     gLineMatrix[gLutIdx][gRegIdx] = strtoul(&gLutRegRdResp[6], NULL, 16);
     gRegIdx++;
 
-//    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
+    //    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
     Util_setEvent(&gRFEvents, READ_NEXT_REG_EV);
 
     Semaphore_post(collectorSem);
@@ -1422,7 +1476,7 @@ static void readLutRegCb(const FPGA_cbArgs_t _cbArgs)
 static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs)
 {
     char *line = _cbArgs.arg3;
-//    uint32_t size = _cbArgs.arg0;
+    //    uint32_t size = _cbArgs.arg0;
 
     memset(gLutRegRdResp, 0, LINE_SZ);
 
@@ -1439,7 +1493,6 @@ static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs)
                 counter++;
                 isFirst = false;
                 continue;
-
             }
             isNumber = true;
             gLutRegRdResp[gTmpLine_idx] = line[counter];
@@ -1459,7 +1512,6 @@ static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs)
             gTmpLine_idx++;
             counter++;
             continue;
-
         }
         counter++;
     }
@@ -1467,7 +1519,7 @@ static void readGlobalRegCb(const FPGA_cbArgs_t _cbArgs)
     gGlobalReg[gGlobalIdx] = strtoul(&gLutRegRdResp[6], NULL, 16);
     gGlobalIdx++;
 
-//    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
+    //    CLI_cliPrintf("\r\nrd rsp after my parsing: %s\r\n", gTmpLine);
     Util_setEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
 
     Semaphore_post(collectorSem);
