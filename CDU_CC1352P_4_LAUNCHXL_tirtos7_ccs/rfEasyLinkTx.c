@@ -62,7 +62,7 @@
 /* CRS protocol */
 #include "mac/macTask.h"
 #include "application/collector.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "application/crs/crs_cli.h"
 #include "mac/mediator.h"
 #include "oad/crs_oad.h"

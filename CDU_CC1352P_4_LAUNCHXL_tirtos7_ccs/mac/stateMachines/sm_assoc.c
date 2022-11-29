@@ -25,7 +25,7 @@
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
 #include "mac/mac_util.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -136,7 +136,7 @@ void Smas_process()
 
     if (smasEvents & SMAS_DEBUG_EVT)
     {
-        CP_CLI_cliPrintf("\r\nrecived assoc req 0x%x", gNumReq);
+//        CP_CLI_cliPrintf("\r\nrecived assoc req 0x%x", gNumReq);
         Util_clearEvent(&smasEvents, SMAS_DEBUG_EVT);
     }
 

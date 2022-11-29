@@ -20,7 +20,7 @@
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
 #include "mac/mac_util.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -129,14 +129,14 @@ void Smas_process()
         MAC_moveToSmriState();
         MAC_sendAssocIndToApp(&rsp);
 
-        CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
+//        CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
 
         Util_clearEvent(&smasEvents, SMAS_JOINED_NETWORK_EVT);
     }
 
     if (smasEvents & SMAS_SEND_ASSOC_REQ_EVT)
     {
-        CP_CLI_cliPrintf("\r\nFinished sending assoc req");
+//        CP_CLI_cliPrintf("\r\nFinished sending assoc req");
 
         EasyLink_abort();
         sendAssocReq();
@@ -248,7 +248,7 @@ static void finishedSendingAssocReqCb(EasyLink_Status status)
         CollectorLink_eraseCollector();
 
         MAC_moveToBeaconState();
-        CP_CLI_cliPrintf("\r\nWTF");
+//        CP_CLI_cliPrintf("\r\nWTF");
     }
 }
 
