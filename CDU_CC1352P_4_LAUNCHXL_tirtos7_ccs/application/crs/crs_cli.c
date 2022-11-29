@@ -5208,18 +5208,97 @@ static CRS_retVal_t CLI_getGainParsing(char *line)
      #endif
     CRS_retVal_t ret = CRS_FAILURE;
     token = strtok(NULL, s);
+    char *rfAddr=token;
+    int rfAddrInt=0;
     int gain;
-    if(strcmp("dc_rf_high_freq_hb_rx", token) == 0){
-        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
+    if(memcmp("dc_rf_high_freq_hb_rx",token, sizeof("dc_rf_high_freq_hb_rx")-1) == 0){
+        rfAddr+=sizeof("dc_rf_high_freq_hb_rx_chip");
+        rfAddrInt=strtol(rfAddr, NULL, 10);
+switch (rfAddrInt) {
+    case 0:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0;
+        break;
+    case 2:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2;
+        break;
+    case 4:
+            gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4;
+            break;
+    case 6:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6;
+        break;
+    default:
+        CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+        break;
+}
+//        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
         ret = CRS_SUCCESS;
     } else if(strcmp("uc_rf_high_freq_hb_tx", token) == 0){
-        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
+        rfAddr+=sizeof("uc_rf_high_freq_hb_tx_chip");
+         rfAddrInt=strtol(rfAddr, NULL, 10);
+ switch (rfAddrInt) {
+     case 0:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0;
+         break;
+     case 2:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2;
+         break;
+     case 4:
+             gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4;
+             break;
+     case 6:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6;
+         break;
+     default:
+         CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+         break;
+ }
+//        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
         ret = CRS_SUCCESS;
     } else if(strcmp("uc_if_low_freq_rx", token) == 0){
-        gain = CRS_cbGainStates.uc_if_low_freq_rx;
+        rfAddr+=sizeof("uc_if_low_freq_rx_chip");
+         rfAddrInt=strtol(rfAddr, NULL, 10);
+ switch (rfAddrInt) {
+     case 1:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_1;
+         break;
+     case 3:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_3;
+         break;
+     case 5:
+             gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_5;
+             break;
+     case 7:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_7;
+         break;
+     default:
+         CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+         break;
+ }
+//        gain = CRS_cbGainStates.uc_if_low_freq_rx;
         ret = CRS_SUCCESS;
     } else if(strcmp("dc_if_low_freq_tx", token) == 0){
-        gain = CRS_cbGainStates.dc_if_low_freq_tx;
+
+        rfAddr+=sizeof("dc_if_low_freq_tx_chip");
+          rfAddrInt=strtol(rfAddr, NULL, 10);
+  switch (rfAddrInt) {
+      case 1:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_1;
+          break;
+      case 3:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_3;
+          break;
+      case 5:
+              gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_5;
+              break;
+      case 7:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_7;
+          break;
+      default:
+          CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+          break;
+  }
+//        gain = CRS_cbGainStates.dc_if_low_freq_tx;
         ret = CRS_SUCCESS;
     }
     if(ret==CRS_SUCCESS){
