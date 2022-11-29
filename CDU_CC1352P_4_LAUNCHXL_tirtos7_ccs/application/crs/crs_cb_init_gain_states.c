@@ -23,7 +23,7 @@
 #define STRLEN_BYTES 32
 #define MAX_LINE_CHARS 1024
 #define INIT_GAIN_STATES_FILENAME "init gain"
-#define INIT_GAIN_STATES_FILE "init_dc_if_low_freq_tx-chip_1=NULL\ninit_dc_rf_high_freq_hb_rx-chip_0=NULL\ninit_uc_if_low_freq_rx-chip_1=NULL\ninit_uc_rf_high_freq_hb_tx-chip_0=NULL\ninit_dc_if_low_freq_tx-chip_3=NULL\ninit_dc_rf_high_freq_hb_rx-chip_2=NULL\ninit_uc_if_low_freq_rx-chip_3=NULL\ninit_uc_rf_high_freq_hb_tx-chip_2=NULL\ninit_dc_if_low_freq_tx-chip_5=NULL\ninit_dc_rf_high_freq_hb_rx-chip_4=NULL\ninit_uc_if_low_freq_rx-chip_5=NULL\ninit_uc_rf_high_freq_hb_tx-chip_4=NULL\ninit_dc_if_low_freq_tx-chip_7=NULL\ninit_dc_rf_high_freq_hb_rx-chip_6=NULL\ninit_uc_if_low_freq_rx-chip_7=NULL\ninit_uc_rf_high_freq_hb_tx-chip_6=NULL\n"
+#define INIT_GAIN_STATES_FILE "init_dc_if_low_freq_tx_chip_1=NULL\ninit_dc_rf_high_freq_hb_rx_chip_0=NULL\ninit_uc_if_low_freq_rx_chip_1=NULL\ninit_uc_rf_high_freq_hb_tx_chip_0=NULL\ninit_dc_if_low_freq_tx_chip_3=NULL\ninit_dc_rf_high_freq_hb_rx_chip_2=NULL\ninit_uc_if_low_freq_rx_chip_3=NULL\ninit_uc_rf_high_freq_hb_tx_chip_2=NULL\ninit_dc_if_low_freq_tx_chip_5=NULL\ninit_dc_rf_high_freq_hb_rx_chip_4=NULL\ninit_uc_if_low_freq_rx_chip_5=NULL\ninit_uc_rf_high_freq_hb_tx_chip_4=NULL\ninit_dc_if_low_freq_tx_chip_7=NULL\ninit_dc_rf_high_freq_hb_rx_chip_6=NULL\ninit_uc_if_low_freq_rx_chip_7=NULL\ninit_uc_rf_high_freq_hb_tx_chip_6=NULL\n"
 
 
 /******************************************************************************

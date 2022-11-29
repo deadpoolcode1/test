@@ -12,6 +12,8 @@
 #include "application/util_timer.h"
 #include "config_parsing.h" // isconfigOk
 #include <ctype.h>
+#include "crs_cb_init_gain_states.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -124,6 +126,12 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         return CRS_FAILURE;
     }
 
+    char initGainFile[1024] = { 0 };
+    char *ptr;
+    CRS_retVal_t ret;
+    int16_t initGainValue =0;
+
+
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
                sizeof("DC_RF_HIGH_FREQ_HB_RX") - 1) == 0 &&
         nameVals != NULL)
@@ -131,7 +139,15 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         switch (rfAddr)
         {
         case 0:
-            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
+            ret= CIGS_read("init_dc_rf_high_freq_hb_rx_chip_0", initGainFile);
+            *ptr=initGainFile;
+            ptr+=sizeof("init_dc_rf_high_freq_hb_rx_chip_0");
+            if (memcmp(ptr, "NULL", sizeof("NULL")-1)==0) {
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
+            }else{
+            initGainValue =strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_0=0x"),NULL,16);
+            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 =initGainValue;
+            }
             break;
         case 2:
             CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
