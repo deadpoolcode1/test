@@ -118,6 +118,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
                              CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
 {
+
     if (Fpga_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
@@ -125,13 +126,12 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         cbFunc(cbArgs);
         return CRS_FAILURE;
     }
-
-    char initGainFile[1024] = { 0 };
-    char *ptr;
     CRS_retVal_t ret;
-    int16_t initGainValue =0;
+    char initGainFile[1024] = {0};
+    char *ptr = NULL;
+    int16_t initGainValue = 0;
 
-
+    //    rfAddr=0; //TODO remove
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
                sizeof("DC_RF_HIGH_FREQ_HB_RX") - 1) == 0 &&
         nameVals != NULL)
@@ -139,28 +139,65 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         switch (rfAddr)
         {
         case 0:
-            ret= CIGS_read("init_dc_rf_high_freq_hb_rx_chip_0", initGainFile);
-            *ptr=initGainFile;
-            ptr+=sizeof("init_dc_rf_high_freq_hb_rx_chip_0");
-            if (memcmp(ptr, "NULL", sizeof("NULL")-1)==0) {
+            ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_0", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_rf_high_freq_hb_rx_chip_0");
+            CLI_cliPrintf("\r\ninit dc ptr is : %s", ptr);
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
-            }else{
-            initGainValue =strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_0=0x"),NULL,16);
-            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 =initGainValue;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_0=0x"), NULL, 16);
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = initGainValue;
             }
             break;
         case 2:
-            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
+            ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_2", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_rf_high_freq_hb_rx_chip_2");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_2=0x"), NULL, 16);
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = initGainValue;
+            }
             break;
         case 4:
-            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = nameVals[0].value;
+            ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_4", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_rf_high_freq_hb_rx_chip_4");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_4=0x"), NULL, 16);
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = initGainValue;
+            }
             break;
         case 6:
-            CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = nameVals[0].value;
+            ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_6", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_rf_high_freq_hb_rx_chip_6");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_6=0x"), NULL, 16);
+                CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = initGainValue;
+            }
             break;
         default:
-            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
-            return CRS_FAILURE; // INVALID!
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, rfAddr);
+            // INVALID!
             break;
         }
         CRS_cbGainStates.dc_rf_high_freq_hb_rx = nameVals[0].value; // legacy value
@@ -172,21 +209,64 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         switch (rfAddr)
         {
         case 1:
-            CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = nameVals[0].value;
+            ret = CIGS_read("init_dc_if_low_freq_tx_chip_1", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_if_low_freq_tx_chip_1");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_1=0x"), NULL, 16);
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = initGainValue;
+            }
             break;
         case 3:
-            CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = nameVals[0].value;
+            ret = CIGS_read("init_dc_if_low_freq_tx_chip_3", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_if_low_freq_tx_chip_3");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_3=0x"), NULL, 16);
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = initGainValue;
+            }
             break;
         case 5:
-            CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = nameVals[0].value;
+            ret = CIGS_read("init_dc_if_low_freq_tx_chip_5", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_if_low_freq_tx_chip_5");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_5=0x"), NULL, 16);
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = initGainValue;
+            }
             break;
         case 7:
-            CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = nameVals[0].value;
+            ret = CIGS_read("init_dc_if_low_freq_tx_chip_7", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_dc_if_low_freq_tx_chip_7");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_7=0x"), NULL, 16);
+                CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = initGainValue;
+            }
             break;
         default:
-            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
-            return CRS_FAILURE; // INVALID!
-            break;
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, rfAddr);
+            break; // INVALID!
         }
         CRS_cbGainStates.dc_if_low_freq_tx = nameVals[0].value;
     }
@@ -197,20 +277,64 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         switch (rfAddr)
         {
         case 0:
-            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = nameVals[0].value;
+            ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_0", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_uc_rf_high_freq_hb_tx_chip_0");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_0=0x"), NULL, 16);
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = initGainValue;
+            }
             break;
         case 2:
-            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = nameVals[0].value;
+            ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_2", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_uc_rf_high_freq_hb_tx_chip_2");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_2=0x"), NULL, 16);
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = initGainValue;
+            }
             break;
         case 4:
-            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = nameVals[0].value;
+            ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_4", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_uc_rf_high_freq_hb_tx_chip_4");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_4=0x"), NULL, 16);
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = initGainValue;
+            }
             break;
         case 6:
-            CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = nameVals[0].value;
+            ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_6", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_uc_rf_high_freq_hb_tx_chip_6");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_6=0x"), NULL, 16);
+                CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = initGainValue;
+            }
             break;
         default:
-            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
-            return CRS_FAILURE; // INVALID!
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, rfAddr);
+            // INVALID!
             break;
         }
         CRS_cbGainStates.uc_rf_high_freq_hb_tx = nameVals[0].value;
@@ -222,20 +346,64 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         switch (rfAddr)
         {
         case 1:
-            CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = nameVals[0].value;
+            ret = CIGS_read("init_if_low_freq_rx_chip_1", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_if_low_freq_rx_chip_1");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_if_low_freq_rx_chip_1=0x"), NULL, 16);
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = initGainValue;
+            }
             break;
         case 3:
-            CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = nameVals[0].value;
+            ret = CIGS_read("init_if_low_freq_rx_chip_3", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_if_low_freq_rx_chip_3");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_if_low_freq_rx_chip_3=0x"), NULL, 16);
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = initGainValue;
+            }
             break;
         case 5:
-            CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = nameVals[0].value;
+            ret = CIGS_read("init_if_low_freq_rx_chip_5", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_if_low_freq_rx_chip_5");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_if_low_freq_rx_chip_5=0x"), NULL, 16);
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = initGainValue;
+            }
             break;
         case 7:
-            CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = nameVals[0].value;
+            ret = CIGS_read("init_if_low_freq_rx_chip_7", initGainFile);
+            ptr = initGainFile;
+            ptr += sizeof("init_if_low_freq_rx_chip_7");
+            if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
+            {
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = nameVals[0].value;
+            }
+            else
+            {
+                initGainValue = strtol(initGainFile + strlen("init_if_low_freq_rx_chip_7=0x"), NULL, 16);
+                CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = initGainValue;
+            }
             break;
         default:
-            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
-            return CRS_FAILURE; // INVALID!
+            CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, rfAddr);
+            // INVALID!
             break;
         }
         CRS_cbGainStates.uc_if_low_freq_rx = nameVals[0].value;
