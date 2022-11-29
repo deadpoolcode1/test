@@ -11,6 +11,8 @@
 #include "crs_thresholds.h"
 #include "crs_nvs.h"
 #include "crs_cli.h"
+#include "crs_cb_init_gain_states.h"
+#include "crs_vars.h"
 #include <stdlib.h>
 /* Driver Header files */
 #include <ti/drivers/NVS.h>

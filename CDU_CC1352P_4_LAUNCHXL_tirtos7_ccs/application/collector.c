@@ -34,6 +34,7 @@
 #include "oad/crs_oad.h"
 #include "easylink/EasyLink.h"
 #include "application/crs/crs_locks.h"
+#include "crs_cb_init_gain_states.h"
 
 /******************************************************************************
  Constants and definitions
@@ -119,6 +120,7 @@ void Collector_init()
     Nvs_init(sem);
     Env_init();
     Thresh_init();
+    CIGS_init();
     SnapInit(sem);
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);

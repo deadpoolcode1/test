@@ -44,6 +44,7 @@
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "application/crs/crs_agc_management.h"
+#include "crs_cb_init_gain_states.h"
 
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
@@ -184,6 +185,13 @@
 #define CLI_CRS_TRSH_RESTORE "thrsh restore"
 #define CLI_CRS_TRSH_FORMAT "thrsh format"
 
+#define CLI_CRS_INIT_GAIN_LS "init gain ls"
+#define CLI_CRS_INIT_GAIN_UPDATE "init gain update"
+#define CLI_CRS_INIT_GAIN_RM "init gain rm"
+#define CLI_CRS_INIT_GAIN_RESTORE "init gain restore"
+#define CLI_CRS_INIT_GAIN_FORMAT "init gain format"
+
+
 #define CLI_CRS_GET_TIME "time"
 #define CLI_CRS_SET_TIME "set time"
 
@@ -321,6 +329,14 @@ static CRS_retVal_t CLI_trshRm(char *line);
 static CRS_retVal_t CLI_trshLs(char *line);
 static CRS_retVal_t CLI_trshFormat(char *line);
 static CRS_retVal_t CLI_trshRestore(char *line);
+
+
+static CRS_retVal_t CLI_cigsUpdate(char *line);
+static CRS_retVal_t CLI_cigsRm(char *line);
+static CRS_retVal_t CLI_cigsLs(char *line);
+static CRS_retVal_t CLI_cigsFormat(char *line);
+static CRS_retVal_t CLI_cigsRestore(char *line);
+
 
 static CRS_retVal_t CLI_getTimeParsing(char *line);
 static CRS_retVal_t CLI_setTimeParsing(char *line);
@@ -815,6 +831,57 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
                    inputBad = false;
                }
+
+
+
+
+
+
+          if (memcmp(CLI_CRS_INIT_GAIN_UPDATE, line, sizeof(CLI_CRS_INIT_GAIN_UPDATE) - 1) == 0)
+                 {
+
+                  CLI_cigsUpdate(line);
+
+                     inputBad = false;
+                 }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_RM, line, sizeof(CLI_CRS_INIT_GAIN_RM) - 1) == 0)
+                   {
+
+                  CLI_cigsRm(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_LS, line, sizeof(CLI_CRS_INIT_GAIN_LS) - 1) == 0)
+                   {
+
+                  CLI_cigsLs(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_FORMAT, line, sizeof(CLI_CRS_INIT_GAIN_FORMAT) - 1) == 0)
+                   {
+
+                  CLI_cigsFormat(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_RESTORE, line, sizeof(CLI_CRS_INIT_GAIN_RESTORE) - 1) == 0)
+                   {
+
+                  CLI_cigsRestore(line);
+
+                       inputBad = false;
+                   }
+
+
+
+
+
+
 
           if (memcmp(CLI_CRS_SET_TIME, line, sizeof(CLI_CRS_SET_TIME) - 1) == 0)
               {
@@ -4620,7 +4687,7 @@ static CRS_retVal_t CLI_envLs(char *line)
     char envFile[CUI_NUM_UART_CHARS] = {0};
     char envTmp[4096] = {0};
     memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
-    CRS_retVal_t rsp = Env_read(envFile, envTmp);
+    CRS_retVal_t rsp =Env_read(envFile, envTmp); //Env_read(envFile, envTmp);
     if (rsp != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4642,6 +4709,219 @@ static CRS_retVal_t CLI_envLs(char *line)
     return CRS_SUCCESS;
 
 }
+
+
+//static CRS_retVal_t CLI_varsCmdParser(char *line, varsCmd_t varsCmdType, varsType_t varsType)
+//{
+//    const char s[2] = " ";
+//    char *token;
+//    char tmpBuff[CUI_NUM_UART_CHARS] = {0};
+//    uint16_t flag=0;
+//    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//    /* get the first token */
+//    // 0xaabb shortAddr
+//
+//    if (varsCmdType == varsCmd_ls)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_LS)]), s);
+//            flag=0;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_LS)]), s);
+//            flag=1;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_LS)]), s);
+//            flag=2;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_format)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_FORMAT)]), s);
+//            flag=3;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_FORMAT)]), s);
+//            flag=4;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_FORMAT)]), s);
+//            flag=5;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_rm)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_RM)]), s);
+//            flag=6;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_RM)]), s);
+//            flag=7;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RM)]), s);
+//            flag=8;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_update)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_UPDATE)]), s);
+//            flag=9;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_UPDATE)]), s);
+//            flag=10;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_UPDATE)]), s);
+//            flag=11;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_restore)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_RESTORE)]), s);
+//            flag=12;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_RESTORE)]), s);
+//            flag=13;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RESTORE)]), s);
+//            flag=14;
+//        }
+//    }
+//
+//    // token = strtok(NULL, s);
+//    //                  uint32_t commSize = sizeof(CLI_CRS_ENV_FORMAT);
+//    uint32_t addrSize = strlen(token);
+//    // shortAddr in decimal
+//    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//#ifndef CLI_SENSOR
+//
+//    uint16_t addr = 0;
+//    Cllc_getFfdShortAddr(&addr);
+//    if (addr != shortAddr)
+//    {
+//        //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = shortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+//        if (stat != Collector_status_success)
+//        {
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//        //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//        return CRS_SUCCESS;
+//    }
+//#endif
+//    if (varsCmdType == varsCmd_ls)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_format)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_rm)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_update)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_restore)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//          ;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//
+////    CRS_retVal_t rsp = Env_format();
+////    CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+//    CLI_startREAD();
+//    return rsp;
+//}
+
 
 static CRS_retVal_t CLI_envFormat(char *line)
 {
@@ -5049,6 +5329,282 @@ static CRS_retVal_t CLI_trshRestore(char *line)
                   return rsp;
 
 }
+
+
+
+
+
+static CRS_retVal_t CLI_cigsUpdate(char *line)
+{
+    const char s[2] = " ";
+           char *token;
+           char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+           memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+           /* get the first token */
+           //0xaabb shortAddr
+           token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_UPDATE)]), s);
+           //token = strtok(NULL, s);
+           uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_UPDATE);
+           uint32_t addrSize = strlen(token);
+           //shortAddr in decimal
+           uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+       #ifndef CLI_SENSOR
+
+           uint16_t addr = 0;
+           Cllc_getFfdShortAddr(&addr);
+           if (addr != shortAddr)
+           {
+               //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+               ApiMac_sAddr_t dstAddr;
+               dstAddr.addr.shortAddr = shortAddr;
+               dstAddr.addrMode = ApiMac_addrType_short;
+               Collector_status_t stat;
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+               if (stat != Collector_status_success)
+                      {
+                          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                          CLI_startREAD();
+                      }
+    //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+               return CRS_SUCCESS;
+           }
+       #endif
+           uint32_t command_len = commSize + addrSize+ 1;
+           char vars[CUI_NUM_UART_CHARS] = {0};
+           memcpy(vars, line + command_len, strlen(line + command_len));
+
+           CRS_retVal_t rspStatus = CIGS_write(vars);
+           if (rspStatus != CRS_SUCCESS)
+           {
+               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+               CLI_startREAD();
+               return CRS_FAILURE;
+
+           }
+           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+           CLI_startREAD();
+                      return CRS_SUCCESS;
+
+
+
+}
+
+static CRS_retVal_t CLI_cigsRm(char *line)
+{
+    const char s[2] = " ";
+               char *token;
+               char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+               memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+               /* get the first token */
+               //0xaabb shortAddr
+               token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RM)]), s);
+               //token = strtok(NULL, s);
+               uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_RM);
+               uint32_t addrSize = strlen(token);
+               //shortAddr in decimal
+               uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+           #ifndef CLI_SENSOR
+
+               uint16_t addr = 0;
+               Cllc_getFfdShortAddr(&addr);
+               if (addr != shortAddr)
+               {
+                   //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                   ApiMac_sAddr_t dstAddr;
+                   dstAddr.addr.shortAddr = shortAddr;
+                   dstAddr.addrMode = ApiMac_addrType_short;
+                   Collector_status_t stat;
+                   stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                   if (stat != Collector_status_success)
+                          {
+                              CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                              CLI_startREAD();
+                          }
+        //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                   return CRS_SUCCESS;
+               }
+           #endif
+
+           char vars[CUI_NUM_UART_CHARS] = {0};
+             memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
+             CRS_retVal_t rsp = CIGS_delete(vars);
+             CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+             CLI_startREAD();
+             return rsp;
+}
+
+
+
+static CRS_retVal_t CLI_cigsLs(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_LS)]), s);
+                  //token = strtok(NULL, s);
+                  uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_LS);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+
+
+
+                  char envFile[CUI_NUM_UART_CHARS] = {0};
+                  char envTmp[4096] = {0};
+                  memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
+                  CRS_retVal_t rsp = CIGS_read(envFile, envTmp);
+                  if (rsp != CRS_SUCCESS)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                      return CRS_FAILURE;
+
+                  }
+
+                  const char d[2] = "\n";
+                  token = strtok(envTmp, d);
+
+                  while (token != NULL)
+                  {
+                      CLI_cliPrintf("\r\n%s",token );
+                      token = strtok(NULL, d);
+                  }
+
+
+                  //filename
+
+                  CLI_startREAD();
+                  return CRS_SUCCESS;
+
+}
+
+static CRS_retVal_t CLI_cigsFormat(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_FORMAT)]), s);
+                  //token = strtok(NULL, s);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_FORMAT);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+
+
+                  CRS_retVal_t rsp = CIGS_format();
+                  CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                  CLI_startREAD();
+                  return rsp;
+}
+
+static CRS_retVal_t CLI_cigsRestore(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RESTORE)]), s);
+                  //token = strtok(NULL, s);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_RESTORE);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+                  CRS_retVal_t rsp = CIGS_restore();
+                  CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                  CLI_startREAD();
+                  return rsp;
+
+}
+
+
+
+
 
 
 static CRS_retVal_t CLI_setTimeParsing(char *line)
@@ -5701,6 +6257,13 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
     CLI_printCommInfo(CLI_AGC_SET_GAP, strlen(CLI_AGC_SET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling'] [0xus]");
     CLI_printCommInfo(CLI_AGC_GET_GAP, strlen(CLI_AGC_GET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling']");
+
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_FORMAT, strlen(CLI_CRS_INIT_GAIN_FORMAT), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_LS, strlen(CLI_CRS_INIT_GAIN_LS), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_RESTORE, strlen(CLI_CRS_INIT_GAIN_RESTORE), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_RM, strlen(CLI_CRS_INIT_GAIN_RM), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_UPDATE, strlen(CLI_CRS_INIT_GAIN_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+
     CLI_cliPrintf("\r\n");
 
     CLI_startREAD();

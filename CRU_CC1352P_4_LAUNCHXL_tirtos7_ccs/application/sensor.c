@@ -161,8 +161,9 @@ void Sensor_init( )
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
 
     Nvs_init(sem);
-    Thresh_init();
     Env_init();
+    Thresh_init();
+    CIGS_init();
     SnapInit(sem);
     //    Fs_init(sem);
     MultiFiles_multiFilesInit(sem);

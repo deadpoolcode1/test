@@ -22,6 +22,7 @@ const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
 const NVS3        = NVS.addInstance();
 const NVS4        = NVS.addInstance();
+const NVS5        = NVS.addInstance();
 const RF          = scripting.addModule("/ti/drivers/RF");
 const Temperature = scripting.addModule("/ti/drivers/Temperature");
 const UART        = scripting.addModule("/ti/drivers/UART", {}, false);
@@ -91,6 +92,12 @@ NVS4.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X3";
 NVS4.externalFlash.regionBase = 0xC1000;
 NVS4.externalFlash.regionSize = 0x1000;
 
+NVS5.$name                    = "INIT_GAIN_NVS";
+NVS5.$hardware                = system.deviceData.board.components.MX25R8035F;
+NVS5.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X4";
+NVS5.externalFlash.regionBase = 0xC2000;
+NVS5.externalFlash.regionSize = 0x1000;
+
 scripting.suppress("The board 'CC1352P-4 LaunchPad' requires the 'RF Antenna Switch' to be selected\.", RF, "$hardware");
 scripting.suppress("EasyLink stack requires the use of the RF Antenna Switch hardware", RF, "$hardware");
 
@@ -110,6 +117,7 @@ Watchdog1.period = 5000;
 
 const NVSSPI25XDevice                         = scripting.addModule("/ti/drivers/nvs/NVSSPI25XDevice", {}, false);
 const NVSSPI25XDevice1                        = NVSSPI25XDevice.addInstance({}, false);
+NVS5.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS2.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS3.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS4.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
