@@ -5789,7 +5789,7 @@ switch (rfAddrInt) {
 }
 //        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("uc_rf_high_freq_hb_tx", token) == 0){
+    } else if(memcmp("uc_rf_high_freq_hb_tx", token,sizeof("uc_rf_high_freq_hb_tx")-1) == 0){
         rfAddr+=sizeof("uc_rf_high_freq_hb_tx_chip");
          rfAddrInt=strtol(rfAddr, NULL, 10);
  switch (rfAddrInt) {
@@ -5811,7 +5811,7 @@ switch (rfAddrInt) {
  }
 //        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("uc_if_low_freq_rx", token) == 0){
+    } else if(memcmp("uc_if_low_freq_rx", token,sizeof("uc_if_low_freq_rx")-1) == 0){
         rfAddr+=sizeof("uc_if_low_freq_rx_chip");
          rfAddrInt=strtol(rfAddr, NULL, 10);
  switch (rfAddrInt) {
@@ -5833,7 +5833,7 @@ switch (rfAddrInt) {
  }
 //        gain = CRS_cbGainStates.uc_if_low_freq_rx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("dc_if_low_freq_tx", token) == 0){
+    } else if(memcmp("dc_if_low_freq_tx", token,sizeof("dc_if_low_freq_tx")-1) == 0){
 
         rfAddr+=sizeof("dc_if_low_freq_tx_chip");
           rfAddrInt=strtol(rfAddr, NULL, 10);
