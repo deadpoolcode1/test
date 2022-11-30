@@ -142,7 +142,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_0", initGainFile);
             ptr = initGainFile;
             ptr += sizeof("init_dc_rf_high_freq_hb_rx_chip_0");
-            CLI_cliPrintf("\r\ninit dc ptr is : %s", ptr);
+//            CLI_cliPrintf("\r\ninit dc ptr is : %s", ptr);
             if (memcmp(ptr, "NULL", sizeof("NULL") - 1) == 0)
             {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
