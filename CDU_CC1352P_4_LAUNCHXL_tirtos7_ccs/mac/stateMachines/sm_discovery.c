@@ -21,7 +21,7 @@
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
 #include "mac/mac_util.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "easylink/EasyLink.h"
 #include "application/crs/crs_tdd.h" // TODO earse in the future
 

@@ -11,6 +11,7 @@
 
 #include <ti/drivers/NVS.h>
 #include <string.h>
+#include "crs_thresholds.h"
 #include "crs_vars.h"
 #include "crs_nvs.h"
 

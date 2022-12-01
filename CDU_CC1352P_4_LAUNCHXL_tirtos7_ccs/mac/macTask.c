@@ -16,7 +16,7 @@
 //#include <ti/drivers/PIN.h>
 
 #include "macTask.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "mac_util.h"
 #include "node.h"
 #include "crs_tx.h"
@@ -157,7 +157,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
     initCollectorPib();
 
-    CP_CLI_startREAD();
+//    CP_CLI_startREAD();
 
     Node_init(macSemHandle);
 //    Smri_init(macSemHandle);
@@ -202,7 +202,7 @@ static void macFnx(UArg arg0, UArg arg1)
                         && ((macEvents & MAC_TASK_CLI_UPDATE_EVT) == 0))
                 {
                     gIsNeedToSendBeacon = false;
-                    CP_CLI_cliPrintf("\r\nSending beacon");
+//                    CP_CLI_cliPrintf("\r\nSending beacon");
 
                     EasyLink_abort();
                     sendBeacon();
@@ -244,7 +244,7 @@ static void macFnx(UArg arg0, UArg arg1)
         //MAC_TASK_TX_DONE_EVT
         if (macEvents & MAC_TASK_CLI_UPDATE_EVT)
         {
-            CP_CLI_processCliUpdate();
+//            CP_CLI_processCliUpdate();
             Util_clearEvent(&macEvents, MAC_TASK_CLI_UPDATE_EVT);
         }
 
@@ -262,7 +262,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
         if (macEvents & MAC_TASK_NODE_TIMEOUT_EVT)
         {
-            CP_CLI_cliPrintf("\r\nTimeout test");
+//            CP_CLI_cliPrintf("\r\nTimeout test");
             Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
         }
 
@@ -323,7 +323,7 @@ static void smasFinishedSendingBeaconCb(EasyLink_Status status)
 
     else
     {
-        CP_CLI_cliPrintf("\r\nWTF");
+//        CP_CLI_cliPrintf("\r\nWTF");
 
         Clock_setFunc(gClkHandle, beaconClockCb, 0);
         Clock_setTimeout(gClkHandle, CRS_BEACON_INTERVAL * 100000);

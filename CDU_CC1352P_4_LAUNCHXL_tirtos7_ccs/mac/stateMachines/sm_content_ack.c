@@ -17,7 +17,7 @@
 #include "mac/crs_tx.h"
 #include "mac/crs_rx.h"
 #include "mac/mac_util.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "easylink/EasyLink.h"
 
 /******************************************************************************
@@ -479,44 +479,44 @@ static void smacEraseNode()
     Semaphore_post(macSem);
 }
 
-void Smac_printStateMachine()
-{
-
-    int i = 0;
-    for (i = 0; i < gSmacStateArrayIdx; ++i)
-    {
-        switch (gSmacStateArray[i])
-        {
-        case SMAC_RX_IDLE:
-            CP_CLI_cliPrintf("\r\nSMAC_RX_IDLE");
-            break;
-        case SMAC_SENT_CONTENT:
-            CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT");
-            break;
-        case SMAC_SENT_CONTENT_AGAIN:
-            CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT_AGAIN");
-            break;
-        case SMAC_RECIVED_CONTENT_ACK:
-            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_ACK");
-
-            break;
-        case SMAC_RECIVED_CONTENT:
-            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT");
-
-            break;
-        case SMAC_FINISHED_SENDING_CONTENT_ACK:
-            CP_CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT_ACK");
-
-            break;
-
-        case SMAC_RECIVED_CONTENT_AGAIN:
-            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_AGAIN");
-            break;
-        case SMAC_ERROR:
-            CP_CLI_cliPrintf("\r\nSMAC_ERROR");
-            break;
-        default:
-            break;
-        }
-    }
-}
+//void Smac_printStateMachine()
+//{
+//
+//    int i = 0;
+//    for (i = 0; i < gSmacStateArrayIdx; ++i)
+//    {
+//        switch (gSmacStateArray[i])
+//        {
+//        case SMAC_RX_IDLE:
+//            CP_CLI_cliPrintf("\r\nSMAC_RX_IDLE");
+//            break;
+//        case SMAC_SENT_CONTENT:
+//            CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT");
+//            break;
+//        case SMAC_SENT_CONTENT_AGAIN:
+//            CP_CLI_cliPrintf("\r\nSMAC_SENT_CONTENT_AGAIN");
+//            break;
+//        case SMAC_RECIVED_CONTENT_ACK:
+//            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_ACK");
+//
+//            break;
+//        case SMAC_RECIVED_CONTENT:
+//            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT");
+//
+//            break;
+//        case SMAC_FINISHED_SENDING_CONTENT_ACK:
+//            CP_CLI_cliPrintf("\r\nSMAC_FINISHED_SENDING_CONTENT_ACK");
+//
+//            break;
+//
+//        case SMAC_RECIVED_CONTENT_AGAIN:
+//            CP_CLI_cliPrintf("\r\nSMAC_RECIVED_CONTENT_AGAIN");
+//            break;
+//        case SMAC_ERROR:
+//            CP_CLI_cliPrintf("\r\nSMAC_ERROR");
+//            break;
+//        default:
+//            break;
+//        }
+//    }
+//}

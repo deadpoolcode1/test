@@ -789,18 +789,29 @@ void Config_process(void)
         }
 
         gInvLineNumber++;
+
+//       CLI_cliPrintf("\r\nrfAddr is : %s", gInvLineStrct.Addr);
+       uint32_t rfAddr=0xff;
+       char *ptr=gInvLineStrct.Addr;
+       if (memcmp(ptr, "None", sizeof("None")-1)!=0) {
+       ptr+=sizeof("ew 0xff 0x")-1;
+        rfAddr=strtol(ptr, NULL, 16);
+
+       }
+//        CLI_cliPrintf("\r\nptr is : %s\r\nrfAddrInt is %x", ptr,rfAddr);
+
         if (gIsSingleLine == true)
         {
             rspStatus = MultiFiles_runMultiFiles(&packageLineStruct,
                                                  gInvLineStrct.ChipType,
-                                                 gInvLineStrct.Flavor,
+                                                 gInvLineStrct.Flavor,rfAddr,
                                                  uploadPackageSingleLineCb);
         }
         else
         {
             rspStatus = MultiFiles_runMultiFiles(&packageLineStruct,
                                                  gInvLineStrct.ChipType,
-                                                 gInvLineStrct.Flavor,
+                                                 gInvLineStrct.Flavor,rfAddr,
                                                  uploadPackageCb);
         }
 

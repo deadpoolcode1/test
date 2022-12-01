@@ -17,6 +17,19 @@
 #include <ti/drivers/NVS.h>
 #include "crs.h"
 
+typedef enum varsCmd {
+    varsCmd_ls=1,
+    varsCmd_update=2,
+    varsCmd_rm=4,
+    varsCmd_format=8,
+    varsCmd_restore=16
+}varsCmd_t;
+
+typedef enum varsType {
+    varsType_env=32,
+    varsType_thrsh=64,
+    varsType_initGain=128
+}varsType_t;
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/

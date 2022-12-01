@@ -22,7 +22,7 @@ extern bool gIsConfigOk;
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define NAME_SZ 70
+#define NAME_SZ 200
 #define ADDR_SZ 20
 #define CLASSID_SZ 12
 #define SCRIPT_SZ 80
