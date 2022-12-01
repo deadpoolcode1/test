@@ -18,7 +18,7 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define STRLEN_BYTES 32
+#define VARS_HDR_SZ_BYTES 32
 #define MAX_LINE_CHARS 1024
 
 #define ENV_FILENAME "env"
@@ -64,18 +64,30 @@ CRS_retVal_t Env_init(void){
          */
     NVS_getAttrs(envHandle, &gRegionAttrs);
 
-    CRS_retVal_t status;
+    CRS_retVal_t status=CRS_FAILURE;
     int length = Vars_getLength(&envHandle);
-    if(length == -1){
+    if(length == -1){ //there is no hdr found in flash
         bool ret = Vars_createFile(&envHandle);
         if(!ret){
             return CRS_FAILURE;
         }
         length = 1;
         envCache = CRS_calloc(length, sizeof(char));
+        if (NULL == envCache){
+            CRS_LOG(CRS_ERR, "\r\nenvCache calloc failed!");
+
+            return CRS_FAILURE;
+        }
+        memset(envCache, '\0', length);
         status = Env_restore();
     }else{
         envCache = CRS_calloc(length, sizeof(char));
+        if (NULL == envCache){
+            CRS_LOG(CRS_ERR, "\r\nenvCache calloc failed!");
+
+            return CRS_FAILURE;
+        }
+        memset(envCache, '\0', length);
         status = Vars_getFile(&envHandle, envCache);
     }
 
@@ -95,7 +107,7 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
     }
     else{
         if(strlen(envCache)){
-            strcpy(returnedVars, envCache);
+            memcpy(returnedVars, envCache,strlen(envCache));
             if(returnedVars[strlen(envCache)-1] == '\n'){
                 returnedVars[strlen(envCache)-1] = 0;
             }
@@ -106,18 +118,37 @@ CRS_retVal_t Env_read(char *vars, char *returnedVars){
 
 CRS_retVal_t Env_write(char *vars){
 
-    uint32_t length;
+    uint16_t length=0;
     if(envCache == NULL){
-        Env_init();
+        CRS_retVal_t ret=  Env_init();
+        if (ret==CRS_FAILURE) {
+            CRS_LOG(CRS_ERR,"\r\nEnv init failed!");
+
+            return ret;
+        }
     }
 
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
 
-    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
+    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-VARS_HDR_SZ_BYTES); //TODO check why this is indeed
+    if (envCache==NULL) {
+        CRS_LOG(CRS_ERR,"\r\nenvCache failed to realloc!");
+        return CRS_FAILURE;
+    }
     length = Vars_setFileVars(&envHandle, envCache, vars);
+    if (length == 0){
+        CRS_LOG(CRS_ERR,"\r\nVars_setFileVars failed");
+
+        return CRS_FAILURE;
+    }
 
     envCache = CRS_realloc(envCache, length);
+    if (envCache==NULL) {
+        CRS_LOG(CRS_ERR,"\r\nenvCache failed to realloc!");
+
+        return CRS_FAILURE;
+    }
 
     return CRS_SUCCESS;
 }
@@ -132,12 +163,26 @@ CRS_retVal_t Env_delete(char *vars){
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
 
-    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-STRLEN_BYTES);
-    length = Vars_removeFileVars(&envHandle, envCache, vars);
-    if(!length){
+    envCache = CRS_realloc(envCache, envRegionAttrs.regionSize-VARS_HDR_SZ_BYTES); // TODO WHY is this needed?
+    if (NULL == envCache){
+        CRS_LOG(CRS_ERR, "\r\nenvCache realloc failed!");
+
         return CRS_FAILURE;
     }
+
+    length = Vars_removeFileVars(&envHandle, envCache, vars);
+    if(0 == length){
+        CRS_LOG(CRS_ERR, "\r\nVars_removeFileVars failed!");
+
+        return CRS_FAILURE;
+    }
+
     envCache = CRS_realloc(envCache, length);
+    if (NULL == envCache){
+        CRS_LOG(CRS_ERR, "\r\nenvCache realloc failed!");
+
+        return CRS_FAILURE;
+    }
 
     return CRS_SUCCESS;
 }
@@ -149,11 +194,26 @@ CRS_retVal_t Env_format(void){
         NVS_init();
         NVS_Params_init(&nvsParams);
         envHandle = NVS_open(ENV_NVS, &nvsParams);
+        if (NULL == envHandle){
+            CRS_LOG(CRS_ERR, "\r\nNVS_open failed!");
+
+            return CRS_FAILURE;
+        }
     }
 //    int_fast16_t retStatus = NVS_erase(envHandle, 0, gRegionAttrs.regionSize);
     bool ret = Vars_createFile(&envHandle);
+    if (ret == false){
+        CRS_LOG(CRS_ERR, "\r\nVars_createFile failed!");
+
+        return CRS_FAILURE;
+    }
     CRS_free(&envCache);
     envCache = CRS_calloc(1, sizeof(char));
+    if (NULL == envCache){
+        CRS_LOG(CRS_ERR, "\r\nenvCache calloc failed!");
+
+        return CRS_FAILURE;
+    }
     return CRS_SUCCESS;
 }
 
@@ -161,29 +221,23 @@ CRS_retVal_t Env_restore(void)
 {
 
     if(envCache == NULL){
+        CRS_LOG(CRS_ERR,"\r\nenvCache was NULL when calling Env_restore");
+
         return CRS_FAILURE;
-        //Env_init();
     }
 
-    if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
-    {
-        CRS_free(&envCache);
-        envCache = NULL;
-//        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
-//        if (!envCache)
-//        {
-//            envCache = CRS_calloc(1, sizeof(char));
-//        }
-        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
-        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
-    }
-    else
-    {
-        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
-        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
+    CRS_free(&envCache);
+    envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
+    if (NULL == envCache){
+        CRS_LOG(CRS_ERR, "\r\nenvCache realloc failed!");
 
+        return CRS_FAILURE;
     }
-   return Vars_setFile(&envHandle, envCache);
+
+    memset(envCache, '\0', sizeof(ENV_FILE));//TODO check should we do sizeof-1
+
+    memcpy(envCache, ENV_FILE, sizeof(ENV_FILE)); //write into RAM cache
+    return Vars_setFile(&envHandle, envCache); //write into flash
 
 }
 

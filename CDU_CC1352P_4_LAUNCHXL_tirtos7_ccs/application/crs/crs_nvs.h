@@ -27,7 +27,7 @@
 #define MAX_FILES 62
 #define CRS_NVS_LINE_BYTES 50
 #define FAT_CACHE_SZ 10
-#define STRLEN_BYTES 32
+#define VARS_HDR_SZ_BYTES 32
 #define MAX_LINE_CHARS 1024
 typedef struct CRS_fat
 {

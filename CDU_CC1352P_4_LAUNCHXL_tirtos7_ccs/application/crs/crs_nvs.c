@@ -81,7 +81,7 @@ CRS_retVal_t Nvs_ls(uint8_t page)
 //    CLI_cliPrintf("\r\nFlashSize=0x%x", gRegionAttrs.regionSize);
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     uint32_t strlen;
     int i = 0;
     //int numfiles = 0;
@@ -102,7 +102,7 @@ CRS_retVal_t Nvs_ls(uint8_t page)
         {
             NVS_read(gNvsHandle,
                      (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-                     (void*) strlenStr, STRLEN_BYTES);
+                     (void*) strlenStr, VARS_HDR_SZ_BYTES);
             sscanf(strlenStr, "%x", &strlen);
             if(strlen){
                 strlen -= 1;
@@ -110,7 +110,7 @@ CRS_retVal_t Nvs_ls(uint8_t page)
             CLI_cliPrintf("\r\nName=%s Size=0x%x", fat[i].filename, strlen);
 //            numfiles++;
             strlen = 0;
-            memset(strlenStr, 0, STRLEN_BYTES);
+            memset(strlenStr, 0, VARS_HDR_SZ_BYTES);
         }
 
         i++;
@@ -138,11 +138,11 @@ CRS_retVal_t Nvs_ls(uint8_t page)
 CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 {
     // currently set maximum filename length to 32 chars
-    if (strlen(filename) > STRLEN_BYTES){
+    if (strlen(filename) > VARS_HDR_SZ_BYTES){
         return CRS_FAILURE;
     }
     char temp[1024] = { 0 };
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     memcpy(temp, buff, strlen(buff));
 //    strcat(temp, "\n");
 
@@ -197,12 +197,12 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
         int2hex(strlen(temp), strlenStr);
         NVS_write(gNvsHandle,
                   (i + 1 + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-                  (void*) strlenStr, STRLEN_BYTES,
+                  (void*) strlenStr, VARS_HDR_SZ_BYTES,
                   NVS_WRITE_ERASE);
         NVS_write(
                 gNvsHandle,
                 ((i + 1 + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-                        + (STRLEN_BYTES + 1),
+                        + (VARS_HDR_SZ_BYTES + 1),
                 (void*) temp, strlen(temp), 0);
         memset(fat[i].filename, 0, FILENAME_SZ);
         memcpy(fat[i].filename, filename, strlen(filename));
@@ -220,7 +220,7 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
                 gNvsHandle,
                 (FATcache[i % FAT_CACHE_SZ].index + gFAT_sector_sz)
                         * gRegionAttrs.sectorSize,
-                (void*) strlenStr, STRLEN_BYTES);
+                (void*) strlenStr, VARS_HDR_SZ_BYTES);
 
         uint32_t strlenPrev = CLI_convertStrUint(strlenStr);
         if (strlenPrev + strlen(buff) > 4000)
@@ -230,9 +230,9 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
         NVS_read(
                 gNvsHandle,
                 ((i + 1 + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-                        + (STRLEN_BYTES + 1),
+                        + (VARS_HDR_SZ_BYTES + 1),
                 (void*) fileContent, strlenPrev);
-        memset(strlenStr, 0, STRLEN_BYTES);
+        memset(strlenStr, 0, VARS_HDR_SZ_BYTES);
 
         uint32_t newStrlen = strlenPrev + strlen(temp);
 
@@ -240,11 +240,11 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 
         NVS_write(gNvsHandle,
                   (i + 1 + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-                  (void*) strlenStr, STRLEN_BYTES,
+                  (void*) strlenStr, VARS_HDR_SZ_BYTES,
                   NVS_WRITE_ERASE);
         strcat(fileContent, temp);
         size_t startFile = ((i + 1 + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-                + STRLEN_BYTES + 1;
+                + VARS_HDR_SZ_BYTES + 1;
         NVS_write(gNvsHandle, startFile, (void*) fileContent, newStrlen, 0);
 //        fat[i].len += strlen(temp);
     }
@@ -254,7 +254,7 @@ CRS_retVal_t Nvs_writeFile(char *filename, char *buff)
 
 CRS_retVal_t Nvs_cat(char *filename)
 {
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
@@ -274,12 +274,12 @@ CRS_retVal_t Nvs_cat(char *filename)
     char fileContent[4096] = { 0 };
     NVS_read(gNvsHandle,
              (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) strlenStr, STRLEN_BYTES);
+             (void*) strlenStr, VARS_HDR_SZ_BYTES);
 
     uint32_t strlen;
     sscanf(strlenStr, "%x", &strlen);
     size_t startFile = ((fat[i].index + gFAT_sector_sz)
-            * gRegionAttrs.sectorSize) + (STRLEN_BYTES + 1);
+            * gRegionAttrs.sectorSize) + (VARS_HDR_SZ_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) fileContent, strlen);
 //    char line[50] = { 0 };
     const char s[2] = "\n";
@@ -296,7 +296,7 @@ CRS_retVal_t Nvs_cat(char *filename)
 
 CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSize)
 {
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     CRS_FAT_t fat[MAX_FILES] = {0};
     Nvs_readFAT((fat));
     int i = 0;
@@ -316,12 +316,12 @@ CRS_retVal_t Nvs_catSegment(char *filename, uint32_t fileIndex, uint32_t readSiz
     char fileContent[4096] = { 0 };
     NVS_read(gNvsHandle,
              (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) strlenStr, STRLEN_BYTES);
+             (void*) strlenStr, VARS_HDR_SZ_BYTES);
 
     uint32_t stringlen;
     sscanf(strlenStr, "%x", &stringlen);
     size_t startFile = ((fat[i].index + gFAT_sector_sz)
-            * gRegionAttrs.sectorSize) + (STRLEN_BYTES + 1);
+            * gRegionAttrs.sectorSize) + (VARS_HDR_SZ_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) fileContent, stringlen);
 //    char line[50] = { 0 };
 //    const char s[2] = "\n";
@@ -452,13 +452,13 @@ CRS_retVal_t Nvs_readFile(const char *filename, char *respLine)
     }
 //    CLI_cliPrintf("filenamefat:%s, filenameme:%s, sizeme:0x%x", fat.filename, filename, strlen(filename));
 
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     uint32_t strlen_f;
     NVS_read(gNvsHandle, (fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) strlenStr, STRLEN_BYTES);
+             (void*) strlenStr, VARS_HDR_SZ_BYTES);
     sscanf(strlenStr, "%x", &strlen_f);
     size_t startFile = ((fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-            + (STRLEN_BYTES + 1);
+            + (VARS_HDR_SZ_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) respLine, strlen_f);
     return CRS_SUCCESS;
 }
@@ -536,14 +536,14 @@ CRS_retVal_t Nvs_readLine(char *filename, uint32_t lineNumber, char *respLine)
         CLI_cliPrintf("\r\nfile not found!\r\n");
         return CRS_FAILURE;
     }
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     uint32_t strlen_f;
     NVS_read(gNvsHandle, (fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) strlenStr, STRLEN_BYTES);
+             (void*) strlenStr, VARS_HDR_SZ_BYTES);
     sscanf(strlenStr, "%x", &strlen_f);
     char fileContent[4096] = { 0 };
     size_t startFile = ((fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-            + (STRLEN_BYTES + 1);
+            + (VARS_HDR_SZ_BYTES + 1);
     NVS_read(gNvsHandle, startFile, (void*) fileContent, strlen_f);
 
     i = 0;
@@ -618,13 +618,13 @@ char* Nvs_readFileWithMalloc(char *filename)
     }
     //    CLI_cliPrintf("filenamefat:%s, filenameme:%s, sizeme:0x%x", fat.filename, filename, strlen(filename));
 
-    char strlenStr[STRLEN_BYTES] = { 0 };
+    char strlenStr[VARS_HDR_SZ_BYTES] = { 0 };
     uint32_t strlen_f;
     NVS_read(gNvsHandle, (fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
-             (void*) strlenStr, STRLEN_BYTES);
+             (void*) strlenStr, VARS_HDR_SZ_BYTES);
     sscanf(strlenStr, "%x", &strlen_f);
     size_t startFile = ((fat.index + gFAT_sector_sz) * gRegionAttrs.sectorSize)
-            + (STRLEN_BYTES + 1);
+            + (VARS_HDR_SZ_BYTES + 1);
 
     respLine = CRS_malloc(strlen_f + 100);
     if (respLine == NULL)

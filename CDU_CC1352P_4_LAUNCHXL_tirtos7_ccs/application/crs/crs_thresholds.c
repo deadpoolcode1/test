@@ -17,7 +17,7 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define STRLEN_BYTES 32
+#define VARS_HDR_SZ_BYTES 32
 #define MAX_LINE_CHARS 1024
 #define THRSH_FILENAME "thrsh"
 #ifndef CLI_SENSOR
