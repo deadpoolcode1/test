@@ -158,7 +158,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                     shouldCpyNameVals=false;
                 }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
             }
@@ -183,7 +183,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
             }
@@ -209,7 +209,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = nameVals[0].value;
             }
@@ -234,7 +234,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = nameVals[0].value;
             }
@@ -273,7 +273,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = nameVals[0].value;
             }
@@ -299,7 +299,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = nameVals[0].value;
             }
@@ -325,7 +325,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = nameVals[0].value;
             }
@@ -352,7 +352,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                            }
             }
 
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = nameVals[0].value;
             }
@@ -390,7 +390,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                            }
             }
 
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = nameVals[0].value;
             }
@@ -416,7 +416,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                            }
             }
 
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = nameVals[0].value;
             }
@@ -443,7 +443,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                            }
             }
 
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = nameVals[0].value;
             }
@@ -470,7 +470,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                            }
             }
 
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = nameVals[0].value;
             }
@@ -508,7 +508,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = nameVals[0].value;
             }
@@ -533,7 +533,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = nameVals[0].value;
             }
@@ -558,7 +558,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = nameVals[0].value;
             }
@@ -583,7 +583,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                                shouldCpyNameVals=false;
                            }
             }
-            if (isFromFlat)
+            if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = nameVals[0].value;
             }
