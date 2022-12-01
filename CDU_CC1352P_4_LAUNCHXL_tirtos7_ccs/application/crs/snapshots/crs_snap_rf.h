@@ -32,6 +32,6 @@ CRS_retVal_t RF_init(void *sem);
 
 CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
-                             CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc);
+                             CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc,bool isFromFlat);
 void RF_process(void);
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_SNAP_RF_H_ */

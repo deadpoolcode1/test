@@ -145,7 +145,7 @@ void MultiFiles_process(void)
 
         CRS_retVal_t rspStatus = RF_uploadSnapRf(
                 gPackage.fileInfos[gFileIdx].name, gRfAddr, gLutLineIdx, gChipMode,
-                gPackage.fileInfos[gFileIdx].nameValues, uploadSnapRfCb);
+                gPackage.fileInfos[gFileIdx].nameValues, uploadSnapRfCb,true);
         if (rspStatus != CRS_SUCCESS)
         {
             const FPGA_cbArgs_t cbArgs={0};

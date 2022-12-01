@@ -4172,7 +4172,7 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
     }
 
 
-    CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
+    CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback,false);
 
     if (retStatus != CRS_SUCCESS)
     {
