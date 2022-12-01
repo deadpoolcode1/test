@@ -88,6 +88,11 @@ CRS_retVal_t Env_init(void){
             return CRS_FAILURE;
         }
         memset(envCache, '\0', length);
+#ifndef CLI_SENSOR
+          Env_write("name=Cdu");
+#else
+          Env_write("name=Cru");
+#endif
         status = Vars_getFile(&envHandle, envCache);
     }
 
