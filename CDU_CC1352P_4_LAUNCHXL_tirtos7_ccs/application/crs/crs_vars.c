@@ -284,7 +284,7 @@ int Vars_getLength(NVS_Handle * fileHandle){
 
     uint32_t length = strtoul(fileHeader, NULL, 16);
     if(memcmp(&fileHeader[4], VAR_HEADER, sizeof(VAR_HEADER) - 1) != 0 ){ // TODO check if this is valid
-        CRS_LOG(CRS_ERR, "\r\nfileHeader did not have TZKAM , sizeof(VAR_HEADER) - 1): %d", (sizeof(VAR_HEADER) - 1));
+//        CRS_LOG(CRS_INFO, "\r\nfileHeader did not have TZKAM , sizeof(VAR_HEADER) - 1): %d", (sizeof(VAR_HEADER) - 1));
 
         return -1;
     }
