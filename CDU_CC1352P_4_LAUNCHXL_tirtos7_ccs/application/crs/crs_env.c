@@ -227,16 +227,16 @@ CRS_retVal_t Env_restore(void)
     }
 
     CRS_free(&envCache);
-    envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
+    envCache = CRS_realloc(envCache, sizeof(ENV_FILE)); // one more on purpose for end byte
     if (NULL == envCache){
         CRS_LOG(CRS_ERR, "\r\nenvCache realloc failed!");
 
         return CRS_FAILURE;
     }
 
-    memset(envCache, '\0', sizeof(ENV_FILE));//TODO check should we do sizeof-1
+    memset(envCache, '\0', sizeof(ENV_FILE));
 
-    memcpy(envCache, ENV_FILE, sizeof(ENV_FILE)); //write into RAM cache
+    memcpy(envCache, ENV_FILE, sizeof(ENV_FILE) - 1); //write into RAM cache
     return Vars_setFile(&envHandle, envCache); //write into flash
 
 }
