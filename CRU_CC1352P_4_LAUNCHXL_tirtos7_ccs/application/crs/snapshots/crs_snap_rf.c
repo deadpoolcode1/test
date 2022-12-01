@@ -130,6 +130,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
     char initGainFile[1024] = {0};
     char *ptr = NULL;
     int16_t initGainValue = 0;
+    bool shouldCpyNameVals=true;
 
     //    rfAddr=0; //TODO remove
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
@@ -153,6 +154,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_0="), NULL, 10);
+                if (isFromFlat) {
+                    shouldCpyNameVals=false;
+                }
             }
             if (isFromFlat)
             {
@@ -175,6 +179,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_2="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -198,6 +205,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_4="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -220,6 +230,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_6="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -256,6 +269,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_1="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -279,6 +295,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_3="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -302,6 +321,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_5="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -325,6 +347,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_dc_if_low_freq_tx_chip_7="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
 
             if (isFromFlat)
@@ -360,6 +385,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_0="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
 
             if (isFromFlat)
@@ -383,6 +411,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_2="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
 
             if (isFromFlat)
@@ -407,6 +438,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_4="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
 
             if (isFromFlat)
@@ -431,6 +465,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_6="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
 
             if (isFromFlat)
@@ -467,6 +504,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_if_low_freq_rx_chip_1="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -489,6 +529,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_if_low_freq_rx_chip_1="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -511,6 +554,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_if_low_freq_rx_chip_5="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -533,6 +579,9 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             else
             {
                 initGainValue = strtol(initGainFile + strlen("init_uc_if_low_freq_rx_chip_7="), NULL, 10);
+                if (isFromFlat) {
+                               shouldCpyNameVals=false;
+                           }
             }
             if (isFromFlat)
             {
@@ -563,7 +612,11 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         for (i = 0; i < NAME_VALUES_SZ; ++i)
         {
             memcpy(gNameValues[i].name, nameVals[i].name, NAMEVALUE_NAME_SZ);
-            gNameValues[i].value = nameVals[i].value;
+            if (shouldCpyNameVals) {
+                gNameValues[i].value = nameVals[i].value;
+            }else{
+                gNameValues[i].value =initGainValue;
+            }
         }
     }
     CLI_cliPrintf("\r\n");
