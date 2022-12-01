@@ -41,7 +41,7 @@
 #define BV(n)               (1 << (n))
 
 #define AGC_INTERVAL 1000  //time in milliseconds  for the main CPU to check the samples reported from the scif
-#define AGC_HOLD 60
+#define AGC_HOLD 1
 #define DC_RF_HIGH_FREQ_HB_RX 21
 #define DC_IF_LOW_FREQ_TX 21
 #define UC_RF_HIGH_FREQ_HB_TX 21
@@ -68,7 +68,7 @@ static Clock_Struct gClkStructTimeMinMaxAvgInit;
 static Clock_Struct agcClkStruct;
 static Clock_Handle agcClkHandle;
 static void* gSem;
-static uint32_t gTimeMinMaxAvgseconds=0;
+static uint32_t gTimeMinMaxAvgseconds=AGC_HOLD;
 static uint16_t Agc_events = 0;
 static AGC_sensorMode_t gAgcMode = AGC_AUTO;
 static AGC_channels_t gAgcChannel = AGC_ALL_CHANNELS;
@@ -182,10 +182,10 @@ CRS_retVal_t Agc_init(void * sem){
         gClkHandleTimeMinMaxAvgInit = Clock_handle(&gClkStructTimeMinMaxAvgInit);
 
         Clock_setFunc(gClkHandleTimeMinMaxAvgInit, timeMinMaxAvgInitClockCb, 0);
-        Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, (15 * 100000));//
+        Clock_setTimeout(gClkHandleTimeMinMaxAvgInit, (AGC_HOLD * 100000));//
         Clock_start(gClkHandleTimeMinMaxAvgInit);
 
-        gTimeMinMaxAvgseconds=15;
+        gTimeMinMaxAvgseconds=AGC_HOLD;
     gAgcInitialized = 1;
     return CRS_SUCCESS;
 }
