@@ -596,6 +596,9 @@ CRS_retVal_t Agc_sample(){
 //return CRS_FAILURE;
 //        }
 
+
+
+
         // values to correct ADC conversion offset
                int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
                int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);

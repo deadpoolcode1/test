@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="System AGC  CRU CODE" version="2.9.0.208">
+<project name="System AGC  CRU CODE" version="2.8.0.170">
     <desc><![CDATA[Samples 4 channels for TX/RX voltage, calculates min and max values of these measures for each channel and raises AlertInterrupt for main application when done.
 Sampling occurs only when TDD is locked and connected to the configured GPIO pins.]]></desc>
     <pattr name="Apply default power mode">0</pattr>
@@ -11,7 +11,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
     <pattr name="Code prefix"></pattr>
     <pattr name="Default power mode">0</pattr>
     <pattr name="Operating system">TI-RTOS</pattr>
-    <pattr name="Output directory">C:/Users/cellium/workspace_v12/crs_tirtos_test/CRU_CC1352P_4_LAUNCHXL_tirtos7_ccs/scif</pattr>
+    <pattr name="Output directory">C:/Users/Amitg/workspace_v11/crs_tirtos_test/CRU_CC1352P_4_LAUNCHXL_tirtos7_ccs/scif</pattr>
     <pattr name="RTC tick interval (16.16 format)">2000</pattr>
     <pattr name="Run-time logging UART RX pin"></pattr>
     <pattr name="Run-time logging UART TX pin"></pattr>
@@ -32,7 +32,7 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="MULTI_RESULT_SIZE" desc="Total number of measures from all channels across all samples cycles" type="expr" content="const" scope="task" min="0" max="65535">SAMPLE_SIZE*MULTI_BUFFER_SIZE</tattr>
         <tattr name="RESULTS" desc="Number of measures for a channel across all sample cycles" type="expr" content="const" scope="task" min="0" max="65535">BUFFER_SIZE*SAMPLE_SIZE</tattr>
         <tattr name="SAMPLE_SIZE" desc="Number of sample cycles" type="expr" content="const" scope="task" min="0" max="65535">2</tattr>
-        <tattr name="SAMPLE_SZ" type="expr" content="const" scope="task" min="0" max="65535">180</tattr>
+        <tattr name="SAMPLE_SZ" type="expr" content="const" scope="task" min="0" max="65535">90</tattr>
         <tattr name="TP_CHANNEL_COUNT" type="expr" content="const" scope="task" min="0" max="65535">4</tattr>
         <tattr name="cfg.Dio26" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="cfg.Dio27" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
@@ -61,6 +61,10 @@ Sampling occurs only when TDD is locked and connected to the configured GPIO pin
         <tattr name="output.cruLock" type="expr" content="struct" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.pAccValueBuffer" desc="32-bit accumulator value for each ADC channel (L[0], H[0], ..., L[n], H[n]), to be accessed as a uint32_t array in the System CPU application" size="ACC_VALUE_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="output.tester" size="ACC_VALUE_BUFFER_SIZE" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.IFDetDLMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.IFDetDLMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.IFDetULMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
+        <tattr name="state.IFDetULMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.TxDetMax" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">0</tattr>
         <tattr name="state.TxDetMin" size="CHANNELS_NUMBER" type="expr" content="struct_array" scope="task" min="0" max="65535">65535</tattr>
         <tattr name="state.alertEnabled" desc="Is ALERT interrupt generation enabled?" type="expr" content="struct" scope="task" min="0" max="65535">1</tattr>
@@ -549,9 +553,9 @@ if(state.tddMode != 2){
 
 
 
-       adcDisable();
+    adcDisable();
     adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
-    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_5P3_US , ADC_TRIGGER_MANUAL); // MANUAl sampling, 2.7 us sample time, the fastest possible
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_5P3_US , ADC_TRIGGER_MANUAL); // MANUAl sampling, 5.3 us sample time, the fastest possible
     //     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
 
 
@@ -589,7 +593,7 @@ if(state.tddMode != 2){
 
         // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
         if (accSampleCount == 0) {
-             accReset();
+            accReset();
         } else {
             U16 accValueL = *(pAccValueBuffer++);
             U16 accValueH = *(pAccValueBuffer++);
@@ -629,6 +633,121 @@ if(state.tddMode != 2){
         } else{
             if (state.invalid != 1) {
                 if(input.canTouchTester==1){
+                pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
+                *(pAccValueBuffer++) = accValueL;
+                *(pAccValueBuffer++) = accValueH;
+                pAccValueBuffer -= 2;
+                pAccValueBuffer -= accValueBufferOutputOffset; //move back to state struct
+                }
+            }
+            *(pAccValueBuffer++) = accValueL;
+            *(pAccValueBuffer++) = accValueH;
+            pAccValueBuffer -= 2;
+
+        }
+
+        n += 1;
+        accSampleCount+=1;
+
+    }//end of   while (n < MULTI_BUFFER_SIZE) {
+
+
+
+
+
+
+
+    //moving to sample if det
+    adcDisable();
+    adcSelectGpioInput(cfg.pAuxioASensorOutput[2]); //AUX Mapping 24--->DIO 25 IF det
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_5P3_US , ADC_TRIGGER_MANUAL); // MANUAl sampling, 5.3 us sample time, the fastest possible
+
+
+
+    accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
+    pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
+        //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+        //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+        //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+        //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
+
+        //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+        //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+        //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+        //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+        //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+        //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+        //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+        //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+        //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+        //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+        //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+        //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[22];
+    }
+    if(state.channelsIdx == 1){
+        pAccValueBuffer=#state.pAccValueBuffer[20];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer= #state.pAccValueBuffer[18];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer= #state.pAccValueBuffer[16];
+    }
+
+
+    n = 0;
+    accSampleCount = 0;
+    while (n < SAMPLE_SZ) {
+        U16 accExt;
+        U16 accValueL;
+        U16 accValueH;
+
+        // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+        if (accSampleCount == 0) {
+            accReset();
+        } else {
+            U16 accValueL = *(pAccValueBuffer++);
+            U16 accValueH = *(pAccValueBuffer++);
+            accSet32u(accValueH, accValueL);
+            pAccValueBuffer -= 2;
+        }
+        U16 adcValue;
+        // this triggers the driver to start a measure and place the result in the output array
+        adcGenManualTrigger();
+        adcReadFifo(adcValue);
+        U16 a=n;
+        n=state.channelsIdx;
+        //min, max, sum calculations
+        if(adcValue<=state.IFDetDLMin[n]){
+            state.IFDetDLMin[n]=adcValue;
+        }
+        if(adcValue>=state.IFDetDLMax[n]){
+            state.IFDetDLMax[n]=adcValue;
+        }
+
+        n=a;
+
+        // Add the ADC value to the accumulator
+        accAdd16u(adcValue);
+        accGetAll(accExt, accValueH, accValueL);
+
+
+        // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+        // state.pAccValueBuffer[], so it can be restored in the next iteration
+        if (accSampleCount != (SAMPLE_SZ - 1)) {
+            *(pAccValueBuffer++) = accValueL;
+            *(pAccValueBuffer++) = accValueH;
+            pAccValueBuffer -= 2;
+
+        // When the accumulator contains the wanted number of samples: Save the accumulator value to
+        // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+        } else{
+            if (state.invalid != 1) {
+                if(input.canTouchTester==1){
 
                 }
             }
@@ -643,35 +762,43 @@ if(state.tddMode != 2){
 
     }//end of   while (n < MULTI_BUFFER_SIZE) {
 
+
+
+
+
     if(state.invalid != 1){
         if(state.alertEnabled == 1) {
             if(input.canTouchTester==1){
-            state.alertEnabled = 0;
-            input.canTouchTester=0;
-             U16 accValueL = *(pAccValueBuffer++);
-            U16 accValueH = *(pAccValueBuffer++);
-             pAccValueBuffer -= 2;
-                 pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
+                state.alertEnabled = 0;
+                input.canTouchTester=0;
+                U16 accValueL = *(pAccValueBuffer++);
+                U16 accValueH = *(pAccValueBuffer++);
+                pAccValueBuffer -= 2;
+                pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
                 *(pAccValueBuffer++) = accValueL;
                 *(pAccValueBuffer++) = accValueH;
                 pAccValueBuffer -= 2;
                 pAccValueBuffer -= accValueBufferOutputOffset; //move back to state struct
-            n=state.channelsIdx;
-         //min, max, sum calculations
-//        if(state.TxDetMin[n]<=output.TxDetMin[n]){
-           output.TxDetMin[n]=state.TxDetMin[n];
-//        }
-//        if(state.TxDetMax[n]>=output.TxDetMax[n]){
-            output.TxDetMax[n] =state.TxDetMax[n];
-//        }
+                n=state.channelsIdx;
+                //min, max, sum calculations
+                //        if(state.TxDetMin[n]<=output.TxDetMin[n]){
+                output.TxDetMin[n]=state.TxDetMin[n];
+                output.IFDetDLMin[n]=state.IFDetDLMin[n];
+                //        }
+                //        if(state.TxDetMax[n]>=output.TxDetMax[n]){
+                output.TxDetMax[n] =state.TxDetMax[n];
+                output.IFDetDLMax[n]=state.IFDetDLMax[n];
+                //        }
 
-            fwGenQuickAlertInterrupt();
+                fwGenQuickAlertInterrupt();
 
-           state.TxDetMin[n]=65535;
-           state.TxDetMax[n]=0;
+                state.TxDetMin[n]=65535;
+                state.TxDetMax[n]=0;
+                state.IFDetDLMin[n]=65535;
+                state.IFDetDLMax[n]=0;
 
+            }
         }
-    }
     }
 
 
@@ -1150,129 +1277,299 @@ if(state.tddMode != 1){
     }
     //**Led logic**//
 
-//    adcDisable();
-//    adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
-//    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // MANUAl sampling, 2.7 us sample time, the fastest possible
-//    //     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
-//
-//
-//
-//    adcFlushFifo();
-//
-//    // Initialize variables, only 6 are available
-//    U16 a = 0;
-//    S16 b = 0;
-//    U16 c = 0;
-//    U16 n = 0;
-//
-//    U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
-//    U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
-//    if(state.channelsIdx == 0){
-//        pAccValueBuffer = #state.pAccValueBuffer[0];
-//    }
-//    if(state.channelsIdx == 1){
-//        pAccValueBuffer=#state.pAccValueBuffer[2];
-//    }
-//    if(state.channelsIdx == 2){
-//        pAccValueBuffer= #state.pAccValueBuffer[4];
-//    }
-//    if(state.channelsIdx == 3){
-//        pAccValueBuffer= #state.pAccValueBuffer[6];
-//    }
-//
-//
-//    n = 0;
-//    U16 accSampleCount = 0;
-//    while (n < SAMPLE_SZ) {
-//        U16 accExt;
-//        U16 accValueL;
-//        U16 accValueH;
-//
-//        // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
-//        if (accSampleCount == 0) {
-//             accReset();
-//        } else {
-//            U16 accValueL = *(pAccValueBuffer++);
-//            U16 accValueH = *(pAccValueBuffer++);
-//            accSet32u(accValueH, accValueL);
-//            pAccValueBuffer -= 2;
-//        }
-//        U16 adcValue;
-//        // this triggers the driver to start a measure and place the result in the output array
-//        adcGenManualTrigger();
-//        adcReadFifo(adcValue);
-//        U16 a=n;
-//        n=state.channelsIdx;
-//        //min, max, sum calculations
-//        if(adcValue<state.TxDetMin[n]){
-//            state.TxDetMin[n]=adcValue;
-//        }
-//        if(adcValue>state.TxDetMax[n]){
-//            state.TxDetMax[n]=adcValue;
-//        }
-//
-//        n=a;
-//
-//        // Add the ADC value to the accumulator
-//        accAdd16u(adcValue);
-//        accGetAll(accExt, accValueH, accValueL);
-//
-//
-//        // Before the accumulator contains the wanted number of samples: Save the accumulator value to
-//        // state.pAccValueBuffer[], so it can be restored in the next iteration
-//        if (accSampleCount != (SAMPLE_SZ - 1)) {
-//            *(pAccValueBuffer++) = accValueL;
-//            *(pAccValueBuffer++) = accValueH;
-//            pAccValueBuffer -= 2;
-//
-//        // When the accumulator contains the wanted number of samples: Save the accumulator value to
-//        // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
-//        } else{
-//            if (state.invalid != 1) {
-//                if(input.canTouchTester==1){
-//
-//                }
-//            }
-//            *(pAccValueBuffer++) = accValueL;
-//            *(pAccValueBuffer++) = accValueH;
-//            pAccValueBuffer -= 2;
-//
-//        }
-//
-//        n += 1;
-//        accSampleCount+=1;
-//
-//    }//end of   while (n < MULTI_BUFFER_SIZE) {
-//
-//    if(state.invalid != 1){
-//        if(state.alertEnabled == 1) {
-//            if(input.canTouchTester==1){
-//            state.alertEnabled = 0;
-//            input.canTouchTester=0;
-//             U16 accValueL = *(pAccValueBuffer++);
-//            U16 accValueH = *(pAccValueBuffer++);
-//             pAccValueBuffer -= 2;
-//                 pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
-//                *(pAccValueBuffer++) = accValueL;
-//                *(pAccValueBuffer++) = accValueH;
-//                pAccValueBuffer -= 2;
-//                pAccValueBuffer -= accValueBufferOutputOffset; //move back to state struct
-//            n=state.channelsIdx;
-//            output.TxDetMin[n]=state.TxDetMin[n];
-//            output.TxDetMax[n]=state.TxDetMax[n];
-//            fwGenQuickAlertInterrupt();
-//
-//           state.TxDetMin[n]=65535;
-//           state.TxDetMax[n]=0;
-//
-//        }
-//    }
-//    }
-//
-//
-//    // reset all variables and decalre the rest of necessary variables
-//    n = 0;
-//
+
+
+
+
+
+
+
+      //moving to sample if det
+    adcDisable();
+    adcSelectGpioInput(cfg.pAuxioASensorOutput[2]); //AUX Mapping 24--->DIO 25 IF det
+    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_5P3_US , ADC_TRIGGER_MANUAL); // MANUAl sampling, 5.3 us sample time, the fastest possible
+
+
+
+   U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
+   U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
+        //pAccValueBuffer[0]-pAccValueBuffer[1]: Tx channel 0
+        //pAccValueBuffer[2]-pAccValueBuffer[3]: Tx channel 1
+        //pAccValueBuffer[4]-pAccValueBuffer[5]: Tx channel 2
+        //pAccValueBuffer[6]-pAccValueBuffer[7]: Tx channel 3
+
+        //pAccValueBuffer[8]-pAccValueBuffer[9]:   Rx channel 0
+        //pAccValueBuffer[10]-pAccValueBuffer[11]: Rx channel 1
+        //pAccValueBuffer[12]-pAccValueBuffer[13]: Rx channel 2
+        //pAccValueBuffer[14]-pAccValueBuffer[15]: Rx channel 3
+
+        //pAccValueBuffer[16]-pAccValueBuffer[17]: IF Det DL channel 0
+        //pAccValueBuffer[18]-pAccValueBuffer[19]: IF Det DL channel 1
+        //pAccValueBuffer[20]-pAccValueBuffer[21]: IF Det DL channel 2
+        //pAccValueBuffer[22]-pAccValueBuffer[23]: IF Det DL channel 3
+
+        //pAccValueBuffer[24]-pAccValueBuffer[25]: IF Det UL channel 0
+        //pAccValueBuffer[26]-pAccValueBuffer[27]: IF Det UL channel 1
+        //pAccValueBuffer[28]-pAccValueBuffer[29]: IF Det UL channel 2
+        //pAccValueBuffer[30]-pAccValueBuffer[31]: IF Det UL channel 3
+    if(state.channelsIdx == 0){
+        pAccValueBuffer = #state.pAccValueBuffer[30];
+    }
+    if(state.channelsIdx == 1){
+        pAccValueBuffer=#state.pAccValueBuffer[28];
+    }
+    if(state.channelsIdx == 2){
+        pAccValueBuffer= #state.pAccValueBuffer[26];
+    }
+    if(state.channelsIdx == 3){
+        pAccValueBuffer= #state.pAccValueBuffer[24];
+    }
+
+
+  U16  n = 0;
+  U16 accSampleCount = 0;
+    while (n < SAMPLE_SZ) {
+        U16 accExt;
+        U16 accValueL;
+        U16 accValueH;
+
+        // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+        if (accSampleCount == 0) {
+            accReset();
+        } else {
+            U16 accValueL = *(pAccValueBuffer++);
+            U16 accValueH = *(pAccValueBuffer++);
+            accSet32u(accValueH, accValueL);
+            pAccValueBuffer -= 2;
+        }
+        U16 adcValue;
+        // this triggers the driver to start a measure and place the result in the output array
+        adcGenManualTrigger();
+        adcReadFifo(adcValue);
+        U16 a=n;
+        n=state.channelsIdx;
+        //min, max, sum calculations
+        if(adcValue<=state.IFDetULMin[n]){
+            state.IFDetULMin[n]=adcValue;
+        }
+        if(adcValue>=state.IFDetULMax[n]){
+            state.IFDetULMax[n]=adcValue;
+        }
+
+        n=a;
+
+        // Add the ADC value to the accumulator
+        accAdd16u(adcValue);
+        accGetAll(accExt, accValueH, accValueL);
+
+
+        // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+        // state.pAccValueBuffer[], so it can be restored in the next iteration
+        if (accSampleCount != (SAMPLE_SZ - 1)) {
+            *(pAccValueBuffer++) = accValueL;
+            *(pAccValueBuffer++) = accValueH;
+            pAccValueBuffer -= 2;
+
+        // When the accumulator contains the wanted number of samples: Save the accumulator value to
+        // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+        } else{
+            if (state.invalid != 1) {
+                if(input.canTouchTester==1){
+
+                }
+            }
+            *(pAccValueBuffer++) = accValueL;
+            *(pAccValueBuffer++) = accValueH;
+            pAccValueBuffer -= 2;
+
+        }
+
+        n += 1;
+        accSampleCount+=1;
+
+    }//end of   while (n < MULTI_BUFFER_SIZE) {
+
+
+
+
+
+    if(state.invalid != 1){
+        if(state.alertEnabled == 1) {
+            if(input.canTouchTester==1){
+                state.alertEnabled = 0;
+                input.canTouchTester=0;
+                U16 accValueL = *(pAccValueBuffer++);
+                U16 accValueH = *(pAccValueBuffer++);
+                pAccValueBuffer -= 2;
+                pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
+                *(pAccValueBuffer++) = accValueL;
+                *(pAccValueBuffer++) = accValueH;
+                pAccValueBuffer -= 2;
+                pAccValueBuffer -= accValueBufferOutputOffset; //move back to state struct
+                n=state.channelsIdx;
+                //min, max, sum calculations
+                output.IFDetULMin[n]=state.IFDetULMin[n];
+                output.IFDetULMax[n]=state.IFDetULMax[n];
+
+                fwGenQuickAlertInterrupt();
+
+
+                state.IFDetULMin[n]=65535;
+                state.IFDetULMax[n]=0;
+
+            }
+        }
+    }
+
+
+    // reset all variables and decalre the rest of necessary variables
+    n = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //    adcDisable();
+    //    adcSelectGpioInput(cfg.pAuxioASensorOutput[1]); //AUX Mapping 26--->DIO 23 TX det
+    //    adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_MANUAL); // MANUAl sampling, 2.7 us sample time, the fastest possible
+    //    //     adcEnableSync(ADC_REF_FIXED, ADC_SAMPLE_TIME_2P7_US, ADC_TRIGGER_AUX_TIMER1); // period sampling, 2.7 us sample time, the fastest possible
+    //
+    //
+    //
+    //    adcFlushFifo();
+    //
+    //    // Initialize variables, only 6 are available
+    //    U16 a = 0;
+    //    S16 b = 0;
+    //    U16 c = 0;
+    //    U16 n = 0;
+    //
+    //    U16 accValueBufferOutputOffset = #output.pAccValueBuffer - #state.pAccValueBuffer;
+    //    U16* pAccValueBuffer = #state.pAccValueBuffer[0]; //To create a pointer to a data structure member, use the # operator.
+    //    if(state.channelsIdx == 0){
+    //        pAccValueBuffer = #state.pAccValueBuffer[0];
+    //    }
+    //    if(state.channelsIdx == 1){
+    //        pAccValueBuffer=#state.pAccValueBuffer[2];
+    //    }
+    //    if(state.channelsIdx == 2){
+    //        pAccValueBuffer= #state.pAccValueBuffer[4];
+    //    }
+    //    if(state.channelsIdx == 3){
+    //        pAccValueBuffer= #state.pAccValueBuffer[6];
+    //    }
+    //
+    //
+    //    n = 0;
+    //    U16 accSampleCount = 0;
+    //    while (n < SAMPLE_SZ) {
+    //        U16 accExt;
+    //        U16 accValueL;
+    //        U16 accValueH;
+    //
+    //        // Reset the accumulator for the first sample in a block, or restore the accumulator for the current channel
+    //        if (accSampleCount == 0) {
+    //             accReset();
+    //        } else {
+    //            U16 accValueL = *(pAccValueBuffer++);
+    //            U16 accValueH = *(pAccValueBuffer++);
+    //            accSet32u(accValueH, accValueL);
+    //            pAccValueBuffer -= 2;
+    //        }
+    //        U16 adcValue;
+    //        // this triggers the driver to start a measure and place the result in the output array
+    //        adcGenManualTrigger();
+    //        adcReadFifo(adcValue);
+    //        U16 a=n;
+    //        n=state.channelsIdx;
+    //        //min, max, sum calculations
+    //        if(adcValue<state.TxDetMin[n]){
+    //            state.TxDetMin[n]=adcValue;
+    //        }
+    //        if(adcValue>state.TxDetMax[n]){
+    //            state.TxDetMax[n]=adcValue;
+    //        }
+    //
+    //        n=a;
+    //
+    //        // Add the ADC value to the accumulator
+    //        accAdd16u(adcValue);
+    //        accGetAll(accExt, accValueH, accValueL);
+    //
+    //
+    //        // Before the accumulator contains the wanted number of samples: Save the accumulator value to
+    //        // state.pAccValueBuffer[], so it can be restored in the next iteration
+    //        if (accSampleCount != (SAMPLE_SZ - 1)) {
+    //            *(pAccValueBuffer++) = accValueL;
+    //            *(pAccValueBuffer++) = accValueH;
+    //            pAccValueBuffer -= 2;
+    //
+    //        // When the accumulator contains the wanted number of samples: Save the accumulator value to
+    //        // output.pAccValueBuffer[] instead, so it can be handed over to the System CPU application
+    //        } else{
+    //            if (state.invalid != 1) {
+    //                if(input.canTouchTester==1){
+    //
+    //                }
+    //            }
+    //            *(pAccValueBuffer++) = accValueL;
+    //            *(pAccValueBuffer++) = accValueH;
+    //            pAccValueBuffer -= 2;
+    //
+    //        }
+    //
+    //        n += 1;
+    //        accSampleCount+=1;
+    //
+    //    }//end of   while (n < MULTI_BUFFER_SIZE) {
+    //
+    //    if(state.invalid != 1){
+    //        if(state.alertEnabled == 1) {
+    //            if(input.canTouchTester==1){
+    //            state.alertEnabled = 0;
+    //            input.canTouchTester=0;
+    //             U16 accValueL = *(pAccValueBuffer++);
+    //            U16 accValueH = *(pAccValueBuffer++);
+    //             pAccValueBuffer -= 2;
+    //                 pAccValueBuffer += accValueBufferOutputOffset; //move to output struct
+    //                *(pAccValueBuffer++) = accValueL;
+    //                *(pAccValueBuffer++) = accValueH;
+    //                pAccValueBuffer -= 2;
+    //                pAccValueBuffer -= accValueBufferOutputOffset; //move back to state struct
+    //            n=state.channelsIdx;
+    //            output.TxDetMin[n]=state.TxDetMin[n];
+    //            output.TxDetMax[n]=state.TxDetMax[n];
+    //            fwGenQuickAlertInterrupt();
+    //
+    //           state.TxDetMin[n]=65535;
+    //           state.TxDetMax[n]=0;
+    //
+    //        }
+    //    }
+    //    }
+    //
+    //
+    //    // reset all variables and decalre the rest of necessary variables
+    //    n = 0;
+    //
 
 
 }
