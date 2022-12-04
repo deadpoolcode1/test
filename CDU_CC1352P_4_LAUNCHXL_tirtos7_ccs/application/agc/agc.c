@@ -596,6 +596,9 @@ CRS_retVal_t Agc_sample(){
 //return CRS_FAILURE;
 //        }
 
+
+
+
         // values to correct ADC conversion offset
                int32_t adcOffset = AUXADCGetAdjustmentOffset(AUXADC_REF_FIXED);
                int32_t adcGainError = AUXADCGetAdjustmentGain(AUXADC_REF_FIXED);
@@ -777,9 +780,15 @@ static void avgArray(int32_t* array, int32_t* result){
 }
 
 void printADCOutput(){
+
+
+
+
 int channelIdx=0;
 int detIdx=0; // 0: ADC0_DIO23_Tx_Det, 1 : ADC1_DIO24_Rx_Det, 2 : ADC2_DIO25_IF_Det_DL, 3: ADC2_DIO25_IF_Det_UL
 for (detIdx = 0; detIdx < 4; detIdx++) {
+
+
     if ((gAgcMode==AGC_DL && detIdx==0) || (gAgcMode==AGC_DL && detIdx==3)) {
 continue;
            }
@@ -788,7 +797,11 @@ continue;
 continue;
            }
     for (channelIdx = 0; channelIdx < 4; channelIdx++) {
-
+#ifdef CLI_SENSOR
+        if (Tdd_isLocked()==CRS_SUCCESS) {
+#else
+        if (Tdd_isLocked()!=CRS_SUCCESS) {
+#endif
 //      CLI_cliPrintf("\r\n*****");
       switch (detIdx) {
         case 0:
@@ -812,9 +825,43 @@ continue;
                   CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
                   break;
     }
+
+
+
+    }else{
+   switch (detIdx) {
+        case 0:
+        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: N\\C",(channelIdx+1));
+        break;
+        case 1:
+
+        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: N\\C",(channelIdx+1));
+        break;
+        case 2:
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: N\\C",(channelIdx+1));
+        break;
+        case 3:
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: N\\C",(channelIdx+1));
+        break;
+   }
+         }
     }
 
 }
+
+
+
+
+
+
 
 //    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Average: %u uV", (outputValues[0].avg));
 //    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Max: %u uV", outputValues[0].max);
