@@ -72,7 +72,7 @@
   #define BOUNDARY_SEG_LEN   0x18 //!< Length of the boundary segment */
 #endif
 
-#define SOFTWARE_VER            {'C', '0', '0', 'b'}
+#define SOFTWARE_VER            {'C', '2', '0', 'C'}
 /*******************************************************************************
  * TYPEDEFS
  */
