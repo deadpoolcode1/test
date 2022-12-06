@@ -6257,12 +6257,17 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
     CLI_printCommInfo(CLI_AGC_SET_GAP, strlen(CLI_AGC_SET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling'] [0xus]");
     CLI_printCommInfo(CLI_AGC_GET_GAP, strlen(CLI_AGC_GET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling']");
+    CLI_printCommInfo(CLI_AGC_SET_TIME_MINMAX, strlen(CLI_AGC_SET_TIME_MINMAX), "[shortAddr] [seconds]");
+
 
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_FORMAT, strlen(CLI_CRS_INIT_GAIN_FORMAT), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_LS, strlen(CLI_CRS_INIT_GAIN_LS), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_RESTORE, strlen(CLI_CRS_INIT_GAIN_RESTORE), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_RM, strlen(CLI_CRS_INIT_GAIN_RM), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_UPDATE, strlen(CLI_CRS_INIT_GAIN_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+
+
+
 
     CLI_cliPrintf("\r\n");
 

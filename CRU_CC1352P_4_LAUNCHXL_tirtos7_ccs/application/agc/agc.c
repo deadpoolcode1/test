@@ -96,6 +96,7 @@ void scTaskAlertCallback(void) {
     //Util_setEvent(&AGC_events, AGC_EVT);
     if(scifTaskData.systemAgc.state.invalid != 1){
         gAgcReady = 1;
+
     }
 
 
@@ -131,6 +132,15 @@ CRS_retVal_t Agc_init(void * sem){
     if(gAgcInitialized){
         return CRS_SUCCESS;
     }
+    int j=0,k=0,l=0;
+for (j = 0; j < 4; j++) {
+    for (k = 0; k < 4; k++) {
+        for (l = 0; l < MAX_AVG_HOLD_ARRAY_SZ; l++) {
+            avgArrayHold[j][k][l]=-1;
+        }
+    }
+}
+
     gSem = sem;
     scifOsalInit(); //Construct Sensor Controller framework semaphore.
     scifOsalRegisterCtrlReadyCallback(scCtrlReadyCallback); //Interrupt handlers are registered. To Sensor Controller: CTRL initiates a control operation that starts or stops Sensor Controller tasks
@@ -199,7 +209,7 @@ for (i = 0; i < 4; i++) {
         outputValuesHold[i][j].avg=0;
     }
 }
-
+cntrAlerts=0;
 }
 
 
