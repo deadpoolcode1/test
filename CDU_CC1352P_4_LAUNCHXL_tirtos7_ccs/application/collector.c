@@ -145,7 +145,7 @@ void Collector_init()
     Tdd_initSem(sem);
     CRS_init();
     Manage_initSem(sem);
-    Oad_init(sem);
+//    Oad_init(sem);
     Csf_crsInitScript();
 //       Agc_init(); ----------->agc init is after you run flat script
 

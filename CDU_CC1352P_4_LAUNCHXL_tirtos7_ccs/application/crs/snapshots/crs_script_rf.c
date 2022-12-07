@@ -280,9 +280,9 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 //    writeGlobalsToFpga(&parsingContainer);
 //    printGlobalArrayAndLineMatrix(&parsingContainer);
 
-    free (parsingContainer.fileBuffer);
-    parsingContainer.fileBuffer = NULL;
-
+//    free (parsingContainer.fileBuffer);
+//    parsingContainer.fileBuffer = NULL;
+    CRS_free(&parsingContainer.fileBuffer);
     return retStatus;
 
 }

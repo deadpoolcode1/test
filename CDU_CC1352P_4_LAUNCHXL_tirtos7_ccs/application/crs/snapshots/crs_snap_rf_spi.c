@@ -201,6 +201,7 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
     }
     changeActiveLine(&fileTraverser);
     readNextReg(&fileTraverser);
+    CRS_free(&fileTraverser.fileContentCache);
 
     return rspStatus;
 }

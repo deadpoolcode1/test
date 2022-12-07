@@ -87,6 +87,7 @@ void CRS_init()
 
 void* CRS_malloc(uint16_t size)
 {
+//    CRS_LOG(CRS_INFO, "\r\nin malloc of size 0x%x", size);
     return malloc(size);
 
 }
@@ -99,6 +100,11 @@ void* CRS_calloc(uint16_t num ,size_t size)
 
 void* CRS_realloc(void* ptr, uint16_t size)
 {
+    if(ptr == NULL)
+      {
+          ptr = malloc(size);
+          return ptr;
+      }
     return realloc(ptr, size);
 
 }
@@ -108,14 +114,15 @@ void* CRS_realloc(void* ptr, uint16_t size)
 
  Public function defined in csf.h
  */
-void CRS_free(void *ptr)
+void CRS_free(char **ptr)
 {
-//    CRS_LOG(CRS_DEBUG, "FREEE");
-    if (ptr != NULL)
-    {
-        free(ptr);
+//    CRS_LOG(CRS_INFO, "\r\nin free");
 
-    }
+       if (*ptr != NULL)
+       {
+          free(*ptr);
+          *ptr = NULL;
+       }
 }
 
 

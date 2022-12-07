@@ -13,6 +13,8 @@
 #include <string.h>
 #include "crs_vars.h"
 #include "crs_nvs.h"
+#include "crs_env.h"
+
 
 /******************************************************************************
  Constants and definitions
@@ -39,8 +41,8 @@ static CRS_retVal_t nvsClose();
  *****************************************************************************/
 
 static char * envCache  = NULL;
-static NVS_Handle envHandle;
-static NVS_Attrs gRegionAttrs;
+static NVS_Handle envHandle = NULL;
+static NVS_Attrs gRegionAttrs = {0};
 static bool gIsMoudleInit = false;
 
 
@@ -63,7 +65,7 @@ CRS_retVal_t Env_restore()
 
     if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
     {
-        CRS_free(envCache);
+        CRS_free(&envCache);
 //        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
 //        if (!envCache)
 //        {
@@ -86,7 +88,7 @@ CRS_retVal_t Env_restore()
 
 }
 
-CRS_retVal_t Env_init(){
+CRS_retVal_t Env_init(void){
 
     if (nvsInit() != CRS_SUCCESS)
         {
@@ -195,14 +197,14 @@ CRS_retVal_t Env_delete(char *vars){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Env_format(){
+CRS_retVal_t Env_format(void){
     if (nvsInit() != CRS_SUCCESS)
     {
         return CRS_FAILURE;
     }
 //    int_fast16_t retStatus = NVS_erase(envHandle, 0, gRegionAttrs.regionSize);
     bool ret = Vars_createFile(&envHandle);
-    CRS_free(envCache);
+    CRS_free(&envCache);
     envCache = CRS_calloc(1, sizeof(char));
     nvsClose();
 

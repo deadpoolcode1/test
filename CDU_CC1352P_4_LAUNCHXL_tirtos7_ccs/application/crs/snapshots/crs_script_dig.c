@@ -233,7 +233,7 @@ void DIG_process(void)
             else
             {
                 gIsFileDone = false;
-                CRS_free(gFileContentCache);
+                CRS_free(&gFileContentCache);
                 gFileContentCache = NULL;
                 const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
@@ -259,7 +259,7 @@ void DIG_process(void)
         rspStatus = getPrevLine(line);
         if (rspStatus == CRS_FAILURE)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
             gFileContentCache = NULL;
 
             const FPGA_cbArgs_t cbArgs={0};
@@ -426,7 +426,7 @@ static CRS_retVal_t runLine(char *line)
             {
                 gIsFileDone = false;
 
-                CRS_free(gFileContentCache);
+                CRS_free(&gFileContentCache);
                 gFileContentCache = NULL;
                 const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
@@ -864,7 +864,7 @@ static CRS_retVal_t runErCommand(char *line)
 
 static CRS_retVal_t addEndOfFlieSequence()
 {
-    CRS_free(gFileContentCache);
+    CRS_free(&gFileContentCache);
     gFileContentCache = CRS_malloc(700);
     if (gFileContentCache == NULL)
     {

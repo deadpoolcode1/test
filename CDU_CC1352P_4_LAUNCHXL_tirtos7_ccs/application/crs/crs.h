@@ -88,7 +88,7 @@ extern CRS_cb_gain_states_t CRS_cbGainStates;
 void* CRS_malloc(uint16_t size);
 void* CRS_calloc(uint16_t num , size_t size);
 void* CRS_realloc(void *ptr ,uint16_t size);
-void CRS_free(void *ptr);
+void CRS_free(char **ptr);
 void CRS_init();
 CRS_retVal_t CRS_watchdogDisable();
 

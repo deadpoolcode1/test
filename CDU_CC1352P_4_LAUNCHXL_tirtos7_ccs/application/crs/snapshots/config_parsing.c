@@ -600,7 +600,7 @@ void Config_process(void)
             {
 
             }
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
@@ -612,7 +612,7 @@ void Config_process(void)
         rspStatus = Config_parseInvLine(line, &gInvLineStrct);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
@@ -648,7 +648,7 @@ void Config_process(void)
                                             gFileContentCache, line);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
@@ -659,7 +659,7 @@ void Config_process(void)
         rspStatus = Config_parseDiscoveryLine(line, &discLineStruct);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
@@ -697,7 +697,7 @@ void Config_process(void)
                 if (rspStatus != CRS_SUCCESS)
                 {
 
-                    CRS_free(gFileContentCache);
+                    CRS_free(&gFileContentCache);
 
                     const FPGA_cbArgs_t cbArgs={0};
                     gCbFn(cbArgs);
@@ -731,7 +731,7 @@ void Config_process(void)
             if (rspStatus != CRS_SUCCESS)
             {
 
-                CRS_free(gFileContentCache);
+                CRS_free(&gFileContentCache);
 
                 const FPGA_cbArgs_t cbArgs={0};
                 gCbFn(cbArgs);
@@ -754,7 +754,7 @@ void Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CLI_cliPrintf("\r\nConfig_getPackageLine didnt success");
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
@@ -767,7 +767,7 @@ void Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CLI_cliPrintf("\r\nConfig_parsePackageLine didnt success");
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
             const FPGA_cbArgs_t cbArgs={0};
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
@@ -794,7 +794,7 @@ void Config_process(void)
     }
     if (gConfigEvents & FINISHED_SINGLE_LINE_EV)
     {
-        CRS_free(gFileContentCache);
+        CRS_free(&gFileContentCache);
         const FPGA_cbArgs_t cbArgs={0};
         gCbFn(cbArgs);
         Util_clearEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
