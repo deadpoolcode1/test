@@ -203,8 +203,8 @@ void Csf_crsInitScript()
     CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
     CLI_startREAD();
     Alarms_init(sem);
-    Agc_init(sem); //uses ENV
-    Agc_ledEnv(); //uses ENV
+    Agc_init(sem); //uses ENV API=>safe with spi
+    Agc_ledEnv(); //uses ENV API=>safe with spi
 #else
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)

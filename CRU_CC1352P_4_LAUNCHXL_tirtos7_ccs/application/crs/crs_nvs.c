@@ -659,7 +659,8 @@ char* Nvs_readFileWithMalloc(char *filename)
 {
     if (nvsInit() != CRS_SUCCESS)
     {
-        return CRS_FAILURE;
+        CRS_LOG(CRS_ERR,"\r\nNvs_readFileWithMalloc nvsInit failed");
+        return NULL;
     }
 //    CLI_printHeapStatus();
     CRS_FAT_t fat;

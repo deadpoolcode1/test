@@ -116,12 +116,14 @@ void* CRS_realloc(void* ptr, uint16_t size)
 void CRS_free(char **ptr)
 {
 //    CRS_LOG(CRS_DEBUG, "FREEE");
+
     if (*ptr != NULL)
     {
         free(*ptr);
         *ptr = NULL;
     }
 }
+
 
 
 CRS_retVal_t CRS_watchdogDisable()

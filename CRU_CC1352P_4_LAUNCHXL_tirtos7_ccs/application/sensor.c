@@ -32,6 +32,7 @@
 #include "application/crs/snapshots/crs_multi_snapshots.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
 #include "application/crs/snapshots/crs_script_dig.h"
+#endif
 #include "application/crs/crs_locks.h"
 #include "crs/crs_tdd.h"
 #include "crs/crs_env.h"
@@ -191,7 +192,7 @@ void Sensor_init( )
     //    AGCinit(sem);
     Tdd_initSem(sem);
     CRS_init();
-    OadClient_init(sem);
+    OadClient_init(sem); //TODO verify uses spi-safe env api
     Msgs_init(sem);
     Ssf_crsInitScript();
     //       Agc_init(); ----------->agc init is after you run flat script
@@ -233,14 +234,14 @@ void Sensor_process(void)
     Snap_process();
     DIG_process();
 #endif
-    Fpga_process();
+//    Fpga_process();
 
     Agc_process();
     Tdd_process();
     Alarms_process();
     OadClient_process();
     Msgs_process();
-    Locks_process();
+//    Locks_process(); TODO fix it replace any fpga uart usage with an SPI
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();
@@ -254,6 +255,9 @@ void Ssf_crsInitScript()
 #ifdef CRS_TMP_SPI
     CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
     CLI_startREAD();
+    Alarms_init(sem);
+    Agc_init(sem); //TODO verify uses spi-safe env api
+   Agc_ledEnv(); //TODO verify uses spi-safe env api
 #else
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
