@@ -140,15 +140,16 @@ void Collector_init()
     DigInit(sem);
 #endif
     Nvs_init(sem);
+    Nvs_ls(0);
     Env_init();
-//    Thresh_init();
-//    CIGS_init();
-    SnapInit(sem);
+    Thresh_init();
+    CIGS_init();
+//    SnapInit(sem);
 //    Fpga_initSem(sem);
-    Tdd_initSem(sem);
+//    Tdd_initSem(sem);
     CRS_init();
-    Manage_initSem(sem);
-//    Oad_init(sem);
+//    Manage_initSem(sem);
+    Oad_init(sem); //used NVS and ENV
     Csf_crsInitScript();
 //       Agc_init(); ----------->agc init is after you run flat script
 
@@ -182,13 +183,13 @@ void Collector_process(void)
     RF_process();
     Snap_process();
 #endif
-    Fpga_process();
+//    Fpga_process();
     Tdd_process();
     Agc_process();
 
     Alarms_process();
     Oad_process();
-    Locks_process();
+//    Locks_process(); //TODO replace UART in SPI
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();
@@ -200,11 +201,11 @@ void Csf_crsInitScript()
 //    CRS_LOG(CRS_DEBUG, "Running script");
 
 #ifdef CRS_TMP_SPI
-    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
+//    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
     CLI_startREAD();
     Alarms_init(sem);
-    Agc_init(sem);
-    Agc_ledEnv();
+    Agc_init(sem); //uses ENV
+    Agc_ledEnv(); //uses ENV
 #else
     CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)

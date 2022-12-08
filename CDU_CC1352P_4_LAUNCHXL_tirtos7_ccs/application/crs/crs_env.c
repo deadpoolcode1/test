@@ -114,9 +114,9 @@ CRS_retVal_t Env_init(void){
         envCache = CRS_calloc(length, sizeof(char));
         status = Env_restore();
     }else{
-        envCache = CRS_calloc(sizeof(ENV_FILE), sizeof(char));
-//        status = Vars_getFile(&envHandle, envCache); // TODO fix this
-        memcpy(envCache,ENV_FILE, sizeof(ENV_FILE));
+        envCache = CRS_calloc(length, sizeof(char));
+        status = Vars_getFile(&envHandle, envCache); // TODO fix this
+//        memcpy(envCache,ENV_FILE, sizeof(ENV_FILE));
     }
     nvsClose();
 
@@ -225,7 +225,7 @@ static CRS_retVal_t nvsInit()
 
     if (envHandle == NULL)
     {
-
+        CRS_LOG(CRS_ERR,"\r\nfailed to open ENV nvs");
         return (CRS_FAILURE);
     }
 
