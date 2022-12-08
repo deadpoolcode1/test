@@ -11,6 +11,7 @@
 
 #include <ti/drivers/NVS.h>
 #include <string.h>
+#include "crs_thresholds.h"
 #include "crs_vars.h"
 #include "crs_nvs.h"
 
@@ -67,7 +68,7 @@ CRS_retVal_t Thresh_restore()
 
     if (Nvs_isFileExists(THRSH_FILENAME) == CRS_SUCCESS)
     {
-        CRS_free(threshCache);
+        CRS_free(&threshCache);
         threshCache = Nvs_readFileWithMalloc(THRSH_FILENAME);
         if (!threshCache)
         {
@@ -204,7 +205,7 @@ CRS_retVal_t Thresh_format(){
 
 
     bool ret = Vars_createFile(&threshHandle);
-    CRS_free(threshCache);
+    CRS_free(&threshCache);
     threshCache = CRS_calloc(1, sizeof(char));
     nvsClose();
 

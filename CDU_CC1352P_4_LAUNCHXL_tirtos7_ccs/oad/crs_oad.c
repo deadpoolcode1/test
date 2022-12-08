@@ -38,10 +38,6 @@
 #define OAD_UART_NEXT_BLOCK_EVT 0x0001
 #define OAD_RF_NEXT_BLOCK_EVT 0x0002
 #define OAD_RF_FINISHED_OAD_EVT 0x0004
-#define ALARMS_SET_CHECKPLLPRIMARY_ALARM_EVT 0x0008
-#define ALARMS_SET_CHECKPLLSECONDARY_ALARM_EVT 0x00010
-#define ALARMS_SET_DISCOVERYPLLPRIMARY_ALARM_EVT 0x0020
-#define ALARMS_SET_DISCOVERYPLLSECONDARY_ALARM_EVT 0x0040
 
 /******************************************************************************
  Local variables
@@ -145,17 +141,18 @@ CRS_retVal_t Oad_init(void *sem)
 
 }
 CRS_retVal_t Oad_checkImgEnvVar(){
-    OADStorage_init();
-    /* get Available FW version*/
-    OADStorage_imgIdentifyPld_t remoteAppImageId;
-    /* get Available FW version*/
-    OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteAppImageId);
-    if(remoteAppImageId.softVer[0]=='C'){
+
+    uint8_t page=0;
+        uint32_t offset=0;
+        uint8_t pBuf[100]={0};
+        uint16_t len=80;
+        readInternalbimFlashPg(page, offset, pBuf, len);
+    if(pBuf[32]=='C' || pBuf[32]=='F'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
         char ver[4]={0};
-        memcpy(ver,&remoteAppImageId.softVer[1],3);
+        memcpy(ver,&pBuf[33],3);
         uint32_t imgExtFlash=strtol(ver,NULL,10);
         //if this is a collector img - update the img env var
 //        if ((imgExtFlash>imgPrev)) {
@@ -164,7 +161,6 @@ CRS_retVal_t Oad_checkImgEnvVar(){
             Env_write(currImg);
 //        }
     }
-    OADStorage_close();
     return CRS_SUCCESS;
 }
 
@@ -392,6 +388,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
         oadBNumBlocks = OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteImgId);
         if (isFactory) {
             remoteImgId.imgType=OAD_IMG_TYPE_FACTORY;
+            remoteImgId.imgCpStat = DEFAULT_STATE;
         }
         /*
          * Hard code imgId to 0 - its not used in this
@@ -467,8 +464,9 @@ void* oadRadioAccessAllocMsg(uint32_t msgLen)
 
 CRS_retVal_t Oad_Reinit()
 {
-    oadInProgress = false;
+           oadInProgress = false;
           oadBNumBlocks = 0;
+          oadBlock=0;
           CLI_init(false);
           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
           CLI_startREAD();
@@ -527,7 +525,7 @@ static OADProtocol_Status_t oadRadioAccessPacketSend(void *pDstAddr,
 //    ConcentratorRadioTask_sendNodeMsg( (uint8_t*) pDstAddr, pMsg, msgLen + 2);
 
 //free the memory allocated in oadRadioAccessAllocMsg
-    CRS_free(pMsg);
+    CRS_free(&pMsg);
 
     return status;
 }

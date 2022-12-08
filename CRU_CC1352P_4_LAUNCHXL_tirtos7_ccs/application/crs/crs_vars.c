@@ -11,6 +11,8 @@
 #include "crs_thresholds.h"
 #include "crs_nvs.h"
 #include "crs_cli.h"
+#include "crs_cb_init_gain_states.h"
+#include "crs_vars.h"
 #include <stdlib.h>
 /* Driver Header files */
 #include <ti/drivers/NVS.h>
@@ -129,8 +131,8 @@ void Vars_setVars(char *file, char * vars, const char *d, char* returnedFile){
 
     }
 
-    CRS_free(copyFile);
-    CRS_free(copyVars);
+    CRS_free(&copyFile);
+    CRS_free(&copyVars);
 }
 
 bool Vars_getVars(char *file, char *keys, char *values)
@@ -182,8 +184,8 @@ bool Vars_getVars(char *file, char *keys, char *values)
         token = strtok(NULL, " ");
 
     }
-    CRS_free(copyFile);
-    CRS_free(copyKeys);
+    CRS_free(&copyFile);
+    CRS_free(&copyKeys);
     return exists;
 }
 
@@ -237,8 +239,8 @@ bool Vars_removeVars(char *file, char *keys, char * returnedFile){
         token = strtok(NULL, "\n");
 
     }
-    CRS_free(copyFile);
-    CRS_free(copyKeys);
+    CRS_free(&copyFile);
+    CRS_free(&copyKeys);
     return deleted;
 }
 
@@ -304,7 +306,7 @@ CRS_retVal_t Vars_setFile(NVS_Handle * fileHandle, char * file){
     memcpy(&fileCopy[STRLEN_BYTES], file, fileLength+1);
 
     int_fast16_t retStatus = NVS_write(*fileHandle, 0, (void*) fileCopy, fileLength+STRLEN_BYTES+1, NVS_WRITE_ERASE);
-    CRS_free(fileCopy);
+    CRS_free(&fileCopy);
     if(retStatus == NVS_STATUS_SUCCESS){
         return CRS_SUCCESS;
     }
@@ -342,7 +344,7 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 //    char fileCopy [1024] = {0};
 //    NVS_read(*fileHandle, 0, (void*) fileCopy, 1024);
 
-    CRS_free(returnedFile);
+    CRS_free(&returnedFile);
     return newLength+1;
 }
 
@@ -358,7 +360,7 @@ uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     bool deleted = Vars_removeVars(file, vars, returnedFile);
     if(!deleted){
         // if no deletion happened, return 0
-        CRS_free(returnedFile);
+        CRS_free(&returnedFile);
         return 0;
     }
 
@@ -374,7 +376,7 @@ uint16_t Vars_removeFileVars(NVS_Handle * fileHandle, char * file, char * vars){
 
 //    // write new file to flash
     NVS_write(*fileHandle, STRLEN_BYTES, file, newLength+1, NVS_WRITE_POST_VERIFY);
-    CRS_free(returnedFile);
+    CRS_free(&returnedFile);
     return newLength+1;
 
 }

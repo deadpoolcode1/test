@@ -192,7 +192,7 @@ CRS_retVal_t OadClient_init(void *sem)
 
 CRS_retVal_t Oad_checkImgEnvVar(){
     //if this is a sensor img - update the img env var
-    if( _imgHdr.fixedHdr.softVer[0]=='S'){
+    if( _imgHdr.fixedHdr.softVer[0]=='S' || _imgHdr.fixedHdr.softVer[0]=='F'){
         char envFile[1024] = { 0 };
         Env_read("img", envFile);
         uint32_t imgPrev = strtol(envFile + strlen("img="),NULL,10);
@@ -373,7 +373,7 @@ static void oadFwVersionReqCb(void *pSrcAddr)
 static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
                                 uint8_t *imgMetaData)
 {
-
+    OADStorage_init();
 //    CLI_cliPrintf("\r\noadImgIdentifyReqCb");
     /*
      * Ignore imgId - its not used in this
@@ -481,7 +481,7 @@ static OADProtocol_Status_t oadRadioAccessPacketSend(void *pDstAddr,
         status=OADProtocol_Status_Success;
     }
     //free the memory allocated in oadRadioAccessAllocMsg
-    CRS_free(pMsg);
+    CRS_free(&pMsg);
 
     return status;
 }

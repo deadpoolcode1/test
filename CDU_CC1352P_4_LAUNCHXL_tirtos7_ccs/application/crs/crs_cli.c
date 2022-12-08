@@ -27,6 +27,7 @@
 #include "application/util_timer.h"
 #include "mac/api_mac.h"
 #include "application/crs/crs_alarms.h"
+#include "application/crs/crs_locks.h"
 #include "crs.h"
 #ifndef CLI_SENSOR
 #include "application/collector.h"
@@ -46,6 +47,7 @@
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/crs_agc_management.h"
+#include "crs_cb_init_gain_states.h"
 
 #include "application/crs/crs_tmp.h"
 #include "crs_tdd.h"
@@ -85,6 +87,7 @@
 #define CONTROL_CH_STOP_TRANS '%'
 
 #define CLI_CRS_HELP "help"
+#define CLI_CRS_HELP_2  "help 2"
 
 #ifndef CLI_SENSOR
 
@@ -98,7 +101,6 @@
 #define CLI_LIST_SENSORS "list units"
 #define CLI_NWK_STATUS "nwk status"
 #define CLI_LED_TOGGLE "led toggle"
-
 
 #else
 #define CLI_ASSOC "assoc"
@@ -133,6 +135,8 @@
 #define CLI_CRS_TDD_FRAME "tdd set frame"
 #define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
 #define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
+#define CLI_CRS_LOCKS "locks"
+#define CLI_CRS_SET_DIO "set dio" //ment to set a GPIO/DIO value
 
 #define CLI_CRS_RF_RUN  "rf run"
 #define CLI_CRS_READ_RF_LINE    "read rf line"
@@ -169,6 +173,11 @@
 #define CLI_CRS_CONFIG_DIRECT "config direct"
 #define CLI_CRS_CONFIG_LINE "config line"
 #define CLI_CRS_CONFIG_FILE "config file"
+#define CLI_AGC_SET_GAP "agc set gap"
+#define CLI_AGC_GET_GAP "agc get gap"
+#define CLI_AGC_SET_TIME_MINMAX "agc set time"
+#define CLI_AGC_GET_TIME_MINMAX "agc get time"
+
 
 #define CLI_CRS_ENV_LS "env ls"
 #define CLI_CRS_ENV_UPDATE "env update"
@@ -181,6 +190,13 @@
 #define CLI_CRS_TRSH_RM "thrsh rm"
 #define CLI_CRS_TRSH_RESTORE "thrsh restore"
 #define CLI_CRS_TRSH_FORMAT "thrsh format"
+
+#define CLI_CRS_INIT_GAIN_LS "init gain ls"
+#define CLI_CRS_INIT_GAIN_UPDATE "init gain update"
+#define CLI_CRS_INIT_GAIN_RM "init gain rm"
+#define CLI_CRS_INIT_GAIN_RESTORE "init gain restore"
+#define CLI_CRS_INIT_GAIN_FORMAT "init gain format"
+
 
 #define CLI_CRS_GET_TIME "time"
 #define CLI_CRS_SET_TIME "set time"
@@ -209,6 +225,8 @@
 #define CLI_CRS_OAD_RCV_FACTORY_IMG "oad rcv factory img" //sending via UART a img into the extFlash factory slot
 #endif
 #define CLI_CRS_OAD_FACTORY_IMG "oad factory img" //backing up the current running img into extFlash factory slot
+#define CLI_CRS_OAD_FACTORY_CHECK "oad factory check" //checking if factory img exists or not on extFlash
+
 #define CLI_CRS_OAD_INVALID "oad invalid img" //making the current running img be invalid for the next boot
 #define CLI_CRS_OAD_FORMAT "oad format"
 
@@ -300,6 +318,16 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line);
 static CRS_retVal_t CLI_sensorModeParsing(char *line);
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
+static CRS_retVal_t CLI_agcSetGapParsing(char *line);
+static CRS_retVal_t CLI_agcGetGapParsing(char *line);
+static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line);
+static CRS_retVal_t CLI_agcGetTimeMinMaxParsing(char *line);
+static CRS_retVal_t CLI_setDioParsing(char *line);
+
+
+
+static CRS_retVal_t CLI_locksParsing(char *line);
+static void printLocksStatus(void);
 
 static CRS_retVal_t CLI_envUpdate(char *line);
 static CRS_retVal_t CLI_envRm(char *line);
@@ -312,6 +340,14 @@ static CRS_retVal_t CLI_trshRm(char *line);
 static CRS_retVal_t CLI_trshLs(char *line);
 static CRS_retVal_t CLI_trshFormat(char *line);
 static CRS_retVal_t CLI_trshRestore(char *line);
+
+
+static CRS_retVal_t CLI_cigsUpdate(char *line);
+static CRS_retVal_t CLI_cigsRm(char *line);
+static CRS_retVal_t CLI_cigsLs(char *line);
+static CRS_retVal_t CLI_cigsFormat(char *line);
+static CRS_retVal_t CLI_cigsRestore(char *line);
+
 
 static CRS_retVal_t CLI_getTimeParsing(char *line);
 static CRS_retVal_t CLI_setTimeParsing(char *line);
@@ -363,6 +399,7 @@ static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
+static CRS_retVal_t CLI_help2Parsing(char *line);
 static uint32_t MakeULFromHex(char *hex_str);
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
@@ -744,6 +781,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           inputBad = false;
       }
 
+
+
       if (memcmp(CLI_CRS_ENV_UPDATE, line, sizeof(CLI_CRS_ENV_UPDATE) - 1) == 0)
          {
 
@@ -825,6 +864,57 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
                    inputBad = false;
                }
+
+
+
+
+
+
+          if (memcmp(CLI_CRS_INIT_GAIN_UPDATE, line, sizeof(CLI_CRS_INIT_GAIN_UPDATE) - 1) == 0)
+                 {
+
+                  CLI_cigsUpdate(line);
+
+                     inputBad = false;
+                 }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_RM, line, sizeof(CLI_CRS_INIT_GAIN_RM) - 1) == 0)
+                   {
+
+                  CLI_cigsRm(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_LS, line, sizeof(CLI_CRS_INIT_GAIN_LS) - 1) == 0)
+                   {
+
+                  CLI_cigsLs(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_FORMAT, line, sizeof(CLI_CRS_INIT_GAIN_FORMAT) - 1) == 0)
+                   {
+
+                  CLI_cigsFormat(line);
+
+                       inputBad = false;
+                   }
+
+              if (memcmp(CLI_CRS_INIT_GAIN_RESTORE, line, sizeof(CLI_CRS_INIT_GAIN_RESTORE) - 1) == 0)
+                   {
+
+                  CLI_cigsRestore(line);
+
+                       inputBad = false;
+                   }
+
+
+
+
+
+
 
           if (memcmp(CLI_CRS_SET_TIME, line, sizeof(CLI_CRS_SET_TIME) - 1) == 0)
               {
@@ -1001,6 +1091,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
 
 
+      if (memcmp (CLI_CRS_LOCKS, line, sizeof(CLI_CRS_LOCKS) - 1) == 0)
+      {
+          CLI_locksParsing(line);
+
+          inputBad = false;
+      }
 
 
 
@@ -1166,20 +1262,110 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 #endif
       if (memcmp(CLI_CRS_OAD_FACTORY_IMG, line, sizeof(CLI_CRS_OAD_FACTORY_IMG) - 1) == 0)
                {
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FACTORY_IMG) + 2]), NULL,
+                                                  16);
+                 #ifndef CLI_SENSOR
 
+                     uint16_t addr = 0;
+                     Cllc_getFfdShortAddr(&addr);
+                     if (addr != shortAddr)
+                     {
+                         //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                         ApiMac_sAddr_t dstAddr;
+                         dstAddr.addr.shortAddr = shortAddr;
+                         dstAddr.addrMode = ApiMac_addrType_short;
+                         Collector_status_t stat;
+                         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                         if (stat != Collector_status_success)
+                         {
+                             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                             CLI_startREAD();
+                         }
+
+                 //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                         return CRS_SUCCESS;
+                     }
+                 #endif
           CRS_retVal_t rsp=  Oad_createFactoryImageBackup();
           CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
                    inputBad = false;
                    CLI_startREAD();
                }
-
-      if (memcmp(CLI_CRS_OAD_INVALID, line, sizeof(CLI_CRS_OAD_INVALID) - 1) == 0)
+      //oad factory check [shortAddr]
+      if (memcmp(CLI_CRS_OAD_FACTORY_CHECK, line, sizeof(CLI_CRS_OAD_FACTORY_CHECK) - 1) == 0)
                {
-          Oad_invalidateImg();
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FACTORY_CHECK) + 2]), NULL,
+                                         16);
+        #ifndef CLI_SENSOR
 
+            uint16_t addr = 0;
+            Cllc_getFfdShortAddr(&addr);
+            if (addr != shortAddr)
+            {
+                //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                ApiMac_sAddr_t dstAddr;
+                dstAddr.addr.shortAddr = shortAddr;
+                dstAddr.addrMode = ApiMac_addrType_short;
+                Collector_status_t stat;
+                stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                if (stat != Collector_status_success)
+                {
+                    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                    CLI_startREAD();
+                }
+
+        //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                return CRS_SUCCESS;
+            }
+        #endif
+           bool rspBool= OADStorage_checkFactoryImage();
+           CRS_retVal_t rsp=CRS_FAILURE;
+           if (rspBool==true) {
+               rsp=CRS_SUCCESS;
+        }
+          CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
                    inputBad = false;
                    CLI_startREAD();
                }
+
+
+          //oad invalid img [shortAddr]
+         if (memcmp(CLI_CRS_OAD_INVALID, line, sizeof(CLI_CRS_OAD_INVALID) - 1) == 0)
+                  {
+
+             uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_INVALID) + 2]), NULL,
+                                             16);
+            #ifndef CLI_SENSOR
+
+                uint16_t addr = 0;
+                Cllc_getFfdShortAddr(&addr);
+                if (addr != shortAddr)
+                {
+                    //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                    ApiMac_sAddr_t dstAddr;
+                    dstAddr.addr.shortAddr = shortAddr;
+                    dstAddr.addrMode = ApiMac_addrType_short;
+                    Collector_status_t stat;
+                    stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                    if (stat != Collector_status_success)
+                    {
+                        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                        CLI_startREAD();
+                    }
+
+            //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                    return CRS_SUCCESS;
+                }
+            #endif
+
+               CRS_retVal_t rsp= Oad_invalidateImg();
+              CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                       inputBad = false;
+                       CLI_startREAD();
+                  }
+
+
+
       if (memcmp(CLI_CRS_RESET, line, sizeof(CLI_CRS_RESET) - 1) == 0)
                {
               CLI_OadResetParsing(line);
@@ -1195,7 +1381,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
                inputBad = false;
                  }
-
+      //set dio [shortAddr] [dioIdx] [value: 0x0 | 0x1]
+      if (memcmp(CLI_CRS_SET_DIO, line, sizeof(CLI_CRS_SET_DIO) - 1) == 0)
+                 {
+           CRS_retVal_t ret= CLI_setDioParsing(line);
+               inputBad = false;
+                 }
 
       if (memcmp(CLI_CRS_LED_ON, line, sizeof(CLI_CRS_LED_ON) - 1) == 0)
                {
@@ -1217,9 +1408,34 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
-                  Oad_flashFormat();
-                   inputBad = false;
-                   CLI_startREAD();
+          uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_OAD_FORMAT) + 2]), NULL,
+                                                  16);
+                 #ifndef CLI_SENSOR
+
+                     uint16_t addr = 0;
+                     Cllc_getFfdShortAddr(&addr);
+                     if (addr != shortAddr)
+                     {
+                         //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                         ApiMac_sAddr_t dstAddr;
+                         dstAddr.addr.shortAddr = shortAddr;
+                         dstAddr.addrMode = ApiMac_addrType_short;
+                         Collector_status_t stat;
+                         stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                         if (stat != Collector_status_success)
+                         {
+                             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                             CLI_startREAD();
+                         }
+
+                 //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+                         return CRS_SUCCESS;
+                     }
+                 #endif
+                    CRS_retVal_t ret= Oad_flashFormat();
+                   CLI_cliPrintf("\r\nStatus: 0x%x", ret);
+                            inputBad = false;
+                            CLI_startREAD();
                }
 
 
@@ -1340,6 +1556,24 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_sensorGetModeParsing(line);
           inputBad = false;
       }
+      else if (memcmp(CLI_AGC_SET_GAP, line, sizeof(CLI_AGC_SET_GAP) - 1) == 0){
+          CLI_agcSetGapParsing(line);
+          inputBad = false;
+      }
+
+      else if (memcmp(CLI_AGC_GET_GAP, line, sizeof(CLI_AGC_GET_GAP) - 1) == 0){
+                    CLI_agcGetGapParsing(line);
+                    inputBad = false;
+                }
+  else if (memcmp(CLI_AGC_SET_TIME_MINMAX, line, sizeof(CLI_AGC_SET_TIME_MINMAX) - 1) == 0){
+      CLI_agcSetTimeMinMaxParsing(line);
+          inputBad = false;
+      }
+
+  else if (memcmp(CLI_AGC_GET_TIME_MINMAX, line, sizeof(CLI_AGC_GET_TIME_MINMAX) - 1) == 0){
+      CLI_agcGetTimeMinMaxParsing(line);
+          inputBad = false;
+      }
 
       else if (memcmp(CLI_AGC_CHANNEL, line, sizeof(CLI_AGC_CHANNEL) - 1) == 0){
           CLI_sensorChannelParsing(line);
@@ -1434,11 +1668,17 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
 
 
-      if (memcmp(CLI_CRS_HELP, line, sizeof(CLI_CRS_HELP) - 1) == 0)
+      if ((memcmp(CLI_CRS_HELP, line, sizeof(CLI_CRS_HELP) - 1) == 0) && memcmp(CLI_CRS_HELP_2, line, sizeof(CLI_CRS_HELP_2) - 1) != 0 )
          {
              CLI_helpParsing(line);
              inputBad = false;
          }
+
+      if (memcmp(CLI_CRS_HELP_2, line, sizeof(CLI_CRS_HELP_2) - 1) == 0)
+          {
+              CLI_help2Parsing(line);
+              inputBad = false;
+          }
 
       if (inputBad && strlen(line) > 0)
       {
@@ -1756,6 +1996,258 @@ static CRS_retVal_t CLI_unit(char *line)
         return CRS_SUCCESS;
 }
 
+
+
+//agc set gap [shortAddr] [start/stop] [rising/falling] [us]
+static CRS_retVal_t CLI_agcSetGapParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_GAP)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        uint8_t isStart=0;
+        token = strtok(NULL, s); //[start/stop]
+        if (memcmp(token, "start", 5)==0) {
+            isStart=1;
+        }
+       uint8_t isRising=0;
+    token = strtok(NULL, s);// [rising/falling]
+    if (memcmp(token, "rising", 6)==0) {
+        isRising=1;
+    }
+
+    token = strtok(NULL, s); //[us]
+    uint16_t us = strtoul((token), NULL, 10);
+    CRS_retVal_t retStatus=Agc_setGap(isStart,isRising, us);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+//agc get gap [shortAddr] [start/stop] [rising/falling]
+static CRS_retVal_t CLI_agcGetGapParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_GAP)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        uint8_t isStart=0;
+        token = strtok(NULL, s); //[start/stop]
+        if (memcmp(token, "start", 5)==0) {
+            isStart=1;
+        }
+       uint8_t isRising=0;
+    token = strtok(NULL, s); //[tx/rx]
+    if (memcmp(token, "rising", 6)==0) {
+        isRising=1;
+    }
+    uint16_t result;
+    CRS_retVal_t retStatus=Agc_getGap(isStart,isRising,&result);
+    CLI_cliPrintf("\r\nGap Value: 0x%x", result);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+
+//agc set time [shortAddr] [seconds]
+static CRS_retVal_t CLI_agcSetTimeMinMaxParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_SET_TIME_MINMAX)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+        token = strtok(NULL, s); //[seconds]
+    uint32_t seconds = strtoul((token), NULL, 10);
+    CRS_retVal_t retStatus=Agc_setTimeMinMax(seconds);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+//agc get time [shortAddr]
+static CRS_retVal_t CLI_agcGetTimeMinMaxParsing(char *line)
+{
+     const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_AGC_GET_TIME_MINMAX)]), s);
+       uint32_t addrSize = strlen(token);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+
+    //        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+            return CRS_SUCCESS;
+        }
+    #endif
+    uint32_t seconds= 0;
+    CRS_retVal_t retStatus=Agc_getTimeMinMax(&seconds);
+    CLI_cliPrintf("\r\nTime Value: 0x%x", seconds);
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+    return retStatus;
+}
+
+
+//set dio [shortAddr] [dioIdx] [value: 0x0 | 0x1]
+static CRS_retVal_t CLI_setDioParsing(char *line)
+{
+uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_MODE) + 2]), NULL,
+                               16);
+#ifndef CLI_SENSOR
+  uint16_t addr = 0;
+  Cllc_getFfdShortAddr(&addr);
+  if (addr != shortAddr)
+  {
+      //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+      ApiMac_sAddr_t dstAddr;
+      dstAddr.addr.shortAddr = shortAddr;
+      dstAddr.addrMode = ApiMac_addrType_short;
+      Collector_status_t stat;
+      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+      if (stat != Collector_status_success)
+      {
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+      }
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+      return CRS_SUCCESS;
+  }
+#endif
+      const char s[2] = " ";
+     char *token;
+     char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+     /* get the first token */
+     token = strtok(&(tmpBuff[sizeof(CLI_CRS_LED_MODE)]), s); //shortAddr
+     token = strtok(NULL, s);//[dioIdx]
+     if (token == NULL) {
+      return CRS_FAILURE;
+  }
+     uint32_t dioIdxInt =0;
+     dioIdxInt=strtoul(token,NULL,10);
+     token = strtok(NULL, s);//[value: 0x0 | 0x1]
+     if (token == NULL) {
+           return CRS_FAILURE;
+       }
+     uint32_t value =0;
+    value=strtoul(token+2,NULL,16);
+  CRS_retVal_t retStatus =Agc_setDio(dioIdxInt,value);
+  Agc_readDio(dioIdxInt);
+  CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+  CLI_startREAD();
+  return retStatus;
+}
+
+
+
 //ledMode [shortAddr] [on/off: 0x1 | 0x0]
 static CRS_retVal_t CLI_ledModeParsing(char *line)
 {
@@ -1898,8 +2390,32 @@ static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
 
 static CRS_retVal_t CLI_fpgaCloseParsing(char *line)
 {
-    Fpga_close();
-    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_CLOSE) + 2]), NULL,
+                                 16);
+#ifndef CLI_SENSOR
+
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+        if (stat != Collector_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+        }
+
+//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+        return CRS_SUCCESS;
+    }
+#endif
+    CRS_retVal_t retStatus = Fpga_close();
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return CRS_SUCCESS;
 }
@@ -2627,8 +3143,12 @@ static CRS_retVal_t CLI_tddGetLockParsing(char *line)
              return CRS_SUCCESS;
          }
      #endif
+#ifdef CLI_SENSOR
+         CRS_retVal_t retStatus = (Tdd_isLocked());
 
-         CRS_retVal_t retStatus = Tdd_isLocked();
+#else
+         CRS_retVal_t retStatus = !(Tdd_isLocked());
+#endif
          if(retStatus == CRS_SUCCESS){
              CLI_cliPrintf("\r\nLOCKED");
          }
@@ -3274,162 +3794,14 @@ static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
            return CRS_SUCCESS;
        }
     #endif
-
-    uint16_t channel = Agc_getChannel();
-    uint16_t rfIf = 0;
-    uint16_t maxMinAvg = 0;
-
-    // get args for filtering by channel, DL/UL, RF/IF and max/average/min
-    token = strtok(NULL, s);
-    if(token){
-        if(!channel){
-            channel = strtoul(&(token[2]), NULL, 16);
-        }
-        token = strtok(NULL, s);
-        if(token){
-            if(!mode){
-                mode = strtoul(&(token[2]), NULL, 16);
-            }
-            token = strtok(NULL, s);
-            if(token){
-                rfIf = strtoul(&(token[2]), NULL, 16);
-                token = strtok(NULL, s);
-                if(token){
-                    maxMinAvg = strtoul(&(token[2]), NULL, 16);
-                    token = strtok(NULL, s);
-                }
-            }
-        }
-    }
-
-    CRS_retVal_t retStatus =  Agc_sample_debug();
-    AGC_results_t agcResults;
-    if(retStatus == CRS_SUCCESS){
-        agcResults = Agc_getResults();
-    }
-    else{
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-        // CLI_cliPrintf("\r\nSensorStatus=SC_ERROR");
-//#ifndef CLI_SENSOR
-//        CLI_cliPrintf("\r\nULDetMaxPwr=N/A");
-//        CLI_cliPrintf("\r\nDLDetMaxInPwr=N/A");
-//#else
-//        CLI_cliPrintf("\r\nDLDetMaxOutPwr=N/A");
-//        CLI_cliPrintf("\r\nULDetMaxInPwr=N/A");
-//#endif
-        CLI_startREAD();
-        return retStatus;
-    }
-    int i;
-    // print all channels results
-//    CLI_cliPrintf("\r\nSensorMode=0x%x",mode);
-    if(!channel){
-        for(i=0;i<4;i++){
-                if(mode == 0 || mode == 1){
-                    if(rfIf == 0 || rfIf == 1){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nRF DL max %i: %u", i+1, agcResults.adcMaxResults[i]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nRF DL avg %i: %u", i+1, agcResults.adcAvgResults[i]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nRF DL min %i: %u", i+1, agcResults.adcMinResults[i]);
-                        }
-                    }
-                    if(rfIf == 0 || rfIf == 2){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nIF DL max %i: %u", i+1, agcResults.adcMaxResults[i+8]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nIF DL avg %i: %u", i+1, agcResults.adcAvgResults[i+8]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nIF DL min %i: %u", i+1, agcResults.adcMinResults[i+8]);
-                        }
-                    }
-                }
-                if (mode == 0 || mode == 2){
-                    if(rfIf == 0 || rfIf == 1){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nRF UL max %i: %u", i+1, agcResults.adcMaxResults[i+4]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nRF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+4]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nRF UL min %i: %u", i+1, agcResults.adcMinResults[i+4]);
-                        }
-                    }
-                    if(rfIf == 0 || rfIf == 2){
-                        if(maxMinAvg == 0 || maxMinAvg == 1){
-                            CLI_cliPrintf("\r\nIF UL max %i: %u", i+1, agcResults.adcMaxResults[i+12]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 2){
-                            CLI_cliPrintf("\r\nIF UL avg %i: %u", i+1, agcResults.adcAvgResults[i+12]);
-                        }
-                        if(maxMinAvg == 0 || maxMinAvg == 3){
-                            CLI_cliPrintf("\r\nIF UL min %i: %u", i+1, agcResults.adcMinResults[i+12]);
-                        }
-                    }
-                }
-        }
-    }
-    else{
-        if(mode == 0 || mode == 1){
-            if(rfIf == 0 || rfIf == 1){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nRF DL max %i: %u", channel, agcResults.adcMaxResults[channel-1]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nRF DL avg %i: %u", channel, agcResults.adcAvgResults[channel-1]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nRF DL min %i: %u", channel, agcResults.adcMinResults[channel-1]);
-                }
-            }
-            if(rfIf == 0 || rfIf == 2){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nIF DL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+8]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nIF DL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+8]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nIF DL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+8]);
-                }
-            }
-//                CLI_cliPrintf("\r\n%u", agcResults.adcMaxResults[0]);
-        }
-        if (mode == 0 || mode == 2){
-            if(rfIf == 0 || rfIf == 1){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nRF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+4]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nRF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+4]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nRF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+4]);
-                }
-            }
-            if(rfIf == 0 || rfIf == 2){
-                if(maxMinAvg == 0 || maxMinAvg == 1){
-                    CLI_cliPrintf("\r\nIF UL max %i: %u", channel, agcResults.adcMaxResults[(channel-1)+12]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 2){
-                    CLI_cliPrintf("\r\nIF UL avg %i: %u", channel, agcResults.adcAvgResults[(channel-1)+12]);
-                }
-                if(maxMinAvg == 0 || maxMinAvg == 3){
-                    CLI_cliPrintf("\r\nIF UL min %i: %u", channel, agcResults.adcMinResults[(channel-1)+12]);
-                }
-            }
-        }
-    }
+CRS_retVal_t retStatus=CRS_SUCCESS;
+     printADCOutput();
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return retStatus;
 }
+
+
 
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line)
 {
@@ -4061,7 +4433,7 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
     }
 
 
-    CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback);
+    CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback,false);
 
     if (retStatus != CRS_SUCCESS)
     {
@@ -4683,6 +5055,70 @@ static CRS_retVal_t CLI_envUpdate(char *line)
 
 }
 
+
+static CRS_retVal_t CLI_locksParsing(char *line)
+{
+    const char s[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CRS_LOCKS)]), s);
+    //token = strtok(NULL, s);
+    uint32_t commSize = sizeof(CLI_CRS_LOCKS);
+    uint32_t addrSize = strlen(token);
+    //shortAddr in decimal
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+   #ifndef CLI_SENSOR
+
+       uint16_t addr = 0;
+       Cllc_getFfdShortAddr(&addr);
+       if (addr != shortAddr)
+       {
+           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+           ApiMac_sAddr_t dstAddr;
+           dstAddr.addr.shortAddr = shortAddr;
+           dstAddr.addrMode = ApiMac_addrType_short;
+           Collector_status_t stat;
+           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+           if (stat != Collector_status_success)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                  }
+//           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+           return CRS_SUCCESS;
+       }
+   #endif
+
+        Locks_checkLocks(printLocksStatus);
+
+       return CRS_SUCCESS;
+}
+
+
+static void printLocksStatus(void)
+{
+#ifndef CLI_SENSOR
+    bool tddIsLocked = Locks_getTddLockVal();
+    char *answer = tddIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nTDD LOCK: %s", answer);
+#else
+    bool adfIsLocked = Locks_getAdfLockVal();
+    char *answer = adfIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nADF LOCK: %s", answer);
+#endif
+    bool tiIsLocked = Locks_getTiLockVal();
+    answer = tiIsLocked == true ? "LOCKED" : "UNLOCKED";
+    CLI_cliPrintf("\r\nTI LOCK: %s", answer);
+
+    CLI_startREAD();
+}
+
 static CRS_retVal_t CLI_envRm(char *line)
 {
     const char s[2] = " ";
@@ -4783,7 +5219,7 @@ static CRS_retVal_t CLI_envLs(char *line)
     char envFile[CUI_NUM_UART_CHARS] = {0};
     char envTmp[4096] = {0};
     memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
-    CRS_retVal_t rsp = Env_read(envFile, envTmp);
+    CRS_retVal_t rsp =Env_read(envFile, envTmp); //Env_read(envFile, envTmp);
     if (rsp != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -4805,6 +5241,219 @@ static CRS_retVal_t CLI_envLs(char *line)
     return CRS_SUCCESS;
 
 }
+
+
+//static CRS_retVal_t CLI_varsCmdParser(char *line, varsCmd_t varsCmdType, varsType_t varsType)
+//{
+//    const char s[2] = " ";
+//    char *token;
+//    char tmpBuff[CUI_NUM_UART_CHARS] = {0};
+//    uint16_t flag=0;
+//    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//    /* get the first token */
+//    // 0xaabb shortAddr
+//
+//    if (varsCmdType == varsCmd_ls)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_LS)]), s);
+//            flag=0;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_LS)]), s);
+//            flag=1;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_LS)]), s);
+//            flag=2;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_format)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_FORMAT)]), s);
+//            flag=3;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_FORMAT)]), s);
+//            flag=4;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_FORMAT)]), s);
+//            flag=5;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_rm)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_RM)]), s);
+//            flag=6;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_RM)]), s);
+//            flag=7;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RM)]), s);
+//            flag=8;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_update)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_UPDATE)]), s);
+//            flag=9;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_UPDATE)]), s);
+//            flag=10;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_UPDATE)]), s);
+//            flag=11;
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_restore)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_ENV_RESTORE)]), s);
+//            flag=12;
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_THRSH_RESTORE)]), s);
+//            flag=13;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//            token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RESTORE)]), s);
+//            flag=14;
+//        }
+//    }
+//
+//    // token = strtok(NULL, s);
+//    //                  uint32_t commSize = sizeof(CLI_CRS_ENV_FORMAT);
+//    uint32_t addrSize = strlen(token);
+//    // shortAddr in decimal
+//    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//#ifndef CLI_SENSOR
+//
+//    uint16_t addr = 0;
+//    Cllc_getFfdShortAddr(&addr);
+//    if (addr != shortAddr)
+//    {
+//        //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = shortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+//        if (stat != Collector_status_success)
+//        {
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//        //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//        return CRS_SUCCESS;
+//    }
+//#endif
+//    if (varsCmdType == varsCmd_ls)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_format)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_rm)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_update)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//    else if (varsCmdType == varsCmd_restore)
+//    {
+//        if (varsType == varsType_env)
+//        {
+//
+//        }
+//        else if (varsType == varsType_thrsh)
+//        {
+//          ;
+//        }
+//        else if (varsType == varsType_initGain)
+//        {
+//
+//        }
+//    }
+//
+////    CRS_retVal_t rsp = Env_format();
+////    CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+//    CLI_startREAD();
+//    return rsp;
+//}
+
 
 static CRS_retVal_t CLI_envFormat(char *line)
 {
@@ -5214,6 +5863,282 @@ static CRS_retVal_t CLI_trshRestore(char *line)
 }
 
 
+
+
+
+static CRS_retVal_t CLI_cigsUpdate(char *line)
+{
+    const char s[2] = " ";
+           char *token;
+           char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+           memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+           /* get the first token */
+           //0xaabb shortAddr
+           token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_UPDATE)]), s);
+           //token = strtok(NULL, s);
+           uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_UPDATE);
+           uint32_t addrSize = strlen(token);
+           //shortAddr in decimal
+           uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+       #ifndef CLI_SENSOR
+
+           uint16_t addr = 0;
+           Cllc_getFfdShortAddr(&addr);
+           if (addr != shortAddr)
+           {
+               //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+               ApiMac_sAddr_t dstAddr;
+               dstAddr.addr.shortAddr = shortAddr;
+               dstAddr.addrMode = ApiMac_addrType_short;
+               Collector_status_t stat;
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+               if (stat != Collector_status_success)
+                      {
+                          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                          CLI_startREAD();
+                      }
+    //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+               return CRS_SUCCESS;
+           }
+       #endif
+           uint32_t command_len = commSize + addrSize+ 1;
+           char vars[CUI_NUM_UART_CHARS] = {0};
+           memcpy(vars, line + command_len, strlen(line + command_len));
+
+           CRS_retVal_t rspStatus = CIGS_write(vars);
+           if (rspStatus != CRS_SUCCESS)
+           {
+               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+               CLI_startREAD();
+               return CRS_FAILURE;
+
+           }
+           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+           CLI_startREAD();
+                      return CRS_SUCCESS;
+
+
+
+}
+
+static CRS_retVal_t CLI_cigsRm(char *line)
+{
+    const char s[2] = " ";
+               char *token;
+               char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+               memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+               /* get the first token */
+               //0xaabb shortAddr
+               token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RM)]), s);
+               //token = strtok(NULL, s);
+               uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_RM);
+               uint32_t addrSize = strlen(token);
+               //shortAddr in decimal
+               uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+           #ifndef CLI_SENSOR
+
+               uint16_t addr = 0;
+               Cllc_getFfdShortAddr(&addr);
+               if (addr != shortAddr)
+               {
+                   //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                   ApiMac_sAddr_t dstAddr;
+                   dstAddr.addr.shortAddr = shortAddr;
+                   dstAddr.addrMode = ApiMac_addrType_short;
+                   Collector_status_t stat;
+                   stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                   if (stat != Collector_status_success)
+                          {
+                              CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                              CLI_startREAD();
+                          }
+        //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                   return CRS_SUCCESS;
+               }
+           #endif
+
+           char vars[CUI_NUM_UART_CHARS] = {0};
+             memcpy(vars, line + commSize+ addrSize+ 1, strlen(line + commSize+ addrSize+ 1));
+             CRS_retVal_t rsp = CIGS_delete(vars);
+             CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+             CLI_startREAD();
+             return rsp;
+}
+
+
+
+static CRS_retVal_t CLI_cigsLs(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_LS)]), s);
+                  //token = strtok(NULL, s);
+                  uint32_t commSize = sizeof(CLI_CRS_INIT_GAIN_LS);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+
+
+
+                  char envFile[CUI_NUM_UART_CHARS] = {0};
+                  char envTmp[4096] = {0};
+                  memcpy(envFile, line + commSize+ addrSize+ 1, strlen(line));
+                  CRS_retVal_t rsp = CIGS_read(envFile, envTmp);
+                  if (rsp != CRS_SUCCESS)
+                  {
+                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                      CLI_startREAD();
+                      return CRS_FAILURE;
+
+                  }
+
+                  const char d[2] = "\n";
+                  token = strtok(envTmp, d);
+
+                  while (token != NULL)
+                  {
+                      CLI_cliPrintf("\r\n%s",token );
+                      token = strtok(NULL, d);
+                  }
+
+
+                  //filename
+
+                  CLI_startREAD();
+                  return CRS_SUCCESS;
+
+}
+
+static CRS_retVal_t CLI_cigsFormat(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_FORMAT)]), s);
+                  //token = strtok(NULL, s);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_FORMAT);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+
+
+                  CRS_retVal_t rsp = CIGS_format();
+                  CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                  CLI_startREAD();
+                  return rsp;
+}
+
+static CRS_retVal_t CLI_cigsRestore(char *line)
+{
+    const char s[2] = " ";
+                  char *token;
+                  char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+                  memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+                  /* get the first token */
+                  //0xaabb shortAddr
+                  token = strtok(&(tmpBuff[sizeof(CLI_CRS_INIT_GAIN_RESTORE)]), s);
+                  //token = strtok(NULL, s);
+//                  uint32_t commSize = sizeof(CLI_CRS_TRSH_RESTORE);
+                  uint32_t addrSize = strlen(token);
+                  //shortAddr in decimal
+                  uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+              #ifndef CLI_SENSOR
+
+                  uint16_t addr = 0;
+                  Cllc_getFfdShortAddr(&addr);
+                  if (addr != shortAddr)
+                  {
+                      //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+                      ApiMac_sAddr_t dstAddr;
+                      dstAddr.addr.shortAddr = shortAddr;
+                      dstAddr.addrMode = ApiMac_addrType_short;
+                      Collector_status_t stat;
+                      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+                      if (stat != Collector_status_success)
+                             {
+                                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                                 CLI_startREAD();
+                             }
+           //           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+                      return CRS_SUCCESS;
+                  }
+              #endif
+                  CRS_retVal_t rsp = CIGS_restore();
+                  CLI_cliPrintf("\r\nStatus: 0x%x", rsp);
+                  CLI_startREAD();
+                  return rsp;
+
+}
+
+
+
+
+
+
 static CRS_retVal_t CLI_setTimeParsing(char *line)
 {
     const char s[2] = " ";
@@ -5371,18 +6296,97 @@ static CRS_retVal_t CLI_getGainParsing(char *line)
      #endif
     CRS_retVal_t ret = CRS_FAILURE;
     token = strtok(NULL, s);
+    char *rfAddr=token;
+    int rfAddrInt=0;
     int gain;
-    if(strcmp("dc_rf_high_freq_hb_rx", token) == 0){
-        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
+    if(memcmp("dc_rf_high_freq_hb_rx",token, sizeof("dc_rf_high_freq_hb_rx")-1) == 0){
+        rfAddr+=sizeof("dc_rf_high_freq_hb_rx_chip");
+        rfAddrInt=strtol(rfAddr, NULL, 10);
+switch (rfAddrInt) {
+    case 0:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0;
+        break;
+    case 2:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2;
+        break;
+    case 4:
+            gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4;
+            break;
+    case 6:
+        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6;
+        break;
+    default:
+        CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+        break;
+}
+//        gain = CRS_cbGainStates.dc_rf_high_freq_hb_rx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("uc_rf_high_freq_hb_tx", token) == 0){
-        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
+    } else if(memcmp("uc_rf_high_freq_hb_tx", token,sizeof("uc_rf_high_freq_hb_tx")-1) == 0){
+        rfAddr+=sizeof("uc_rf_high_freq_hb_tx_chip");
+         rfAddrInt=strtol(rfAddr, NULL, 10);
+ switch (rfAddrInt) {
+     case 0:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0;
+         break;
+     case 2:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2;
+         break;
+     case 4:
+             gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4;
+             break;
+     case 6:
+         gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6;
+         break;
+     default:
+         CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+         break;
+ }
+//        gain = CRS_cbGainStates.uc_rf_high_freq_hb_tx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("uc_if_low_freq_rx", token) == 0){
-        gain = CRS_cbGainStates.uc_if_low_freq_rx;
+    } else if(memcmp("uc_if_low_freq_rx", token,sizeof("uc_if_low_freq_rx")-1) == 0){
+        rfAddr+=sizeof("uc_if_low_freq_rx_chip");
+         rfAddrInt=strtol(rfAddr, NULL, 10);
+ switch (rfAddrInt) {
+     case 1:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_1;
+         break;
+     case 3:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_3;
+         break;
+     case 5:
+             gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_5;
+             break;
+     case 7:
+         gain = CRS_cbGainStates.uc_if_low_freq_rx_chip_7;
+         break;
+     default:
+         CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+         break;
+ }
+//        gain = CRS_cbGainStates.uc_if_low_freq_rx;
         ret = CRS_SUCCESS;
-    } else if(strcmp("dc_if_low_freq_tx", token) == 0){
-        gain = CRS_cbGainStates.dc_if_low_freq_tx;
+    } else if(memcmp("dc_if_low_freq_tx", token,sizeof("dc_if_low_freq_tx")-1) == 0){
+
+        rfAddr+=sizeof("dc_if_low_freq_tx_chip");
+          rfAddrInt=strtol(rfAddr, NULL, 10);
+  switch (rfAddrInt) {
+      case 1:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_1;
+          break;
+      case 3:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_3;
+          break;
+      case 5:
+              gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_5;
+              break;
+      case 7:
+          gain = CRS_cbGainStates.dc_if_low_freq_tx_chip_7;
+          break;
+      default:
+          CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! rfAddr : %d", rfAddr);
+          break;
+  }
+//        gain = CRS_cbGainStates.dc_if_low_freq_tx;
         ret = CRS_SUCCESS;
     }
     if(ret==CRS_SUCCESS){
@@ -5671,7 +6675,8 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo("\r\nCOMMAND", strlen("COMMAND"), "PARAMS");
 
     CLI_cliPrintf("\r\n");
-
+    CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
+    CLI_printCommInfo(CLI_CRS_HELP_2, strlen(CLI_CRS_HELP_2),"");
     CLI_printCommInfo(CLI_LIST_ALARMS_LIST, strlen(CLI_LIST_ALARMS_LIST), "[shortAddr]");
     CLI_printCommInfo(CLI_LIST_ALARMS_SET, strlen(CLI_LIST_ALARMS_SET), "[shortAddr] [id] [state]");
     //CLI_printCommInfo(CLI_LIST_ALARMS_START, strlen(CLI_LIST_ALARMS_START), "");
@@ -5688,9 +6693,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_FPGA_CLOSE, strlen(CLI_CRS_FPGA_CLOSE), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FPGA_OPEN, strlen(CLI_CRS_FPGA_OPEN), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_FPGA_WRITELINES, strlen(CLI_CRS_FPGA_WRITELINES), "[shortAddr] [lines seperated by new line char]");
-
-    CLI_printCommInfo(CLI_CRS_HELP, strlen(CLI_CRS_HELP), "");
-
+    CLI_printCommInfo(CLI_CRS_FPGA_READLINES, strlen(CLI_CRS_FPGA_READLINES),"[shortAddr]");
     //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_START, strlen(CLI_CRS_FPGA_TRANSPARENT_START), "[shortAddr]");
     //CLI_cliPrintf("%");
     //CLI_printCommInfo(CLI_CRS_FPGA_TRANSPARENT_END, strlen(CLI_CRS_FPGA_TRANSPARENT_END), "[shortAddr]");
@@ -5715,16 +6718,16 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_printCommInfo(CLI_CRS_OAD_RCV_IMG, strlen(CLI_CRS_OAD_RCV_IMG), "");
     CLI_printCommInfo(CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG), "[shortAddr] [reset](0x0:False, 0x1:True) [factory](0x0:False, 0x1:True)");
     CLI_printCommInfo(CLI_CRS_UPDATE_IMG, strlen(CLI_CRS_UPDATE_IMG), "[shortAddr] [reset](0x0:False, 0x1:True)");
+    CLI_printCommInfo(CLI_CRS_OAD_RCV_FACTORY_IMG, strlen(CLI_CRS_OAD_RCV_FACTORY_IMG), "");
 #endif
+    CLI_printCommInfo(CLI_CRS_OAD_FACTORY_IMG, strlen(CLI_CRS_OAD_FACTORY_IMG), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_OAD_FACTORY_CHECK, strlen(CLI_CRS_OAD_FACTORY_CHECK), "[shortAddr]");
+
 
     CLI_printCommInfo(CLI_CRS_RESET, strlen(CLI_CRS_RESET), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_RSSI, strlen(CLI_CRS_RSSI), "[shortAddr]");
 
-    CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
-    CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
-    CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
-    CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
-    CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
+
 
     CLI_printCommInfo(CLI_CRS_TDD_ALLOC, strlen(CLI_CRS_TDD_ALLOC), "[shortAddr] [alloc]");
     CLI_printCommInfo(CLI_CRS_TDD_CLOSE, strlen(CLI_CRS_TDD_CLOSE), "[shortAddr]");
@@ -5763,10 +6766,41 @@ static CRS_retVal_t CLI_helpParsing(char *line)
 
     //CLI_printCommInfo(CLI_CRS_WATCHDOG_DISABLE, strlen(CLI_CRS_WATCHDOG_DISABLE), "[shortAddr]");
 
+    CLI_cliPrintf("\r\n");
+
+    CLI_startREAD();
+    return CRS_SUCCESS;
+}
+
+
+static CRS_retVal_t CLI_help2Parsing(char *line)
+{
+    CLI_printCommInfo(CLI_CRS_LED_MODE, strlen(CLI_CRS_LED_MODE), "[shortAddr] [mode](0x0:Off, 0x1:On)");
 #ifndef CLI_SENSOR
     CLI_printCommInfo(CLI_LIST_SENSORS, strlen(CLI_LIST_SENSORS), "");
 #endif
     CLI_printCommInfo(CLI_DEVICE, strlen(CLI_DEVICE), "");
+    CLI_printCommInfo(CLI_DISCOVER_MODULES, strlen(CLI_DISCOVER_MODULES), "[shortAddr] [fileName]");
+    CLI_printCommInfo(CLI_CRS_MODEM_TEST, strlen(CLI_CRS_MODEM_TEST), "[time]");
+    CLI_printCommInfo(CLI_CRS_LOCKS, strlen(CLI_CRS_LOCKS), "[shortAddr]");
+
+    CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
+    CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
+    CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
+    CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
+    CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");
+    CLI_printCommInfo(CLI_AGC_SET_GAP, strlen(CLI_AGC_SET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling'] [0xus]");
+    CLI_printCommInfo(CLI_AGC_GET_GAP, strlen(CLI_AGC_GET_GAP), "[shortAddr] ['start'|'stop'] ['rising'|'falling']");
+    CLI_printCommInfo(CLI_AGC_SET_TIME_MINMAX, strlen(CLI_AGC_SET_TIME_MINMAX), "[shortAddr] [seconds]");
+
+
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_FORMAT, strlen(CLI_CRS_INIT_GAIN_FORMAT), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_LS, strlen(CLI_CRS_INIT_GAIN_LS), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_RESTORE, strlen(CLI_CRS_INIT_GAIN_RESTORE), "[shortAddr]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_RM, strlen(CLI_CRS_INIT_GAIN_RM), "[shortAddr] [key1 key2 ...]");
+    CLI_printCommInfo(CLI_CRS_INIT_GAIN_UPDATE, strlen(CLI_CRS_INIT_GAIN_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+
+
 
 
     CLI_cliPrintf("\r\n");
@@ -5774,6 +6808,7 @@ static CRS_retVal_t CLI_helpParsing(char *line)
     CLI_startREAD();
     return CRS_SUCCESS;
 }
+
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description)
 {
@@ -5947,8 +6982,9 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
         Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
     }
 #endif
-
+if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
+}
     return CRS_SUCCESS;
 }
 

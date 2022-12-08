@@ -187,7 +187,9 @@ static CRS_retVal_t getMsg(uint8_t *msg)
         memset(gRspBuff, 0, sizeof(gRspBuff));
         return CRS_SUCCESS;
     }
-
+    if (gRspBuffIdx==0) {
+        return CRS_SUCCESS;
+    }
     uint8_t *file = Nvs_readFileWithMalloc(FILE_NAME);
     if (file == NULL)
     {

@@ -25,6 +25,7 @@ const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
 const NVS3        = NVS.addInstance();
 const NVS4        = NVS.addInstance();
+const NVS5        = NVS.addInstance();
 const RF          = scripting.addModule("/ti/drivers/RF");
 const Temperature = scripting.addModule("/ti/drivers/Temperature");
 const UART        = scripting.addModule("/ti/drivers/UART", {}, false);
@@ -52,29 +53,30 @@ rfdesign.rfDesign = "LAUNCHXL-CC1352P-4";
 
 AESCCM1.$name = "CONFIG_AESCCM_0";
 
-GPIO1.$hardware = system.deviceData.board.components.LED_RED;
-GPIO1.$name     = "CONFIG_GPIO_RLED";
+GPIO1.$hardware        = system.deviceData.board.components["BTN-1"];
+GPIO1.$name            = "CONFIG_GPIO_BTN1";
+GPIO1.pull             = "Pull Up";
+GPIO1.interruptTrigger = "Both Edges";
 
-GPIO2.$hardware        = system.deviceData.board.components["BTN-1"];
-GPIO2.$name            = "CONFIG_GPIO_BTN1";
+GPIO2.$hardware        = system.deviceData.board.components["BTN-2"];
+GPIO2.$name            = "CONFIG_GPIO_BTN2";
 GPIO2.pull             = "Pull Up";
-GPIO2.interruptTrigger = "Both Edges";
+GPIO2.interruptTrigger = "Falling Edge";
 
-GPIO3.$hardware        = system.deviceData.board.components["BTN-2"];
-GPIO3.$name            = "CONFIG_GPIO_BTN2";
-GPIO3.pull             = "Pull Up";
-GPIO3.interruptTrigger = "Falling Edge";
+GPIO3.$name           = "CONFIG_GPIO_TDD_SWITCH";
+GPIO3.mode            = "Output";
+GPIO3.gpioPin.$assign = "ball.43";
+scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@", GPIO3, "gpioPin");
 
-GPIO4.$hardware = system.deviceData.board.components.LED_GREEN;
-GPIO4.$name     = "CONFIG_GPIO_GLED";
-
+GPIO4.$name = "CONFIG_RJ_MAIN_LED1";
+GPIO4.pull  = "Pull Up";
 GPIO5.$name           = "CONFIG_GPIO_TDD_SWITCH";
 GPIO5.mode            = "Output";
 GPIO5.gpioPin.$assign = "ball.43";
 scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@", GPIO5, "gpioPin");
 
-GPIO6.$name = "CONFIG_RJ_MAIN_LED1";
-GPIO6.pull  = "Pull Up";
+GPIO15.$name = "CONFIG_FPGA_CS";
+GPIO15.mode  = "Output";
 
 GPIO15.$name = "CONFIG_FPGA_CS";
 GPIO15.mode  = "Output";
@@ -103,6 +105,13 @@ NVS4.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X3";
 NVS4.externalFlash.regionBase = 0xC1000;
 NVS4.externalFlash.regionSize = 0x1000;
 
+NVS5.nvsType                  = "External";
+NVS5.$name                    = "INIT_GAIN_NVS";
+NVS5.$hardware                = system.deviceData.board.components.MX25R8035F;
+NVS5.externalFlash.$name      = "ti_drivers_nvs_NVSSPI25X4";
+NVS5.externalFlash.regionBase = 0xC2000;
+NVS5.externalFlash.regionSize = 0x1000;
+
 scripting.suppress("The board 'CC1352P-4 LaunchPad' requires the 'RF Antenna Switch' to be selected\.", RF, "$hardware");
 scripting.suppress("EasyLink stack requires the use of the RF Antenna Switch hardware", RF, "$hardware");
 
@@ -122,6 +131,7 @@ Watchdog1.period = 5000;
 
 const NVSSPI25XDevice                         = scripting.addModule("/ti/drivers/nvs/NVSSPI25XDevice", {}, false);
 const NVSSPI25XDevice1                        = NVSSPI25XDevice.addInstance({}, false);
+NVS5.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS2.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS3.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;
 NVS4.externalFlash.spiFlashDevice             = NVSSPI25XDevice1;

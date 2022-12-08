@@ -440,7 +440,10 @@ CRS_retVal_t Fpga_transparentClose()
     UART_readCancel(gUartHandle);
     return CRS_SUCCESS;
 }
+CRS_retVal_t Fpga_setPrint(bool isToPrint){
 
+    gIsToPrint=isToPrint;
+}
 void Fpga_process(void)
 {
 

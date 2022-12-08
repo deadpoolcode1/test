@@ -36,6 +36,8 @@ static FPGA_cbFn_t gCbFn = NULL;
 static Semaphore_Handle collectorSem;
 static CRS_chipType_t gChipType;
 static CRS_chipMode_t gChipMode;
+static uint32_t gRfAddr;
+
 /******************************************************************************
  Local Function Prototypes
  *****************************************************************************/
@@ -53,14 +55,14 @@ CRS_retVal_t MultiFiles_multiFilesInit(void *sem)
 
 CRS_retVal_t MultiFiles_runMultiFiles(crs_package_t *package,
                                       CRS_chipType_t chipType,
-                                      CRS_chipMode_t chipMode,
+                                      CRS_chipMode_t chipMode,uint32_t rfAddr,
                                       FPGA_cbFn_t cbFunc)
 {
     gLutLineIdx = 0;
     gFileIdx = 0;
     gChipType = chipType;
     gChipMode = chipMode;
-
+    gRfAddr=rfAddr;
     memset(&gPackage, 0, sizeof(crs_package_t));
     memcpy(&gPackage, package, sizeof(crs_package_t));
     CRS_LOG(CRS_DEBUG, "in MultiFiles_runMultiFiles");
@@ -75,6 +77,7 @@ void MultiFiles_process(void)
 {
     if (gMultiFilesEvents & RUN_NEXT_FILE_EV)
     {
+        gIsConfigOk = true;
         CRS_LOG(CRS_DEBUG, "in MultiFiles_process RUN_NEXT_FILE_EV");
 
         if (gFileIdx >= gPackage.numFileInfos)
@@ -142,8 +145,8 @@ void MultiFiles_process(void)
         }
 
         CRS_retVal_t rspStatus = RF_uploadSnapRf(
-                gPackage.fileInfos[gFileIdx].name, 0xff, gLutLineIdx, gChipMode,
-                gPackage.fileInfos[gFileIdx].nameValues, uploadSnapRfCb);
+                gPackage.fileInfos[gFileIdx].name, gRfAddr, gLutLineIdx, gChipMode,
+                gPackage.fileInfos[gFileIdx].nameValues, uploadSnapRfCb,true);
         if (rspStatus != CRS_SUCCESS)
         {
             const FPGA_cbArgs_t cbArgs={0};

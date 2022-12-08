@@ -15,7 +15,7 @@
 #include <ti/sysbios/knl/Clock.h>
 
 #include "macTask.h"
-#include "cp_cli.h"
+//#include "cp_cli.h"
 #include "mac_util.h"
 #include "collectorLink.h"
 #include "crs_tx.h"
@@ -165,7 +165,7 @@ static void macFnx(UArg arg0, UArg arg1)
 
     initSensorPib();
 
-    CP_CLI_startREAD();
+//    CP_CLI_startREAD();
 
     CollectorLink_init();
 
@@ -215,7 +215,7 @@ static void macFnx(UArg arg0, UArg arg1)
             {
                 memset(&gRssiStrct, 0, sizeof(Sensor_rssi_t));
 
-                CP_CLI_cliPrintf("\r\nMAC_ENTER_BEACON_STATE_EVT");
+//                CP_CLI_cliPrintf("\r\nMAC_ENTER_BEACON_STATE_EVT");
                 CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
                                 CollectorLink_getCollector(&collectorLink);
                 macMlmeDisassociateInd_t rsp2 = { 0 };
@@ -243,7 +243,7 @@ static void macFnx(UArg arg0, UArg arg1)
         //MAC_TASK_TX_DONE_EVT
         if (macEvents & MAC_TASK_CLI_UPDATE_EVT)
         {
-            CP_CLI_processCliUpdate();
+//            CP_CLI_processCliUpdate();
             Util_clearEvent(&macEvents, MAC_TASK_CLI_UPDATE_EVT);
         }
 
@@ -254,21 +254,21 @@ static void macFnx(UArg arg0, UArg arg1)
 //
 //            CollectorLink_collectorLinkInfo_t collectorLink = { 0 };
 //            CollectorLink_getCollector(&collectorLink);
-            CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
+//            CP_CLI_cliPrintf("\r\nConnected to collector shortAddr: %x", sensorPib.shortAddr);
             Util_clearEvent(&macEvents, MAC_TASK_TX_DONE_EVT);
         }
 
         if (macEvents & MAC_TASK_RX_DONE_EVT)
         {
             processRxDone();
-            CP_CLI_cliPrintf("\r\nFinished sending assoc req");
+//            CP_CLI_cliPrintf("\r\nFinished sending assoc req");
 
             Util_clearEvent(&macEvents, MAC_TASK_RX_DONE_EVT);
         }
 
         if (macEvents & MAC_TASK_NODE_TIMEOUT_EVT)
         {
-            CP_CLI_cliPrintf("\r\nTimeout test");
+//            CP_CLI_cliPrintf("\r\nTimeout test");
             Util_clearEvent(&macEvents, MAC_TASK_NODE_TIMEOUT_EVT);
         }
 

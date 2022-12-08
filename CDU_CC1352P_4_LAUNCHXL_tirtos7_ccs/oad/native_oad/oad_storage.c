@@ -62,6 +62,7 @@
 #include "oad/native_oad/oad_protocol.h"
 #include "common/cc26xx/oad/ext_flash_layout.h"
 #include "common/cc26xx/flash_interface/flash_interface.h"
+#include "application/crs/crs_cli.h"
 
 /*********************************************************************
  * CONSTANTS
@@ -104,7 +105,7 @@ static uint32_t candidateImageType = 0xFFFFFFFF;
 static bool useExternalFlash = false;
 
 static uint32_t flashPageSize;
-
+static bool gIsFactoryStorage=false;
 #ifndef FEATURE_OAD_SERVER_ONLY
     static uint32_t flashNumPages;
 #endif
@@ -224,9 +225,9 @@ uint16_t OADStorage_imgIdentifyRead(uint8_t imageType, OADStorage_imgIdentifyPld
  */
 uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 {
-    eraseFlashPg(0); //erase metaData
-    eraseFlashPg(1); //erase metaData
-    eraseFlashPg(2); //erase metaData
+//    eraseFlashPg(0); //erase metaData
+//    eraseFlashPg(1); //erase metaData
+//    eraseFlashPg(2); //erase metaData
 
     uint8_t idStatus;
 
@@ -239,6 +240,7 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
 
     // Validate the ID
     idStatus = oadCheckImageID(idPld);
+    gIsFactoryStorage=isFactory;
 
     // If image ID is accepted, set variables and pre-erase flash pages
     if(idStatus == OADStorage_Status_Success)
@@ -252,12 +254,14 @@ uint16_t OADStorage_imgIdentifyWrite(uint8_t *pBlockData,bool isFactory)
         else
         {
             if (isFactory) {
-                imageAddress = oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                imageAddress = oadFindFactImgAddr();// oadFindExtFlImgAddr(OAD_IMG_TYPE_APP);
+                metaPage = EFL_ADDR_META;
             }else{
                 imageAddress = oadFindExtFlImgAddr(idPld->imgType);
+                metaPage = oadFindExtFlMetaPage();
             }
             imagePage = EXT_FLASH_PAGE(imageAddress);
-            metaPage = oadFindExtFlMetaPage();
+
         }
 
         // Calculate total number of OAD blocks, round up if needed
@@ -518,6 +522,13 @@ OADStorage_Status_t OADStorage_imgFinalise(void)
             }else{
             extFlMetaHdr.fixedHdr.imgCpStat = NEED_COPY;
             }
+            //if its factory
+            if(gIsFactoryStorage==true){
+                extFlMetaHdr.fixedHdr.imgCpStat = DEFAULT_STATE;
+                extFlMetaHdr.fixedHdr.imgType = OAD_IMG_TYPE_FACTORY;
+                        }
+
+
             extFlMetaHdr.fixedHdr.crcStat = CRC_VALID;
         }
         //Erase the old meta data
@@ -1230,3 +1241,44 @@ static uint8_t oadEraseExtFlashPages(uint8_t imgStartPage, uint32_t imgLen, uint
     }
     return status;
 }
+
+
+
+/*********************************************************************
+ * @fn      OADStorage_checkFactoryImage
+ *
+ * @brief   This function check if the valid factory image exists on external
+ *          flash
+ *
+ * @param   None
+ *
+ * @return  TRUE If factory image exists on external flash, else FALSE
+ *
+ */
+bool OADStorage_checkFactoryImage(void)
+{
+    bool rtn = false;
+    /* initialize external flash driver */
+    if(flash_open() != 0)
+    {
+        // First check if there is a need to create the factory image
+        imgHdr_t metadataHdr;
+
+        // Read First metadata page for getting factory image information
+        readFlash(EFL_ADDR_META_FACT_IMG, (uint8_t *)&metadataHdr, EFL_METADATA_LEN);
+
+        /* check Metadata version */
+        if( (metadataHdr.fixedHdr.imgType == OAD_IMG_TYPE_FACTORY) &&
+            (metadataHdr.fixedHdr.crcStat != CRC_INVALID) )  /* Not an invalid CRC */
+        {
+            rtn = true; /* Factory image exists return from here */
+            CLI_cliPrintf("\r\nFactory img loaded successfully sv:%c%c%c bv:%02x",metadataHdr.fixedHdr.softVer[1], metadataHdr.fixedHdr.softVer[2],metadataHdr.fixedHdr.softVer[3], metadataHdr.fixedHdr.bimVer);
+        }
+
+        //close flash
+        flash_close();
+    }
+    return rtn;
+}
+
+

@@ -335,10 +335,10 @@ static bool macCompare(uint8_t macSrc[MAC_SIZE], uint8_t macDest[MAC_SIZE])
 static bool macPrint(uint8_t mac[MAC_SIZE])
 {
     int i = 0;
-    CP_CLI_cliPrintf("0x");
+//    CP_CLI_cliPrintf("0x");
     while (i < MAC_SIZE)
     {
-        CP_CLI_cliPrintf("%x", mac[i]);
+//        CP_CLI_cliPrintf("%x", mac[i]);
         i++;
     }
     return true;
