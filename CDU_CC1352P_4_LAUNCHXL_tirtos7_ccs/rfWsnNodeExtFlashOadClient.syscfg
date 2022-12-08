@@ -18,8 +18,6 @@ const GPIO2       = GPIO.addInstance();
 const GPIO3       = GPIO.addInstance();
 const GPIO4       = GPIO.addInstance();
 const GPIO5       = GPIO.addInstance();
-const GPIO6       = GPIO.addInstance();
-const GPIO15      = GPIO.addInstance();
 const NVS         = scripting.addModule("/ti/drivers/NVS");
 const NVS1        = NVS.addInstance();
 const NVS2        = NVS.addInstance();
@@ -63,23 +61,13 @@ GPIO2.$name            = "CONFIG_GPIO_BTN2";
 GPIO2.pull             = "Pull Up";
 GPIO2.interruptTrigger = "Falling Edge";
 
-GPIO3.$name           = "CONFIG_GPIO_TDD_SWITCH";
-GPIO3.mode            = "Output";
-GPIO3.gpioPin.$assign = "ball.43";
-scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@", GPIO3, "gpioPin");
+GPIO3.$name = "CONFIG_RJ_MAIN_LED1";
+GPIO3.pull  = "Pull Up";
 
-GPIO4.$name = "CONFIG_RJ_MAIN_LED1";
-GPIO4.pull  = "Pull Up";
-GPIO5.$name           = "CONFIG_GPIO_TDD_SWITCH";
-GPIO5.mode            = "Output";
-GPIO5.gpioPin.$assign = "ball.43";
-scripting.suppress("Connected to hardware,@@@.+?@@@ is connected to SKY13317-373LF RF Antenna Switch on the CC1352P-4 LaunchPad\. Consider selecting it in 'use hardware' above\. @@@.+?@@@", GPIO5, "gpioPin");
+GPIO4.$name = "CONFIG_GPIO_5";
 
-GPIO15.$name = "CONFIG_FPGA_CS";
-GPIO15.mode  = "Output";
-
-GPIO15.$name = "CONFIG_FPGA_CS";
-GPIO15.mode  = "Output";
+GPIO5.$name = "CONFIG_FPGA_CS";
+GPIO5.mode  = "Output";
 
 NVS1.$hardware                      = system.deviceData.board.components.MX25R8035F;
 NVS1.$name                          = "OAD_NVS";
@@ -192,12 +180,11 @@ System.supportModule   = "SysCallback";
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-GPIO1.gpioPin.$suggestSolution                = "boosterpack.39";
-GPIO2.gpioPin.$suggestSolution                = "boosterpack.13";
-GPIO3.gpioPin.$suggestSolution                = "boosterpack.8";
-GPIO4.gpioPin.$suggestSolution                = "boosterpack.40";
-GPIO6.gpioPin.$suggestSolution                = "boosterpack.10";
-GPIO15.gpioPin.$suggestSolution               = "boosterpack.18";
+GPIO1.gpioPin.$suggestSolution                = "boosterpack.13";
+GPIO2.gpioPin.$suggestSolution                = "boosterpack.8";
+GPIO3.gpioPin.$suggestSolution                = "boosterpack.10";
+GPIO4.gpioPin.$suggestSolution                = "boosterpack.18";
+GPIO5.gpioPin.$suggestSolution                = "boosterpack.36";
 UART1.uart.$suggestSolution                   = "UART1";
 UART1.uart.txPin.$suggestSolution             = "boosterpack.4";
 UART1.uart.rxPin.$suggestSolution             = "boosterpack.3";

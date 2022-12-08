@@ -212,7 +212,9 @@ CRS_retVal_t Env_format(){
     return CRS_SUCCESS;
 }
 
-
+/******************************************************************************
+ Local Functions
+ *****************************************************************************/
 static CRS_retVal_t nvsInit()
 {
     if (gIsMoudleInit == true)
@@ -249,33 +251,4 @@ static CRS_retVal_t nvsClose()
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Env_restore(void)
-{
-
-    if(envCache == NULL){
-        return CRS_FAILURE;
-        //Env_init();
-    }
-
-    if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
-    {
-        CRS_free(&envCache);
-        envCache = NULL;
-//        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
-//        if (!envCache)
-//        {
-//            envCache = CRS_calloc(1, sizeof(char));
-//        }
-        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
-        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
-    }
-    else
-    {
-        envCache = CRS_realloc(envCache, sizeof(ENV_FILE));
-        memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
-
-    }
-   return Vars_setFile(&envHandle, envCache);
-
-}
 

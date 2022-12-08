@@ -141,10 +141,10 @@ void Collector_init()
 #endif
     Nvs_init(sem);
     Env_init();
-    Thresh_init();
-    CIGS_init();
+//    Thresh_init();
+//    CIGS_init();
     SnapInit(sem);
-    Fpga_initSem(sem);
+//    Fpga_initSem(sem);
     Tdd_initSem(sem);
     CRS_init();
     Manage_initSem(sem);
