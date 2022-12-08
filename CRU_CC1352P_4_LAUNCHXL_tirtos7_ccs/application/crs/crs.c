@@ -87,6 +87,7 @@ void CRS_init()
 
 void* CRS_malloc(uint16_t size)
 {
+//    CRS_LOG(CRS_INFO, "\r\nin malloc of size 0x%x", size);
     return malloc(size);
 
 }

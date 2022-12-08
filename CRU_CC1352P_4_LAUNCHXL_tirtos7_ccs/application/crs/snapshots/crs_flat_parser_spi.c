@@ -240,7 +240,7 @@ CRS_retVal_t SPI_Config_runConfigFile(char *filename)
     memcpy(fileTraverser.invName,INV_NAME, strlen(INV_NAME));
     fileTraverser.isConfigStatusFail = false;
     CRS_retVal_t rspStatus = runFile(&fileTraverser);
-    CRS_free(fileTraverser.fileContentCache);
+    CRS_free(&fileTraverser.fileContentCache);
     fileTraverser.fileContentCache = NULL;
     if (rspStatus != CRS_SUCCESS || fileTraverser.isConfigStatusFail == true)
     {
@@ -275,7 +275,7 @@ CRS_retVal_t SPI_Config_runConfigFileDiscovery(char *filename)
    fileTraverser.isConfigStatusFail = false;
    fileTraverser.isOnlyDiscovery = true;
    CRS_retVal_t rspStatus = runFile(&fileTraverser);
-   CRS_free(fileTraverser.fileContentCache);
+   CRS_free(&fileTraverser.fileContentCache);
    fileTraverser.fileContentCache = NULL;
    if (rspStatus != CRS_SUCCESS || fileTraverser.isConfigStatusFail == true)
    {
@@ -690,7 +690,7 @@ void SPI_Config_process(void)
             {
 
             }
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
@@ -703,7 +703,7 @@ void SPI_Config_process(void)
         rspStatus = SPI_Config_parseInvLine(line, &gInvLineStrct);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
@@ -739,7 +739,7 @@ void SPI_Config_process(void)
                                             gFileContentCache, line);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
@@ -750,7 +750,7 @@ void SPI_Config_process(void)
         rspStatus = SPI_Config_parseDiscoveryLine(line, &discLineStruct);
         if (rspStatus != CRS_SUCCESS)
         {
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
@@ -794,7 +794,7 @@ void SPI_Config_process(void)
                 if (rspStatus != CRS_SUCCESS)
                 {
 
-                    CRS_free(gFileContentCache);
+                    CRS_free(&gFileContentCache);
 
 //                    const FPGA_cbArgs_t cbArgs={0};
 //                    gCbFn(cbArgs);
@@ -828,7 +828,7 @@ void SPI_Config_process(void)
             if (rspStatus != CRS_SUCCESS)
             {
 
-                CRS_free(gFileContentCache);
+                CRS_free(&gFileContentCache);
 
 //                const FPGA_cbArgs_t cbArgs={0};
 //                gCbFn(cbArgs);
@@ -851,7 +851,7 @@ void SPI_Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CLI_cliPrintf("\r\nConfig_getPackageLine didnt success");
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 //
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
@@ -864,7 +864,7 @@ void SPI_Config_process(void)
         if (rspStatus != CRS_SUCCESS)
         {
             CLI_cliPrintf("\r\nConfig_parsePackageLine didnt succeed");
-            CRS_free(gFileContentCache);
+            CRS_free(&gFileContentCache);
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, FINISHED_DISCOVERY_EV);
@@ -891,7 +891,7 @@ void SPI_Config_process(void)
     }
     if (gConfigEvents & FINISHED_SINGLE_LINE_EV)
     {
-        CRS_free(gFileContentCache);
+        CRS_free(&gFileContentCache);
 //        const FPGA_cbArgs_t cbArgs={0};
 //        gCbFn(cbArgs);
         Util_clearEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
@@ -1456,7 +1456,7 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
             if (rspStatus != CRS_SUCCESS)
             {
 
-//                CRS_free(fileTraverser->fileContentCache);
+//                CRS_free(&fileTraverser->fileContentCache);
 
 //                    const FPGA_cbArgs_t cbArgs={0};
 //                    gCbFn(cbArgs);
@@ -1488,7 +1488,7 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
         if (rspStatus != CRS_SUCCESS)
         {
 
-//            CRS_free(fileTraverser->fileContentCache);
+//            CRS_free(&fileTraverser->fileContentCache);
 
 //                const FPGA_cbArgs_t cbArgs={0};
 //                gCbFn(cbArgs);
@@ -1509,7 +1509,7 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
     if (rspStatus != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nConfig_getPackageLine didnt success");
-//        CRS_free(fileTraverser->fileContentCache);
+//        CRS_free(&fileTraverser->fileContentCache);
 
         return CRS_FAILURE;
     }
@@ -1519,7 +1519,7 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
     if (rspStatus != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nConfig_parsePackageLine didnt succeed");
-//        CRS_free(fileTraverser->fileContentCache);
+//        CRS_free(&fileTraverser->fileContentCache);
 //            const FPGA_cbArgs_t cbArgs={0};
 //            gCbFn(cbArgs);
         return CRS_FAILURE;
@@ -1532,7 +1532,7 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
                                              fileTraverser->invLineStruct.ChipType,
                                              fileTraverser->invLineStruct.Flavor);
 
-//        CRS_free(fileTraverser->fileContentCache);
+//        CRS_free(&fileTraverser->fileContentCache);
     }
     else
     {

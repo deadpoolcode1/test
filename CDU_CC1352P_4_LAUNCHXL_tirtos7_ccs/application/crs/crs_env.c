@@ -15,6 +15,7 @@
 #include "crs_nvs.h"
 #include "crs_env.h"
 
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -41,8 +42,9 @@ static CRS_retVal_t nvsClose();
 
 static char * envCache  = NULL;
 static NVS_Handle envHandle = NULL;
-static NVS_Attrs gRegionAttrs= {0};
+static NVS_Attrs gRegionAttrs = {0};
 static bool gIsMoudleInit = false;
+
 
 /******************************************************************************
  Public Functions
@@ -50,21 +52,20 @@ static bool gIsMoudleInit = false;
 
 CRS_retVal_t Env_restore()
 {
-
-  if (nvsInit() != CRS_SUCCESS)
+    if (nvsInit() != CRS_SUCCESS)
         {
             return CRS_FAILURE;
         }
-
     if(envCache == NULL){
         nvsClose();
+
         return CRS_FAILURE;
         //Env_init();
     }
 
     if (Nvs_isFileExists(ENV_FILENAME) == CRS_SUCCESS)
     {
-        CRS_free(envCache);
+        CRS_free(&envCache);
 //        envCache = Nvs_readFileWithMalloc(ENV_FILENAME);
 //        if (!envCache)
 //        {
@@ -79,13 +80,15 @@ CRS_retVal_t Env_restore()
         memcpy(envCache, ENV_FILE, sizeof(ENV_FILE));
 
     }
+    CRS_retVal_t retStatus = Vars_setFile(&envHandle, envCache);
 
-   CRS_retVal_t retVal= Vars_setFile(&envHandle, envCache);
     nvsClose();
-   return retVal;
+
+   return retStatus;
+
 }
 
-CRS_retVal_t Env_init(){
+CRS_retVal_t Env_init(void){
 
     if (nvsInit() != CRS_SUCCESS)
         {
@@ -194,12 +197,7 @@ CRS_retVal_t Env_delete(char *vars){
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Env_format(){ 
-    if (envHandle == NULL) //TODO check if we should open handle or not
-    {
-     return CRS_FAILURE;
-    }
-
+CRS_retVal_t Env_format(void){
     if (nvsInit() != CRS_SUCCESS)
     {
         return CRS_FAILURE;
@@ -209,12 +207,11 @@ CRS_retVal_t Env_format(){
     CRS_free(&envCache);
     envCache = CRS_calloc(1, sizeof(char));
     nvsClose();
+
     return CRS_SUCCESS;
 }
 
-/******************************************************************************
- Local Functions
- *****************************************************************************/
+
 static CRS_retVal_t nvsInit()
 {
     if (gIsMoudleInit == true)
@@ -250,5 +247,4 @@ static CRS_retVal_t nvsClose()
     envHandle = NULL;
     return CRS_SUCCESS;
 }
-
 

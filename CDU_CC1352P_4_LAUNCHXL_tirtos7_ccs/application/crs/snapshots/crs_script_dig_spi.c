@@ -173,6 +173,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 
 //    memset(gFileContentCache, 0, FILE_CACHE_SZ);
     fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
+
 //    gFileContentCache = Nvs_readFileWithMalloc(filename);
     if (fileTraverser.fileContentCache == NULL)
     {
@@ -190,7 +191,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 //        Util_setEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
 
 //    }
-
+    CRS_free(&fileTraverser.fileContentCache);
     return rspStatus;
 
 }
@@ -211,7 +212,7 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     scriptDigTraverser_t fileTraverser = {0};
     fileTraverser.chipMode = chipMode;
     fileTraverser.chipType = UNKNOWN;
-    CLI_cliPrintf("\r\n");
+//    CLI_cliPrintf("\r\n");
     if (nameVals != NULL)
     {
         int i;
@@ -236,7 +237,7 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
         return CRS_FAILURE;
     }
     runNextLine(&fileTraverser);
-    CRS_free(fileTraverser.fileContentCache);
+    CRS_free(&fileTraverser.fileContentCache);
     fileTraverser.fileContentCache = NULL;
 //    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
 
@@ -931,7 +932,7 @@ static CRS_retVal_t runErCommand(char *line)
 
 static CRS_retVal_t addEndOfFlieSequence(scriptDigTraverser_t *fileTraverser)
 {
-    CRS_free(fileTraverser->fileContentCache);
+    CRS_free(&fileTraverser->fileContentCache);
     fileTraverser->fileContentCache = CRS_malloc(700);
     if (fileTraverser->fileContentCache == NULL)
     {
@@ -1296,7 +1297,7 @@ static CRS_retVal_t starRsp(scriptDigTraverser_t *fileTraverser)
      CRS_retVal_t rspStatus = getPrevLine(fileTraverser, line);
      if (rspStatus == CRS_FAILURE)
      {
-         CRS_free(fileTraverser->fileContentCache);
+         CRS_free(&fileTraverser->fileContentCache);
          fileTraverser->fileContentCache = NULL;
 
 //            const FPGA_cbArgs_t cbArgs={0};
