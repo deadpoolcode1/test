@@ -140,10 +140,9 @@ void Collector_init()
     DigInit(sem);
 #endif
     Nvs_init(sem);
-    Nvs_ls(0);
     Env_init();
     Thresh_init();
-    CIGS_init();
+//    CIGS_init(); //TODO fix it add to it nvsInit and nvsClose after each usage of nvs
 //    SnapInit(sem);
 //    Fpga_initSem(sem);
 //    Tdd_initSem(sem);
@@ -201,7 +200,7 @@ void Csf_crsInitScript()
 //    CRS_LOG(CRS_DEBUG, "Running script");
 
 #ifdef CRS_TMP_SPI
-//    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
+    CRS_retVal_t retStatus = SPI_Config_runConfigFile("flat");
     CLI_startREAD();
     Alarms_init(sem);
     Agc_init(sem); //uses ENV
