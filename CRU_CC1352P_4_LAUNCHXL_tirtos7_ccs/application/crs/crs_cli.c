@@ -2531,7 +2531,9 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
     {
         lineToSend[len] = '\r';
     }
+
     CRS_retVal_t rspStatus = Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+
     if (rspStatus == CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\n 0x");
