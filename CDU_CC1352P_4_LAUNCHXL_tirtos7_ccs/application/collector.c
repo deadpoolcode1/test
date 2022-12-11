@@ -143,6 +143,7 @@ void Collector_init()
     Env_init();
     Thresh_init();
     CIGS_init();
+    Locks_init(sem);
 //    SnapInit(sem);
 //    Fpga_initSem(sem);
 //    Tdd_initSem(sem);
@@ -188,7 +189,7 @@ void Collector_process(void)
 
     Alarms_process();
     Oad_process();
-//    Locks_process(); //TODO replace UART in SPI
+    Locks_process(); //TODO replace UART in SPI
     if (Collector_events == 0)
     {
         ApiMac_processIncoming();

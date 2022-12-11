@@ -281,7 +281,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 //    CLI_cliPrintf("\r\n%s", line);
     if (line == NULL   )
     {
-
+        CRS_LOG(CRS_ERR, "\r\nLine is NULL");
         return CRS_FAILURE;
     }
 
@@ -291,6 +291,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
     //maybe read reg a and see if there is a return.
     if (line[0] == '\r' && line[1] == 0)
     {
+        CRS_LOG(CRS_INFO, "\r\nLine is empty");
 
         return CRS_SUCCESS;
     }
@@ -320,6 +321,8 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
         }
 //        CLI_cliPrintf("\r\n%s", token2);
 
+//        CRS_LOG(CRS_INFO, "\r\nBefore sendSpiBuf()");
+//        Task_sleep(5000);
         if (sendSpiBuf() != CRS_SUCCESS)
         {
 

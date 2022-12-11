@@ -238,12 +238,16 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
         gUartParams.readMode = UART_MODE_CALLBACK;
         gUartParams.readDataMode = UART_DATA_BINARY;
         gUartParams.readCallback = UartReadCallback;
-
+        CRS_LOG(CRS_INFO, "\r\nbefore UART open");
         gUartHandle = UART_open(CONFIG_UART_1, &gUartParams);
         if (NULL == gUartHandle)
         {
+            CRS_LOG(CRS_INFO, "\r\nUART open failed");
+
             return CRS_FAILURE;
         }
+        CRS_LOG(CRS_INFO, "\r\nafter UART open");
+
 
         memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
         memset(gUartRxBuffer, 0, 1);
@@ -254,6 +258,7 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 
         UtilTimer_setFunc(tddClkHandle, processTddStartCallback, 0);
         Tdd_setTddClock(5);
+        CRS_LOG(CRS_INFO, "\r\nexiting tdd init successfully");
 
         return CRS_SUCCESS;
 

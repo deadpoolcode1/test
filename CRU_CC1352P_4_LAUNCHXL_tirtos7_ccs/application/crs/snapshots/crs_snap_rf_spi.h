@@ -32,6 +32,6 @@ CRS_retVal_t SPI_RF_init(void *sem);
 
 CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
-                             CRS_nameValue_t *nameVals);
+                             CRS_nameValue_t *nameVals, bool isFromFlat);
 void SPI_RF_process(void);
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_SNAP_RF_H_ */

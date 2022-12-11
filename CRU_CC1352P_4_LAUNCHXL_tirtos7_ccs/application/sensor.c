@@ -194,6 +194,7 @@ void Sensor_init( )
     Tdd_initSem(sem);
     CRS_init();
     OadClient_init(sem); //TODO verify uses spi-safe env api
+    Locks_init(sem);
     Msgs_init(sem);
     Ssf_crsInitScript();
     //       Agc_init(); ----------->agc init is after you run flat script
@@ -242,7 +243,7 @@ void Sensor_process(void)
     Alarms_process();
     OadClient_process();
     Msgs_process();
-//    Locks_process(); TODO fix it replace any fpga uart usage with an SPI
+    Locks_process(); //TODO fix it replace any fpga uart usage with an SPI
     if (Sensor_events == 0)
     {
         ApiMac_processIncoming();

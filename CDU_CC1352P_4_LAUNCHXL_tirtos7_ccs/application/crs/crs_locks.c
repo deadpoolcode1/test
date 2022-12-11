@@ -16,7 +16,11 @@
 #include "mac/mac_util.h"
 #include "application/crs/crs_agc_management.h"
 #include "application/crs/crs_alarms.h"
+#ifdef CRS_TMP_SPI
+#include "application/crs/crs_tmp.h"
+#else
 #include "application/crs/crs_fpga.h"
+#endif
 
 /******************************************************************************
  Constants and definitions
@@ -105,11 +109,18 @@ static CRS_retVal_t saveTiLockStatus(uint32_t val);
 //static void checkCurrentLock();
 static void MoveIdxToNextLockIdx(void);
 static CRS_retVal_t setAlarms(void);
+#ifdef CRS_TMP_SPI
+static void getLockValueSPI(uint32_t val);
+#else
 static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs);
+#endif
 static void processLocksTimeoutCallback(UArg a0);
 static void setLocksClock(uint32_t locksTime);
 static CRS_retVal_t valsInit(void);
 static void startCheckingLocks(void);
+
+
+
 
 
 static locks_WriteFpgafxn gFpgaWriteFunctionsTable [lockType_numOfLockTypes] =
@@ -140,6 +151,9 @@ static locks_ReadValuefxn gSaveValueFunctionTable [lockType_numOfLockTypes] =
  *****************************************************************************/
 CRS_retVal_t Locks_init(void *sem)
 {
+//#ifdef CRS_TMP_SPI
+//    return CRS_SUCCESS;
+//#else
     collectorSem = sem;
     locksClkHandle = UtilTimer_construct(&locksClkStruct,
                                         processLocksTimeoutCallback,
@@ -150,14 +164,22 @@ CRS_retVal_t Locks_init(void *sem)
     setLocksClock(5 * ONE_SECOND);
 
     return CRS_SUCCESS;
-
+//#endif
 }
 CRS_retVal_t Locks_process(void)
 {
 if (Locks_events & LOCKS_CHECKLOCK_EV)
 {
-    if (Fpga_isOpen()==CRS_SUCCESS) {
+//    CRS_LOG(CRS_INFO, "\r\nInside of checklock event");
 
+    CRS_retVal_t fpgaStatus = CRS_SUCCESS;
+#ifdef CRS_TMP_SPI
+    // do nothing
+#else
+    fpgaStatus = Fpga_isOpen();
+#endif
+
+    if (fpgaStatus==CRS_SUCCESS) {
 
 //    CLI_cliPrintf("\r\nLOCKS_CHECKLOCK_EV");
     AGCM_runTask(startCheckingLocks);
@@ -167,11 +189,20 @@ if (Locks_events & LOCKS_CHECKLOCK_EV)
 
 if (Locks_events & LOCKS_READ_NEXT_REG_EV)
 {
-//    CLI_cliPrintf("\r\nLOCKS_READ_NEXT_REG_EV");
-    if (Fpga_isOpen()==CRS_SUCCESS) {
+
+    CRS_retVal_t fpgaStatus = CRS_SUCCESS;
+#ifdef CRS_TMP_SPI
+    // do nothing
+#else
+    fpgaStatus = Fpga_isOpen();
+#endif
+    Util_clearEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
+
+    if (fpgaStatus==CRS_SUCCESS) {
     MoveIdxToNextLockIdx();
     }
-    Util_clearEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
+//    CRS_LOG(CRS_INFO, "\r\nOut of readnextreg event");
+
 }
 
 if (Locks_events & LOCKS_FINISH_READING_REG_EV)
@@ -217,6 +248,8 @@ static void startCheckingLocks(void)
 {
     valsInit();
     gFpgaWriteFunctionsTable[gLocksIdx]();
+    Util_setEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
+    Semaphore_post(collectorSem);
 }
 
 
@@ -242,7 +275,7 @@ bool Locks_getTiLockVal(void)
 //    gFpgaWriteFunctionsTable[gLocksIdx]();
 //}
 
-
+#ifndef CRS_TMP_SPI
 static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs)
 {
 
@@ -295,6 +328,16 @@ static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs)
        Semaphore_post(collectorSem);
 
 }
+#endif
+
+#ifdef CRS_TMP_SPI
+static void getLockValueSPI(uint32_t val)
+{
+    gSaveValueFunctionTable[gLocksIdx](val);
+}
+#endif
+
+
 
 void MoveIdxToNextLockIdx(void)
 {
@@ -302,14 +345,16 @@ void MoveIdxToNextLockIdx(void)
     if(gLocksIdx == lockType_numOfLockTypes)
     {
         Util_setEvent(&Locks_events, LOCKS_FINISH_READING_REG_EV);
+        Semaphore_post(collectorSem);
     }
 
     else
     {
         gFpgaWriteFunctionsTable[gLocksIdx]();
+        Util_setEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
+        Semaphore_post(collectorSem);
     }
 }
-
 static void processLocksTimeoutCallback(UArg a0)
 {
 
@@ -370,23 +415,65 @@ static CRS_retVal_t setAlarms(void)
 #ifndef CLI_SENSOR
 static CRS_retVal_t writeToTddLockReg(void)
 {
-    if (Fpga_isOpen()==CRS_SUCCESS) {
+    CRS_retVal_t fpgaStatus = CRS_SUCCESS;
+#ifdef CRS_TMP_SPI
+    // do nothing
+#else
+    fpgaStatus = Fpga_isOpen();
+#endif
+
+    if (fpgaStatus==CRS_SUCCESS) {
+#ifdef CRS_TMP_SPI
+    uint32_t rsp = 0;
+    char line [sizeof(READ_TDD_REG)] = {0};
+    memcpy(line, READ_TDD_REG, sizeof(READ_TDD_REG) - 1);
+    Fpga_tmpWriteMultiLine(line, &rsp);
+
+    getLockValueSPI(rsp);
+#else
     Fpga_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
+#endif
     }
     return CRS_SUCCESS;
 }
+
 #else
 static CRS_retVal_t writeToAdfLockReg(void)
 {
+#ifdef CRS_TMP_SPI
+    uint32_t rsp = 0;
+    char line [sizeof(READ_ADF_REG)] = {0};
+    memcpy(line, READ_ADF_REG, sizeof(READ_ADF_REG) - 1);
+    Fpga_tmpWriteMultiLine(line, &rsp);
+    getLockValueSPI(rsp);
+#else
     Fpga_writeMultiLineNoPrint(READ_ADF_REG, getLockValueCallback);
 
+#endif
     return CRS_SUCCESS;
 }
 #endif
+
 static CRS_retVal_t writeToTiLockReg(void)
 {
-    if (Fpga_isOpen()==CRS_SUCCESS) {
+    CRS_retVal_t fpgaStatus = CRS_SUCCESS;
+#ifdef CRS_TMP_SPI
+    // do nothing
+#else
+    fpgaStatus = Fpga_isOpen();
+#endif
+
+    if (fpgaStatus==CRS_SUCCESS) {
+#ifdef CRS_TMP_SPI
+        uint32_t rsp = 0;
+        char line [sizeof(READ_TI_REG)] = {0};
+        memcpy(line, READ_TI_REG, sizeof(READ_TI_REG) - 1);
+        Fpga_tmpWriteMultiLine(line, &rsp);
+        getLockValueSPI(rsp);
+#else
     Fpga_writeMultiLineNoPrint(READ_TI_REG, getLockValueCallback);
+#endif
+
     }
     return CRS_SUCCESS;
 }
@@ -454,7 +541,7 @@ static CRS_retVal_t saveTiLockStatus(uint32_t val)
 
 static CRS_retVal_t valsInit(void)
 {
-    gLocksIdx = 0;
+    gLocksIdx = lockType_tddLock;
     memset(gLockChecker,0,sizeof(gLockChecker));
 
     return CRS_SUCCESS;

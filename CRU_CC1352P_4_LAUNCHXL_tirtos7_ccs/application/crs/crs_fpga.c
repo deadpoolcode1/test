@@ -200,6 +200,10 @@ CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
 
 CRS_retVal_t Fpga_isOpen()
 {
+#ifdef CRS_TMP_SPI
+    return CRS_SUCCESS;
+#endif
+
     if (gUartHandle == NULL)
     {
         return CRS_FAILURE;
