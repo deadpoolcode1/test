@@ -33,7 +33,7 @@
 #define HEXADECIMAL 16
 #define ONE_SECOND  1000
 #define LOCKS_LINE_SZ   30
-
+#define LINE_TMP_SZ 100
 #ifndef CLI_SENSOR
 #define READ_TDD_REG    "rd 0x23\r"
 #else
@@ -425,7 +425,7 @@ static CRS_retVal_t writeToTddLockReg(void)
     if (fpgaStatus==CRS_SUCCESS) {
 #ifdef CRS_TMP_SPI
     uint32_t rsp = 0;
-    char line [sizeof(READ_TDD_REG)] = {0};
+    char line [LINE_TMP_SZ] = {0};
     memcpy(line, READ_TDD_REG, sizeof(READ_TDD_REG) - 1);
     Fpga_tmpWriteMultiLine(line, &rsp);
 
@@ -442,7 +442,7 @@ static CRS_retVal_t writeToAdfLockReg(void)
 {
 #ifdef CRS_TMP_SPI
     uint32_t rsp = 0;
-    char line [sizeof(READ_ADF_REG)] = {0};
+    char line [LINE_TMP_SZ] = {0};
     memcpy(line, READ_ADF_REG, sizeof(READ_ADF_REG) - 1);
     Fpga_tmpWriteMultiLine(line, &rsp);
     getLockValueSPI(rsp);
@@ -466,7 +466,7 @@ static CRS_retVal_t writeToTiLockReg(void)
     if (fpgaStatus==CRS_SUCCESS) {
 #ifdef CRS_TMP_SPI
         uint32_t rsp = 0;
-        char line [sizeof(READ_TI_REG)] = {0};
+        char line [LINE_TMP_SZ] = {0};
         memcpy(line, READ_TI_REG, sizeof(READ_TI_REG) - 1);
         Fpga_tmpWriteMultiLine(line, &rsp);
         getLockValueSPI(rsp);
@@ -541,7 +541,11 @@ static CRS_retVal_t saveTiLockStatus(uint32_t val)
 
 static CRS_retVal_t valsInit(void)
 {
+#ifndef CLI_SENSOR
     gLocksIdx = lockType_tddLock;
+#else
+    gLocksIdx = lockType_adfLock;
+#endif
     memset(gLockChecker,0,sizeof(gLockChecker));
 
     return CRS_SUCCESS;
