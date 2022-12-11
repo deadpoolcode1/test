@@ -58,6 +58,11 @@
 #ifdef CLI_SENSOR
 #include "application/crs_msgs.h"
 #endif
+
+#ifdef CRS_TMP_SPI
+#include "application/crs/snapshots/crs_snap_rf_spi.h"
+#endif
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -4432,8 +4437,12 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
                    }
     }
 
+#ifdef CRS_TMP_SPI
+    CRS_retVal_t retStatus = SPI_RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals,false);
+#else
 
     CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback,false);
+#endif
 
     if (retStatus != CRS_SUCCESS)
     {
