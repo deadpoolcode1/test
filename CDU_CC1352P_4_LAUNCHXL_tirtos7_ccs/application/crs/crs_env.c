@@ -42,7 +42,6 @@ static CRS_retVal_t nvsClose();
 
 static char * envCache  = NULL;
 static NVS_Handle envHandle = NULL;
-static NVS_Attrs gRegionAttrs = {0};
 static bool gIsMoudleInit = false;
 
 
@@ -99,7 +98,6 @@ CRS_retVal_t Env_init(void){
          * to a NVS_Handle such as region base address, region size,
          * and sector size.
          */
-    NVS_getAttrs(envHandle, &gRegionAttrs);
 
     CRS_retVal_t status;
     int length = Vars_getLength(&envHandle);
@@ -115,7 +113,7 @@ CRS_retVal_t Env_init(void){
         status = Env_restore();
     }else{
         envCache = CRS_calloc(length, sizeof(char));
-        status = Vars_getFile(&envHandle, envCache); // TODO fix this
+        status = Vars_getFile(&envHandle, envCache); // TODO fix this (?)
 //        memcpy(envCache,ENV_FILE, sizeof(ENV_FILE));
     }
     nvsClose();
@@ -158,7 +156,7 @@ CRS_retVal_t Env_write(char *vars){
         return CRS_FAILURE;
     }
 
-    uint32_t length;
+    uint32_t length = 0;
 
     NVS_Attrs envRegionAttrs;
     NVS_getAttrs(envHandle, &envRegionAttrs);
@@ -202,7 +200,6 @@ CRS_retVal_t Env_format(void){
     {
         return CRS_FAILURE;
     }
-//    int_fast16_t retStatus = NVS_erase(envHandle, 0, gRegionAttrs.regionSize);
     bool ret = Vars_createFile(&envHandle);
     CRS_free(&envCache);
     envCache = CRS_calloc(1, sizeof(char));

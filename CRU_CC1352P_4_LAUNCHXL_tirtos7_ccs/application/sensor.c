@@ -41,7 +41,7 @@
 #include "crs/crs_thresholds.h"
 #include "crs/crs_agc_management.h"
 #include "crs_msgs.h"
-
+#include "application/crs/crs_cb_init_gain_states.h"
 
 
 #include "easylink/EasyLink.h"
@@ -189,6 +189,7 @@ void Sensor_init( )
     Nvs_init(sem);
     Thresh_init();
     Env_init();
+    CIGS_init();
     //    AGCinit(sem);
     Tdd_initSem(sem);
     CRS_init();

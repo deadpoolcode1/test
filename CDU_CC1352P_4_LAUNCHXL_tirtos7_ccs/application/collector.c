@@ -142,7 +142,7 @@ void Collector_init()
     Nvs_init(sem);
     Env_init();
     Thresh_init();
-//    CIGS_init(); //TODO fix it add to it nvsInit and nvsClose after each usage of nvs
+    CIGS_init();
 //    SnapInit(sem);
 //    Fpga_initSem(sem);
 //    Tdd_initSem(sem);

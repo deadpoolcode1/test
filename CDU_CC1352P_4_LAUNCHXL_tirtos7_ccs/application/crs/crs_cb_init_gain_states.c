@@ -27,11 +27,18 @@
 
 
 /******************************************************************************
+ Local Function Prototypes
+ *****************************************************************************/
+static CRS_retVal_t nvsInit();
+static CRS_retVal_t nvsClose();
+
+/******************************************************************************
  Local variables
  *****************************************************************************/
 
 static char * initGainStatesCache  = NULL;
-static NVS_Handle initGainStatesHandle;
+static NVS_Handle initGainStatesHandle = NULL;
+static bool gIsMoudleInit = false;
 
 /******************************************************************************
  Public Functions
@@ -39,7 +46,13 @@ static NVS_Handle initGainStatesHandle;
 
 CRS_retVal_t CIGS_restore()
 {
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
+    }
+
     if(initGainStatesCache == NULL){
+        nvsClose();
         return CRS_FAILURE;
         //CIGS_init();
     }
@@ -59,30 +72,26 @@ CRS_retVal_t CIGS_restore()
         memcpy(initGainStatesCache, INIT_GAIN_STATES_FILE, sizeof(INIT_GAIN_STATES_FILE));
 
     }
-   return Vars_setFile(&initGainStatesHandle, initGainStatesCache);
+    CRS_retVal_t status = Vars_setFile(&initGainStatesHandle, initGainStatesCache);
+
+    nvsClose();
+    return status;
 
 }
 
 CRS_retVal_t CIGS_init(){
-    if (initGainStatesHandle == NULL)
+    if (nvsInit() != CRS_SUCCESS)
     {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        initGainStatesHandle = NVS_open(INIT_GAIN_NVS, &nvsParams);
-
-        if (initGainStatesHandle == NULL)
-        {
-             CLI_cliPrintf("NVS_open() failed.\r\n");
-            return CRS_FAILURE;
-        }
+      CRS_LOG(CRS_ERR,"\r\nnvsInit failed for CIGS_init");
+      return CRS_FAILURE;
     }
 
-    CRS_retVal_t status;
+    CRS_retVal_t status = CRS_FAILURE;
     int length = Vars_getLength(&initGainStatesHandle);
     if(length == -1){
         bool ret = Vars_createFile(&initGainStatesHandle);
         if(!ret){
+            nvsClose();
             return CRS_FAILURE;
         }
         length = 1;
@@ -93,17 +102,26 @@ CRS_retVal_t CIGS_init(){
         status = Vars_getFile(&initGainStatesHandle, initGainStatesCache);
     }
 
+    nvsClose();
+
     return status;
 }
 
 CRS_retVal_t CIGS_read(char *vars, char *returnedVars){
 
-    if(initGainStatesCache == NULL){
-        CIGS_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
+
+//    if(initGainStatesCache == NULL){
+//        CIGS_init();
+//    }
+
     if(strlen(vars)){
         bool exists = Vars_getVars(initGainStatesCache, vars, returnedVars);
         if(!exists){
+            nvsClose();
             return CRS_FAILURE;
         }
     }
@@ -116,63 +134,116 @@ CRS_retVal_t CIGS_read(char *vars, char *returnedVars){
         }
     }
 
+    nvsClose();
+
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t CIGS_write(char *vars){
 
-    uint32_t length;
-    if(initGainStatesCache == NULL){
-        CIGS_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
 
+//    if(initGainStatesCache == NULL){
+//        CIGS_init();
+//    }
+
+    uint32_t length = 0;
     NVS_Attrs cigsRegionAttrs;
     NVS_getAttrs(initGainStatesHandle, &cigsRegionAttrs);
 
-    initGainStatesCache = CRS_realloc(initGainStatesCache, cigsRegionAttrs.regionSize);
+    initGainStatesCache = CRS_realloc(initGainStatesCache, cigsRegionAttrs.regionSize - STRLEN_BYTES);
     length = Vars_setFileVars(&initGainStatesHandle, initGainStatesCache, vars);
 
     initGainStatesCache = CRS_realloc(initGainStatesCache, length);
 //    char filecopy [1024] = {0};
 //    NVS_read(initGainStatesHandle, 0, (void*) filecopy, 1024);
+    nvsClose();
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t CIGS_delete(char *vars){
 
-    uint32_t length;
-    if(initGainStatesCache == NULL){
-        CIGS_init();
+    if (nvsInit() != CRS_SUCCESS)
+    {
+        return CRS_FAILURE;
     }
 
+//    if(initGainStatesCache == NULL){
+//        CIGS_init();
+//    }
+
+    uint32_t length = 0;
     NVS_Attrs cigsRegionAttrs;
     NVS_getAttrs(initGainStatesHandle, &cigsRegionAttrs);
 
-    initGainStatesCache = CRS_realloc(initGainStatesCache, cigsRegionAttrs.regionSize);
+    initGainStatesCache = CRS_realloc(initGainStatesCache, cigsRegionAttrs.regionSize - STRLEN_BYTES);
     length = Vars_removeFileVars(&initGainStatesHandle, initGainStatesCache, vars);
     if(!length){
+        CRS_LOG(CRS_ERR, "\r\nCIGS_delete - Vars_removeFileVars failed");
+        nvsClose();
         return CRS_FAILURE;
     }
     initGainStatesCache = CRS_realloc(initGainStatesCache, length);
 
+    nvsClose();
     return CRS_SUCCESS;
 }
 
 CRS_retVal_t CIGS_format(){
-
-    if (initGainStatesHandle == NULL)
+    if (nvsInit() != CRS_SUCCESS)
     {
-        NVS_Params nvsParams;
-        NVS_init();
-        NVS_Params_init(&nvsParams);
-        initGainStatesHandle = NVS_open(INIT_GAIN_NVS, &nvsParams);
+        return CRS_FAILURE;
     }
+
+//    if (initGainStatesHandle == NULL)
+//    {
+//        NVS_Params nvsParams;
+//        NVS_init();
+//        NVS_Params_init(&nvsParams);
+//        initGainStatesHandle = NVS_open(INIT_GAIN_NVS, &nvsParams);
+//    }
 
     bool ret = Vars_createFile(&initGainStatesHandle);
     CRS_free(&initGainStatesCache);
     initGainStatesCache = CRS_calloc(1, sizeof(char));
+    nvsClose();
     return CRS_SUCCESS;
 }
 
+static CRS_retVal_t nvsInit()
+{
+    if (gIsMoudleInit == true)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_Params nvsParams;
+    NVS_Params_init(&nvsParams);
 
+    initGainStatesHandle = NVS_open(INIT_GAIN_NVS, &nvsParams);
+
+    if (initGainStatesHandle == NULL)
+    {
+
+        return (CRS_FAILURE);
+    }
+
+    gIsMoudleInit = true;
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t nvsClose()
+{
+    gIsMoudleInit = false;
+
+    if (initGainStatesHandle == NULL)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_close(initGainStatesHandle);
+    initGainStatesHandle = NULL;
+    return CRS_SUCCESS;
+}
 
