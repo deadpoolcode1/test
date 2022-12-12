@@ -36,7 +36,7 @@ typedef struct multiPackageTraverser
     CRS_chipType_t chipType;
     CRS_chipMode_t chipMode;
     SPI_crs_package_t package;
-
+    uint32_t chipAddr;
 } multiPackageTraverser_t;
 /******************************************************************************
  Local variables
@@ -71,6 +71,7 @@ CRS_retVal_t MultiFilesSPI_multiFilesInit(void *sem)
 }
 
 CRS_retVal_t MultiFilesSPI_runMultiFiles(SPI_crs_package_t *package,
+                                      uint32_t chipAddr,
                                       CRS_chipType_t chipType,
                                       CRS_chipMode_t chipMode)
 {
@@ -81,6 +82,7 @@ CRS_retVal_t MultiFilesSPI_runMultiFiles(SPI_crs_package_t *package,
     multiPackageTraverser_t packageTraverser = {0};
     packageTraverser.chipMode = chipMode;
     packageTraverser.chipType = chipType;
+    packageTraverser.chipAddr = chipAddr;
 
     memset(&packageTraverser.package, 0, sizeof(SPI_crs_package_t));
     memcpy(&packageTraverser.package, package, sizeof(SPI_crs_package_t));
@@ -242,7 +244,7 @@ static CRS_retVal_t runNextFile(multiPackageTraverser_t *packageTraverser)
          {
              rspStatus = DigSPI_uploadSnapDig(
                      packageTraverser->package.fileInfos[packageTraverser->fileIdx].name,
-                     packageTraverser->chipMode, 0xff,
+                     packageTraverser->chipMode, packageTraverser->chipAddr,
                      packageTraverser->package.fileInfos[packageTraverser->fileIdx].nameValues);
          }
          else
@@ -251,7 +253,7 @@ static CRS_retVal_t runNextFile(multiPackageTraverser_t *packageTraverser)
             {
                rspStatus = scriptRf_runFile((uint8_t*)packageTraverser->package.fileInfos[packageTraverser->fileIdx].name,
                                                 packageTraverser->package.fileInfos[packageTraverser->fileIdx].nameValues,
-                                                0xff, packageTraverser->lutLineIdx);
+                                                packageTraverser->chipAddr, packageTraverser->lutLineIdx, true);
             }
             else
             {
@@ -297,12 +299,12 @@ static CRS_retVal_t runNextLine(multiPackageTraverser_t *packageTraverser)
          {
              rspStatus = scriptRf_runFile((uint8_t*)packageTraverser->package.fileInfos[packageTraverser->fileIdx].name,
                                               packageTraverser->package.fileInfos[packageTraverser->fileIdx].nameValues,
-                                              0xff, packageTraverser->lutLineIdx);
+                                              packageTraverser->chipAddr, packageTraverser->lutLineIdx, true);
          }
          else
          {
              rspStatus = SPI_RF_uploadSnapRf(
-                     packageTraverser->package.fileInfos[packageTraverser->fileIdx].name, 0xff,
+                     packageTraverser->package.fileInfos[packageTraverser->fileIdx].name, packageTraverser->chipAddr,
                      packageTraverser->lutLineIdx, packageTraverser->chipMode,
                      packageTraverser->package.fileInfos[packageTraverser->fileIdx].nameValues, true);
          }

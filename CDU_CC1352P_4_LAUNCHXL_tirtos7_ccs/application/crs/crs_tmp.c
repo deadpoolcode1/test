@@ -390,7 +390,7 @@ static CRS_retVal_t closeSpi()
 //TODO: check strstr returns
 static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
 {
-//    CLI_cliPrintf("\r\n%s", line);
+//    CLI_cliPrintf("\r\nspi buff: %s", line);
 
     if (line[0] == 'w' && line[1] == 'r' && line[2] == ' ')
     {
@@ -431,6 +431,7 @@ static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
     }
     else
     {
+        CRS_LOG(CRS_ERR,"\r\ninvalid buff spi format! line: %s",line);
         return CRS_FAILURE;
     }
 

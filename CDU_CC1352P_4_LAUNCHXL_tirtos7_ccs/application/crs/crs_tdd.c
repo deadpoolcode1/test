@@ -268,6 +268,9 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 CRS_retVal_t Tdd_close()
 {
 //    gIsOpen = false;
+#ifdef CRS_TMP_SPI
+    return CRS_SUCCESS;
+#endif
     if (gUartHandle == NULL)
     {
         return CRS_SUCCESS;

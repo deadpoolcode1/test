@@ -110,7 +110,7 @@ static CRS_retVal_t saveTiLockStatus(uint32_t val);
 static void MoveIdxToNextLockIdx(void);
 static CRS_retVal_t setAlarms(void);
 #ifdef CRS_TMP_SPI
-static void getLockValueSPI(uint32_t val);
+static void saveLockValueSPI(uint32_t val);
 #else
 static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs);
 #endif
@@ -331,7 +331,7 @@ static void getLockValueCallback(const FPGA_cbArgs_t _cbArgs)
 #endif
 
 #ifdef CRS_TMP_SPI
-static void getLockValueSPI(uint32_t val)
+static void saveLockValueSPI(uint32_t val)
 {
     gSaveValueFunctionTable[gLocksIdx](val);
 }
@@ -429,7 +429,7 @@ static CRS_retVal_t writeToTddLockReg(void)
     memcpy(line, READ_TDD_REG, sizeof(READ_TDD_REG) - 1);
     Fpga_tmpWriteMultiLine(line, &rsp);
 
-    getLockValueSPI(rsp);
+    saveLockValueSPI(rsp);
 #else
     Fpga_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
 #endif
@@ -445,7 +445,7 @@ static CRS_retVal_t writeToAdfLockReg(void)
     char line [LINE_TMP_SZ] = {0};
     memcpy(line, READ_ADF_REG, sizeof(READ_ADF_REG) - 1);
     Fpga_tmpWriteMultiLine(line, &rsp);
-    getLockValueSPI(rsp);
+    saveLockValueSPI(rsp);
 #else
     Fpga_writeMultiLineNoPrint(READ_ADF_REG, getLockValueCallback);
 
@@ -469,7 +469,7 @@ static CRS_retVal_t writeToTiLockReg(void)
         char line [LINE_TMP_SZ] = {0};
         memcpy(line, READ_TI_REG, sizeof(READ_TI_REG) - 1);
         Fpga_tmpWriteMultiLine(line, &rsp);
-        getLockValueSPI(rsp);
+        saveLockValueSPI(rsp);
 #else
     Fpga_writeMultiLineNoPrint(READ_TI_REG, getLockValueCallback);
 #endif
