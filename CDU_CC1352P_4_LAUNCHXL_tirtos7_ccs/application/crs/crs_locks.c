@@ -170,8 +170,6 @@ CRS_retVal_t Locks_process(void)
 {
 if (Locks_events & LOCKS_CHECKLOCK_EV)
 {
-    CRS_LOG(CRS_INFO, "\r\nChecking locks");
-
     CRS_retVal_t fpgaStatus = CRS_SUCCESS;
 #ifdef CRS_TMP_SPI
     // do nothing
