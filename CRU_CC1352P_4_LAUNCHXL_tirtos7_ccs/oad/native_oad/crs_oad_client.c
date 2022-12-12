@@ -85,6 +85,7 @@
 #include DeviceFamily_constructPath(driverlib/flash.h)
 #include "oad/native_oad/oad_image_header_app.h"
 #include "oad/native_oad/flash_interface_internal.h"
+#include "application/crs/crs_locks.h"
 
 /******************************************************************************
  Constants and definitions
@@ -254,6 +255,7 @@ CRS_retVal_t OadClient_process(void)
     if ( Oad_clientEvents & OAD_CLIENT_FINISHED_OAD_EVT)
        {
         oadInProgress=false;
+        Locks_enable();
         oadBNumBlocks=0;
         OADStorage_init();
         OADStorage_Status_t status = OADStorage_imgFinalise();
@@ -391,6 +393,7 @@ static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
     if (oadBNumBlocks)
     {
         oadInProgress = true;
+        Locks_disable();//disable locks process checks, in order for it not make troubles with the spi extFlash
         //Send success response back
         OADProtocol_sendOadIdentifyImgRsp(pSrcAddr, 1);
     }
