@@ -101,7 +101,7 @@
 static uint16_t oadBNumBlocks = 0;
 static uint16_t oadBlock = 0;
 static uint16_t oadServerAddr = {0};
-static bool oadInProgress = false;
+bool oadInProgress = false;
 
 static uint16_t Oad_clientEvents = 0;
 static Semaphore_Handle collectorSem;

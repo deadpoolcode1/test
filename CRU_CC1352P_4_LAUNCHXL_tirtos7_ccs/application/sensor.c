@@ -239,7 +239,7 @@ void Sensor_process(void)
 //    Fpga_process();
 
     Agc_process();
-    Tdd_process();
+//    Tdd_process();
     Alarms_process();
     OadClient_process();
     Msgs_process();
