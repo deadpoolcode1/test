@@ -315,9 +315,9 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
         CRS_retVal_t retVal = convertLineAsciToSpiFormat((uint8_t*)token2, gMasterTxBuffer);
         if (retVal != CRS_SUCCESS)
         {
+//            return CRS_FAILURE; //TODO fix 'ver' command and split it into rd 0x0 and rd 0x date register
             token2 = strtok(NULL, d);
             continue;
-
         }
 //        CLI_cliPrintf("\r\n%s", token2);
 
@@ -388,6 +388,7 @@ static CRS_retVal_t closeSpi()
 //SPI format: first bit: read/write, 8 bit addr, 7 bit dont care, 32 bit data.
 //not using strtok
 //TODO: check strstr returns
+//TODO fix 'ver' command and split it into rd 0x0 and rd 0x date register
 static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
 {
 //    CLI_cliPrintf("\r\nspi buff: %s", line);
@@ -431,7 +432,7 @@ static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
     }
     else
     {
-        CRS_LOG(CRS_ERR,"\r\ninvalid buff spi format! line: %s",line);
+        CRS_LOG(CRS_INFO,"\r\nbad buffer input to spi %s",line);
         return CRS_FAILURE;
     }
 
