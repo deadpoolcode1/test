@@ -304,7 +304,7 @@ static CRS_retVal_t runNextLine(multiPackageTraverser_t *packageTraverser)
          else
          {
              rspStatus = SPI_RF_uploadSnapRf(
-                     packageTraverser->package.fileInfos[packageTraverser->fileIdx].name, packageTraverser->chipAddr,
+                     packageTraverser->package.fileInfos[packageTraverser->fileIdx].name, 0xff,
                      packageTraverser->lutLineIdx, packageTraverser->chipMode,
                      packageTraverser->package.fileInfos[packageTraverser->fileIdx].nameValues, true);
          }
