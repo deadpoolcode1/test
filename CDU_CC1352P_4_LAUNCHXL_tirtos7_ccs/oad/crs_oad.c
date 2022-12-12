@@ -244,21 +244,23 @@ CRS_retVal_t Oad_process()
             /* Clear the event */
            Util_clearEvent(&Oad_events, OAD_RF_NEXT_BLOCK_EVT);
         }else{
-
+            OADStorage_init();
             uint8_t blockBuf[OADStorage_BLOCK_SIZE - OADStorage_BLK_NUM_HDR_SZ] = { 0 };
             /* read a block from Flash */
             OADStorage_imgBlockRead(oadBlock, blockBuf);
             OADProtocol_Status_t status= OADProtocol_sendOadImgBlockRsp(&oadClientAddr, 0, oadBlock, blockBuf);
+            OADStorage_close();
             if (status==OADProtocol_Failed) {
-                UART_close(uartHandle);
+//                UART_close(uartHandle);
                 CLI_init(false);
                 CLI_startREAD();
-                OADStorage_close();
+//                OADStorage_close();
                 oadInProgress=false;
                 oadBNumBlocks= 0;
                 oadBlock=0;
                 CLI_cliPrintf("\r\nsendOadImgBlockRsp Failed");
                    }
+//            OADStorage_close();
             //CLI_cliPrintf("\r\n------------------\r\nsending\r\nclient Addr: %x\r\noadBlock: %d\r\noadBNumBlocks: %d\r\n------------------",oadClientAddr,oadBlock,oadBNumBlocks);
             oadBlock++;
 
@@ -386,6 +388,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
 
         /* get num blocks and setup OADStorage to store in user image region */
         oadBNumBlocks = OADStorage_imgIdentifyRead(OAD_IMG_TYPE_USR_BEGIN, &remoteImgId);
+        OADStorage_close();
         if (isFactory) {
             remoteImgId.imgType=OAD_IMG_TYPE_FACTORY;
             remoteImgId.imgCpStat = DEFAULT_STATE;

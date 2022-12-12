@@ -246,7 +246,7 @@ CRS_retVal_t OadClient_process(void)
     /* Is it time to send the next sensor data message? */
     if ( Oad_clientEvents & OAD_CLIENT_REQ_EVT)
     {
-        OADStorage_init();
+//        OADStorage_init();
         CLI_cliPrintf("\roadBlock #%d",oadBlock);
         OADProtocol_sendOadImgBlockReq(&oadServerAddr, 0, oadBlock, 1);
         Util_clearEvent(&Oad_clientEvents, OAD_CLIENT_REQ_EVT);
@@ -255,6 +255,7 @@ CRS_retVal_t OadClient_process(void)
        {
         oadInProgress=false;
         oadBNumBlocks=0;
+        OADStorage_init();
         OADStorage_Status_t status = OADStorage_imgFinalise();
         OADStorage_close();
         if (status == OADStorage_Status_Success) {
@@ -373,7 +374,7 @@ static void oadFwVersionReqCb(void *pSrcAddr)
 static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
                                 uint8_t *imgMetaData)
 {
-    OADStorage_init();
+
 //    CLI_cliPrintf("\r\noadImgIdentifyReqCb");
     /*
      * Ignore imgId - its not used in this
@@ -382,8 +383,9 @@ static void oadImgIdentifyReqCb(void *pSrcAddr, uint8_t imgId,
     (void) imgId;
 
     oadServerAddr = *((uint16_t*) pSrcAddr);
-
+    OADStorage_init();
     oadBNumBlocks = OADStorage_imgIdentifyWrite(imgMetaData);
+    OADStorage_close();
     oadBlock = 0;
 
     if (oadBNumBlocks)
@@ -414,12 +416,15 @@ static void oadBlockRspCb(void *pSrcAddr, uint8_t imgId, uint16_t blockNum,
     (void) imgId;
     if ((blockNum == oadBlock) && (oadInProgress))
     {
+        OADStorage_init();
         oadBlock++;
         OADStorage_Status_t status = OADStorage_imgBlockWrite(blockNum, (blkData), OADStorage_BLOCK_SIZE);
         if (status!=OADStorage_Status_Success) {
             CLI_cliPrintf("\r\nfailed to write to flash");
+            OADStorage_close();
             return;
         }
+        OADStorage_close();
         //request the next block from the server
         Util_setEvent(&Oad_clientEvents, OAD_CLIENT_REQ_EVT);
         /* Wake up the application thread when it waits for clock event */
