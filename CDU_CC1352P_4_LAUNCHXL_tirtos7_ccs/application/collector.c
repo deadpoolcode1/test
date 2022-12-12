@@ -184,7 +184,7 @@ void Collector_process(void)
     Snap_process();
 #endif
 //    Fpga_process();
-    Tdd_process();
+//    Tdd_process();
     Agc_process();
 
     Alarms_process();

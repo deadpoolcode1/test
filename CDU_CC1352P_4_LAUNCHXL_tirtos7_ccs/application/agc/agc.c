@@ -20,7 +20,11 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/hal/Seconds.h>
 #include <ti/drivers/GPIO.h>
-
+#ifdef CLI_SENSOR
+#include "oad/native_oad/crs_oad_client.h"
+#else
+#include "oad/crs_oad.h"
+#endif
 #include <math.h>
 #include <float.h>
 #include DeviceFamily_constructPath(driverlib/aux_adc.h)
@@ -754,8 +758,9 @@ CRS_retVal_t Agc_sample(){
 
 static void processAgcTimeoutCallback(UArg a0)
 {
+    if (oadInProgress==false) {
     AGCM_runTask(processAgcSample);
-
+    }
     //gAgcTimeout = true;
 }
 

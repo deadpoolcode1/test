@@ -32,6 +32,8 @@
 #include DeviceFamily_constructPath(driverlib/flash.h)
 #include "oad/native_oad/oad_image_header_app.h"
 #include "oad/flash_interface_internal.h"
+#include "application/crs/crs_locks.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -203,7 +205,7 @@ CRS_retVal_t Oad_process()
 
             /* end available fw update */
             oadInProgress = false;
-
+            Locks_enable();
             /*
              * Check that CRC is correct and mark the image as new
              * image to be booted in to by BIM on next reset
@@ -383,7 +385,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
             return CRS_FAILURE;
         }
         oadInProgress = true;
-
+        Locks_disable(); //disable locks process checks, in order for it not make troubles with the spi extFlash
         OADStorage_init();
 
         /* get num blocks and setup OADStorage to store in user image region */
@@ -402,6 +404,7 @@ CRS_retVal_t Oad_parseOadPkt(uint8_t* incomingPacket){
         {
             /* issue with image in ext flash */
             oadInProgress = false;
+            Locks_enable();
             oadBNumBlocks = 0;
             CLI_init(false);
             CLI_startREAD();
@@ -468,6 +471,7 @@ void* oadRadioAccessAllocMsg(uint32_t msgLen)
 CRS_retVal_t Oad_Reinit()
 {
            oadInProgress = false;
+           Locks_enable();
           oadBNumBlocks = 0;
           oadBlock=0;
           CLI_init(false);
@@ -588,6 +592,7 @@ static void oadBlockReqCb(void *pSrcAddr, uint8_t imgId, uint16_t blockNum,
         {
             /* OAD complete */
             oadInProgress = false;
+            Locks_enable();
             Util_setEvent(&Oad_events, OAD_RF_FINISHED_OAD_EVT);
             /* Wake up the application thread when it waits for clock event */
             Semaphore_post(collectorSem);

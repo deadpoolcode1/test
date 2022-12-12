@@ -96,6 +96,7 @@ extern CRS_retVal_t OadClient_process(void);
  */
 extern void OADClient_invalidateHeader(void);
 
+extern bool oadInProgress;
 
 /*********************************************************************
 *********************************************************************/
