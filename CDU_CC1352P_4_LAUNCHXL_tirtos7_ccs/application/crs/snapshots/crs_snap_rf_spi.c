@@ -622,8 +622,6 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
         }
     }
 
-    CLI_cliPrintf("\r\n");
-
     CRS_retVal_t rspStatus = CRS_SUCCESS;
 
     fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);

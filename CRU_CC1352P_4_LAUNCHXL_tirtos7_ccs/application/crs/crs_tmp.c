@@ -391,7 +391,7 @@ static CRS_retVal_t closeSpi()
 //TODO fix 'ver' command and split it into rd 0x0 and rd 0x date register
 static CRS_retVal_t convertLineAsciToSpiFormat(uint8_t *line , uint8_t* rspBuf)
 {
-//    CLI_cliPrintf("\r\n%s", line);
+//    CLI_cliPrintf("\r\nspi buff: %s", line);
 
     if (line[0] == 'w' && line[1] == 'r' && line[2] == ' ')
     {

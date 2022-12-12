@@ -134,7 +134,7 @@ CRS_retVal_t DigSPI_init(void *sem)
 }
 
 CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
-                               uint32_t chipNumber, CRS_nameValue_t *nameVals)
+                               uint32_t chipAddr, CRS_nameValue_t *nameVals)
 {
 
     if (Fpga_isOpen() == CRS_FAILURE)
@@ -148,7 +148,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
     }
 
     scriptDigTraverser_t fileTraverser = {0};
-    fileTraverser.digAddr = chipNumber;
+    fileTraverser.digAddr = chipAddr;
     fileTraverser.chipMode = chipMode;
     fileTraverser.chipType = DIG;
     fileTraverser.fileContentCache = NULL;
@@ -180,7 +180,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
         return CRS_FAILURE;
     }
 
-    if (chipNumber != 0xff)
+    if (chipAddr != 0xff)
     {
 //        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
         changeDigChip(&fileTraverser);
@@ -213,7 +213,7 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     fileTraverser.chipMode = chipMode;
     fileTraverser.chipType = UNKNOWN;
 //    CLI_cliPrintf("\r\n");
-    if (nameVals != NULL)
+    if (nameVals != NULL && nameVals[0].name[0] != 0)
     {
         int i;
         for (i = 0; i < NAME_VALUES_SZ; ++i)

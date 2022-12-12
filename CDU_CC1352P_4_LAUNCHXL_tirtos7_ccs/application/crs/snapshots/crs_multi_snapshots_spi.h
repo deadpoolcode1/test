@@ -21,6 +21,7 @@
  *****************************************************************************/
 CRS_retVal_t MultiFilesSPI_multiFilesInit(void *sem);
 CRS_retVal_t MultiFilesSPI_runMultiFiles(SPI_crs_package_t *package,
+                                      uint32_t chipAddr,
                                       CRS_chipType_t chipType,
                                       CRS_chipMode_t chipMode);
 void MultiFilesSPI_process(void);
