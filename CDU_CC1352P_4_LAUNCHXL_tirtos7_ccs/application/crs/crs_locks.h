@@ -31,5 +31,7 @@ bool Locks_getTddLockVal(void);
 bool Locks_getAdfLockVal(void);
 #endif
 bool Locks_getTiLockVal(void);
+void Locks_disable(void);
+void Locks_enable(void);
 
 #endif /* APPLICATION_CRS_CRS_LOCKS_H_ */

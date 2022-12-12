@@ -170,7 +170,7 @@ CRS_retVal_t Locks_process(void)
 {
 if (Locks_events & LOCKS_CHECKLOCK_EV)
 {
-//    CRS_LOG(CRS_INFO, "\r\nInside of checklock event");
+    CRS_LOG(CRS_INFO, "\r\nChecking locks");
 
     CRS_retVal_t fpgaStatus = CRS_SUCCESS;
 #ifdef CRS_TMP_SPI
@@ -269,7 +269,14 @@ bool Locks_getTiLockVal(void)
     return gGettersArray[lockType_tiLock];
 }
 
-
+void Locks_disable(void)
+{
+    UtilTimer_stop(&locksClkStruct);
+}
+void Locks_enable(void)
+{
+    UtilTimer_start(&locksClkStruct);
+}
 //static void checkCurrentLock()
 //{
 //    gFpgaWriteFunctionsTable[gLocksIdx]();
