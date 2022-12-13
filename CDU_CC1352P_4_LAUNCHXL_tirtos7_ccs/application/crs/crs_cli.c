@@ -2526,6 +2526,7 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
 //
 //    CRS_retVal_t rspStatus = Fpga_readMultiLine(lineToSend,
 //                                                 fpgaMultiLineCallback);
+    Fpga_readMultiLine(lineToSend ,fpgaMultiLineCallback);
     uint32_t rsp = 0;
     if (lineToSend[len - 1] != '\r')
     {

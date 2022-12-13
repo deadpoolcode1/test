@@ -145,8 +145,8 @@ void Collector_init()
     CIGS_init();
     Locks_init(sem);
 //    SnapInit(sem);
-//    Fpga_initSem(sem);
-//    Tdd_initSem(sem);
+    Fpga_initSem(sem);
+    Tdd_initSem(sem);
     CRS_init();
 //    Manage_initSem(sem);
     Oad_init(sem); //used NVS and ENV
@@ -183,8 +183,8 @@ void Collector_process(void)
     RF_process();
     Snap_process();
 #endif
-//    Fpga_process();
-//    Tdd_process();
+    Fpga_process();
+    Tdd_process();
     Agc_process();
 
     Alarms_process();
