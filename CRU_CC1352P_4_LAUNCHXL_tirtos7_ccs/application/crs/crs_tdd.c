@@ -212,11 +212,12 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 
     if (gUartHandle != NULL || Fpga_UART_isOpen() == CRS_SUCCESS)
     {
+        CRS_LOG(CRS_INFO, "\r\nUART FPGA is open or tdd is already open!");
         return CRS_FAILURE;
     }
 
 #ifdef CRS_CB
-//    GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
+    GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
 #endif
 
     {
@@ -268,9 +269,9 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 CRS_retVal_t Tdd_close()
 {
 //    gIsOpen = false;
-#ifdef CRS_TMP_SPI
-    return CRS_SUCCESS;
-#endif
+//#ifdef CRS_TMP_SPI
+//    return CRS_SUCCESS;
+//#endif
     if (gUartHandle == NULL)
     {
         return CRS_SUCCESS;
