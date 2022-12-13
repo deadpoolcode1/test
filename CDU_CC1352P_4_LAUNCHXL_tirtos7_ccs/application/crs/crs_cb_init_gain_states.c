@@ -59,23 +59,23 @@ CRS_retVal_t CIGS_restore()
         //CIGS_init();
     }
 
-    if (Nvs_isFileExists(INIT_GAIN_STATES_FILENAME) == CRS_SUCCESS)
-    {
-        CRS_free(&initGainStatesCache);
-        initGainStatesCache = Nvs_readFileWithMalloc(INIT_GAIN_STATES_FILENAME);
-        if (!initGainStatesCache)
-        {
-            initGainStatesCache = CRS_calloc(1, sizeof(char));
-            if(NULL == initGainStatesCache)
-            {
-                CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache calloc failed!");
-                nvsClose();
-                return CRS_FAILURE;
-            }
-        }
-    }
-    else
-    {
+    CRS_free(&initGainStatesCache);
+//    if (Nvs_isFileExists(INIT_GAIN_STATES_FILENAME) == CRS_SUCCESS)
+//    {
+//        initGainStatesCache = Nvs_readFileWithMalloc(INIT_GAIN_STATES_FILENAME);
+//        if (!initGainStatesCache)
+//        {
+//            initGainStatesCache = CRS_calloc(1, sizeof(char));
+//            if(NULL == initGainStatesCache)
+//            {
+//                CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache calloc failed!");
+//                nvsClose();
+//                return CRS_FAILURE;
+//            }
+//        }
+//    }
+//    else
+//    {
         initGainStatesCache = CRS_realloc(initGainStatesCache, sizeof(INIT_GAIN_STATES_FILE));
         if(NULL == initGainStatesCache)
         {
@@ -83,10 +83,16 @@ CRS_retVal_t CIGS_restore()
             nvsClose();
             return CRS_FAILURE;
         }
+        memset(initGainStatesCache, '\0', sizeof(INIT_GAIN_STATES_FILE));
         memcpy(initGainStatesCache, INIT_GAIN_STATES_FILE, sizeof(INIT_GAIN_STATES_FILE) - 1);
 
-    }
+//    }
     CRS_retVal_t status = Vars_setFile(&initGainStatesHandle, initGainStatesCache);
+    if (status != CRS_SUCCESS)
+    {
+        CRS_LOG(CRS_ERR, "\r\nVars_setFile failed");
+        nvsClose();
+    }
 
     nvsClose();
     return status;
@@ -113,6 +119,7 @@ CRS_retVal_t CIGS_init(){
         if(NULL == initGainStatesCache)
         {
             CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache calloc failed!");
+            nvsClose();
 
             return CRS_FAILURE;
         }
@@ -123,6 +130,7 @@ CRS_retVal_t CIGS_init(){
         if(NULL == initGainStatesCache)
         {
             CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache calloc failed!");
+            nvsClose();
 
             return CRS_FAILURE;
         }
@@ -181,7 +189,6 @@ CRS_retVal_t CIGS_write(char *vars){
 //        CIGS_init();
 //    }
 
-    uint32_t length = 0;
     NVS_Attrs cigsRegionAttrs;
     NVS_getAttrs(initGainStatesHandle, &cigsRegionAttrs);
 
@@ -189,6 +196,7 @@ CRS_retVal_t CIGS_write(char *vars){
     if(NULL == initGainStatesCache)
     {
         CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache realloc failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -196,6 +204,7 @@ CRS_retVal_t CIGS_write(char *vars){
     length = Vars_setFileVars(&initGainStatesHandle, initGainStatesCache, vars);
     if (length == 0){
         CRS_LOG(CRS_ERR,"\r\nVars_setFileVars failed");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -204,6 +213,7 @@ CRS_retVal_t CIGS_write(char *vars){
     if(NULL == initGainStatesCache)
     {
         CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache realloc failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -233,6 +243,7 @@ CRS_retVal_t CIGS_delete(char *vars){
     if(NULL == initGainStatesCache)
     {
         CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache realloc failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -240,6 +251,7 @@ CRS_retVal_t CIGS_delete(char *vars){
     length = Vars_removeFileVars(&initGainStatesHandle, initGainStatesCache, vars);
     if(length == 0){
         CRS_LOG(CRS_ERR, "\r\nVars_removeFileVars failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -247,6 +259,7 @@ CRS_retVal_t CIGS_delete(char *vars){
     if(NULL == initGainStatesCache)
     {
         CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache realloc failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }
@@ -274,6 +287,7 @@ CRS_retVal_t CIGS_format(){
     bool ret = Vars_createFile(&initGainStatesHandle);
     if (ret == false){
         CRS_LOG(CRS_ERR, "\r\nVars_createFile failed!");
+        nvsClose();
 
            return CRS_FAILURE;
     }
@@ -283,6 +297,7 @@ CRS_retVal_t CIGS_format(){
     if(NULL == initGainStatesCache)
     {
         CRS_LOG(CRS_ERR, "\r\ninitGainStatesCache calloc failed!");
+        nvsClose();
 
         return CRS_FAILURE;
     }

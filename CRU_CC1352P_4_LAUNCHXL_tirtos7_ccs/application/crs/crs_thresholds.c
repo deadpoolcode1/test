@@ -197,7 +197,7 @@ CRS_retVal_t Thresh_write(char *vars){
     length = Vars_setFileVars(&threshHandle, threshCache, vars);
     if (length == 0)
     {
-        CRS_LOG(CRS_ERR,"\r\Vars_setFileVars failed");
+        CRS_LOG(CRS_ERR,"\r\nVars_setFileVars failed");
         nvsClose();
     }
     threshCache = CRS_realloc(threshCache, length);

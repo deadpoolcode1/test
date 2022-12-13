@@ -88,12 +88,18 @@ CRS_retVal_t Env_init(void){
             return CRS_FAILURE;
         }
         memset(envCache, '\0', length);
-#ifndef CLI_SENSOR
-          Env_write("name=Cdu");
-#else
-          Env_write("name=Cru");
-#endif
+
         status = Vars_getFile(&envHandle, envCache);
+        nvsClose();
+        if (status == CRS_SUCCESS)
+        {
+
+        #ifndef CLI_SENSOR
+                  Env_write("name=Cdu");
+        #else
+                  Env_write("name=Cru");
+        #endif
+        }
     }
     nvsClose();
 
@@ -258,12 +264,47 @@ CRS_retVal_t Env_restore()
 
     memcpy(envCache, ENV_FILE, sizeof(ENV_FILE) - 1); //write into RAM cache
     CRS_retVal_t ret =  Vars_setFile(&envHandle, envCache); //write into flash
-    nvsClose();
     if (ret != CRS_SUCCESS)
     {
         CRS_LOG(CRS_ERR, "\r\nVars_setFile failed");
+        nvsClose();
     }
 
+    nvsClose();
     return ret;
+}
+
+static CRS_retVal_t nvsInit()
+{
+    if (gIsMoudleInit == true)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_Params nvsParams;
+    NVS_Params_init(&nvsParams);
+
+    envHandle = NVS_open(ENV_NVS, &nvsParams);
+
+    if (envHandle == NULL)
+    {
+
+        return (CRS_FAILURE);
+    }
+
+    gIsMoudleInit = true;
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t nvsClose()
+{
+    gIsMoudleInit = false;
+
+    if (envHandle == NULL)
+    {
+        return CRS_SUCCESS;
+    }
+    NVS_close(envHandle);
+    envHandle = NULL;
+    return CRS_SUCCESS;
 }
 

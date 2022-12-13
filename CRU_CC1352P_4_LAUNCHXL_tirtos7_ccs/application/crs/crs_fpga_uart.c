@@ -134,7 +134,7 @@ CRS_retVal_t Fpga_UART_init(FPGA_cbFn_t _cbFn)
     }
 
     #ifdef CRS_CB
-//        GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH,  GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW);
+        GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH,  GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW);
     #endif
 
 

@@ -1922,22 +1922,36 @@ static CRS_retVal_t CLI_unit(char *line)
 #ifndef CLI_SENSOR
 //        CRS_LOG(CRS_DEBUG,"Collector");
         CLI_cliPrintf("\r\ncollector");
-        char envFile[4096] = {0};
+#else
+        CLI_cliPrintf("\r\nsensor");
+#endif
+        char envBuff[100] = {0};
 
-        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
-              if (rspStatus == CRS_SUCCESS){
-                  char* token;
-                  const char d[2] = "\n";
-                  token = strtok(envFile, d);
-                  while (token != NULL){
-                      char * pEqual = strstr(token, "=");
-                      CLI_cliPrintf(", %s",pEqual+1 );
-                      token = strtok(NULL, d);
-                  }
-              }
-
-
-
+//        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
+//              if (rspStatus == CRS_SUCCESS){
+//                  char* token;
+//                  const char d[2] = "\n";
+        char *requiredEnvs [] = {"name", "ver", "config","img"};
+        uint8_t i = 0;
+        uint8_t numOfParams = 4;
+        CRS_retVal_t ret = CRS_SUCCESS;
+        for (i = 0; i < numOfParams; i++)
+        {
+            ret = Env_read(requiredEnvs[i], envBuff);
+            if (ret == CRS_FAILURE)
+            {
+                CLI_cliPrintf(", 0");
+            }
+            else
+            {
+                char envValue [50] = {0};
+                strcpy(envValue,  &envBuff[strlen(requiredEnvs[i]) + 1]);
+                envValue[strlen(envValue) - 1] = 0;
+                CLI_cliPrintf(", %s", envValue);
+            }
+            memset(envBuff,0,100);
+        }
+#ifndef CLI_SENSOR
         uint32_t left = 0, right = 0;
         bool rsp = true;
         Llc_netInfo_t nwkInfo;
@@ -1956,21 +1970,21 @@ static CRS_retVal_t CLI_unit(char *line)
 
 
 #else
-        CLI_cliPrintf("\r\nsensor");
-        char envFile[4096] = {0};
-
-        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
-              if (rspStatus == CRS_SUCCESS){
-                  char* token;
-                  const char d[2] = "\n";
-                  token = strtok(envFile, d);
-                  while (token != NULL)
-                  {
-                    char * pEqual = strstr(token, "=");
-                    CLI_cliPrintf(", %s",pEqual+1 );
-                    token = strtok(NULL, d);
-                  }
-              }
+//        CLI_cliPrintf("\r\nsensor");
+//        char envFile[4096] = {0};
+//
+//        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
+//              if (rspStatus == CRS_SUCCESS){
+//                  char* token;
+//                  const char d[2] = "\n";
+//                  token = strtok(envFile, d);
+//                  while (token != NULL)
+//                  {
+//                    char * pEqual = strstr(token, "=");
+//                    CLI_cliPrintf(", %s",pEqual+1 );
+//                    token = strtok(NULL, d);
+//                  }
+//              }
 
         uint32_t left = 0, right = 0;
                bool rsp = true;
@@ -2478,7 +2492,7 @@ static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
     CRS_retVal_t rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
     CLI_startREAD();
 
-    return CRS_SUCCESS;
+    return rspStatus;
 }
 
 static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)

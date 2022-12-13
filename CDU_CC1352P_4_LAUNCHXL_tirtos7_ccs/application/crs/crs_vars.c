@@ -352,7 +352,7 @@ uint16_t Vars_setFileVars(NVS_Handle * fileHandle, char * file, char * vars){
     if (NULL == returnedFile){
         CRS_LOG(CRS_ERR, "\r\returnedFile CRS_calloc failed");
 
-        return CRS_FAILURE;
+        return 0;
     }
     memset(returnedFile, '\0', fileRegionAttrs.regionSize-VARS_HDR_SZ_BYTES);
     // get new file string
