@@ -181,7 +181,7 @@ void Snap_process(void)
                 Convert_applyLine(gLineToSendArray, gLUT_line, gMode);
                 char lineToSend[100] = { 0 };
                 flat2DArray(gLineToSendArray, 3, lineToSend);
-                Fpga_writeMultiLineNoPrint(lineToSend, finishedFileCb);
+                Fpga_UART_writeMultiLineNoPrint(lineToSend, finishedFileCb);
                 Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
                 return;
             }
@@ -198,7 +198,7 @@ void Snap_process(void)
             Convert_rdParser(line, gLineToSendArray);
             char lineToSend[100] = { 0 };
             flat2DArray(gLineToSendArray, 2, lineToSend);
-            Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapStarCb);
+            Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapStarCb);
             Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
             return;
 
@@ -241,7 +241,7 @@ void Snap_process(void)
         }
 
         flat2DArray(gLineToSendArray, numLines, lineToSend);
-        Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapNativeCb);
+        Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapNativeCb);
 
         Util_clearEvent(&gSnapEvents, RUN_NEXT_LINE_EV);
         return;
@@ -308,7 +308,7 @@ void Snap_process(void)
         }
 
         flat2DArray(gLineToSendArray, numLines, lineToSend);
-        Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapNativeCb);
+        Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapNativeCb);
 
         Util_clearEvent(&gSnapEvents, STAR_RSP_EV);
         return;

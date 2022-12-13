@@ -8,6 +8,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include "crs_tdd.h"
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/sysbios/knl/Semaphore.h>
@@ -18,7 +19,6 @@
 #include "application/util_timer.h"
 #include "mac/mac_util.h"
 #include "crs_cli.h"
-#include "crs_fpga.h"
 #include "application/agc/agc.h"
 /******************************************************************************
  Constants and definitions
@@ -210,7 +210,7 @@ CRS_retVal_t Tdd_initSem(void *sem)
 CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 {
 
-    if (gUartHandle != NULL || Fpga_isOpen() == CRS_SUCCESS)
+    if (gUartHandle != NULL || Fpga_UART_isOpen() == CRS_SUCCESS)
     {
         CRS_LOG(CRS_INFO, "\r\nUART FPGA is open or tdd is already open!");
         return CRS_FAILURE;

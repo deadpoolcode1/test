@@ -8,9 +8,9 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include "config_parsing.h"
 #include <ti/sysbios/knl/Semaphore.h>
-#include "application/crs/crs_fpga.h"
 #include "crs_convert_snapshot.h"
 #include "crs_multi_snapshots.h"
 /******************************************************************************
@@ -75,7 +75,7 @@ return CRS_SUCCESS;
 CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
                                     FPGA_cbFn_t cbFunc)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = { 0 };
@@ -106,7 +106,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
     }
     gCbFn = cbFunc;
     memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
-    Fpga_setPrint(false);
+    Fpga_UART_setPrint(false);
     Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
     CLI_cliPrintf("\r\n");
     if (memcmp(type, "SN", 2) == 0)
@@ -124,7 +124,7 @@ CRS_retVal_t Config_runConfigDirect(char *filename, char *type, char *fileInfos,
 
 CRS_retVal_t Config_runConfigFile(char *filename, FPGA_cbFn_t cbFunc)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = { 0 };
@@ -164,7 +164,7 @@ CRS_retVal_t Config_runConfigFile(char *filename, FPGA_cbFn_t cbFunc)
 
 CRS_retVal_t Config_runConfigFileDiscovery(char *filename, FPGA_cbFn_t cbFunc)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = { 0 };
@@ -211,7 +211,7 @@ CRS_retVal_t Config_runConfigFileLine(char *filename, uint32_t lineNum,
                                       char *fileInfos, FPGA_cbFn_t cbFunc)
 {
 
-//        if (Fpga_isOpen() == CRS_FAILURE)
+//        if (Fpga_UART_isOpen() == CRS_FAILURE)
 //        {
 //            CLI_cliPrintf("\r\nOpen Fpga first");
 //            const FPGA_cbArgs_t cbArgs = { 0 };
@@ -591,7 +591,7 @@ void Config_process(void)
 
     if (gConfigEvents & RUN_NEXT_LINE_EV)
     {
-        Fpga_setPrint(false);
+        Fpga_UART_setPrint(false);
         CRS_LOG(CRS_DEBUG, "in run next line ev\r\n");
         memset(gOutputMessage, 0, (TEMP_SZ));
         char line[300] = { 0 };
@@ -617,7 +617,7 @@ void Config_process(void)
             {
                 CLI_cliPrintf("\r\nConfig Status: OK");
             }
-            Fpga_setPrint(true);
+            Fpga_UART_setPrint(true);
             gCbFn(cbArgs);
             Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
             return;
@@ -686,11 +686,11 @@ void Config_process(void)
         memcpy(gDiscExpectVal, discLineStruct.expectedVal, EXPECTEDVAL_SZ);
         if (gIsOnlyDiscovery == true)
         {
-            Fpga_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb);
+            Fpga_UART_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb);
         }
         else
         {
-            Fpga_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb);
+            Fpga_UART_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb);
         }
 
         Util_clearEvent(&gConfigEvents, RUN_NEXT_LINE_EV);

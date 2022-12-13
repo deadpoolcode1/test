@@ -9,9 +9,9 @@
  *****************************************************************************/
 
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
-#include "application/crs/crs_tmp.h"
 #include "application/crs/crs_cb_init_gain_states.h"
 #include "application/util_timer.h"
+#include "application/crs/crs_fpga_spi.h"
 #include <ctype.h>
 /******************************************************************************
  Constants and definitions
@@ -133,7 +133,7 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
                              CRS_nameValue_t *nameVals, bool isFromFlat)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
 //        CLI_cliPrintf("\r\nOpen Fpga first");
 //        const FPGA_cbArgs_t cbArgs = { 0 };
@@ -244,7 +244,7 @@ void SPI_RF_process(void)
 //        CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
 //        char line[100] = { 0 };
 //        sprintf(line, "wr 0xa 0x%x", gRFline);
-//        Fpga_writeMultiLine(line, changedActiveLineCb);
+//        Fpga_UART_writeMultiLine(line, changedActiveLineCb);
 //        Util_clearEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
 //    }
 //
@@ -253,14 +253,14 @@ void SPI_RF_process(void)
 //        CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
 //        char line[100] = { 0 };
 //        sprintf(line, "wr 0xff 0x%x", gRfAddr);
-//        Fpga_writeMultiLine(line, changedRfChipCb);
+//        Fpga_UART_writeMultiLine(line, changedRfChipCb);
 //        Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
 //    }
 //
 //    if (gRFEvents & START_UPLOAD_FILE_EV)
 //    {
 ////        sprintf("wr 0xa 0x%x", gRFline);
-////        Fpga_writeMultiLine(line, changedActiveLineCb);
+////        Fpga_UART_writeMultiLine(line, changedActiveLineCb);
 //        Util_clearEvent(&gRFEvents, START_UPLOAD_FILE_EV);
 //        CRS_retVal_t rsp = runFile();
 //        if (rsp == CRS_SUCCESS)
@@ -933,7 +933,7 @@ static CRS_retVal_t writeGlobalsToFpga(snapRfParsingStruct_t *fileTraverser)
     lines[strlen(lines) - 1] = 0;
 
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lines, &rsp);
+    Fpga_SPI_WriteMultiLine(lines, &rsp);
 //    if (fileTraverser->isInTheMiddleOfTheFile == true)
 //    {
 //      fileTraverser->isInTheMiddleOfTheFile = false;
@@ -944,7 +944,7 @@ static CRS_retVal_t writeGlobalsToFpga(snapRfParsingStruct_t *fileTraverser)
 //    {
 //      CRS_free(fileTraverser->fileContentCache);
 //    }
-//    Fpga_writeMultiLine(lines, writeGlobalsCb);
+//    Fpga_UART_writeMultiLine(lines, writeGlobalsCb);
     return CRS_SUCCESS;
 }
 
@@ -1009,7 +1009,7 @@ static CRS_retVal_t writeLutToFpga(snapRfParsingStruct_t *fileTraverser, uint32_
         sprintf(&lines[strlen(lines)], "%s", endSeq);
 
         uint32_t rsp = 0;
-        Fpga_tmpWriteMultiLine(lines, &rsp);
+        Fpga_SPI_WriteMultiLine(lines, &rsp);
         fileTraverser->lutIdx++;
         lutNumber = fileTraverser->lutIdx;
      }
@@ -1383,7 +1383,7 @@ static CRS_retVal_t readLutReg(snapRfParsingStruct_t *fileTraverser)
     char line[200] = { 0 };
     flat2DArray(lines, 5, line);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
     processFpgaRspLut(fileTraverser, rsp);
 //    writeMultiLine(line, readLutRegCb);
     return CRS_SUCCESS;
@@ -1406,7 +1406,7 @@ static CRS_retVal_t readGlobalReg(snapRfParsingStruct_t *fileTraverser)
     flat2DArray(lines, 2, line);
     uint32_t rsp = 0;
 
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
     processFpgaRspGlobal(fileTraverser, rsp);
     return CRS_SUCCESS;
 }
@@ -1466,7 +1466,7 @@ static void changeActiveLine(snapRfParsingStruct_t *fileTraverser)
     char line[100] = { 0 };
     sprintf(line, "wr 0xa 0x%x",fileTraverser->rfLine);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 //    writeMultiLine(line, changedActiveLineCb);
 }
 
@@ -1476,7 +1476,7 @@ static void changeRfChip(snapRfParsingStruct_t *fileTraverser)
     char line[100] = { 0 };
     sprintf(line, "wr 0xff 0x%x",fileTraverser->rfAddr);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 //    Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
 }
 

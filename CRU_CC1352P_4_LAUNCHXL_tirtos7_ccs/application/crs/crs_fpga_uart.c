@@ -8,6 +8,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -21,7 +22,6 @@
 
 #include "mac/mac_util.h"
 #include "application/util_timer.h"
-#include "crs_fpga.h"
 #include "ti_drivers_config.h"
 #include "crs_cli.h"
 
@@ -110,7 +110,7 @@ static void fpgaMultiLineReadCallback(const FPGA_cbArgs_t _cbArgs);
  Public Functions
  *****************************************************************************/
 
-CRS_retVal_t Fpga_initSem(void *sem)
+CRS_retVal_t Fpga_UART_initSem(void *sem)
 {
     collectorSem = sem;
     fpgaClkHandle = UtilTimer_construct(&fpgaClkStruct,
@@ -122,7 +122,7 @@ CRS_retVal_t Fpga_initSem(void *sem)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_UART_init(FPGA_cbFn_t _cbFn)
 {
 #ifdef CRS_TMP_SPI
     return CRS_FAILURE;
@@ -177,7 +177,7 @@ CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
         UART_read(gUartHandle, gUartRxBuffer, 1);
         gIsRunnigLines = true;
 
-        FPGA_setFpgaClock(20);
+        FPGA_UART_setFpgaClock(20);
         FPGA_writeString("rd 0x51\r", strlen("rd 0x51\r"));
 //        UART_write(gUartHandle, buffer[5], 1);
 
@@ -198,7 +198,7 @@ CRS_retVal_t Fpga_init(FPGA_cbFn_t _cbFn)
 
 }
 
-CRS_retVal_t Fpga_isOpen()
+CRS_retVal_t Fpga_UART_isOpen()
 {
 #ifdef CRS_TMP_SPI
     return CRS_SUCCESS;
@@ -212,7 +212,7 @@ CRS_retVal_t Fpga_isOpen()
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_close()
+CRS_retVal_t Fpga_UART_close()
 {
     if (gUartHandle == NULL)
     {
@@ -225,14 +225,14 @@ CRS_retVal_t Fpga_close()
 
 }
 
-CRS_retVal_t Fpga_writeMultiLineNoPrint(char *line, FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_UART_writeMultiLineNoPrint(char *line, FPGA_cbFn_t _cbFn)
 {
     gIsToPrint = false;
-    Fpga_writeMultiLine(line, _cbFn);
+    Fpga_UART_writeMultiLine(line, _cbFn);
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_UART_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
 {
     if (line == NULL || _cbFn == NULL || gUartHandle == NULL || gIsRunnigLines == true)
     {
@@ -260,7 +260,7 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
         gIsUploadingSnapshot = true;
         gLineNumber = 1;
 
-        Fpga_writeCommand(line, strlen(line), fpgaMultiLineWriteCallback);
+        Fpga_UART_writeCommand(line, strlen(line), fpgaMultiLineWriteCallback);
         return CRS_SUCCESS;
     }
 
@@ -295,14 +295,14 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
     uint32_t sz = strlen(lineToSend);
     if (lineToSend[sz - 1] == '\r')
     {
-        rspStatus = Fpga_writeCommand(lineToSend, strlen(lineToSend),
+        rspStatus = Fpga_UART_writeCommand(lineToSend, strlen(lineToSend),
                                       fpgaMultiLineWriteCallback);
     }
     else
     {
         lineToSend[strlen(lineToSend)] = '\r';
         lineToSend[sz + 1] = 0;
-        rspStatus = Fpga_writeCommand(lineToSend, strlen(lineToSend),
+        rspStatus = Fpga_UART_writeCommand(lineToSend, strlen(lineToSend),
                                       fpgaMultiLineWriteCallback);
 
     }
@@ -310,7 +310,7 @@ CRS_retVal_t Fpga_writeMultiLine(char *line, FPGA_cbFn_t _cbFn)
 
 }
 
-CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_UART_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
 {
     if (line == NULL || _cbFn == NULL || gUartHandle == NULL || gIsRunnigLines == true)
     {
@@ -337,7 +337,7 @@ CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
         gIsUploadingSnapshot = true;
         gLineNumber = 1;
 
-        Fpga_writeCommand(line, strlen(line), fpgaMultiLineReadCallback);
+        Fpga_UART_writeCommand(line, strlen(line), fpgaMultiLineReadCallback);
         return CRS_SUCCESS;
     }
 
@@ -372,14 +372,14 @@ CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
     uint32_t sz = strlen(lineToSend);
     if (lineToSend[sz - 1] == '\r')
     {
-        rspStatus = Fpga_writeCommand(lineToSend, strlen(lineToSend),
+        rspStatus = Fpga_UART_writeCommand(lineToSend, strlen(lineToSend),
                                       fpgaMultiLineReadCallback);
     }
     else
     {
         lineToSend[strlen(lineToSend)] = '\r';
         lineToSend[sz + 1] = 0;
-        rspStatus = Fpga_writeCommand(lineToSend, strlen(lineToSend),
+        rspStatus = Fpga_UART_writeCommand(lineToSend, strlen(lineToSend),
                                       fpgaMultiLineReadCallback);
 
     }
@@ -387,7 +387,7 @@ CRS_retVal_t Fpga_readMultiLine(char *line, FPGA_cbFn_t _cbFn)
 
 }
 
-CRS_retVal_t Fpga_writeCommand(void *_buffer, size_t _size, FPGA_cbFn_t _cbFn)
+CRS_retVal_t Fpga_UART_writeCommand(void *_buffer, size_t _size, FPGA_cbFn_t _cbFn)
 {
     if (_buffer == NULL || _size == 0 || gUartHandle == NULL)
     {
@@ -410,7 +410,7 @@ CRS_retVal_t Fpga_writeCommand(void *_buffer, size_t _size, FPGA_cbFn_t _cbFn)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_transparentWrite(void *_buffer, size_t _size)
+CRS_retVal_t Fpga_UART_transparentWrite(void *_buffer, size_t _size)
 {
     if (_buffer == NULL || _size == 0 || gUartHandle == NULL)
     {
@@ -430,7 +430,7 @@ CRS_retVal_t Fpga_transparentWrite(void *_buffer, size_t _size)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_transparentOpen()
+CRS_retVal_t Fpga_UART_transparentOpen()
 {
     gIsTransparentBridge = true;
     memset(gUartRxBuffer, 0, 1);
@@ -438,17 +438,17 @@ CRS_retVal_t Fpga_transparentOpen()
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t Fpga_transparentClose()
+CRS_retVal_t Fpga_UART_transparentClose()
 {
     gIsTransparentBridge = false;
     UART_readCancel(gUartHandle);
     return CRS_SUCCESS;
 }
-CRS_retVal_t Fpga_setPrint(bool isToPrint){
+CRS_retVal_t Fpga_UART_setPrint(bool isToPrint){
 
     gIsToPrint=isToPrint;
 }
-void Fpga_process(void)
+void Fpga_UART_process(void)
 {
 
     if (Fpga_events & FPGA_OPEN_FAIL_EV)
@@ -458,7 +458,7 @@ void Fpga_process(void)
         memset(gUartTxBuffer, 0, TX_BUFF_SIZE);
         //memset(gUartRxBuffer, 0, 1);
         gUartTxBufferIdx = 0;
-        Fpga_close();
+        Fpga_UART_close();
         if (gCbFpgaOpenFn != NULL)
         {
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
@@ -556,14 +556,14 @@ void Fpga_process(void)
         uint32_t sz = strlen(line);
         if ((sz == 1 && line[0] == '\r') || (line[strlen(line) - 1] == '\r'))
         {
-            rspStatus = Fpga_writeCommand(line, strlen(line),
+            rspStatus = Fpga_UART_writeCommand(line, strlen(line),
                                           fpgaMultiLineWriteCallback);
         }
         else
         {
             line[strlen(line)] = '\r';
             line[sz + 1] = 0;
-            rspStatus = Fpga_writeCommand(line, strlen(line),
+            rspStatus = Fpga_UART_writeCommand(line, strlen(line),
                                           fpgaMultiLineWriteCallback);
 
         }
@@ -610,14 +610,14 @@ void Fpga_process(void)
         uint32_t sz = strlen(line);
         if ((sz == 1 && line[0] == '\r') || (line[strlen(line) - 1] == '\r'))
         {
-            rspStatus = Fpga_writeCommand(line, strlen(line),
+            rspStatus = Fpga_UART_writeCommand(line, strlen(line),
                                           fpgaMultiLineReadCallback);
         }
         else
         {
             line[strlen(line)] = '\r';
             line[sz + 1] = 0;
-            rspStatus = Fpga_writeCommand(line, strlen(line),
+            rspStatus = Fpga_UART_writeCommand(line, strlen(line),
                                           fpgaMultiLineReadCallback);
 
         }
@@ -639,7 +639,7 @@ void Fpga_process(void)
     }
 }
 
-void FPGA_setFpgaClock(uint32_t fpgaTime)
+void FPGA_UART_setFpgaClock(uint32_t fpgaTime)
 {
     /* Stop the Tracking timer */
     if (UtilTimer_isActive(&fpgaClkStruct) == true)

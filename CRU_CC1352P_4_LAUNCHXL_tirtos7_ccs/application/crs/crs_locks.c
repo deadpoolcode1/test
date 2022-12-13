@@ -17,7 +17,7 @@
 #include "application/crs/crs_agc_management.h"
 #include "application/crs/crs_alarms.h"
 #ifdef CRS_TMP_SPI
-#include "application/crs/crs_tmp.h"
+#include "application/crs/crs_fpga_spi.h"
 #else
 #include "application/crs/crs_fpga.h"
 #endif
@@ -144,7 +144,7 @@ static locks_ReadValuefxn gSaveValueFunctionTable [lockType_numOfLockTypes] =
  saveTiLockStatus
 };
 
-//        FPGA_setFpgaClock(20);
+//        FPGA_UART_setFpgaClock(20);
 
 /******************************************************************************
  Public Functions
@@ -176,7 +176,7 @@ if (Locks_events & LOCKS_CHECKLOCK_EV)
 #ifdef CRS_TMP_SPI
     // do nothing
 #else
-    fpgaStatus = Fpga_isOpen();
+    fpgaStatus = Fpga_UART_isOpen();
 #endif
 
     if (fpgaStatus==CRS_SUCCESS) {
@@ -194,7 +194,7 @@ if (Locks_events & LOCKS_READ_NEXT_REG_EV)
 #ifdef CRS_TMP_SPI
     // do nothing
 #else
-    fpgaStatus = Fpga_isOpen();
+    fpgaStatus = Fpga_UART_isOpen();
 #endif
     Util_clearEvent(&Locks_events, LOCKS_READ_NEXT_REG_EV);
 
@@ -426,7 +426,7 @@ static CRS_retVal_t writeToTddLockReg(void)
 #ifdef CRS_TMP_SPI
     // do nothing
 #else
-    fpgaStatus = Fpga_isOpen();
+    fpgaStatus = Fpga_UART_isOpen();
 #endif
 
     if (fpgaStatus==CRS_SUCCESS) {
@@ -434,11 +434,11 @@ static CRS_retVal_t writeToTddLockReg(void)
     uint32_t rsp = 0;
     char line [LINE_TMP_SZ] = {0};
     memcpy(line, READ_TDD_REG, sizeof(READ_TDD_REG) - 1);
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
     saveLockValueSPI(rsp);
 #else
-    Fpga_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
+    Fpga_UART_writeMultiLineNoPrint(READ_TDD_REG, getLockValueCallback);
 #endif
     }
     return CRS_SUCCESS;
@@ -451,10 +451,10 @@ static CRS_retVal_t writeToAdfLockReg(void)
     uint32_t rsp = 0;
     char line [LINE_TMP_SZ] = {0};
     memcpy(line, READ_ADF_REG, sizeof(READ_ADF_REG) - 1);
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
     saveLockValueSPI(rsp);
 #else
-    Fpga_writeMultiLineNoPrint(READ_ADF_REG, getLockValueCallback);
+    Fpga_UART_writeMultiLineNoPrint(READ_ADF_REG, getLockValueCallback);
 
 #endif
     return CRS_SUCCESS;
@@ -467,7 +467,7 @@ static CRS_retVal_t writeToTiLockReg(void)
 #ifdef CRS_TMP_SPI
     // do nothing
 #else
-    fpgaStatus = Fpga_isOpen();
+    fpgaStatus = Fpga_UART_isOpen();
 #endif
 
     if (fpgaStatus==CRS_SUCCESS) {
@@ -475,10 +475,10 @@ static CRS_retVal_t writeToTiLockReg(void)
         uint32_t rsp = 0;
         char line [LINE_TMP_SZ] = {0};
         memcpy(line, READ_TI_REG, sizeof(READ_TI_REG) - 1);
-        Fpga_tmpWriteMultiLine(line, &rsp);
+        Fpga_SPI_WriteMultiLine(line, &rsp);
         saveLockValueSPI(rsp);
 #else
-    Fpga_writeMultiLineNoPrint(READ_TI_REG, getLockValueCallback);
+    Fpga_UART_writeMultiLineNoPrint(READ_TI_REG, getLockValueCallback);
 #endif
 
     }

@@ -19,12 +19,11 @@
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
 //#include "application/crs/crs_fpga.h"
-#include "application/crs/crs_tmp.h"
-/* Driver Header files */
 #include <ti/drivers/NVS.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"
 #include "application/util_timer.h"
+#include "application/crs/crs_fpga_spi.h"
 #include <ctype.h>
 
 /******************************************************************************

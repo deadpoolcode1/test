@@ -15,8 +15,8 @@
 #include "application/crs/snapshots/crs_script_rf.h"
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
-#include "application/crs/crs_tmp.h"
 #include "application/crs/crs_cb_init_gain_states.h"
+#include "application/crs/crs_fpga_spi.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -669,7 +669,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         sprintf(chipNumStr, "wr 0xff 0x%x\r", chipNumber);
         uint32_t rsp = 0;
 
-        if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(chipNumStr,&rsp))
+        if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(chipNumStr,&rsp))
         {
             return CRS_FAILURE;
         }
@@ -681,7 +681,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
     uint32_t rsp = 0;
 
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lineNumStr,&rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lineNumStr,&rsp))
     {
        return CRS_FAILURE;
     }
@@ -1057,7 +1057,7 @@ static CRS_retVal_t ewCommandHandler (ScriptRf_parsingContainer_t *parsingContai
     }
 
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
 
     return CRS_SUCCESS;
 }
@@ -2023,30 +2023,30 @@ static CRS_retVal_t readLutReg(uint32_t regIdx, uint32_t lutIdx, uint32_t *rsp)
     char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
 
     sprintf(lines[0], "wr 0x50 0x3900%x%x\r", regIdx, lutIdx);
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[0], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[0], rsp))
     {
         return CRS_FAILURE;
     }
 
     memcpy(lines[1], "wr 0x50 0x000001\r", strlen("wr 0x50 0x000001\r"));
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[1], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[1], rsp))
     {
         return CRS_FAILURE;
     }
 
     memcpy(lines[2], "wr 0x50 0x000000\r", strlen("wr 0x50 0x000000\r"));
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[2], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[2], rsp))
     {
         return CRS_FAILURE;
     }
     memcpy(lines[3], "wr 0x51 0x510000\r", strlen("wr 0x51 0x510000\r"));
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[3], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[3], rsp))
     {
         return CRS_FAILURE;
     }
 
     memcpy(lines[4], "rd 0x51\r", strlen("rd 0x51\r"));
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[4], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[4], rsp))
     {
         return CRS_FAILURE;
     }
@@ -2058,13 +2058,13 @@ static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp)
 {
     char lines[9][CRS_NVS_LINE_BYTES] = { 0 };
     sprintf(lines[0], "wr 0x51 0x%x0000\r", globalIdx + GLOBAL_ADDR_START);
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[0], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[0], rsp))
     {
         return CRS_FAILURE;
     }
 
     memcpy(lines[1], "rd 0x51\r", strlen("rd 0x51\r"));
-    if (CRS_SUCCESS != Fpga_tmpWriteMultiLine(lines[1], rsp))
+    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lines[1], rsp))
     {
         return CRS_FAILURE;
     }
@@ -2167,7 +2167,7 @@ static CRS_retVal_t writeLutToFpga(ScriptRf_parsingContainer_t *parsingContainer
     sprintf(&lines[strlen(lines)], "%s", endSeq);
 
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lines, &rsp);
+    Fpga_SPI_WriteMultiLine(lines, &rsp);
 
     return (CRS_SUCCESS);
 
@@ -2239,7 +2239,7 @@ static CRS_retVal_t writeGlobalsToFpga(ScriptRf_parsingContainer_t *parsingConta
     lines[strlen(lines) - 1] = 0;
 
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lines, &rsp);
+    Fpga_SPI_WriteMultiLine(lines, &rsp);
 
     return CRS_SUCCESS;
 }

@@ -24,7 +24,7 @@
 #include "application/crs/snapshots/crs_script_rf.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
-#include "crs_tmp.h"
+#include "application/crs/crs_fpga_spi.h"
 #else
 #include "crs/crs_fpga.h"
 #include "application/crs/snapshots/crs_snapshot.h"
@@ -125,9 +125,11 @@ static void processCrsRequest(ApiMac_mcpsDataInd_t *pDataInd);
 
 
 static void updateRssiStrct(int8_t rssi);
+#ifndef CRS_TMP_SPI
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs);
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs);
+#endif
 
 static void Sensor_processCrsRequest(void);
 
@@ -172,7 +174,7 @@ void Sensor_init( )
     ApiMac_registerCallbacks(&Sensor_macCallbacks);
 
 #ifdef CRS_TMP_SPI
-    Fpga_tmpInit();
+    Fpga_SPI_Init();
     SPI_Config_configInit(sem);
     MultiFilesSPI_multiFilesInit(sem);
     DigSPI_init(sem);
@@ -183,7 +185,7 @@ void Sensor_init( )
     MultiFiles_multiFilesInit(sem);
     RF_init(sem);
     Config_configInit(sem);
-    Fpga_initSem(sem);
+    Fpga_UART_initSem(sem);
     DigInit(sem);
 #endif
     Nvs_init(sem);
@@ -261,7 +263,7 @@ void Ssf_crsInitScript()
     Agc_init(sem); //TODO verify uses spi-safe env api
    Agc_ledEnv(); //TODO verify uses spi-safe env api
 #else
-    CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
+    CRS_retVal_t retStatus = Fpga_UART_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
     {
         FPGA_cbArgs_t cbArgs;
@@ -271,12 +273,13 @@ void Ssf_crsInitScript()
     }
 #endif
 }
+#ifndef CRS_TMP_SPI
 
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    if (Fpga_isOpen() == CRS_SUCCESS)
+    if (Fpga_UART_isOpen() == CRS_SUCCESS)
     {
         CRS_retVal_t retStatus = Config_runConfigFile("flat",
                                                       fpgaCrsDoneCallback);
@@ -290,7 +293,6 @@ static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
     }
 
 }
-
 static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE,
@@ -306,7 +308,6 @@ static void fpgaCrsMiddleCallback(const FPGA_cbArgs_t _cbArgs)
     }
 
 }
-
 static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 {
     CLI_startREAD();
@@ -324,6 +325,8 @@ static void fpgaCrsDoneCallback(const FPGA_cbArgs_t _cbArgs)
 //
 //    }
 }
+
+#endif
 void Ssf_processCliUpdate()
 {
     Util_setEvent(&Sensor_events, SENSOR_UI_INPUT_EVT);
