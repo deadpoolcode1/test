@@ -39,7 +39,7 @@
 #include "crs_cli.h"
 #include "application/crs/snapshots/crs_snapshot.h"
 #include "crs_nvs.h"
-#include "crs_fpga.h"
+#include "application/crs/crs_fpga_uart.h"
 #include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_flat_parser_spi.h"
 #include "application/crs/snapshots/crs_snap_rf.h"
@@ -49,7 +49,7 @@
 #include "application/crs/crs_agc_management.h"
 #include "crs_cb_init_gain_states.h"
 
-#include "application/crs/crs_tmp.h"
+#include "application/crs/crs_fpga_spi.h"
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
 #include "crs_env.h"
@@ -673,7 +673,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
         }
 
-        Fpga_transparentWrite(line, strlen(line));
+        Fpga_UART_transparentWrite(line, strlen(line));
 
         return CRS_SUCCESS;
 
@@ -2389,7 +2389,7 @@ static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-    CRS_retVal_t retStatus = Fpga_init(NULL);
+    CRS_retVal_t retStatus = Fpga_UART_init(NULL);
     return retStatus;
 }
 
@@ -2419,7 +2419,7 @@ static CRS_retVal_t CLI_fpgaCloseParsing(char *line)
         return CRS_SUCCESS;
     }
 #endif
-    CRS_retVal_t retStatus = Fpga_close();
+    CRS_retVal_t retStatus = Fpga_UART_close();
     CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
     CLI_startREAD();
     return CRS_SUCCESS;
@@ -2468,14 +2468,14 @@ static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
     uint32_t len =  strlen(fpgaLine);
     memcpy(lineToSend, fpgaLine, len);
 
-//    CRS_retVal_t rspStatus = Fpga_writeMultiLine(lineToSend,
+//    CRS_retVal_t rspStatus = Fpga_UART_writeMultiLine(lineToSend,
 //                                                 fpgaMultiLineCallback);
     uint32_t rsp = 0;
     if (lineToSend[len - 1] != '\r')
     {
         lineToSend[len] = '\r';
     }
-    CRS_retVal_t rspStatus = Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    CRS_retVal_t rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
     CLI_startREAD();
 
     return CRS_SUCCESS;
@@ -2524,7 +2524,7 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
     uint32_t len =  strlen(fpgaLine);
     memcpy(lineToSend, fpgaLine, len);
 //
-//    CRS_retVal_t rspStatus = Fpga_readMultiLine(lineToSend,
+//    CRS_retVal_t rspStatus = Fpga_UART_readMultiLine(lineToSend,
 //                                                 fpgaMultiLineCallback);
     uint32_t rsp = 0;
     if (lineToSend[len - 1] != '\r')
@@ -2532,7 +2532,7 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
         lineToSend[len] = '\r';
     }
 
-    CRS_retVal_t rspStatus = Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    CRS_retVal_t rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
 
     if (rspStatus == CRS_SUCCESS)
     {
@@ -2597,7 +2597,7 @@ static CRS_retVal_t CLI_fpgaTransStartParsing(char *line)
     }
 #endif
 
-    Fpga_transparentOpen();
+    Fpga_UART_transparentOpen();
     gIsTransparentBridge = true;
     if (gIsRemoteCommand == true)
     {
@@ -2621,7 +2621,7 @@ static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
 #ifdef CLI_SENSOR
-    Fpga_transparentClose();
+    Fpga_UART_transparentClose();
     gIsTransparentBridge = false;
     gIsTransparentBridgeSuspended = false;
     gIsRemoteTransparentBridge = false;
@@ -2637,7 +2637,7 @@ static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
 
     if (addr == gTransparentShortAddr)
     {
-        Fpga_transparentClose();
+        Fpga_UART_transparentClose();
         gIsTransparentBridge = false;
         gIsTransparentBridgeSuspended = false;
         memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);

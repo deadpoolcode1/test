@@ -120,7 +120,7 @@ CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
                                FPGA_cbFn_t cbFunc)
 {
 
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = { 0 };
@@ -173,7 +173,7 @@ CRS_retVal_t DIG_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 CRS_retVal_t DIG_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
                                 CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = { 0 };
@@ -309,7 +309,7 @@ void DIG_process(void)
         CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
         char line[100] = { 0 };
         sprintf(line, "wr 0xff 0x%x", gDigAddr);
-        Fpga_writeMultiLineNoPrint(line, changedDigChipCb);
+        Fpga_UART_writeMultiLineNoPrint(line, changedDigChipCb);
         Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
     }
 
@@ -444,7 +444,7 @@ static CRS_retVal_t runApplyCommand(char *line)
 {
     char lineToSend[100] = { 0 };
     sprintf(lineToSend, "wr 0x50 0x000000\nwr 0x50 0x000001");
-    Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapDigCb);
+    Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapDigCb);
     return CRS_SUCCESS;
 
 }
@@ -466,7 +466,7 @@ static CRS_retVal_t runStarCommand(char *line)
 
     }
 
-    Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapStarCb);
+    Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapStarCb);
 
     return CRS_SUCCESS;
 
@@ -784,7 +784,7 @@ static CRS_retVal_t runWCommand(char *line)
     strcat(wr_converted, addrStr);
     strcat(wr_converted, val);
 
-    Fpga_writeMultiLineNoPrint(wr_converted, uploadSnapDigCb);
+    Fpga_UART_writeMultiLineNoPrint(wr_converted, uploadSnapDigCb);
 
     return CRS_SUCCESS;
 
@@ -793,7 +793,7 @@ static CRS_retVal_t runWCommand(char *line)
 static CRS_retVal_t runWrCommand(char *line)
 {
 
-    Fpga_writeMultiLineNoPrint(line, uploadSnapDigCb);
+    Fpga_UART_writeMultiLineNoPrint(line, uploadSnapDigCb);
 
     return CRS_SUCCESS;
 
@@ -806,7 +806,7 @@ static CRS_retVal_t runRCommand(char *line)
     char r_converted[100] = { 0 };
     sprintf(r_converted, "wr 0x51 0x%x0000\nrd 0x51", addr);
 
-    Fpga_writeMultiLineNoPrint(r_converted, uploadSnapRdDigCb);
+    Fpga_UART_writeMultiLineNoPrint(r_converted, uploadSnapRdDigCb);
 
     return CRS_SUCCESS;
 }
@@ -849,7 +849,7 @@ static CRS_retVal_t runEwCommand(char *line)
         strcat(lineToSend, token);
     }
 
-    Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapDigCb);
+    Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapDigCb);
     return CRS_SUCCESS;
 }
 
@@ -861,7 +861,7 @@ static CRS_retVal_t runErCommand(char *line)
     lineToSend[0] = 'r';
     lineToSend[1] = 'd';
 
-    Fpga_writeMultiLineNoPrint(lineToSend, uploadSnapRdDigCb);
+    Fpga_UART_writeMultiLineNoPrint(lineToSend, uploadSnapRdDigCb);
     return CRS_SUCCESS;
 }
 

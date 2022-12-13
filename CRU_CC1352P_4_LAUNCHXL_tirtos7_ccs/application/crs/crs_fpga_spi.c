@@ -19,7 +19,7 @@
 /* Driver configuration */
 #include "ti_drivers_config.h"
 #include "crs_cli.h"
-#include "crs_tmp.h"
+#include "application/crs/crs_fpga_spi.h"
 #include <inttypes.h>
 /******************************************************************************
  Constants and definitions
@@ -50,7 +50,7 @@ static CRS_retVal_t setWrInBuf(uint8_t *buf);
 static CRS_retVal_t setRdInBuf(uint8_t *buf);
 static CRS_retVal_t addAddrToBuf(uint8_t *buf, uint8_t addr);
 static CRS_retVal_t addValToBuf(uint8_t *buf, uint32_t val);
-static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
+//static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
 static CRS_retVal_t sendSpiBuf();
 
 /******************************************************************************
@@ -61,7 +61,7 @@ static CRS_retVal_t sendSpiBuf();
 //TODO: print status.
 //TODO: change the val of discovery back to orig.
 //SPI format: first bit: read/write, 8 bit addr, 7 bit dont care, 32 bit data.
-CRS_retVal_t Fpga_tmpInit()
+CRS_retVal_t Fpga_SPI_Init()
 {
     GPIO_init();
     SPI_init();
@@ -89,7 +89,7 @@ CRS_retVal_t Fpga_tmpInit()
 //    }
 //
 //    uint32_t val;
-//    FPGA_getValFromBuf(gMasterRxBuffer, &val);
+//    Fpga_SPI_GetValFromBuf(gMasterRxBuffer, &val);
 //
 //    if (val != 0x12345678)
 //    {
@@ -254,7 +254,7 @@ CRS_retVal_t Fpga_tmpInit()
 //            return CRS_FAILURE;
 //        }
 //        val = 0;
-//        FPGA_getValFromBuf(gMasterRxBuffer, &val);
+//        Fpga_SPI_GetValFromBuf(gMasterRxBuffer, &val);
 //
 //        if (val != i)
 //        {
@@ -272,7 +272,7 @@ CRS_retVal_t Fpga_tmpInit()
 
 }
 
-CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
+CRS_retVal_t Fpga_SPI_WriteMultiLine(char *line, uint32_t *rsp)
 {
 #ifndef CRS_TMP_SPI
     return CRS_FAILURE;
@@ -325,7 +325,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 //        Task_sleep(5000);
         if (sendSpiBuf() != CRS_SUCCESS)
         {
-
+            CRS_LOG(CRS_ERR, "\r\nSending message %s through SPI has failed", token2);
             return CRS_FAILURE;
         }
         token2 = strtok(NULL, d);
@@ -335,7 +335,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 
     val = 0;
     // Add special case for 0x50/51
-    FPGA_getValFromBuf(gMasterRxBuffer, &val);
+    Fpga_SPI_GetValFromBuf(gMasterRxBuffer, &val);
 
     *rsp = val;
     return CRS_SUCCESS;
@@ -344,7 +344,7 @@ CRS_retVal_t Fpga_tmpWriteMultiLine(char *line, uint32_t *rsp)
 
 
 
-CRS_retVal_t FPGA_getValFromBuf(uint8_t *buf, uint32_t* val)
+CRS_retVal_t Fpga_SPI_GetValFromBuf(uint8_t *buf, uint32_t* val)
 {
     *val = 0;
     *val =  buf[2];
@@ -555,13 +555,13 @@ static CRS_retVal_t sendSpiBuf()
     if (gMasterTxBuffer[0] & 0x80)
     {
         uint32_t val = 0;
-        FPGA_getValFromBuf(gMasterRxBuffer, &val);
+        Fpga_SPI_GetValFromBuf(gMasterRxBuffer, &val);
 //        CLI_cliPrintf("\r\nread 0x%x", val);
     }
     else
     {
         uint32_t val = 0;
-        FPGA_getValFromBuf(gMasterRxBuffer, &val);
+        Fpga_SPI_GetValFromBuf(gMasterRxBuffer, &val);
 //        CLI_cliPrintf("\r\nwrite. and returned from fpga: 0x%x", val<<1);
     }
     closeSpi();

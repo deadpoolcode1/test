@@ -10,6 +10,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,8 +19,6 @@
 #include "mac/mac_util.h"
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
-#include "application/crs/crs_fpga.h"
-/* Driver Header files */
 #include <ti/drivers/NVS.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"

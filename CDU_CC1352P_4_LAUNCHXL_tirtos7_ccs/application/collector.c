@@ -8,6 +8,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,7 +18,6 @@
 #include "smsgs.h"
 #include "mac/api_mac.h"
 #include "crs/crs_cli.h"
-#include "crs/crs_fpga.h"
 #include "crs/crs_nvs.h"
 #include "application/crs/snapshots/crs_snapshot.h"
 #ifdef CRS_TMP_SPI
@@ -26,7 +26,7 @@
 #include "application/crs/snapshots/crs_script_rf.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
-#include "crs_tmp.h"
+#include "application/crs/crs_fpga_spi.h"
 #else
 #include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_multi_snapshots.h"
@@ -127,7 +127,7 @@ void Collector_init()
     /* Register the MAC Callbacks */
     ApiMac_registerCallbacks(&Collector_macCallbacks);
 #ifdef CRS_TMP_SPI
-    Fpga_tmpInit();
+    Fpga_SPI_Init();
     SPI_Config_configInit(sem);
     MultiFilesSPI_multiFilesInit(sem);
     DigSPI_init(sem);
@@ -145,7 +145,7 @@ void Collector_init()
     CIGS_init();
     Locks_init(sem);
 //    SnapInit(sem);
-//    Fpga_initSem(sem);
+//    Fpga_UART_initSem(sem);
 //    Tdd_initSem(sem);
     CRS_init();
 //    Manage_initSem(sem);
@@ -183,7 +183,7 @@ void Collector_process(void)
     RF_process();
     Snap_process();
 #endif
-//    Fpga_process();
+//    Fpga_UART_process();
 //    Tdd_process();
     Agc_process();
 
@@ -207,7 +207,7 @@ void Csf_crsInitScript()
     Agc_init(sem); //uses ENV API=>safe with spi
     Agc_ledEnv(); //uses ENV API=>safe with spi
 #else
-    CRS_retVal_t retStatus = Fpga_init(fpgaCrsStartCallback);
+    CRS_retVal_t retStatus = Fpga_UART_init(fpgaCrsStartCallback);
     if (retStatus != CRS_SUCCESS)
     {
         FPGA_cbArgs_t cbArgs={0};
@@ -419,7 +419,7 @@ void Cllc_getFfdShortAddr(uint16_t *shortAddr)
 static void fpgaCrsStartCallback(const FPGA_cbArgs_t _cbArgs)
 {
 //    CRS_retVal_t retStatus = DIG_uploadSnapFpga("TDDModeToTx", MODE_NATIVE, NULL, fpgaCrsDoneCallback);
-    if (Fpga_isOpen() == CRS_SUCCESS)
+    if (Fpga_UART_isOpen() == CRS_SUCCESS)
     {
         CRS_retVal_t retStatus = Config_runConfigFile("flat",
                                                       fpgaCrsDoneCallback);

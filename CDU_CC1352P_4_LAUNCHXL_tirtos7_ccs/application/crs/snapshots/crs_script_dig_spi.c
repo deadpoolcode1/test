@@ -137,7 +137,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
                                uint32_t chipAddr, CRS_nameValue_t *nameVals)
 {
 
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
 //        CLI_cliPrintf("\r\nOpen Fpga first");
 ////        const FPGA_cbArgs_t cbArgs = { 0 };
@@ -199,7 +199,7 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
                                 CRS_nameValue_t *nameVals)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
 //        CLI_cliPrintf("\r\nOpen Fpga first");
 ////        const FPGA_cbArgs_t cbArgs = { 0 };
@@ -340,9 +340,9 @@ void DigSPI_process(void)
 //        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
 //        char line[100] = { 0 };
 //        sprintf(line, "wr 0xff 0x%x", gDigAddr);
-////        Fpga_writeMultiLine(line, changedDigChipCb);
+////        Fpga_UART_writeMultiLine(line, changedDigChipCb);
 //        uint32_t rsp = 0;
-//        Fpga_tmpWriteMultiLine(line, &rsp);
+//        Fpga_SPI_WriteMultiLine(line, &rsp);
 //        changedDigChipCb();
 //        Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
 //    }
@@ -483,9 +483,9 @@ static CRS_retVal_t runApplyCommand(char *line)
 {
     char lineToSend[100] = { 0 };
     sprintf(lineToSend, "wr 0x50 0x000000\nwr 0x50 0x000001");
-//    Fpga_writeMultiLine(lineToSend, uploadSnapDigCb);
+//    Fpga_UART_writeMultiLine(lineToSend, uploadSnapDigCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
     uploadSnapDigCb();
 
     return CRS_SUCCESS;
@@ -509,9 +509,9 @@ static CRS_retVal_t runStarCommand(scriptDigTraverser_t *fileTraverser, char *li
 
     }
 
-//    Fpga_writeMultiLine(lineToSend, uploadSnapStarCb);
+//    Fpga_UART_writeMultiLine(lineToSend, uploadSnapStarCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
     uploadSnapStarCb(fileTraverser, lineToSend);
 
     return CRS_SUCCESS;
@@ -832,9 +832,9 @@ static CRS_retVal_t runWCommand(char *line)
     strcat(wr_converted, val);
 
 
-//    Fpga_writeMultiLine(wr_converted, uploadSnapDigCb);
+//    Fpga_UART_writeMultiLine(wr_converted, uploadSnapDigCb);
     uint32_t returnVal = 0;
-    Fpga_tmpWriteMultiLine(wr_converted, &returnVal);
+    Fpga_SPI_WriteMultiLine(wr_converted, &returnVal);
 //    uploadSnapDigCb();
 
     return CRS_SUCCESS;
@@ -844,9 +844,9 @@ static CRS_retVal_t runWCommand(char *line)
 static CRS_retVal_t runWrCommand(char *line)
 {
 
-//    Fpga_writeMultiLine(line, uploadSnapDigCb);
+//    Fpga_UART_writeMultiLine(line, uploadSnapDigCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 //    uploadSnapDigCb();
 
     return CRS_SUCCESS;
@@ -860,9 +860,9 @@ static CRS_retVal_t runRCommand(char *line)
     char r_converted[100] = { 0 };
     sprintf(r_converted, "wr 0x51 0x%x0000\nrd 0x51", addr);
 
-//    Fpga_writeMultiLine(r_converted, uploadSnapRdDigCb);
+//    Fpga_UART_writeMultiLine(r_converted, uploadSnapRdDigCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(r_converted, &rsp);
+    Fpga_SPI_WriteMultiLine(r_converted, &rsp);
 //    uploadSnapRdDigCb();
 
     return CRS_SUCCESS;
@@ -906,9 +906,9 @@ static CRS_retVal_t runEwCommand(scriptDigTraverser_t *fileTraverser, char *line
         strcat(lineToSend, token);
     }
 
-//    Fpga_writeMultiLine(lineToSend, uploadSnapDigCb);
+//    Fpga_UART_writeMultiLine(lineToSend, uploadSnapDigCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
 //    uploadSnapDigCb();
 
     return CRS_SUCCESS;
@@ -922,9 +922,9 @@ static CRS_retVal_t runErCommand(char *line)
     lineToSend[0] = 'r';
     lineToSend[1] = 'd';
 
-//    Fpga_writeMultiLine(lineToSend, uploadSnapRdDigCb);
+//    Fpga_UART_writeMultiLine(lineToSend, uploadSnapRdDigCb);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(lineToSend, &rsp);
+    Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
 //    uploadSnapRdDigCb();
 
     return CRS_SUCCESS;
@@ -1343,5 +1343,5 @@ static void changeDigChip(scriptDigTraverser_t *fileTraverser)
     char line[100] = { 0 };
     sprintf(line, "wr 0xff 0x%x\r", fileTraverser->digAddr);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 }

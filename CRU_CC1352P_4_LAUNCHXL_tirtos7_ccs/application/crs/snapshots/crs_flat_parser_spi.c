@@ -10,10 +10,10 @@
  Includes
  *****************************************************************************/
 //#include "config_parsing.h"
+#include "application/crs/crs_fpga_spi.h"
 #include <ti/sysbios/knl/Semaphore.h>
 #include "application/crs/snapshots/crs_flat_parser_spi.h"
 //#include "application/crs/crs_fpga.h" //TODO: replace
-#include "application/crs/crs_tmp.h"
 #include "crs_convert_snapshot.h"
 #include "crs_multi_snapshots_spi.h"
 /******************************************************************************
@@ -124,7 +124,7 @@ uint32_t SPI_getLutRegValue(uint32_t chipNumber, uint32_t lineNumber, uint32_t l
     char line[200] = { 0 };
     flat2DArray(lines, 5, line);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
     return rsp;
 }
@@ -139,7 +139,7 @@ uint32_t SPI_getGlobalRegValue(uint32_t regIdx)
     flat2DArray(lines, 2, line);
     uint32_t rsp = 0;
 
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
     return rsp;
 }
 
@@ -160,7 +160,7 @@ CRS_retVal_t SPI_readRfRegs(uint32_t chipNumber, uint32_t lineNumber)
 
 CRS_retVal_t SPI_Config_runConfigDirect(char *filename, char *type, char *fileInfos)
 {
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
 //        const FPGA_cbArgs_t cbArgs = { 0 };
@@ -208,7 +208,7 @@ CRS_retVal_t SPI_Config_runConfigDirect(char *filename, char *type, char *fileIn
 
 CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 {
-//    if (Fpga_isOpen() == CRS_FAILURE)
+//    if (Fpga_UART_isOpen() == CRS_FAILURE)
 //    {
 //        CLI_cliPrintf("\r\nOpen Fpga first");
 ////        const FPGA_cbArgs_t cbArgs = { 0 };
@@ -297,7 +297,7 @@ CRS_retVal_t SPI_Config_runConfigFileLine(char *filename, uint32_t lineNum,
                                       char *fileInfos)
 {
 
-//        if (Fpga_isOpen() == CRS_FAILURE)
+//        if (Fpga_UART_isOpen() == CRS_FAILURE)
 //        {
 //            CLI_cliPrintf("\r\nOpen Fpga first");
 //            const FPGA_cbArgs_t cbArgs = { 0 };
@@ -762,9 +762,9 @@ CRS_retVal_t SPI_Config_parseDiscoveryLine(char *buff,
 //        memcpy(gDiscExpectVal, discLineStruct.expectedVal, EXPECTEDVAL_SZ);
 ////        if (gIsOnlyDiscovery == true)
 ////        {
-////            Fpga_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb); //TODO: replace
+////            Fpga_UART_writeMultiLineNoPrint(newDiscScript, uploadDiscLinesCb); //TODO: replace
 //        uint32_t rsp = 0;
-//        Fpga_tmpWriteMultiLine(newDiscScript, &rsp);
+//        Fpga_SPI_WriteMultiLine(newDiscScript, &rsp);
 ////        CLI_cliPrintf("\r\nsending command %s", newDiscScript);
 ////        CLI_cliPrintf("\r\n recived %x", rsp);
 //
@@ -772,7 +772,7 @@ CRS_retVal_t SPI_Config_parseDiscoveryLine(char *buff,
 ////        }
 ////        else
 ////        {
-////            Fpga_writeMultiLine(newDiscScript, uploadDiscLinesCb);//TODO: replaceQ
+////            Fpga_UART_writeMultiLine(newDiscScript, uploadDiscLinesCb);//TODO: replaceQ
 ////
 ////        }
 //
@@ -1430,7 +1430,7 @@ static CRS_retVal_t runFile(flatFileTraverser_t *fileTraverser)
         convertDiscseqScript(&fileTraverser->invLineStruct, &discLineStruct, newDiscScript);
         memcpy(fileTraverser->discExpectVal, discLineStruct.expectedVal, EXPECTEDVAL_SZ);
         uint32_t rsp = 0;
-        Fpga_tmpWriteMultiLine(newDiscScript, &rsp);
+        Fpga_SPI_WriteMultiLine(newDiscScript, &rsp);
 
         uploadDiscLines(fileTraverser, rsp);
         if (finishedDiscovery(fileTraverser) != CRS_SUCCESS)
@@ -1565,21 +1565,21 @@ static void readInit(uint32_t chipNumber, uint32_t lineNumber, uint32_t *ffVal, 
 {
     char line[TEMP_SZ] = {0};
     memcpy(line, "rd 0xa", strlen("rd 0xa"));
-    Fpga_tmpWriteMultiLine(line, aVal);
+    Fpga_SPI_WriteMultiLine(line, aVal);
 
     memset(line, 0, TEMP_SZ);
     memcpy(line, "rd 0xff", strlen("rd 0xff"));
-    Fpga_tmpWriteMultiLine(line, ffVal);
+    Fpga_SPI_WriteMultiLine(line, ffVal);
 
     memset(line, 0, TEMP_SZ);
     sprintf(line, "wr 0xa 0x%x", lineNumber);
     uint32_t rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
     memset(line, 0, TEMP_SZ);
     sprintf(line, "wr 0xff 0x%x", chipNumber);
     rsp = 0;
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
 }
 
@@ -1659,11 +1659,11 @@ static void restoreOriginalRegisters(uint32_t ffVal, uint32_t aVal)
     uint32_t rsp = 0;
     memset(line, 0, TEMP_SZ);
     sprintf(line, "wr 0xa 0x%x", aVal);
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
     memset(line, 0, TEMP_SZ);
     sprintf(line, "wr 0xff 0x%x", ffVal);
-    Fpga_tmpWriteMultiLine(line, &rsp);
+    Fpga_SPI_WriteMultiLine(line, &rsp);
 
 }
 

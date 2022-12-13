@@ -8,12 +8,12 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include "crs_alarms.h"
 #include "crs_nvs.h"
 #include "crs.h"
 #include "crs_cli.h"
 #include "crs_thresholds.h"
-#include "crs_fpga.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>

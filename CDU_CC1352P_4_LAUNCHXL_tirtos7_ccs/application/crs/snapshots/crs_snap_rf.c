@@ -122,7 +122,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              CRS_nameValue_t *nameVals, FPGA_cbFn_t cbFunc, bool isFromFlat)
 {
 
-    if (Fpga_isOpen() == CRS_FAILURE)
+    if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
         CLI_cliPrintf("\r\nOpen Fpga first");
         const FPGA_cbArgs_t cbArgs = {0};
@@ -687,7 +687,7 @@ void RF_process(void)
         CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
         char line[100] = {0};
         sprintf(line, "wr 0xa 0x%x", gRFline);
-        Fpga_writeMultiLineNoPrint(line, changedActiveLineCb);
+        Fpga_UART_writeMultiLineNoPrint(line, changedActiveLineCb);
         Util_clearEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
     }
 
@@ -696,14 +696,14 @@ void RF_process(void)
         CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
         char line[100] = {0};
         sprintf(line, "wr 0xff 0x%x", gRfAddr);
-        Fpga_writeMultiLineNoPrint(line, changedRfChipCb);
+        Fpga_UART_writeMultiLineNoPrint(line, changedRfChipCb);
         Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
     }
 
     if (gRFEvents & START_UPLOAD_FILE_EV)
     {
         //        sprintf("wr 0xa 0x%x", gRFline);
-        //        Fpga_writeMultiLineNoPrint(line, changedActiveLineCb);
+        //        Fpga_UART_writeMultiLineNoPrint(line, changedActiveLineCb);
         Util_clearEvent(&gRFEvents, START_UPLOAD_FILE_EV);
         CRS_retVal_t rsp = runFile();
         if (rsp == CRS_SUCCESS)
@@ -1369,7 +1369,7 @@ static CRS_retVal_t writeGlobalsToFpga()
     }
     lines[strlen(lines) - 1] = 0;
 
-    Fpga_writeMultiLineNoPrint(lines, writeGlobalsCb);
+    Fpga_UART_writeMultiLineNoPrint(lines, writeGlobalsCb);
     return CRS_SUCCESS;
 }
 
@@ -1431,7 +1431,7 @@ static CRS_retVal_t writeLutToFpga(uint32_t lutNumber)
     }
     sprintf(&lines[strlen(lines)], "%s", endSeq);
 
-    Fpga_writeMultiLineNoPrint(lines, writeLutCb);
+    Fpga_UART_writeMultiLineNoPrint(lines, writeLutCb);
 
     return (CRS_SUCCESS);
 }
@@ -1808,7 +1808,7 @@ static CRS_retVal_t readLutReg()
 
     char line[200] = {0};
     flat2DArray(lines, 5, line);
-    Fpga_writeMultiLineNoPrint(line, readLutRegCb);
+    Fpga_UART_writeMultiLineNoPrint(line, readLutRegCb);
     return CRS_SUCCESS;
 }
 
@@ -1827,7 +1827,7 @@ static CRS_retVal_t readGlobalReg()
 
     char line[200] = {0};
     flat2DArray(lines, 2, line);
-    Fpga_writeMultiLineNoPrint(line, readGlobalRegCb);
+    Fpga_UART_writeMultiLineNoPrint(line, readGlobalRegCb);
     return CRS_SUCCESS;
 }
 

@@ -10,10 +10,10 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include "application/crs/crs_fpga_uart.h"
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
 #include "application/crs/crs.h"
-#include "application/crs/crs_fpga.h"
 #include "crs_snap_rf.h"
 #include <stdio.h>
 #include <string.h>
