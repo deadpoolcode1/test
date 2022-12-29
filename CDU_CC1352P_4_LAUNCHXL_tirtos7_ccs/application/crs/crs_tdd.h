@@ -42,8 +42,12 @@ CRS_retVal_t Tdd_setSCS(uint8_t scs, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setSs_pos(uint8_t ss_pos, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setAllocationMode(uint8_t alloc, TDD_cbFn_t _cbFn);
-CRS_retVal_t Tdd_setDl1(uint16_t time, TDD_cbFn_t _cbFn);  // new
-CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn);  // new
+CRS_retVal_t Tdd_setDl1(uint16_t time, TDD_cbFn_t _cbFn);
+CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn);
+CRS_retVal_t Tdd_setPeriod2(uint16_t period2, TDD_cbFn_t _cbFn);
+CRS_retVal_t Tdd_setPattern2(uint16_t pattern2, TDD_cbFn_t _cbFn);
+CRS_retVal_t Tdd_setDl2(uint16_t dl2, TDD_cbFn_t _cbFn);
+
 CRS_retVal_t Tdd_setHolTime(uint8_t min, uint8_t sec, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setTtg(int8_t *ttg_vals, TDD_cbFn_t _cbFn);
 CRS_retVal_t Tdd_setRtg(int8_t *rtg_vals, TDD_cbFn_t _cbFn);

@@ -591,6 +591,77 @@ CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn)  // new
     return CRS_FAILURE;
 }
 
+CRS_retVal_t Tdd_setPeriod2(uint16_t period2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    set.pattern2_period = &period2;
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_setPattern2(uint16_t pattern2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    bool patternBool = (pattern2 == true);
+    set.pattern2 = &patternBool;
+
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_setDl2(uint16_t dl2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    set.dl2_us = &dl2;
+
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
 
 CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
 {
@@ -1158,10 +1229,15 @@ static void makeRequest(Tdd_setRequest_t request, uint8_t *request_array)
     if (request.pattern2)
     {
         flag3 = flag3 | 0x01;
-        if (*request.pattern2)
+        if (*request.pattern2){
+            CLI_cliPrintf("\r\npattern2 is set to true");
             set_request[40] = 0x31;
+        }
         else
+        {
             set_request[40] = 0x30;
+            CLI_cliPrintf("\r\npattern2 is set to false");
+        }
     }
 
     if (request.pattern2_period)

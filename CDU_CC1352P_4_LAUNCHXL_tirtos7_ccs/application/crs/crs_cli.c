@@ -129,8 +129,12 @@
 #define CLI_CRS_TDD_HOL "tdd set hol"
 #define CLI_CRS_TDD_ALLOC "tdd set alloc"
 #define CLI_CRS_TDD_FRAME "tdd set frame"
-#define CLI_CRS_TDD_PERIOD1 "tdd set period1"   //new
-#define CLI_CRS_TDD_DL1 "tdd set dl1"   // new
+#define CLI_CRS_TDD_PERIOD1 "tdd set period1"
+#define CLI_CRS_TDD_DL1 "tdd set dl1"
+#define CLI_CRS_TDD_PATTERN2 "tdd set pattern2"
+#define CLI_CRS_TDD_PERIOD2 "tdd set period2"
+#define CLI_CRS_TDD_DL2 "tdd set dl2"
+
 #define CLI_CRS_LOCKS "locks"
 #define CLI_CRS_SET_DIO "set dio" //ment to set a GPIO/DIO value
 
@@ -285,6 +289,9 @@ static CRS_retVal_t CLI_tddSetFrameParsing(char *line);
 static CRS_retVal_t CLI_tddSetAllocParsing(char *line);
 static CRS_retVal_t CLI_tddSetDl1Parsing(char *line);
 static CRS_retVal_t CLI_tddSetPeriod1Parsing(char *line);
+static CRS_retVal_t CLI_tddSetPattern2Parsing(char *line);
+static CRS_retVal_t CLI_tddSetPeriod2Parsing(char *line);
+static CRS_retVal_t CLI_tddSetDl2Parsing(char *line);
 
 static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
@@ -970,14 +977,14 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               inputBad = false;
           }
 
-          if (memcmp(CLI_CRS_TDD_PERIOD1, line, sizeof(CLI_CRS_TDD_PERIOD1) - 1) == 0)  // new
+          if (memcmp(CLI_CRS_TDD_PERIOD1, line, sizeof(CLI_CRS_TDD_PERIOD1) - 1) == 0)
           {
 
               CLI_tddSetPeriod1Parsing(line);
 
               inputBad = false;
           }
-          if (memcmp(CLI_CRS_TDD_DL1, line, sizeof(CLI_CRS_TDD_DL1) - 1) == 0)  //new
+          if (memcmp(CLI_CRS_TDD_DL1, line, sizeof(CLI_CRS_TDD_DL1) - 1) == 0)
           {
 
               CLI_tddSetDl1Parsing(line);
@@ -985,6 +992,28 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
               inputBad = false;
           }
 
+          if (memcmp(CLI_CRS_TDD_DL2, line, sizeof(CLI_CRS_TDD_DL2) - 1) == 0)
+          {
+
+              CLI_tddSetDl2Parsing(line);
+
+              inputBad = false;
+          }
+          if (memcmp(CLI_CRS_TDD_PERIOD2, line, sizeof(CLI_CRS_TDD_PERIOD2) - 1) == 0)
+          {
+
+              CLI_tddSetPeriod2Parsing(line);
+
+              inputBad = false;
+          }
+
+          if (memcmp(CLI_CRS_TDD_PATTERN2, line, sizeof(CLI_CRS_TDD_PATTERN2) - 1) == 0)
+          {
+
+              CLI_tddSetPattern2Parsing(line);
+
+              inputBad = false;
+          }
 
 
           if (memcmp(CLI_CRS_TDD_HOL, line, sizeof(CLI_CRS_TDD_HOL) - 1) == 0)
@@ -3254,6 +3283,137 @@ static CRS_retVal_t CLI_tddSetDl1Parsing(char *line)    //new
 
      return Tdd_setDl1(dl1, tddCallback);
 }
+
+static CRS_retVal_t CLI_tddSetPattern2Parsing(char *line)
+{
+    const char separtor[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+    token = strtok(&(tmpBuff[strlen(CLI_CRS_TDD_PATTERN2) + 1]),separtor); // shortAddr
+    uint32_t shortAddr = MakeULFromHex(token);
+    //collector code
+#ifndef CLI_SENSOR
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+        if (stat != Collector_status_success)
+        {
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+        }
+        return CRS_SUCCESS;
+    }
+
+#endif
+    token = strtok(NULL, separtor); // time
+    uint32_t pattern2 = MakeULFromHex(token);
+    if(0 != pattern2 && 1 != pattern2)
+    {
+        CLI_cliPrintf("\r\nInvalid value for set pattern2");
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+        return CRS_FAILURE;
+    }
+
+    CRS_retVal_t ret = Tdd_setPattern2(pattern2,tddCallback);
+    if (ret != CRS_SUCCESS)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+    }
+    CLI_startREAD();
+
+    return ret;
+}
+static CRS_retVal_t CLI_tddSetPeriod2Parsing(char *line)
+{
+    const char separtor[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+    token = strtok(&(tmpBuff[strlen(CLI_CRS_TDD_PERIOD2) + 1]),separtor); // shortAddr
+    uint32_t shortAddr = MakeULFromHex(token);
+    //collector code
+#ifndef CLI_SENSOR
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+        if (stat != Collector_status_success)
+        {
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+        }
+        return CRS_SUCCESS;
+    }
+
+#endif
+
+    token = strtok(NULL, separtor); // time
+    uint32_t period2 = MakeULFromHex(token);
+    CRS_retVal_t ret = Tdd_setPeriod2(period2,tddCallback);
+    if (ret != CRS_SUCCESS)
+    {
+       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+    }
+    CLI_startREAD();
+
+    return ret;
+}
+static CRS_retVal_t CLI_tddSetDl2Parsing(char *line)
+{
+    const char separtor[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+    token = strtok(&(tmpBuff[strlen(CLI_CRS_TDD_DL2) + 1]),separtor); // shortAddr
+    uint32_t shortAddr = MakeULFromHex(token);
+    //collector code
+#ifndef CLI_SENSOR
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+        if (stat != Collector_status_success)
+        {
+          CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+          CLI_startREAD();
+        }
+        return CRS_SUCCESS;
+    }
+
+#endif
+    token = strtok(NULL, separtor); // time
+    uint32_t dl2 = MakeULFromHex(token);
+    CRS_retVal_t ret = Tdd_setDl2(dl2,tddCallback);
+    if (ret != CRS_SUCCESS)
+    {
+       CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+    }
+    CLI_startREAD();
+
+    return ret;
+}
+
 
 
 static CRS_retVal_t CLI_fsInsertParsing(char *line)
@@ -6266,6 +6426,9 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_RM, strlen(CLI_CRS_INIT_GAIN_RM), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_UPDATE, strlen(CLI_CRS_INIT_GAIN_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
 
+    CLI_printCommInfo(CLI_CRS_TDD_DL2, strlen(CLI_CRS_TDD_DL2), "[shortAddr] [value]");
+    CLI_printCommInfo(CLI_CRS_TDD_PATTERN2, strlen(CLI_CRS_TDD_PATTERN2), "[shortAddr] [value]");
+    CLI_printCommInfo(CLI_CRS_TDD_PERIOD2, strlen(CLI_CRS_TDD_PERIOD2), "[shortAddr] [value]");
 
 
 
