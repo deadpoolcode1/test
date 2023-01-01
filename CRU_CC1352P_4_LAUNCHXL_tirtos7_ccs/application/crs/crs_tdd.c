@@ -591,6 +591,77 @@ CRS_retVal_t Tdd_setPeriod1(uint16_t period1, TDD_cbFn_t _cbFn)  // new
     return CRS_FAILURE;
 }
 
+CRS_retVal_t Tdd_setPeriod2(uint16_t period2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    set.pattern2_period = &period2;
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_setPattern2(uint16_t pattern2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    bool patternBool = (pattern2 == true);
+    set.pattern2 = &patternBool;
+
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
+
+CRS_retVal_t Tdd_setDl2(uint16_t dl2, TDD_cbFn_t _cbFn)
+{
+    if (Tdd_isOpen() == CRS_TDD_NOT_OPEN)
+    {
+         //CLI_cliPrintf("\r\nTDDStatus=TDD_NOT_OPEN");
+         TDD_cbArgs_t cbArgs;
+         cbArgs.arg0 = gUartTxBufferIdx;
+         cbArgs.arg3 =(char *) gUartTxBuffer;
+         cbArgs.status = CRS_FAILURE;
+         _cbFn(cbArgs);
+         return CRS_FAILURE;
+    }
+    Tdd_setRequest_t set = createRequest();
+    set.dl2_us = &dl2;
+
+    uint8_t req[100] = { 0 };
+    makeRequest(set, req);
+
+    gFinalCbFn = _cbFn;
+    gInnerCbFn = printStatus;
+    sendMsgAndGetStatus(req, 45, 69, tddGetStatusCallback);
+    return CRS_SUCCESS;
+}
 
 CRS_retVal_t Tdd_setFrameFormat(uint8_t frame, TDD_cbFn_t _cbFn)
 {
@@ -882,6 +953,7 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
 {
     //CLI_cliPrintf("\r\nTDDStatus=OK");
 //    bool isGood = true;
+
     uint8_t scs = gUartTxBuffer[29];  //(currently always 15hz which is 1)
     if (scs == 1)
     {
@@ -940,12 +1012,26 @@ static void printStatus(const TDD_cbArgs_t _cbArgs)
     CLI_cliPrintf("\r\nRTG=%d %d %d %d", rtg_vals[0], rtg_vals[1], rtg_vals[2],
                   rtg_vals[3]);
 
+
+
+
     uint16_t period = gUartTxBuffer[45] + (gUartTxBuffer[46] << 8);
     uint16_t dl = gUartTxBuffer[47] + (gUartTxBuffer[48] << 8);
     tdArgs.period = period;
     tdArgs.dl1 = dl;
     CLI_cliPrintf("\r\nPeriod1=0x%x", period);
     CLI_cliPrintf("\r\nDL1=0x%x", dl);
+    uint16_t period2 = gUartTxBuffer[49] + (gUartTxBuffer[50] << 8);
+    CLI_cliPrintf("\r\nPeriod2=0x%x", period2);
+    uint16_t dl2 = gUartTxBuffer[51] + (gUartTxBuffer[52] << 8);
+    CLI_cliPrintf("\r\nDL2=0x%x", dl2);
+//    uint16_t i = 0;
+//    CLI_cliPrintf("\r\n");
+//    for(i = 0; i < 69; i ++)
+//    {
+//        CLI_cliPrintf(" %d: 0x%x, ",i,gUartTxBuffer[i]);
+//    }
+//    CLI_cliPrintf("\r\n");
 
     if (gUartTxBuffer[10] == 1)
     {
@@ -1158,10 +1244,15 @@ static void makeRequest(Tdd_setRequest_t request, uint8_t *request_array)
     if (request.pattern2)
     {
         flag3 = flag3 | 0x01;
-        if (*request.pattern2)
+
+        if (*request.pattern2){
             set_request[40] = 0x31;
+        }
         else
+        {
             set_request[40] = 0x30;
+        }
+//        CLI_cliPrintf("\r\nflag3=%x, set_request[40]=%x, request.pattern2=%x",flag3,set_request[40],*request.pattern2);
     }
 
     if (request.pattern2_period)
@@ -1262,6 +1353,12 @@ static void makeRequest(Tdd_setRequest_t request, uint8_t *request_array)
     set_request[43] = crc >> 8;
     set_request[44] = crc & 0xff;
     memcpy(request_array, set_request, 45);
+//    CLI_cliPrintf("\r\n");
+
+//    for (i = 0; i < 45; i++)
+//    {
+//        CLI_cliPrintf("%d:%x, ",i,set_request[i]);
+//    }
 
 }
 

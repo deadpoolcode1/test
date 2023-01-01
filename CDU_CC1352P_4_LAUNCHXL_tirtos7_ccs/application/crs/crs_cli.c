@@ -3327,8 +3327,8 @@ static CRS_retVal_t CLI_tddSetPattern2Parsing(char *line)
     if (ret != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
     }
-    CLI_startREAD();
 
     return ret;
 }
@@ -3368,8 +3368,8 @@ static CRS_retVal_t CLI_tddSetPeriod2Parsing(char *line)
     if (ret != CRS_SUCCESS)
     {
        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+       CLI_startREAD();
     }
-    CLI_startREAD();
 
     return ret;
 }
@@ -3408,8 +3408,8 @@ static CRS_retVal_t CLI_tddSetDl2Parsing(char *line)
     if (ret != CRS_SUCCESS)
     {
        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+       CLI_startREAD();
     }
-    CLI_startREAD();
 
     return ret;
 }
