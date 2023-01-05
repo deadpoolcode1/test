@@ -2547,7 +2547,6 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
     }
 
     CRS_retVal_t rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
-
     if (rspStatus == CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\n 0x");
