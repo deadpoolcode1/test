@@ -15,6 +15,8 @@
  Includes
  *****************************************************************************/
 #include "crs_script_dig_spi.h"
+#include "crs_param_validator.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -185,6 +187,14 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 //        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
         changeDigChip(&fileTraverser);
     }
+
+
+    if (false == isParamValid(fileTraverser.fileContentCache, fileTraverser.nameValues,"_gain"))
+    {
+        CRS_free(&fileTraverser.fileContentCache);
+        return CRS_FAILURE;
+    }
+
     runNextLine(&fileTraverser);
 //    else
 //    {
@@ -234,6 +244,11 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     fileTraverser.fileContentCache = Nvs_readFileWithMalloc(filename);
     if (fileTraverser.fileContentCache == NULL)
     {
+        return CRS_FAILURE;
+    }
+    if (false == isParamValid(fileTraverser.fileContentCache, fileTraverser.nameValues,"_gain"))
+    {
+        CRS_free(&fileTraverser.fileContentCache);
         return CRS_FAILURE;
     }
     runNextLine(&fileTraverser);

@@ -17,6 +17,7 @@
 #include "application/crs/crs_nvs.h"
 #include "application/crs/crs_cb_init_gain_states.h"
 #include "application/crs/crs_fpga_spi.h"
+#include "application/crs/snapshots/crs_param_validator.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -721,6 +722,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         saveNameVals(&parsingContainer,nameVals, initGainValue, shouldCpyNameVals);
     }
 
+
+
 //    printGlobalArrayAndLineMatrix(&parsingContainer);
 
     // read the file using nvs
@@ -750,6 +753,12 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     if (NULL ==  parsingContainer.fileBuffer)
     {
 //        CLI_cliPrintf("File not found\r\n");
+        return CRS_FAILURE;
+    }
+
+    if (false == isParamValid(parsingContainer.fileBuffer, parsingContainer.parameters,"_gain"))
+    {
+        CRS_free(&parsingContainer.fileBuffer);
         return CRS_FAILURE;
     }
 
