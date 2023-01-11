@@ -16,6 +16,7 @@
 //#include "application/crs/crs_fpga.h" //TODO: replace
 #include "crs_convert_snapshot.h"
 #include "crs_multi_snapshots_spi.h"
+#include "crs_script_returnvalues.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -1552,7 +1553,10 @@ static CRS_retVal_t finishedDiscovery(flatFileTraverser_t *fileTraverser)
     if (rspStatus != CRS_SUCCESS)
     {
         strcat(fileTraverser->invLineStruct.LineMessage,
-                ", Config Failed");
+                ", Config Failed, ");
+        char statusMsg [20] = {0};
+        ScriptRetVals_getValue("status", statusMsg);
+        strcat(fileTraverser->invLineStruct.LineMessage, statusMsg);
         return CRS_FAILURE;
     }
 
