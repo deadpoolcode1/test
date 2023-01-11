@@ -25,7 +25,8 @@ typedef enum{
     scriptRetVal_Invalid_script_line
 }scriptReturnValue_t;
 
-
+#define RETVAL_ELEMENT_VAL_SZ   30
+#define RETVAL_ELEMENT_KEY_SZ  15
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/

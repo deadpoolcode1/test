@@ -14,9 +14,6 @@
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-#define RETVAL_ELEMENT__VAL_SZ   30
-#define RETVAL_ELEMENT_KEY_SZ  15
-
 enum
 {
     STATUS_ELEMENT,
@@ -27,7 +24,7 @@ enum
 typedef struct scriptRetValElement
 {
     char key [RETVAL_ELEMENT_KEY_SZ];
-    char val [RETVAL_ELEMENT__VAL_SZ];
+    char val [RETVAL_ELEMENT_VAL_SZ];
 }scriptRetValElement_t;
 
 typedef struct scriptRetVal
@@ -132,7 +129,7 @@ CRS_retVal_t ScriptRetVals_setValue(char *key, char* value)
     {
         if(0 == memcmp(gRetVal.elements[i].key, key, strlen(key)))
         {
-            memset(gRetVal.elements[i].val, 0, RETVAL_ELEMENT__VAL_SZ);
+            memset(gRetVal.elements[i].val, 0, RETVAL_ELEMENT_VAL_SZ);
             memcpy(gRetVal.elements[i].val, value, strlen(value));
             return CRS_SUCCESS;
         }
