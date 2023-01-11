@@ -139,7 +139,7 @@ CRS_retVal_t ScriptRetVals_setValue(char *key, char* value)
 
 }
 
-CRS_retVal_t ScriptRetVals_setStatus(scriptReturnValue_t status)
+CRS_retVal_t ScriptRetVals_setStatus(scriptStatusReturnValue_t status)
 {
 //    char * statusMsg = gScriptRetVals_statusMessages[status];
 //    char *vars = CRS_malloc(strlen(START_OF_STATUS)+strlen(statusMsg) + 1);

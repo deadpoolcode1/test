@@ -209,7 +209,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     int *updatedCRS_cbGainState = NULL;
     int prevCRS_cbGainStateVal = 0;
 
-    scriptReturnValue_t scriptRetValStatus = scriptRetVal_OK;
+    scriptStatusReturnValue_t scriptRetValStatus = scriptRetVal_OK;
     if (CRS_SUCCESS != ScriptRetVals_init())
     {
         return CRS_FAILURE;
