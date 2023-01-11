@@ -18,6 +18,9 @@
 #include "application/crs/crs_cb_init_gain_states.h"
 #include "application/crs/crs_fpga_spi.h"
 #include "application/crs/snapshots/crs_param_validator.h"
+
+#include "application/crs/snapshots/crs_script_returnvalues.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -205,6 +208,14 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     bool shouldCpyNameVals=true;
     int *updatedCRS_cbGainState = NULL;
     int prevCRS_cbGainStateVal = 0;
+
+    scriptStatusReturnValue_t scriptRetValStatus = scriptRetVal_OK;
+    if (CRS_SUCCESS != ScriptRetVals_init())
+    {
+        return CRS_FAILURE;
+    }
+
+
 
 //    if (nameVals != NULL && nameVals[0].name[0] != 0)
 //    {
@@ -761,6 +772,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 
         if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(chipNumStr,&rsp))
         {
+            scriptRetValStatus = scriptRetVal_General_failure;
+            ScriptRetVals_setStatus(scriptRetValStatus);
             return CRS_FAILURE;
         }
     }
@@ -773,6 +786,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 
     if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lineNumStr,&rsp))
     {
+       scriptRetValStatus = scriptRetVal_General_failure;
+       ScriptRetVals_setStatus(scriptRetValStatus);
        return CRS_FAILURE;
     }
 
@@ -781,10 +796,14 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 
     if (CRS_SUCCESS != readGlobalRegArray(&parsingContainer))
     {
+        scriptRetValStatus = scriptRetVal_General_failure;
+        ScriptRetVals_setStatus(scriptRetValStatus);
         return CRS_FAILURE;
     }
     if (CRS_SUCCESS != readLineMatrix(&parsingContainer))
     {
+        scriptRetValStatus = scriptRetVal_General_failure;
+        ScriptRetVals_setStatus(scriptRetValStatus);
         return CRS_FAILURE;
     }
 
@@ -824,6 +843,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     parsingContainer.fileBuffer = Nvs_readFileWithMalloc((char*)filename);
     if (NULL ==  parsingContainer.fileBuffer)
     {
+        scriptRetValStatus = scriptRetVal_General_failure;
+        ScriptRetVals_setStatus(scriptRetValStatus);
 //        CLI_cliPrintf("File not found\r\n");
         return CRS_FAILURE;
     }
@@ -834,6 +855,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         {
             *updatedCRS_cbGainState = prevCRS_cbGainStateVal;  // if the gain was not accepted, put previous value inside CRS_cbGainState that was updated
             CRS_free(&parsingContainer.fileBuffer);
+            scriptRetValStatus = scriptRetVal_Param_out_of_range;
+            ScriptRetVals_setStatus(scriptRetValStatus);
             return CRS_FAILURE;
         }
     }
@@ -861,6 +884,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         if (CRS_SUCCESS != retStatus)
         {
 //            CLI_cliPrintf("\r\nSyntax Error");
+            scriptRetValStatus = scriptRetVal_Invalid_script_line;
+            ScriptRetVals_setStatus(scriptRetValStatus);
             return CRS_FAILURE;
         }
     }while (parsingContainer.idxOfFileBuffer < lenOfFile);

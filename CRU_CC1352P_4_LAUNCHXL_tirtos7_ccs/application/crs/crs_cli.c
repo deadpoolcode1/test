@@ -63,6 +63,8 @@
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
 #endif
 
+#include "application/crs/snapshots/crs_script_returnvalues.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -183,6 +185,7 @@
 #define CLI_AGC_SET_TIME_MINMAX "agc set time"
 #define CLI_AGC_GET_TIME_MINMAX "agc get time"
 
+#define CLI_SCRIPT_RETVAL   "script retval"
 
 #define CLI_CRS_ENV_LS "env ls"
 #define CLI_CRS_ENV_UPDATE "env update"
@@ -306,6 +309,8 @@ static CRS_retVal_t CLI_tddSetTtgParsing(char *line);
 static CRS_retVal_t CLI_tddSetRtgParsing(char *line);
 static CRS_retVal_t CLI_tddCommandParsing(char *line);
 static CRS_retVal_t CLI_tddGetLockParsing(char *line);
+
+static CRS_retVal_t CLI_scriptRetValParsing(char *line);
 
 static CRS_retVal_t CLI_fsInsertParsing(char *line);
 static CRS_retVal_t CLI_fsLsParsing(char *line);
@@ -827,7 +832,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                inputBad = false;
            }
 
-
+      if (memcmp(CLI_SCRIPT_RETVAL,line,sizeof(CLI_SCRIPT_RETVAL) - 1) == 0)
+      {
+          CLI_scriptRetValParsing(line);
+          inputBad = false;
+      }
 
 
       if (memcmp(CLI_CRS_TRSH_UPDATE, line, sizeof(CLI_CRS_TRSH_UPDATE) - 1) == 0)
@@ -3377,6 +3386,57 @@ static CRS_retVal_t CLI_tddSetDl1Parsing(char *line)    //new
      }
 
      return Tdd_setDl1(dl1, tddCallback);
+}
+
+static CRS_retVal_t CLI_scriptRetValParsing(char *line)
+{
+    const char separtor[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+
+    token = strtok(&(tmpBuff[strlen(CLI_SCRIPT_RETVAL) + 1]),separtor); // shortAddr
+    uint32_t shortAddr = MakeULFromHex(token);
+    //collector code
+#ifndef CLI_SENSOR
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+      ApiMac_sAddr_t dstAddr;
+      dstAddr.addr.shortAddr = shortAddr;
+      dstAddr.addrMode = ApiMac_addrType_short;
+      Collector_status_t stat;
+      stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+      if (stat != Collector_status_success)
+      {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+      }
+      return CRS_SUCCESS;
+    }
+#endif
+
+    token = strtok(NULL, separtor); // key
+    if (NULL == token)
+    {
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        CLI_startREAD();
+        return CRS_FAILURE;
+    }
+    char val[RETVAL_ELEMENT_VAL_SZ] = {0};
+    char key[RETVAL_ELEMENT_KEY_SZ] = {0};
+    memcpy(key, token,RETVAL_ELEMENT_KEY_SZ);
+    CRS_retVal_t retStatus = CRS_SUCCESS;
+    retStatus = ScriptRetVals_getValue(key, val);
+    if (CRS_SUCCESS == retStatus)
+    {
+        CLI_cliPrintf("\r\n%s: %s", key, val);
+    }
+    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+    CLI_startREAD();
+
+    return CRS_SUCCESS;
 }
 
 
@@ -6840,6 +6900,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_RESTORE, strlen(CLI_CRS_INIT_GAIN_RESTORE), "[shortAddr]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_RM, strlen(CLI_CRS_INIT_GAIN_RM), "[shortAddr] [key1 key2 ...]");
     CLI_printCommInfo(CLI_CRS_INIT_GAIN_UPDATE, strlen(CLI_CRS_INIT_GAIN_UPDATE), "[shortAddr] [key1=value1 key2=value2 ...]");
+    CLI_printCommInfo(CLI_SCRIPT_RETVAL, strlen(CLI_SCRIPT_RETVAL), "[shortAddr] [key]");
 
 
 

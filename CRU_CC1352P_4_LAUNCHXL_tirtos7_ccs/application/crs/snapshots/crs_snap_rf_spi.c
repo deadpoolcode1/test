@@ -7,12 +7,14 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
+#include <ctype.h>
 
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
 #include "application/crs/crs_cb_init_gain_states.h"
 #include "application/util_timer.h"
 #include "application/crs/crs_fpga_spi.h"
-#include <ctype.h>
+#include "application/crs/snapshots/crs_script_returnvalues.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -133,6 +135,7 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
                              CRS_nameValue_t *nameVals, bool isFromFlat)
 {
+
     if (Fpga_UART_isOpen() == CRS_FAILURE)
     {
 //        CLI_cliPrintf("\r\nOpen Fpga first");
