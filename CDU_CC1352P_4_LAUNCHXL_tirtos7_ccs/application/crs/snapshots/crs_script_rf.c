@@ -964,7 +964,7 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
         return CRS_FAILURE;
     }
 
-    memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name,varName, NAMEVALUE_NAME_SZ);
+    memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name,varName, strlen(varName));
 
     char * varValue = myStrTok(NULL, sep);
     parsingContainer->parameters[parsingContainer->parametersIdx].value = strtol(varValue, NULL, DECIMAL);
