@@ -204,6 +204,22 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     char *ptr = NULL;
     int16_t initGainValue = 0;
     bool shouldCpyNameVals=true;
+    parsingContainer.fileBuffer = Nvs_readFileWithMalloc((char*)filename);
+    if (NULL ==  parsingContainer.fileBuffer)
+    {
+//        CLI_cliPrintf("File not found\r\n");
+        return CRS_FAILURE;
+    }
+
+    if (nameVals != NULL && nameVals[0].name[0] != 0)
+    {
+        if (false == isParamValid(parsingContainer.fileBuffer, nameVals, nameVals[0].name))
+        {
+            CRS_free(&parsingContainer.fileBuffer);
+            parsingContainer.fileBuffer = NULL;
+            return CRS_FAILURE;
+        }
+    }
 
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
                sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
@@ -749,18 +765,13 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 
 
 
-    parsingContainer.fileBuffer = Nvs_readFileWithMalloc((char*)filename);
-    if (NULL ==  parsingContainer.fileBuffer)
-    {
-//        CLI_cliPrintf("File not found\r\n");
-        return CRS_FAILURE;
-    }
 
-    if (false == isParamValid(parsingContainer.fileBuffer, parsingContainer.parameters,"_gain"))
-    {
-        CRS_free(&parsingContainer.fileBuffer);
-        return CRS_FAILURE;
-    }
+
+//    if (false == isParamValid(parsingContainer.fileBuffer, parsingContainer.parameters,"_gain"))
+//    {
+//        CRS_free(&parsingContainer.fileBuffer);
+//        return CRS_FAILURE;
+//    }
 
     uint32_t lenOfFile = strlen(parsingContainer.fileBuffer);
 
@@ -935,8 +946,14 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     char *varName = myStrTok(line, sep);
 
     int8_t idx = getParamIdx(parsingContainer, varName);
+
     if (idx != NOT_FOUND) // if param exists
     {
+        if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
+        {
+            return CRS_FAILURE;
+        }
+
         return CRS_SUCCESS;
     }
 
@@ -953,6 +970,10 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     parsingContainer->parameters[parsingContainer->parametersIdx].value = strtol(varValue, NULL, DECIMAL);
     parsingContainer->parametersIdx++;
 
+    if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
+    {
+        return CRS_FAILURE;
+    }
 
     return CRS_SUCCESS;
 }
