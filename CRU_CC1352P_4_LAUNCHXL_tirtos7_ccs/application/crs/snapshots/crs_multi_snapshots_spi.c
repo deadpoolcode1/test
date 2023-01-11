@@ -238,7 +238,7 @@ static CRS_retVal_t runNextFile(multiPackageTraverser_t *packageTraverser)
          CRS_retVal_t rspStatus = CRS_SUCCESS;
          if (packageTraverser->chipType == RF)
          {
-             runNextLine(packageTraverser);
+             rspStatus = runNextLine(packageTraverser);
          }
          else if (packageTraverser->chipType == DIG)
          {

@@ -1435,7 +1435,7 @@ static CRS_retVal_t runFile(flatFileTraverser_t *fileTraverser)
         uploadDiscLines(fileTraverser, rsp);
         if (finishedDiscovery(fileTraverser) != CRS_SUCCESS)
         {
-            return CRS_FAILURE;
+//            return CRS_FAILURE;
         }
         CLI_cliPrintf("%s",fileTraverser->invLineStruct.LineMessage);
     }

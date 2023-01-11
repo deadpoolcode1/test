@@ -15,6 +15,8 @@
  Includes
  *****************************************************************************/
 #include "crs_script_dig_spi.h"
+#include "crs_param_validator.h"
+
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -185,7 +187,15 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 //        Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
         changeDigChip(&fileTraverser);
     }
-    runNextLine(&fileTraverser);
+
+
+//    if (false == isParamValid(fileTraverser.fileContentCache, fileTraverser.nameValues,"_gain"))
+//    {
+//        CRS_free(&fileTraverser.fileContentCache);
+//        return CRS_FAILURE;
+//    }
+
+    rspStatus = runNextLine(&fileTraverser);
 //    else
 //    {
 //        Util_setEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
@@ -236,7 +246,12 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     {
         return CRS_FAILURE;
     }
-    runNextLine(&fileTraverser);
+//    if (false == isParamValid(fileTraverser.fileContentCache, fileTraverser.nameValues,"_gain"))
+//    {
+//        CRS_free(&fileTraverser.fileContentCache);
+//        return CRS_FAILURE;
+//    }
+    rspStatus = runNextLine(&fileTraverser);
     CRS_free(&fileTraverser.fileContentCache);
     fileTraverser.fileContentCache = NULL;
 //    Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
@@ -409,7 +424,11 @@ static CRS_retVal_t runLine(scriptDigTraverser_t *fileTraverser, char *line)
         }
         else if (memcmp(line, "//@@", 4) == 0)
         {
-            runSlashCommand(fileTraverser, line);
+            if (CRS_SUCCESS != runSlashCommand(fileTraverser, line))
+            {
+                return CRS_FAILURE;
+            }
+
             return CRS_SUCCESS;
         }
         else if (memcmp(line, "if", 2) == 0)
@@ -705,6 +724,11 @@ static CRS_retVal_t runSlashCommand(scriptDigTraverser_t *fileTraverser, char *l
             }
             fileTraverser->nameValues[idx].value = strtol(varValue, NULL, 10);
             i = 0;
+        }
+
+        if (false == isParamValid(fileTraverser->fileContentCache, fileTraverser->nameValues, varName))
+        {
+            return CRS_FAILURE;
         }
 //        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
     }
@@ -1252,6 +1276,7 @@ static void setDigClock(uint32_t time)
 
 static CRS_retVal_t runNextLine(scriptDigTraverser_t *fileTraverser)
 {
+    CRS_retVal_t rspStatus = CRS_SUCCESS;
 
     while(true)
     {
@@ -1283,7 +1308,11 @@ static CRS_retVal_t runNextLine(scriptDigTraverser_t *fileTraverser)
 
       }
 
-      runLine(fileTraverser, line);
+      rspStatus = runLine(fileTraverser, line);
+      if (CRS_SUCCESS != rspStatus)
+      {
+          return rspStatus;
+      }
     }
 
 

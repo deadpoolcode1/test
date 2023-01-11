@@ -17,10 +17,10 @@
 #include "application/crs/crs_nvs.h"
 #include "application/crs/crs_cb_init_gain_states.h"
 #include "application/crs/crs_fpga_spi.h"
+#include "application/crs/snapshots/crs_param_validator.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
-
 #define CMD_IF  "if "
 #define CMD_GOTO  "goto "
 #define CMD_COMMENT  "// "
@@ -203,6 +203,17 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     char *ptr = NULL;
     int16_t initGainValue = 0;
     bool shouldCpyNameVals=true;
+    int *updatedCRS_cbGainState = NULL;
+    int prevCRS_cbGainStateVal = 0;
+
+//    if (nameVals != NULL && nameVals[0].name[0] != 0)
+//    {
+//        if (false == isParamValid(parsingContainer.fileBuffer, nameVals, nameVals[0].name))
+//        {
+//            CRS_free(&parsingContainer.fileBuffer);
+//            return CRS_FAILURE;
+//        }
+//    }
 
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
                sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
@@ -229,6 +240,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                            shouldCpyNameVals=false;
                        }
                    }
+                   prevCRS_cbGainStateVal = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0;
                    if (!isFromFlat)
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = nameVals[0].value;
@@ -237,6 +249,7 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0 = initGainValue;
                    }
+                   updatedCRS_cbGainState = &CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_0;
                    break;
                case 2:
                    ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_2", initGainFile);
@@ -255,6 +268,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                       shouldCpyNameVals=false;
                                   }
                    }
+                   prevCRS_cbGainStateVal = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2;
+
                    if (!isFromFlat)
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = nameVals[0].value;
@@ -263,6 +278,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2 = initGainValue;
                    }
+                   updatedCRS_cbGainState = &CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_2;
+
                    break;
                case 4:
                    ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_4", initGainFile);
@@ -282,6 +299,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                       shouldCpyNameVals=false;
                                   }
                    }
+                   prevCRS_cbGainStateVal = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4;
+
                    if (!isFromFlat)
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = nameVals[0].value;
@@ -290,6 +309,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4 = initGainValue;
                    }
+                   updatedCRS_cbGainState = &CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_4;
+
                    break;
                case 6:
                    ret = CIGS_read("init_dc_rf_high_freq_hb_rx_chip_6", initGainFile);
@@ -308,6 +329,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                       shouldCpyNameVals=false;
                                   }
                    }
+                   prevCRS_cbGainStateVal = CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6;
+
                    if (!isFromFlat)
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = nameVals[0].value;
@@ -316,6 +339,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                    {
                        CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6 = initGainValue;
                    }
+                   updatedCRS_cbGainState = &CRS_cbGainStates.dc_rf_high_freq_hb_rx_chip_6;
+
                    break;
                default:
                    CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, parsingContainer.chipNumber);
@@ -347,6 +372,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.dc_if_low_freq_tx_chip_1;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = nameVals[0].value;
@@ -355,6 +382,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_1 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.dc_if_low_freq_tx_chip_1;
+
             break;
         case 3:
             ret = CIGS_read("init_dc_if_low_freq_tx_chip_3", initGainFile);
@@ -373,6 +402,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.dc_if_low_freq_tx_chip_3;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = nameVals[0].value;
@@ -381,6 +412,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_3 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.dc_if_low_freq_tx_chip_3;
+
             break;
         case 5:
             ret = CIGS_read("init_dc_if_low_freq_tx_chip_5", initGainFile);
@@ -399,6 +432,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.dc_if_low_freq_tx_chip_5;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = nameVals[0].value;
@@ -407,6 +442,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_5 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.dc_if_low_freq_tx_chip_5;
+
             break;
         case 7:
             ret = CIGS_read("init_dc_if_low_freq_tx_chip_7", initGainFile);
@@ -425,6 +462,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.dc_if_low_freq_tx_chip_7;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = nameVals[0].value;
@@ -433,6 +472,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.dc_if_low_freq_tx_chip_7 = initGainValue;
             }
+
+            updatedCRS_cbGainState = &CRS_cbGainStates.dc_if_low_freq_tx_chip_7;
             break;
         default:
             CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, parsingContainer.chipNumber);
@@ -463,6 +504,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = nameVals[0].value;
@@ -471,6 +514,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_0;
+
             break;
         case 2:
             ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_2", initGainFile);
@@ -489,6 +534,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = nameVals[0].value;
@@ -497,6 +544,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_2;
+
             break;
         case 4:
             ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_4", initGainFile);
@@ -515,6 +564,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = nameVals[0].value;
@@ -523,6 +574,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_4;
+
             break;
         case 6:
             ret = CIGS_read("init_uc_rf_high_freq_hb_tx_chip_6", initGainFile);
@@ -541,6 +594,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = nameVals[0].value;
@@ -549,6 +604,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_rf_high_freq_hb_tx_chip_6;
+
             break;
         default:
             CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, parsingContainer.chipNumber);
@@ -579,6 +636,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_if_low_freq_rx_chip_1;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = nameVals[0].value;
@@ -587,6 +646,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_1 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_if_low_freq_rx_chip_1;
+
             break;
         case 3:
             ret = CIGS_read("init_uc_if_low_freq_rx_chip_3", initGainFile);
@@ -605,6 +666,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_if_low_freq_rx_chip_3;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = nameVals[0].value;
@@ -613,6 +676,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_3 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_if_low_freq_rx_chip_3;
+
             break;
         case 5:
             ret = CIGS_read("init_uc_if_low_freq_rx_chip_5", initGainFile);
@@ -631,6 +696,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_if_low_freq_rx_chip_5;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = nameVals[0].value;
@@ -639,6 +706,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_5 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_if_low_freq_rx_chip_5;
+
             break;
         case 7:
             ret = CIGS_read("init_uc_if_low_freq_rx_chip_7", initGainFile);
@@ -657,6 +726,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
                                shouldCpyNameVals=false;
                            }
             }
+            prevCRS_cbGainStateVal = CRS_cbGainStates.uc_if_low_freq_rx_chip_7;
+
             if (!isFromFlat)
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = nameVals[0].value;
@@ -665,6 +736,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             {
                 CRS_cbGainStates.uc_if_low_freq_rx_chip_7 = initGainValue;
             }
+            updatedCRS_cbGainState = &CRS_cbGainStates.uc_if_low_freq_rx_chip_7;
+
             break;
         default:
             CRS_LOG(CRS_ERR, "\r\nINVALID rfAddr! filename : %s rfAddr : %d", filename, parsingContainer.chipNumber);
@@ -721,6 +794,8 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         saveNameVals(&parsingContainer,nameVals, initGainValue, shouldCpyNameVals);
     }
 
+
+
 //    printGlobalArrayAndLineMatrix(&parsingContainer);
 
     // read the file using nvs
@@ -752,6 +827,23 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
 //        CLI_cliPrintf("File not found\r\n");
         return CRS_FAILURE;
     }
+
+    if (nameVals != NULL && nameVals[0].name[0] != 0)
+    {
+        if (false == isParamValid(parsingContainer.fileBuffer, nameVals, nameVals[0].name))
+        {
+            *updatedCRS_cbGainState = prevCRS_cbGainStateVal;  // if the gain was not accepted, put previous value inside CRS_cbGainState that was updated
+            CRS_free(&parsingContainer.fileBuffer);
+            return CRS_FAILURE;
+        }
+    }
+
+
+//    if (false == isParamValid(parsingContainer.fileBuffer, parsingContainer.parameters,"_gain"))
+//    {
+//        CRS_free(&parsingContainer.fileBuffer);
+//        return CRS_FAILURE;
+//    }
 
     uint32_t lenOfFile = strlen(parsingContainer.fileBuffer);
 
@@ -926,8 +1018,14 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     char *varName = myStrTok(line, sep);
 
     int8_t idx = getParamIdx(parsingContainer, varName);
+
     if (idx != NOT_FOUND) // if param exists
     {
+        if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
+        {
+            return CRS_FAILURE;
+        }
+
         return CRS_SUCCESS;
     }
 
@@ -938,12 +1036,16 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
         return CRS_FAILURE;
     }
 
-    memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name,varName, NAMEVALUE_NAME_SZ);
+    memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name,varName, strlen(varName));
 
     char * varValue = myStrTok(NULL, sep);
     parsingContainer->parameters[parsingContainer->parametersIdx].value = strtol(varValue, NULL, DECIMAL);
     parsingContainer->parametersIdx++;
 
+    if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
+    {
+        return CRS_FAILURE;
+    }
 
     return CRS_SUCCESS;
 }

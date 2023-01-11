@@ -4459,7 +4459,15 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
     }
 
 #ifdef CRS_TMP_SPI
-    CRS_retVal_t retStatus = SPI_RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals,false);
+    CRS_retVal_t retStatus = CRS_SUCCESS;
+    if(0 == memcmp(parsingTypeStr, "script",strlen(parsingTypeStr)))
+    {
+        retStatus = scriptRf_runFile(filename, nameVals, rfAddr, LUTLineNumber, false);
+    }
+    else
+    {
+        retStatus = SPI_RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals,false);
+    }
 #else
 
     CRS_retVal_t retStatus = RF_uploadSnapRf(filename, rfAddr, LUTLineNumber, chipMode, nameVals, fpgaMultiLineCallback,false);
