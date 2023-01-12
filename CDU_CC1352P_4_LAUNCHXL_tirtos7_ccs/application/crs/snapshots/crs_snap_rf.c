@@ -153,6 +153,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                 //                CLI_cliPrintf("\r\nnameVals 0.name is : %s",nameVals[0].name);
                 sprintf(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_0"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -178,6 +179,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_2"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -204,6 +206,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_4"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -229,6 +232,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_rf_high_freq_hb_rx_chip_6"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -268,6 +272,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_if_low_freq_tx_chip_1"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -294,6 +299,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_if_low_freq_tx_chip_3"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -320,6 +326,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_if_low_freq_tx_chip_5"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -346,6 +353,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_dc_if_low_freq_tx_chip_7"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -384,6 +392,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_0"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -410,6 +419,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_2"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -437,6 +447,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_4"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -464,6 +475,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_rf_high_freq_hb_tx_chip_6"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -503,6 +515,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_if_low_freq_rx_chip_1"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -528,6 +541,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_if_low_freq_rx_chip_3"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -553,6 +567,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_if_low_freq_rx_chip_5"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
@@ -578,6 +593,7 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             {
                 sprintf(initGainFile + strlen("init_uc_if_low_freq_rx_chip_7"), "=%d\n", nameVals[0].value);
                 CIGS_write(initGainFile);
+                initGainValue = nameVals[0].value;
             }
             else
             {
