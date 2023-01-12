@@ -790,10 +790,6 @@ static void avgArray(int32_t* array, int32_t* result){
 }
 
 void printADCOutput(){
-
-
-
-
 int channelIdx=0;
 int detIdx=0; // 0: ADC0_DIO23_Tx_Det, 1 : ADC1_DIO24_Rx_Det, 2 : ADC2_DIO25_IF_Det_DL, 3: ADC2_DIO25_IF_Det_UL
 for (detIdx = 0; detIdx < 4; detIdx++) {
@@ -815,84 +811,38 @@ continue;
 //      CLI_cliPrintf("\r\n*****");
       switch (detIdx) {
         case 0:
-                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC0_DIO23_Tx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC0_DIO23_Tx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
             break;
         case 1:
-                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC1_DIO24_Rx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC1_DIO24_Rx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
                   break;
         case 2:
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC2_DIO25_IF_Det_DL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC2_DIO25_IF_Det_DL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
                   break;
         case 3:
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC2_DIO25_IF_Det_UL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
                   break;
     }
-
-
 
     }else{
    switch (detIdx) {
         case 0:
-        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: N\\C",(channelIdx+1),"\r\nADC0_DIO23_Tx_Det channel %d Max: N\\C",(channelIdx+1),"\r\nADC0_DIO23_Tx_Det channel %d Min: N\\C",(channelIdx+1));
         break;
         case 1:
 
-        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: N\\C",(channelIdx+1),"\r\nADC1_DIO24_Rx_Det channel %d Max: N\\C",(channelIdx+1),"\r\nADC1_DIO24_Rx_Det channel %d Min: N\\C",(channelIdx+1));
         break;
         case 2:
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_DL channel %d Max: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_DL channel %d Min: N\\C",(channelIdx+1));
         break;
         case 3:
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: N\\C",(channelIdx+1));
-        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: N\\C",(channelIdx+1));
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_UL channel %d Max: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_UL channel %d Min: N\\C",(channelIdx+1));
         break;
    }
          }
+        }
     }
-
-}
-
-
-
-
-
-
-
-//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Average: %u uV", (outputValues[0].avg));
-//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Max: %u uV", outputValues[0].max);
-//    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Min: %u uV", outputValues[0].min);
-////    CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det  Total Samples: %u ", outputValues[0].totalSamples);
-//    CLI_cliPrintf("\r\n*****");
-//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Average: %u uV",  (outputValues[1].avg));
-//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Max: %u uV", outputValues[1].max);
-//    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Min: %u uV", outputValues[1].min);
-////    CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det  Total Samples: %u ", outputValues[1].totalSamples);
-//    CLI_cliPrintf("\r\n*****");
-//
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL  Average: %u uV", (outputValues[2].avg));
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL  Max: %u uV", outputValues[2].max);
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL Min: %u uV", outputValues[2].min);
-//    //    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det  Total Samples: %u ", outputValues[2].totalSamples);
-//
-//    CLI_cliPrintf("\r\n*****");
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL  Average: %u uV", (outputValues[3].avg));
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL  Max: %u uV", outputValues[3].max);
-//    CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL Min: %u uV", outputValues[3].min);
 }
 
 bool Agc_getLock(){
