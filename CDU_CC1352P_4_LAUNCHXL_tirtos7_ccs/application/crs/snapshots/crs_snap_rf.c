@@ -635,10 +635,43 @@ CRS_retVal_t RF_uploadSnapRf(char *filename, uint32_t rfAddr,
             }
         }
     }
-    CLI_cliPrintf("\r\n");
+//    CLI_cliPrintf("\r\n");
     CRS_LOG(CRS_DEBUG, " runing %s, lut line:0x%x", filename, RfLineNum);
 
     CRS_retVal_t rspStatus = CRS_SUCCESS;
+
+
+    if (isFromFlat && memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX", strlen("DC_RF_HIGH_FREQ_HB_RX")) == 0)
+    {
+        bool hasGain = false;
+        int32_t gainValue = -999;
+        if (gNameValues != NULL && gNameValues[0].name[0] != 0)
+       {
+               int i;
+               for (i = 0; i < NAME_VALUES_SZ; ++i)
+               {
+                   if ((gNameValues[i].name[0] != 0)&&(memcmp(gNameValues[i].name, "_gain", strlen(gNameValues[i].name)) == 0))
+                   {
+                       hasGain = true;
+                       gainValue = gNameValues[i].value;
+                   }
+               }
+       }
+        if (hasGain)
+        {
+            if (gainValue > -16 && gainValue < 0)
+            {
+               filename = "DC_RF_HIGH_FREQ_HB_RX_low";
+            }
+            else
+            {
+               filename = "DC_RF_HIGH_FREQ_HB_RX";
+            }
+        }
+
+    }
+
+
 
     gFileContentCache = Nvs_readFileWithMalloc(filename);
     if (gFileContentCache == NULL)
