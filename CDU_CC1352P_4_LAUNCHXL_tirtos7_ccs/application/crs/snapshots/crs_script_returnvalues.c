@@ -86,7 +86,13 @@ CRS_retVal_t ScriptRetVals_init(void)
         return CRS_FAILURE;
     }
     isModuleInit = true;
-    ScriptRetVals_setValue(STATUS_KEY, gScriptRetVals_statusMessages[scriptRetVal_OK]);
+    if (CRS_SUCCESS != ScriptRetVals_setValue(STATUS_KEY, gScriptRetVals_statusMessages[scriptRetVal_OK]))
+    {
+        hashTableDelete(gRetVal);
+        isModuleInit = false;
+
+        return CRS_FAILURE;
+    }
 
     return CRS_SUCCESS;
 
