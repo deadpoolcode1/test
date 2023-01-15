@@ -544,11 +544,11 @@ CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
     sprintf(envFile, "SensorMode=%x\n", mode);
     Thresh_write(envFile);
     //  clear the interrupt flag
-    scifClearAlertIntSource();
-    if(gAgcReady){
-        scifAckAlertEvents();
-    }
-    gAgcReady = 0;
+//    scifClearAlertIntSource();
+//    if(gAgcReady){
+//        scifAckAlertEvents();
+//    }
+//    gAgcReady = 0;
 
     scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
