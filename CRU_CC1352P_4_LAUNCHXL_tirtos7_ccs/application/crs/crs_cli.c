@@ -81,6 +81,7 @@
 
 #define LAST_COMM_ARRAY_SIZE 10
 #define LAST_COMM_COMM_SIZE 100
+#define DATE_STR_LEN 10
 
 #define CLI_MODE_SLAVE "slave"
 #define CLI_MODE_NATIVE "native"
@@ -426,6 +427,8 @@ static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size);
 static int CLI_hex2int(char ch);
 static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs);
+
+static void convertUintToDate(uint32_t date, char dateStr[DATE_STR_LEN]);
 
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
 CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
@@ -2581,8 +2584,43 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
     {
         lineToSend[len] = '\r';
     }
+    CRS_retVal_t rspStatus = CRS_FAILURE;
+    if (memcmp("ver\r",lineToSend, strlen(lineToSend)) == 0)
+    {
+       uint32_t version = 0;
+       uint32_t date = 0;
+       char *readVersionStr = "rd 0x0";
+       char *readDateStr = "rd 0x1";
+       memset(lineToSend, 0, CUI_NUM_UART_CHARS);
+       memcpy(lineToSend, readVersionStr, strlen(readVersionStr));
+       rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &version);
+       if (rspStatus != CRS_SUCCESS)
+       {
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
 
-    CRS_retVal_t rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
+       char versionStr [15] = {0};
+       sprintf(versionStr,"%x",version);
+
+       memset(lineToSend, 0, CUI_NUM_UART_CHARS);
+       memcpy(lineToSend, readDateStr, strlen(readDateStr));
+       rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &date);
+       if (rspStatus != CRS_SUCCESS)
+       {
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+
+       char dateStr [DATE_STR_LEN] = {0};
+       convertUintToDate(date, dateStr);
+       CLI_cliPrintf("\r\nUnit boot OK FPGA Ver:%s Date:%s",versionStr, dateStr);
+       CLI_startREAD();
+       return CRS_SUCCESS;
+    }
+
+
+    rspStatus = Fpga_SPI_WriteMultiLine(lineToSend, &rsp);
     if (rspStatus == CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\n 0x");
@@ -7721,6 +7759,32 @@ static CRS_retVal_t CLI_convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uin
     return CRS_SUCCESS;
 }
 
+static void convertUintToDate(uint32_t date, char dateStr[DATE_STR_LEN])
+{
+    int8_t dateFormatIter = DATE_STR_LEN - 1;
+
+    char dateNumberStr [CUI_NUM_UART_CHARS] = {0};
+    sprintf(dateNumberStr, "%x", date);
+    uint8_t dateNumberSize = strlen(dateNumberStr);
+    int8_t dateNumberIter = dateNumberSize - 1;
+
+    if (DATE_STR_LEN - 2 > dateNumberSize) // if day is less than 9
+    {
+        dateStr[0] = '0';
+    }
+
+    for (; dateFormatIter >= 0 && dateNumberIter >= 0; dateFormatIter--) // date string should be 03/01/2023, extra 2 slots
+    {
+
+        if (2 == dateFormatIter || 5 == dateFormatIter)
+        {
+            dateStr[dateFormatIter] = '/';
+            continue;
+        }
+        dateStr[dateFormatIter] = dateNumberStr[dateNumberIter];
+        dateNumberIter--;
+    }
+}
 
 //void CLI_printHeapStatus()
 //{
