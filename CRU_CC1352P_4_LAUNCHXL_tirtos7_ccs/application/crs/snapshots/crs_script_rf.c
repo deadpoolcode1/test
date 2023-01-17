@@ -46,6 +46,7 @@
 #define NUM_LUTS 4
 #define LINE_LENGTH 50
 
+
 #define GLOBAL_ADDR_START   0x3F
 #define GLOBAL_ADDR_FINAL   0x42
 #define DISCOVERY_ADDRESS   0x7
@@ -110,6 +111,8 @@ static CRS_retVal_t getLutNumberFromWRContainer(ScriptRf_wrContainer_t *wrContai
 static CRS_retVal_t getLutRegFromWRContainer(ScriptRf_wrContainer_t *wrContainer, uint32_t *lutReg);
 static bool checkEquality(ScriptRf_parsingContainer_t *parsingContainer, char *p1, char *p2);
 static bool isNumber(char* p);
+static bool isRetFunction(char* p);
+
 static CRS_retVal_t readGlobalReg(uint32_t globalIdx, uint32_t *rsp);
 static CRS_retVal_t readLutReg(uint32_t regIdx, uint32_t lutIdx, uint32_t *rsp);
 static CRS_retVal_t readGlobalRegArray(ScriptRf_parsingContainer_t *parsingContainer);
@@ -1341,8 +1344,14 @@ static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsi
     int8_t idxParamOne = getParamIdx(parsingContainer, paramOne);
     if (idxParamOne == NOT_FOUND)
     {
-        CLI_cliPrintf("\r\nparam %s not found", paramOne);
-        return CRS_FAILURE;
+//        CLI_cliPrintf("\r\nparam %s not found", paramOne);
+//        return CRS_FAILURE;
+
+        // add new parameter
+        memcpy(parsingContainer->parameters[parsingContainer->parametersIdx].name, paramOne, NAMEVALUE_NAME_SZ);
+        parsingContainer->parameters[parsingContainer->parametersIdx].value = 0;
+        idxParamOne = parsingContainer->parametersIdx;
+        parsingContainer->parametersIdx ++;
     }
 
     ptr += strlen(" = ");
@@ -1355,20 +1364,76 @@ static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsi
         i++;
     }
 
-    if(isNumber(paramTwo))
+    if (isRetFunction(paramTwo))
     {
-        int32_t paramTwoNum = strtol(paramTwo, NULL, DECIMAL);
-        parsingContainer->parameters[idxParamOne].value = paramTwoNum;
+        char retValKey [RETVAL_ELEMENT_KEY_SZ] = {0};
+        char secondRetParam [NAMEVALUE_NAME_SZ] = {0};
 
-        return CRS_SUCCESS;
+        char *ptr = paramTwo; // ptr ->ret("@1",param)
+        ptr += sizeof("ret(") - 1; // ptr->"@1",param)
+        ptr ++; // ptr->@1",param)
+
+        // save the names in the buffers
+        i = 0;
+        while(*ptr != '"')
+        {
+            retValKey[i] = *ptr;
+            i++;
+            ptr++;
+        }
+
+        ptr += 2; // ptr->param)
+        i = 0;
+        while(*ptr != ')')
+        {
+            secondRetParam[i] = *ptr;
+            i++;
+            ptr++;
+        }
+
+        char retValValue [RETVAL_ELEMENT_VAL_SZ] = {0};
+        int8_t idx = getParamIdx(parsingContainer, secondRetParam);
+        if (NOT_FOUND == idx)
+        {
+            if (!isNumber(secondRetParam)) // if not a number and not a parameter, invalid
+            {
+                CLI_cliPrintf("\r\nparam %s not found", secondRetParam);
+                return CRS_FAILURE;
+            }
+            else         // is a number
+            {
+                memcpy(retValValue, secondRetParam, RETVAL_ELEMENT_VAL_SZ);
+            }
+        }
+        // if second param is a recognized symbol,save its value
+        else
+        {
+            int32_t val = parsingContainer->parameters[idx].value;
+            sprintf(retValValue, "%d",val);
+        }
+
+
+
+        // add the value and the key to the global retval dictionary
+
+        return ScriptRetVals_setValue(retValKey, retValValue);
     }
 
     int8_t idxParamTwo = getParamIdx(parsingContainer, paramTwo);
     if (idxParamTwo == NOT_FOUND)
     {
+        if(isNumber(paramTwo))
+        {
+            int32_t paramTwoNum = strtol(paramTwo, NULL, DECIMAL);
+            parsingContainer->parameters[idxParamOne].value = paramTwoNum;
+
+            return CRS_SUCCESS;
+        }
+
         CLI_cliPrintf("\r\nparam %s not found", paramTwo);
         return CRS_FAILURE;
     }
+
 
     parsingContainer->parameters[idxParamOne].value = parsingContainer->parameters[idxParamTwo].value;
 
@@ -2155,6 +2220,37 @@ static bool isNumber(char* p)
             return false;
         }
         ptr++;
+    }
+
+    return true;
+}
+
+static bool isRetFunction(char* p)
+{
+    char *ptr = p; // ptr->res = ret(...)
+    if (NULL == ptr)
+    {
+        return false;
+    }
+
+    uint8_t lineLength = strlen(ptr);
+    char *lastCharPtr = ptr + lineLength - 1;
+
+    if (0 != memcmp(ptr, "ret(", sizeof("ret(") - 1))
+    {
+        return false;
+    }
+
+    ptr = strchr(ptr, ','); // ptr ->,...)
+    if (NULL == ptr || ptr > lastCharPtr) // if no ','
+    {
+        return false;
+    }
+
+    ptr = strchr(ptr, ')');
+    if (NULL == ptr || ptr > lastCharPtr) // if no ')'
+    {
+        return false;
     }
 
     return true;
