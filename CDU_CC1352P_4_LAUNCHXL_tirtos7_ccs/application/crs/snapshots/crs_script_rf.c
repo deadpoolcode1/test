@@ -178,8 +178,8 @@ static Line_Handler_fnx gFunctionsTable[CmdType_NUM_OF_COMMAND_TYPES] =
  applyCommandHandler,
  labelCommandHandler,
  emptyLineCommandHandler,
- assignmentCommandHandler,
  printCommandHandler,
+ assignmentCommandHandler,
  delayCommandHandler
 };
 
@@ -881,14 +881,19 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
         // each line needs to get handled/translated and sent to FPGA
         memset(line, 0,sizeof(line));
         getNextLine(&parsingContainer,line);
+
 //        CLI_cliPrintf("\r\nline is %s",line);
 //        Task_sleep(5000);
         retStatus = handleLine(&parsingContainer, line);
         if (CRS_SUCCESS != retStatus)
         {
 //            CLI_cliPrintf("\r\nSyntax Error");
-            scriptRetValStatus = scriptRetVal_Invalid_script_line;
-            ScriptRetVals_setStatus(scriptRetValStatus);
+            scriptStatusReturnValue_t currStatus = ScriptRetVals_getStatus();
+            if (scriptRetVal_OK == currStatus)
+            {
+                scriptRetValStatus = scriptRetVal_Invalid_script_line;
+                ScriptRetVals_setStatus(scriptRetValStatus);
+            }
             return CRS_FAILURE;
         }
     }while (parsingContainer.idxOfFileBuffer < lenOfFile);
@@ -923,9 +928,9 @@ static CRS_retVal_t getNextLine(ScriptRf_parsingContainer_t *parsingContainer, c
         ptr++;
         len++;
     }
+
     memcpy(next_line, &parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer],len);
     parsingContainer->idxOfFileBuffer += len + 1;
-
     return CRS_SUCCESS;
 }
 
@@ -933,6 +938,10 @@ static CRS_retVal_t getNextLine(ScriptRf_parsingContainer_t *parsingContainer, c
 static CRS_retVal_t handleLine(ScriptRf_parsingContainer_t *parsingContainer, char *line)
 {
     uint8_t i = 0;
+    while (*line == ' ')
+    {
+        line++;
+    }
     for (i = 0; i < CmdType_NUM_OF_COMMAND_TYPES; i++)
     {
         if(CRS_SUCCESS == gFunctionsTable[i](parsingContainer, line))
@@ -1051,6 +1060,7 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
     {
         if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
         {
+            ScriptRetVals_setStatus(scriptRetVal_Param_out_of_range);
             return CRS_FAILURE;
         }
 
@@ -1072,6 +1082,7 @@ static CRS_retVal_t paramsCommandHandler (ScriptRf_parsingContainer_t *parsingCo
 
     if (false == isParamValid(parsingContainer->fileBuffer, parsingContainer->parameters, varName))
     {
+        ScriptRetVals_setStatus(scriptRetVal_Param_out_of_range);
         return CRS_FAILURE;
     }
 
@@ -1316,7 +1327,7 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
 //        CLI_cliPrintf("\r\nparam %s not found");
         return CRS_FAILURE;
     }
-    CLI_cliPrintf("\r\n%d", parsingContainer->parameters[idx].value);
+    CLI_cliPrintf("%d", parsingContainer->parameters[idx].value);
 
     return CRS_SUCCESS;
 }
@@ -1842,18 +1853,6 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
         return CRS_SUCCESS;
     }
 
-    else if (cmd == CmdType_ASSIGNMENT)
-    {
-        if (line[0] == '=' || // first char in line is '='
-                parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer - 2] == '=' || // last char in line is '='
-                strchr(line, '=') == NULL // no '=' in line
-                )
-        {
-            return CRS_FAILURE;
-        }
-
-        return CRS_SUCCESS;
-    }
 
     else if (cmd == CmdType_DELAY)
     {
@@ -1877,7 +1876,7 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
         char *ptr = line;
         ptr += strlen(CMD_PRINT);
 
-        if(*ptr == '"') // if starting brackets appear make sure of closing brackets
+        if(*ptr == '"') // if starting comma appears make sure of closing brackets
         {
             ptr ++;
             while (*ptr != 0 && *ptr != LINE_SEPARTOR && *ptr != '"')
@@ -1889,6 +1888,19 @@ static CRS_retVal_t checkLineSyntax(ScriptRf_parsingContainer_t *parsingContaine
             {
                 return CRS_FAILURE;
             }
+        }
+
+        return CRS_SUCCESS;
+    }
+
+    else if (cmd == CmdType_ASSIGNMENT)
+    {
+        if (line[0] == '=' || // first char in line is '='
+                parsingContainer->fileBuffer[parsingContainer->idxOfFileBuffer - 2] == '=' || // last char in line is '='
+                strchr(line, '=') == NULL // no '=' in line
+                )
+        {
+            return CRS_FAILURE;
         }
 
         return CRS_SUCCESS;

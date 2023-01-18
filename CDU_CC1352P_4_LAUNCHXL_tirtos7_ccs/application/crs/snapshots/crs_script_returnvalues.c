@@ -157,6 +157,22 @@ CRS_retVal_t ScriptRetVals_setStatus(scriptStatusReturnValue_t status)
     return ScriptRetVals_setValue(STATUS_KEY, statusMsg);
 }
 
+scriptStatusReturnValue_t ScriptRetVals_getStatus(void)
+{
+    char statusLine[RETVAL_ELEMENT_VAL_SZ] = {0};
+    ScriptRetVals_getValue(STATUS_KEY, statusLine);
+    uint8_t i = 0;
+    for (i = 0; i < scriptRetVal_Num_of_retVals;i++)
+    {
+        if (0 == memcmp(statusLine, gScriptRetVals_statusMessages[i], strlen(gScriptRetVals_statusMessages[i])))
+        {
+            return (scriptStatusReturnValue_t) i;
+        }
+    }
+
+    return scriptRetVal_OK; //should never happen, condition will always be true at some value
+}
+
 /******************************************************************************
  Local Functions
  *****************************************************************************/
