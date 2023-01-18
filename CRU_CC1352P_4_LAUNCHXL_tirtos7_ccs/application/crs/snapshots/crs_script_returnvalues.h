@@ -36,5 +36,6 @@ CRS_retVal_t ScriptRetVals_getValue(char *key, char *value);
 CRS_retVal_t ScriptRetVals_setValue(char *key, char* value);
 CRS_retVal_t ScriptRetVals_setStatus(scriptStatusReturnValue_t status);
 scriptStatusReturnValue_t ScriptRetVals_getStatus(void);
+CRS_retVal_t ScriptRetVals_printAll(void);
 
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_SCRIPT_RETURNVALUES_H_ */

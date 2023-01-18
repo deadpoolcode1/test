@@ -11,6 +11,7 @@
  *****************************************************************************/
 #include <string.h> // str
 #include "crs_script_returnvalues.h"
+#include "application/crs/crs_cli.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -171,6 +172,29 @@ scriptStatusReturnValue_t ScriptRetVals_getStatus(void)
     }
 
     return scriptRetVal_OK; //should never happen, condition will always be true at some value
+}
+
+
+CRS_retVal_t ScriptRetVals_printAll(void)
+{
+    if (!isModuleInit)
+    {
+        return CRS_FAILURE;
+    }
+
+    uint8_t i = 0;
+    struct Node* node = NULL;
+    for (i = 0; i < HASH_TABLE_MAX_SIZE; i++)
+    {
+        node = gRetVal->table[i];
+        while (NULL != node)
+        {
+            CLI_cliPrintf("\r\n%s: %s",node->key, node->value);
+            node = node->next;
+        }
+    }
+
+    return CRS_SUCCESS;
 }
 
 /******************************************************************************
