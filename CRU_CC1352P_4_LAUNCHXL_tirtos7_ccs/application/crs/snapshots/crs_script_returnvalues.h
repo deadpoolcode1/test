@@ -22,7 +22,8 @@ typedef enum{
     scriptRetVal_OK,
     scriptRetVal_General_failure,
     scriptRetVal_Param_out_of_range,
-    scriptRetVal_Invalid_script_line
+    scriptRetVal_Invalid_script_line,
+    scriptRetVal_Num_of_retVals
 }scriptStatusReturnValue_t;
 
 #define RETVAL_ELEMENT_VAL_SZ   30
@@ -34,5 +35,7 @@ CRS_retVal_t ScriptRetVals_init(void);
 CRS_retVal_t ScriptRetVals_getValue(char *key, char *value);
 CRS_retVal_t ScriptRetVals_setValue(char *key, char* value);
 CRS_retVal_t ScriptRetVals_setStatus(scriptStatusReturnValue_t status);
+scriptStatusReturnValue_t ScriptRetVals_getStatus(void);
+CRS_retVal_t ScriptRetVals_printAll(void);
 
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_SCRIPT_RETURNVALUES_H_ */

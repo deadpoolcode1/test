@@ -3613,17 +3613,18 @@ static CRS_retVal_t CLI_scriptRetValParsing(char *line)
     }
 #endif
 
+    CRS_retVal_t retStatus = CRS_SUCCESS;
     token = strtok(NULL, separtor); // key
     if (NULL == token)
     {
-        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+        retStatus = ScriptRetVals_printAll();
         CLI_startREAD();
-        return CRS_FAILURE;
+        return retStatus;
     }
+
     char val[RETVAL_ELEMENT_VAL_SZ] = {0};
     char key[RETVAL_ELEMENT_KEY_SZ] = {0};
     memcpy(key, token,RETVAL_ELEMENT_KEY_SZ);
-    CRS_retVal_t retStatus = CRS_SUCCESS;
     retStatus = ScriptRetVals_getValue(key, val);
     if (CRS_SUCCESS == retStatus)
     {

@@ -93,7 +93,7 @@ static CRS_retVal_t getValidParamsArray(char *paramLine, int32_t validParams[NUM
 {
     char *arrStart = strstr(paramLine, "[");
     char *arrEnd = strstr(paramLine, "]");
-    if (NULL == arrStart || NULL == arrEnd)
+    if (NULL == arrStart || NULL == arrEnd || arrStart+1 == arrEnd) // if empty []
     {
         return CRS_FAILURE; // no param restrictions
     }

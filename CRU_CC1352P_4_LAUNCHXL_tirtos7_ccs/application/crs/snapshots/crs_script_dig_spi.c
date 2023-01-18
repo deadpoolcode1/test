@@ -16,6 +16,7 @@
  *****************************************************************************/
 #include "crs_script_dig_spi.h"
 #include "crs_param_validator.h"
+#include "crs_script_returnvalues.h"
 
 /******************************************************************************
  Constants and definitions
@@ -728,6 +729,7 @@ static CRS_retVal_t runSlashCommand(scriptDigTraverser_t *fileTraverser, char *l
 
         if (false == isParamValid(fileTraverser->fileContentCache, fileTraverser->nameValues, varName))
         {
+            ScriptRetVals_setStatus(scriptRetVal_Param_out_of_range);
             return CRS_FAILURE;
         }
 //        CLI_cliPrintf("\r\nname:%s\r\nvalue:%s\r\n", varName, varValue);
