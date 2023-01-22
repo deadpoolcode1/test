@@ -110,6 +110,11 @@ CRS_retVal_t Nvs_ls(uint8_t page)
     {
         if (fat[i].isExist == true)
         {
+            if (nvsInit() != CRS_SUCCESS)
+           {
+                   CRS_LOG(CRS_ERR,"\r\nnvsInit failed for Nvs_ls");
+                   return CRS_FAILURE;
+           }
             NVS_read(gNvsHandle,
                      (fat[i].index + gFAT_sector_sz) * gRegionAttrs.sectorSize,
                      (void*) strlenStr, VARS_HDR_SZ_BYTES);
