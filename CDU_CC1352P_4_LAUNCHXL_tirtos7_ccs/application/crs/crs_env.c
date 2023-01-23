@@ -15,18 +15,27 @@
 #include "crs_nvs.h"
 #include "crs_env.h"
 
+#ifndef CLI_SENSOR
+
+    #include "application/collector.h"
+
+#else
+    #include "application/sensor.h"
+#endif
 
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
 #define VARS_HDR_SZ_BYTES 32
 #define MAX_LINE_CHARS 1024
+#define MAC_ADDR_LEN 20
+#define ENV_FILE_SZ 80
 
 #define ENV_FILENAME "env"
 #ifndef CLI_SENSOR
-    #define ENV_FILE "name=Cdu\nver=0\nconfig=0\nimg=0\nledMode=1"
+    #define ENV_FILE "ver=0\nconfig=0\nimg=0\nledMode=1"
 #else
-    #define ENV_FILE "name=Cru\nver=0\nconfig=0\nimg=0\nledMode=1"
+    #define ENV_FILE "ver=0\nconfig=0\nimg=0\nledMode=1"
 #endif
 
 
@@ -35,6 +44,10 @@
  *****************************************************************************/
 static CRS_retVal_t nvsInit();
 static CRS_retVal_t nvsClose();
+static CRS_retVal_t getDefaultName(char macAddress [MAC_ADDR_LEN]);
+static CRS_retVal_t convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right);
+static CRS_retVal_t getEnvDefaultVals(char *defaultVals);
+
 
 /******************************************************************************
  Local variables
@@ -93,12 +106,12 @@ CRS_retVal_t Env_init(void){
         nvsClose();
         if (status == CRS_SUCCESS)
         {
-
-        #ifndef CLI_SENSOR
-                  Env_write("name=Cdu");
-        #else
-                  Env_write("name=Cru");
-        #endif
+//
+//        #ifndef CLI_SENSOR
+//                  Env_write("name=Cdu");
+//        #else
+//                  Env_write("name=Cru");
+//        #endif
         }
     }
     nvsClose();
@@ -253,16 +266,19 @@ CRS_retVal_t Env_restore()
     }
 
     CRS_free(&envCache);
-    envCache = CRS_realloc(envCache, sizeof(ENV_FILE)); // one more on purpose for end byte
+    envCache = CRS_realloc(envCache, ENV_FILE_SZ); // one more on purpose for end byte
     if (NULL == envCache){
         CRS_LOG(CRS_ERR, "\r\nenvCache realloc failed!");
         nvsClose();
         return CRS_FAILURE;
     }
 
-    memset(envCache, '\0', sizeof(ENV_FILE));
+    memset(envCache, '\0', ENV_FILE_SZ);
 
-    memcpy(envCache, ENV_FILE, sizeof(ENV_FILE) - 1); //write into RAM cache
+    char defaultVals [ENV_FILE_SZ] = {0};
+    getEnvDefaultVals(defaultVals);
+
+    memcpy(envCache, defaultVals, strlen(defaultVals)); //write into RAM cache
     CRS_retVal_t ret =  Vars_setFile(&envHandle, envCache); //write into flash
     if (ret != CRS_SUCCESS)
     {
@@ -308,3 +324,113 @@ static CRS_retVal_t nvsClose()
     return CRS_SUCCESS;
 }
 
+static CRS_retVal_t convertExtAddrTo2Uint32(ApiMac_sAddrExt_t  *extAddr, uint32_t* left, uint32_t* right)
+{
+    uint32_t leftPart = 0, rightPart = 0;
+    uint32_t mask = 0;
+
+    rightPart = 0;
+    leftPart = 0;
+    rightPart |= (*extAddr)[7];
+
+    mask |= (*extAddr)[6];
+    mask = mask << 8;
+    rightPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[5];
+    mask = mask << 16;
+    rightPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[4];
+    mask = mask << 24;
+    rightPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[3];
+    mask = mask << 0;
+    leftPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[2];
+    mask = mask << 8;
+    leftPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[1];
+    mask = mask << 16;
+    leftPart |= mask;
+    mask = 0;
+
+    mask |= (*extAddr)[0];
+    mask = mask << 24;
+    leftPart |= mask;
+    mask = 0;
+
+    *left = leftPart;
+    *right = rightPart;
+    return CRS_SUCCESS;
+}
+
+static CRS_retVal_t getDefaultName(char macAddress [MAC_ADDR_LEN])
+{
+    Llc_netInfo_t nwkInfo;
+    uint32_t left = 0;
+    uint32_t right = 0;
+#ifndef CLI_SENSOR
+
+    memset(macAddress, 0,MAC_ADDR_LEN);
+
+    //        memset(&nwkInfo)
+    bool rsp = Csf_getNetworkInformation(&nwkInfo);
+    if (rsp == false)
+    {
+        return CRS_FAILURE;
+    }
+    else
+    {
+        convertExtAddrTo2Uint32(&(nwkInfo.devInfo.extAddress), &left, &right);
+        //pan, longaddr,short,env.txt
+        sprintf(macAddress,"0x%x%x", left, right);
+    }
+
+
+#else
+   bool rsp = true;
+   ApiMac_deviceDescriptor_t devInfo;
+   rsp = Ssf_getNetworkInfo(&devInfo, &nwkInfo);
+   if (rsp == false)
+   {
+       ApiMac_sAddrExt_t  mac = {0};
+       getMac(&mac);
+       convertExtAddrTo2Uint32(&(mac), &left, &right);
+       sprintf(macAddress,"0x%x%x", left, right);
+
+       return CRS_FAILURE;
+   }
+   else
+   {
+       convertExtAddrTo2Uint32(&(devInfo.extAddress), &left, &right);
+       sprintf(macAddress,"0x%x%x", left, right);
+   }
+
+
+#endif
+    return CRS_SUCCESS;
+
+}
+
+
+static CRS_retVal_t getEnvDefaultVals(char defaultVals[ENV_FILE_SZ])
+{
+    char defaultName [MAC_ADDR_LEN] = {0};
+    getDefaultName(defaultName);
+
+    sprintf(defaultVals, "name=%s\n", defaultName);
+
+    memcpy(&defaultVals[strlen(defaultVals)], ENV_FILE, strlen(ENV_FILE));
+
+    return CRS_SUCCESS;
+
+}

@@ -891,11 +891,11 @@ void printADCOutputCSV()
             if (Tdd_isLocked()!=CRS_SUCCESS) {
     #endif
     //      CLI_cliPrintf("\r\n*****");
-              CLI_cliPrintf("%d,%u,%u,%u",(channelIdx+1),outputValues[detIdx][channelIdx].avg,outputValues[detIdx][channelIdx].max,outputValues[detIdx][channelIdx].min);
+              CLI_cliPrintf("%u,%u,%u",outputValues[detIdx][channelIdx].avg,outputValues[detIdx][channelIdx].max,outputValues[detIdx][channelIdx].min);
 
         }
         else{
-            CLI_cliPrintf("%d,N\\C,N\\C,N\\C",(channelIdx+1),outputValues[detIdx][channelIdx].avg,outputValues[detIdx][channelIdx].max,outputValues[detIdx][channelIdx].min);
+            CLI_cliPrintf("N\\C,N\\C,N\\C");
 
         }
 
