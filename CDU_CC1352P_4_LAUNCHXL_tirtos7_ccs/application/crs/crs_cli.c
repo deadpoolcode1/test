@@ -173,7 +173,7 @@
 #define CLI_CRS_FS_UPLOAD_DIG "fs upload dig"
 #define CLI_CRS_FS_UPLOAD_FPGA "fs upload fpga"
 
-
+#define CLI_CSV_SENSOR  "csv sensor"
 #define CLI_AGC "sensor"
 #define CLI_AGC_DEBUG "debug sensor"
 #define CLI_AGC_MODE "set sensor"
@@ -333,6 +333,7 @@ static CRS_retVal_t CLI_fsReadFileNative(char *line);
 static CRS_retVal_t CLI_fsFormat(char *line);
 static CRS_retVal_t CLI_sensorsParsing(char *line);
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line);
+static CRS_retVal_t CLI_csvSensorParsing(char *line);
 static CRS_retVal_t CLI_sensorModeParsing(char *line);
 static CRS_retVal_t CLI_sensorGetModeParsing(char *line);
 static CRS_retVal_t CLI_sensorChannelParsing(char *line);
@@ -1588,6 +1589,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       else if (memcmp(CLI_AGC_DEBUG, line, sizeof(CLI_AGC_DEBUG) - 1) == 0){
           CLI_sensorsDebugParsing(line);
+          inputBad = false;
+      }
+
+      else if (memcmp(CLI_CSV_SENSOR, line, sizeof(CLI_CSV_SENSOR) - 1) == 0)
+      {
+          CLI_csvSensorParsing(line);
           inputBad = false;
       }
 
@@ -4034,6 +4041,47 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
             CLI_startREAD();
             return CRS_SUCCESS;
 }
+
+
+static CRS_retVal_t CLI_csvSensorParsing(char *line)
+{
+    const char s[2] = " ";
+    char *token;
+    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+    /* get the first token */
+    //0xaabb shortAddr
+    token = strtok(&(tmpBuff[sizeof(CLI_CSV_SENSOR)]), s);
+    uint32_t addrSize = strlen(token);
+    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+#ifndef CLI_SENSOR
+
+      uint16_t addr = 0;
+      Cllc_getFfdShortAddr(&addr);
+      if (addr != shortAddr)
+      {
+          // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+          ApiMac_sAddr_t dstAddr;
+          dstAddr.addr.shortAddr = shortAddr;
+          dstAddr.addrMode = ApiMac_addrType_short;
+          Collector_status_t stat;
+          stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+          if (stat != Collector_status_success)
+         {
+             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+             CLI_startREAD();
+         }
+         // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+          return CRS_SUCCESS;
+      }
+#endif
+    printADCOutputCSV();
+    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+    CLI_startREAD();
+    return CRS_SUCCESS;
+}
+
 
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
 
@@ -7084,6 +7132,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
 
     CLI_printCommInfo(CLI_AGC, strlen(CLI_AGC), "[shortAddr]");
     CLI_printCommInfo(CLI_AGC_DEBUG, strlen(CLI_AGC_DEBUG), "[shortAddr] [channel](0x1-0x4, 0x0: All channels) [DL/UL](0x0: Both, 0x1: DL, 0x2:UL) [RF/IF](0x0: Both, 0x1: RF, 0x2:IF) [type](0x0: All, 0x1:Max, 0x2:Avg, 0x3: Min)");
+    CLI_printCommInfo(CLI_CSV_SENSOR, strlen(CLI_CSV_SENSOR),"[shortAddr]");
     CLI_printCommInfo(CLI_AGC_MODE, strlen(CLI_AGC_MODE), "[shortAddr] [mode](0x0: Auto, 0x1: DL, 0x2: UL)");
     CLI_printCommInfo(CLI_AGC_GET_MODE, strlen(CLI_AGC_GET_MODE), "[shortAddr]");
     CLI_printCommInfo(CLI_AGC_CHANNEL, strlen(CLI_AGC_CHANNEL), "[shortAddr] [channel](0x0: All channels, 0x1-0x4 select channel)");

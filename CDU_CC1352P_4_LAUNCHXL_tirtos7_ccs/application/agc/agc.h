@@ -99,6 +99,7 @@ CRS_retVal_t Agc_ledMode(uint16_t ledModeInt);
 CRS_retVal_t Agc_ledOn();
 CRS_retVal_t Agc_ledOff();
 void printADCOutput();
+void printADCOutputCSV();
 void Agc_avgCalc(uint16_t* outputArray,int32_t* avg,uint8_t channelNum);
 CRS_retVal_t Agc_setGap(uint8_t isStart,uint8_t isRising, uint16_t us);
 CRS_retVal_t Agc_getGap(uint8_t isStart,uint8_t isRising, uint16_t* result);

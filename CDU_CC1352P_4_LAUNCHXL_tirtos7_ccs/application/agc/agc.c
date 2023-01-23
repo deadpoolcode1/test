@@ -869,6 +869,49 @@ continue;
 }
 
 
+void printADCOutputCSV()
+{
+    int channelIdx=0;
+    int detIdx=0; // 0: ADC0_DIO23_Tx_Det, 1 : ADC1_DIO24_Rx_Det, 2 : ADC2_DIO25_IF_Det_DL, 3: ADC2_DIO25_IF_Det_UL
+    CLI_cliPrintf("\r\n");
+    for (detIdx = 0; detIdx < 4; detIdx++) {
+
+
+        if ((gAgcMode==AGC_DL && detIdx==0) || (gAgcMode==AGC_DL && detIdx==3)) {
+    continue;
+               }
+
+        if ((gAgcMode==AGC_UL && detIdx==1) || (gAgcMode==AGC_UL && detIdx==2)) {
+    continue;
+               }
+        for (channelIdx = 0; channelIdx < 4; channelIdx++) {
+    #ifdef CLI_SENSOR
+            if (Tdd_isLocked()==CRS_SUCCESS) {
+    #else
+            if (Tdd_isLocked()!=CRS_SUCCESS) {
+    #endif
+    //      CLI_cliPrintf("\r\n*****");
+              CLI_cliPrintf("%d,%u,%u,%u",(channelIdx+1),outputValues[detIdx][channelIdx].avg,outputValues[detIdx][channelIdx].max,outputValues[detIdx][channelIdx].min);
+
+        }
+        else{
+            CLI_cliPrintf("%d,N\\C,N\\C,N\\C",(channelIdx+1),outputValues[detIdx][channelIdx].avg,outputValues[detIdx][channelIdx].max,outputValues[detIdx][channelIdx].min);
+
+        }
+
+        if (channelIdx < 3)
+        {
+            CLI_cliPrintf(",");
+        }
+            }
+        if (detIdx < 3)
+        {
+            CLI_cliPrintf(",");
+        }
+        }
+}
+
+
 
 bool Agc_getLock(){
 #ifndef CLI_SENSOR
