@@ -136,6 +136,7 @@ easylink.enableOad              = true;
 easylink.addrSize               = 8;
 easylink.radioInactivityTimeout = 100000;
 easylink.configInSrfStudio      = true;
+easylink.rssiThresholdDbm       = -60;
 easylink.oadModule.$name        = "ti_easylink_oad_config_easylink_oad_mod0";
 
 BIOS.assertsEnabled = false;
