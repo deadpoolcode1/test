@@ -45,7 +45,7 @@
 #include "application/crs/snapshots/crs_script_dig.h"
 #include "application/crs/crs_agc_management.h"
 #include "crs_cb_init_gain_states.h"
-
+#include "easylink/EasyLink.h"
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
 #include "crs_env.h"
@@ -208,6 +208,8 @@
 #define CLI_CRS_DEBUG "fs debug"
 
 #define CLI_CRS_TMP "tmp"
+#define CLI_CRS_DEBUG_RSSI "debug rssi"
+
 #define CLI_CRS_RSSI "rssi"
 #define CLI_CRS_RSSI_CHECK "rssi check"
 
@@ -1174,6 +1176,16 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                       token = strtok(NULL, s);//rssiAvg value
                       rssiAvg= strtoul(token+2,NULL,10);
                    Alarms_checkRssi(rssiAvg);
+                   inputBad = false;
+                   CLI_startREAD();
+               }
+
+
+      if (memcmp(CLI_CRS_DEBUG_RSSI, line, sizeof(CLI_CRS_DEBUG_RSSI) - 1) == 0)
+               {
+          int8_t gRssiAvg=9;
+          EasyLink_getRssi(&gRssiAvg);
+          CLI_cliPrintf("\r\nrssi: 0x%x",gRssiAvg);
                    inputBad = false;
                    CLI_startREAD();
                }
