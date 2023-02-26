@@ -548,11 +548,11 @@ CRS_retVal_t Agc_setMode(AGC_sensorMode_t mode){
     sprintf(envFile, "SensorMode=%x\n", mode);
     Thresh_write(envFile);
     //  clear the interrupt flag
-    scifClearAlertIntSource();
-    if(gAgcReady){
-        scifAckAlertEvents();
-    }
-    gAgcReady = 0;
+//    scifClearAlertIntSource();
+//    if(gAgcReady){
+//        scifAckAlertEvents();
+//    }
+//    gAgcReady = 0;
 
     scifTaskData.systemAgc.state.alertEnabled = 1;
     scifTaskData.systemAgc.cfg.tddMode = mode;
@@ -794,8 +794,6 @@ static void avgArray(int32_t* array, int32_t* result){
  *result= sum/sumCounter;
 }
 
-
-
 void printADCOutput(){
 int channelIdx=0;
 int detIdx=0; // 0: ADC0_DIO23_Tx_Det, 1 : ADC1_DIO24_Rx_Det, 2 : ADC2_DIO25_IF_Det_DL, 3: ADC2_DIO25_IF_Det_UL
@@ -818,51 +816,34 @@ continue;
 //      CLI_cliPrintf("\r\n*****");
       switch (detIdx) {
         case 0:
-               CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-               CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-               CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
-
+                  CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC0_DIO23_Tx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC0_DIO23_Tx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
             break;
         case 1:
-              CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-              CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-              CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
-              break;
+                  CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC1_DIO24_Rx_Det channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC1_DIO24_Rx_Det channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
         case 2:
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
-             break;
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC2_DIO25_IF_Det_DL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC2_DIO25_IF_Det_DL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
         case 3:
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg);
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max);
-             CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
-             break;
+                  CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].avg,"\r\nADC2_DIO25_IF_Det_UL channel %d Max: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].max,"\r\nADC2_DIO25_IF_Det_UL channel %d Min: %u uV",(channelIdx+1),outputValues[detIdx][channelIdx].min);
+                  break;
     }
 
     }else{
    switch (detIdx) {
         case 0:
-            CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Max: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Min: N\\C",(channelIdx+1));
-            break;
+        CLI_cliPrintf("\r\nADC0_DIO23_Tx_Det channel %d Average: N\\C",(channelIdx+1),"\r\nADC0_DIO23_Tx_Det channel %d Max: N\\C",(channelIdx+1),"\r\nADC0_DIO23_Tx_Det channel %d Min: N\\C",(channelIdx+1));
+        break;
         case 1:
 
-            CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Max: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Min: N\\C",(channelIdx+1));
-            break;
+        CLI_cliPrintf("\r\nADC1_DIO24_Rx_Det channel %d Average: N\\C",(channelIdx+1),"\r\nADC1_DIO24_Rx_Det channel %d Max: N\\C",(channelIdx+1),"\r\nADC1_DIO24_Rx_Det channel %d Min: N\\C",(channelIdx+1));
+        break;
         case 2:
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Max: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Min: N\\C",(channelIdx+1));
-            break;
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_DL channel %d Average: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_DL channel %d Max: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_DL channel %d Min: N\\C",(channelIdx+1));
+        break;
         case 3:
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Max: N\\C",(channelIdx+1));
-            CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Min: N\\C",(channelIdx+1));
-            break;
+        CLI_cliPrintf("\r\nADC2_DIO25_IF_Det_UL channel %d Average: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_UL channel %d Max: N\\C",(channelIdx+1),"\r\nADC2_DIO25_IF_Det_UL channel %d Min: N\\C",(channelIdx+1));
+        break;
    }
          }
         }

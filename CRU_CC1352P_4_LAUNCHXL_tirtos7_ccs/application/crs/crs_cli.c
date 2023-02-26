@@ -48,7 +48,7 @@
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/crs_agc_management.h"
 #include "crs_cb_init_gain_states.h"
-
+#include "easylink/EasyLink.h"
 #include "application/crs/crs_fpga_spi.h"
 #include "crs_tdd.h"
 #include "crs_thresholds.h"
@@ -224,6 +224,8 @@
 #define CLI_CRS_SPI_DEBUG   "fs debug spi" // todo
 
 #define CLI_CRS_TMP "tmp"
+#define CLI_CRS_DEBUG_RSSI "debug rssi"
+
 #define CLI_CRS_RSSI "rssi"
 #define CLI_CRS_RSSI_CHECK "rssi check"
 
@@ -1244,6 +1246,16 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                    CLI_startREAD();
                }
 
+
+      if (memcmp(CLI_CRS_DEBUG_RSSI, line, sizeof(CLI_CRS_DEBUG_RSSI) - 1) == 0)
+               {
+          int8_t gRssiAvg=9;
+          EasyLink_getRssi(&gRssiAvg);
+          CLI_cliPrintf("\r\nrssi: 0x%x",gRssiAvg);
+                   inputBad = false;
+                   CLI_startREAD();
+               }
+
 #ifndef CLI_SENSOR
       if (memcmp(CLI_CRS_OAD_RCV_IMG, line, sizeof(CLI_CRS_OAD_RCV_IMG) - 1) == 0)
                {
@@ -1594,8 +1606,8 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       else if (memcmp(CLI_CSV_SENSOR, line, sizeof(CLI_CSV_SENSOR) - 1) == 0)
       {
-          CLI_csvSensorParsing(line);
-          inputBad = false;
+        CLI_csvSensorParsing(line);
+        inputBad = false;
       }
 
       else if (memcmp(CLI_AGC_MODE, line, sizeof(CLI_AGC_MODE) - 1) == 0){
@@ -4042,46 +4054,44 @@ static CRS_retVal_t CLI_sensorsParsing(char *line){
             return CRS_SUCCESS;
 }
 
-
 static CRS_retVal_t CLI_csvSensorParsing(char *line)
 {
     const char s[2] = " ";
-    char *token;
-    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-    /* get the first token */
-    //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_CSV_SENSOR)]), s);
-    uint32_t addrSize = strlen(token);
-    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-#ifndef CLI_SENSOR
+        char *token;
+        char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+        memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+        /* get the first token */
+        //0xaabb shortAddr
+        token = strtok(&(tmpBuff[sizeof(CLI_CSV_SENSOR)]), s);
+        uint32_t addrSize = strlen(token);
+        uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+    #ifndef CLI_SENSOR
 
-      uint16_t addr = 0;
-      Cllc_getFfdShortAddr(&addr);
-      if (addr != shortAddr)
-      {
-          // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-          ApiMac_sAddr_t dstAddr;
-          dstAddr.addr.shortAddr = shortAddr;
-          dstAddr.addrMode = ApiMac_addrType_short;
-          Collector_status_t stat;
-          stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-          if (stat != Collector_status_success)
-         {
-             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-             CLI_startREAD();
-         }
-         // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+          uint16_t addr = 0;
+          Cllc_getFfdShortAddr(&addr);
+          if (addr != shortAddr)
+          {
+              // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+              ApiMac_sAddr_t dstAddr;
+              dstAddr.addr.shortAddr = shortAddr;
+              dstAddr.addrMode = ApiMac_addrType_short;
+              Collector_status_t stat;
+              stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+              if (stat != Collector_status_success)
+             {
+                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                 CLI_startREAD();
+             }
+             // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
 
-          return CRS_SUCCESS;
-      }
-#endif
-    printADCOutputCSV();
-    CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
-    CLI_startREAD();
-    return CRS_SUCCESS;
+              return CRS_SUCCESS;
+          }
+    #endif
+        printADCOutputCSV();
+        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SUCCESS);
+        CLI_startREAD();
+        return CRS_SUCCESS;
 }
-
 
 static CRS_retVal_t CLI_sensorsDebugParsing(char *line){
 
