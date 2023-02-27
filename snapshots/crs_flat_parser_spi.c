@@ -106,11 +106,6 @@ static void restoreOriginalRegisters(uint32_t ffVal, uint32_t aVal);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-CRS_retVal_t SPI_Config_configInit(void *sem)
-{
-    collectorSem = sem;
-return CRS_SUCCESS;
-}
 
 
 uint32_t SPI_getLutRegValue(uint32_t chipNumber, uint32_t lineNumber, uint32_t lutNumber, uint32_t regNumber)
@@ -159,53 +154,7 @@ CRS_retVal_t SPI_readRfRegs(uint32_t chipNumber, uint32_t lineNumber)
     return CRS_SUCCESS;
 }
 
-CRS_retVal_t SPI_Config_runConfigDirect(char *filename, char *type, char *fileInfos)
-{
-    if (Fpga_UART_isOpen() == CRS_FAILURE)
-    {
-        CLI_cliPrintf("\r\nOpen Fpga first");
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
-        return CRS_FAILURE;
 
-    }
-    gIsOnlyDiscovery = false;
-
-    gIsSingleLine = false;
-    gInvLineNumber = 0;
-    memset(gInvName, 0, 30);
-//    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-    memset(&gInvLineStrct, 0, sizeof(SPI_CRS_invLine_t));
-    if (filename == NULL)
-    {
-        CLI_cliPrintf("\r\nfilename is null!");
-//        const FPGA_cbArgs_t cbArgs = { 0 }; //TODO: replace
-//        cbFunc(cbArgs); //TODO: replace
-        return CRS_FAILURE;
-    }
-    gFileContentCache = Nvs_readFileWithMalloc(filename);
-    if (gFileContentCache == NULL)
-    {
-//        const FPGA_cbArgs_t cbArgs = { 0 }; //TODO: replace
-//        cbFunc(cbArgs); //TODO: replace
-        return CRS_FAILURE;
-    }
-//    gCbFn = cbFunc;
-    memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
-    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
-    CLI_cliPrintf("\r\n");
-    if (memcmp(type, "SN", 2) == 0)
-    {
-//        crs_package_t packageLineStruct;
-//        packageLineStruct.fileInfos[0].name = filename;
-//        packageLineStruct.fileInfos[0].type = SC;
-//        packageLineStruct.fileInfos[0].nameValues[0].name = filename;
-//        packageLineStruct.fileInfos[0].nameValues[0].value = 0;
-//        Semaphore_post(collectorSem);
-        return CRS_SUCCESS;
-    }
-    return CRS_SUCCESS;
-}
 
 CRS_retVal_t SPI_Config_runConfigFile(char *filename)
 {
@@ -293,83 +242,6 @@ CRS_retVal_t SPI_Config_runConfigFileDiscovery(char *filename)
 }
 
 
-//TODO: convert fileInfos to gFileInfos.
-CRS_retVal_t SPI_Config_runConfigFileLine(char *filename, uint32_t lineNum,
-                                      char *fileInfos)
-{
-
-//        if (Fpga_UART_isOpen() == CRS_FAILURE)
-//        {
-//            CLI_cliPrintf("\r\nOpen Fpga first");
-//            const FPGA_cbArgs_t cbArgs = { 0 };
-//            cbFunc(cbArgs);
-//            return CRS_FAILURE;
-//
-//        }
-//
-//        gIsSingleLine = true;
-//    gIsOnlyDiscovery = false;
-
-//        gInvLineNumber = lineNum;
-//        memset(gInvName, 0, 30);
-////    memset(gFileContentCache, 0, FILE_CACHE_SZ);
-//        memset(&gInvLineStrct, 0, sizeof(CRS_invLine_t));
-//        memset(gFileInfos, 0, sizeof(gFileInfos));
-//
-//        if (filename == NULL)
-//        {
-//            CLI_cliPrintf("\r\nfilename is null!");
-//            const FPGA_cbArgs_t cbArgs = { 0 };
-//            cbFunc(cbArgs);
-//            return CRS_FAILURE;
-//        }
-//
-//        gFileContentCache = Nvs_readFileWithMalloc(filename);
-//        if (gFileContentCache == NULL)
-//        {
-//            const FPGA_cbArgs_t cbArgs = { 0 };
-//            cbFunc(cbArgs);
-//            return CRS_FAILURE;
-//        }
-//
-//        uint32_t numOfParams = 0;
-//
-//        const char s[2] = " ";
-//        char *token;
-//        token = strtok(fileInfos, s);
-//        int i = 0;
-//        char *ptr;
-//        char fileNameScript[FILENAME_SZ] = { 0 };
-//        int fileNameIdx = 0;
-//        while (token != NULL)
-//        {
-//            ptr = token;
-//            while (*ptr != ':')
-//            {
-//                fileNameScript[i] = *ptr;
-//                ptr++;
-//                i++;
-//            }
-//            i = 0;
-//            ptr++; //skip ':'
-//            findScriptNameIdx(fileNameScript, &fileNameIdx);
-//            memcpy(gFileInfos[fileNameIdx].name, fileNameScript, FILENAME_SZ);
-//            insertParam(ptr, gFileInfos, fileNameIdx);
-//            numOfParams++;
-//            i = 0;
-//            token = strtok(NULL, s);
-//        }
-//
-//        gCbFn = cbFunc;
-//        memcpy(gInvName, "NAME INV1", strlen("NAME INV1"));
-//
-//        Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
-//        CLI_cliPrintf("\r\n");
-//
-//        Semaphore_post(collectorSem);
-//        return CRS_SUCCESS;
-return CRS_SUCCESS;
-}
 
 CRS_retVal_t SPI_Config_getInvLine(char *invName, uint32_t lineNum,
                                char *fileContent, char *respLine)
@@ -1012,22 +884,22 @@ static CRS_retVal_t cmpDiscRsp(char *rsp, char *expVal)
 //    Semaphore_post(collectorSem);
 //}
 
-static void uploadPackageCb(void)
-{
-    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
-    Semaphore_post(collectorSem);
-}
+//static void uploadPackageCb(void)
+//{
+//    Util_setEvent(&gConfigEvents, RUN_NEXT_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
 //static void uploadPackageSingleLineCb(const FPGA_cbArgs_t _cbArgs)
 //{
 //    Util_setEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
 //    Semaphore_post(collectorSem);
 //}
 
-static void uploadPackageSingleLineCb(void)
-{
-    Util_setEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
-    Semaphore_post(collectorSem);
-}
+//static void uploadPackageSingleLineCb(void)
+//{
+//    Util_setEvent(&gConfigEvents, FINISHED_SINGLE_LINE_EV);
+//    Semaphore_post(collectorSem);
+//}
 
 //static void uploadDiscLinesCb(const FPGA_cbArgs_t _cbArgs) //TODO: replace
 //{

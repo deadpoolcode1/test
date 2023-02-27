@@ -14,7 +14,6 @@
 #include "application/crs/crs_cli.h"
 #include "application/crs/crs_nvs.h"
 #include "application/crs/crs.h"
-#include "crs_snap_rf.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -88,7 +87,6 @@ typedef struct SPI_crs_box
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t SPI_Config_configInit(void *sem);
 CRS_retVal_t SPI_Config_runConfigFile(char *filename);
 CRS_retVal_t SPI_Config_runConfigFileDiscovery(char *filename);
 CRS_retVal_t SPI_Config_getInvLine(char *invName, uint32_t lineNum,
@@ -103,14 +101,10 @@ CRS_retVal_t SPI_Config_parseDiscoveryLine(char *buff,
                                        SPI_crs_discseqLine_t *respStructDiscseq);
 CRS_retVal_t SPI_Config_parseInvLine(char *buff,
                                  SPI_CRS_invLine_t *respStructInventory);
-CRS_retVal_t SPI_Config_runConfigFileLine(char *filename, uint32_t lineNum,
-                                      char *fileInfos);
-CRS_retVal_t SPI_Config_runConfigDirect(char *filename, char *type, char *fileInfos);
 
 uint32_t SPI_getLutRegValue(uint32_t chipNumber, uint32_t lineNumber, uint32_t lutNumber, uint32_t regNumber);
 CRS_retVal_t SPI_readRfRegs(uint32_t chipNumber, uint32_t lineNumber);
 uint32_t SPI_getGlobalRegValue(uint32_t regIdx);
-void SPI_Config_process(void);
 
 
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_FLAT_PARSER_SPI_H_ */

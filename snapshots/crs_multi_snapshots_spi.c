@@ -64,11 +64,6 @@ static CRS_retVal_t runNextLine(multiPackageTraverser_t *packageTraverser);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-CRS_retVal_t MultiFilesSPI_multiFilesInit(void *sem)
-{
-    collectorSem = sem;
-    return CRS_SUCCESS;
-}
 
 CRS_retVal_t MultiFilesSPI_runMultiFiles(SPI_crs_package_t *package,
                                       uint32_t chipAddr,

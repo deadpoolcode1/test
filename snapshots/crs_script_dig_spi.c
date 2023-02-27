@@ -126,15 +126,6 @@ static CRS_retVal_t starRsp(scriptDigTraverser_t *fileTraverser);
  Public Functions
  *****************************************************************************/
 
-CRS_retVal_t DigSPI_init(void *sem)
-{
-    collectorSem = sem;
-    digClkHandle = UtilTimer_construct(&digClkStrct, processDigTimeoutCallback,
-                                       5, 0,
-                                       false,
-                                       0);
-    return CRS_SUCCESS;
-}
 
 CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
                                uint32_t chipAddr, CRS_nameValue_t *nameVals)
@@ -260,110 +251,110 @@ CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
     return rspStatus;
 
 }
-void DigSPI_process(void)
-{
-    CRS_retVal_t rspStatus;
-//
-//    if (gDigEvents & RUN_NEXT_LINE_EV)
-//    {
-//        char line[LINE_SZ] = { 0 };
-//
-////        rspStatus = getNextLine(line);
-//        if (rspStatus == CRS_FAILURE)
-//        {
-//            if (gIsFileDone == false && gChipType != UNKNOWN)
-//            {
-//                gIsFileDone = true;
-////                addEndOfFlieSequence();
+//void DigSPI_process(void)
+//{
+//    CRS_retVal_t rspStatus;
+////
+////    if (gDigEvents & RUN_NEXT_LINE_EV)
+////    {
+////        char line[LINE_SZ] = { 0 };
+////
+//////        rspStatus = getNextLine(line);
+////        if (rspStatus == CRS_FAILURE)
+////        {
+////            if (gIsFileDone == false && gChipType != UNKNOWN)
+////            {
+////                gIsFileDone = true;
+//////                addEndOfFlieSequence();
+//////                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+//////                getNextLine(line);
+////            }
+////            else
+////            {
+////                gIsFileDone = false;
+////                CRS_free(gFileContentCache);
+////                gFileContentCache = NULL;
+//////                const FPGA_cbArgs_t cbArgs={0};
+//////                gCbFn(cbArgs);
+//////                gCbFn();
 ////                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-////                getNextLine(line);
-//            }
-//            else
-//            {
-//                gIsFileDone = false;
-//                CRS_free(gFileContentCache);
-//                gFileContentCache = NULL;
-////                const FPGA_cbArgs_t cbArgs={0};
-////                gCbFn(cbArgs);
-////                gCbFn();
-//                Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-//                return;
-//            }
-//
-//        }
-//
-//        runLine(line);
-//
-//        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-//        return;
-//
+////                return;
+////            }
+////
+////        }
+////
+////        runLine(line);
+////
 ////        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-//    }
+////        return;
+////
+//////        Util_clearEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+////    }
+////
+////    if (gDigEvents & STAR_RSP_EV)
+////    {
+////
+////        char line[LINE_SZ] = { 0 };
+////
+////        rspStatus = getPrevLine(line);
+////        if (rspStatus == CRS_FAILURE)
+////        {
+////            CRS_free(gFileContentCache);
+////            gFileContentCache = NULL;
+////
+//////            const FPGA_cbArgs_t cbArgs={0};
+//////            gCbFn(cbArgs);
+//////            gCbFn();
+////            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+////            return;
+////        }
+////
+////        char starParsedLine[LINE_SZ] = { 0 };
+////        Convert_convertStar(line, gStarRdRespLine, starParsedLine);
+////        zeroLineToSendArray();
+////
+////        if (gChipType == DIG)
+////        {
+////            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
+////                                            gMode);
+////        }
+////        else if (gChipType == UNKNOWN)
+////        {
+////            rspStatus = Convert_readLineFpga(starParsedLine, gLineToSendArray);
+////
+//////            strcpy(gLineToSendArray[0], line);
+////            rspStatus = CRS_SUCCESS;
+////        }
+////
+////        if (rspStatus == CRS_NEXT_LINE)
+////        {
+////            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+////            Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
+////
+////            Semaphore_post(collectorSem);
+////
+////            return;
+////        }
+////
+////        Util_clearEvent(&gDigEvents, STAR_RSP_EV);
+////        return;
+////
+////    }
+////
+////    //CHANGE_DIG_CHIP_EV
+////    if (gDigEvents & CHANGE_DIG_CHIP_EV)
+////    {
+////        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
+////        char line[100] = { 0 };
+////        sprintf(line, "wr 0xff 0x%x", gDigAddr);
+//////        Fpga_UART_writeMultiLine(line, changedDigChipCb);
+////        uint32_t rsp = 0;
+////        Fpga_SPI_WriteMultiLine(line, &rsp);
+////        changedDigChipCb();
+////        Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
+////    }
 //
-//    if (gDigEvents & STAR_RSP_EV)
-//    {
-//
-//        char line[LINE_SZ] = { 0 };
-//
-//        rspStatus = getPrevLine(line);
-//        if (rspStatus == CRS_FAILURE)
-//        {
-//            CRS_free(gFileContentCache);
-//            gFileContentCache = NULL;
-//
-////            const FPGA_cbArgs_t cbArgs={0};
-////            gCbFn(cbArgs);
-////            gCbFn();
-//            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-//            return;
-//        }
-//
-//        char starParsedLine[LINE_SZ] = { 0 };
-//        Convert_convertStar(line, gStarRdRespLine, starParsedLine);
-//        zeroLineToSendArray();
-//
-//        if (gChipType == DIG)
-//        {
-//            rspStatus = Convert_readLineDig(starParsedLine, gLineToSendArray,
-//                                            gMode);
-//        }
-//        else if (gChipType == UNKNOWN)
-//        {
-//            rspStatus = Convert_readLineFpga(starParsedLine, gLineToSendArray);
-//
-////            strcpy(gLineToSendArray[0], line);
-//            rspStatus = CRS_SUCCESS;
-//        }
-//
-//        if (rspStatus == CRS_NEXT_LINE)
-//        {
-//            Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-//            Util_setEvent(&gDigEvents, RUN_NEXT_LINE_EV);
-//
-//            Semaphore_post(collectorSem);
-//
-//            return;
-//        }
-//
-//        Util_clearEvent(&gDigEvents, STAR_RSP_EV);
-//        return;
-//
-//    }
-//
-//    //CHANGE_DIG_CHIP_EV
-//    if (gDigEvents & CHANGE_DIG_CHIP_EV)
-//    {
-//        CRS_LOG(CRS_DEBUG, "\r\nin CHANGE_DIG_CHIP_EV runing");
-//        char line[100] = { 0 };
-//        sprintf(line, "wr 0xff 0x%x", gDigAddr);
-////        Fpga_UART_writeMultiLine(line, changedDigChipCb);
-//        uint32_t rsp = 0;
-//        Fpga_SPI_WriteMultiLine(line, &rsp);
-//        changedDigChipCb();
-//        Util_clearEvent(&gDigEvents, CHANGE_DIG_CHIP_EV);
-//    }
-
-}
+//}
 
 /******************************************************************************
  Local Functions

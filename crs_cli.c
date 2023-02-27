@@ -37,14 +37,9 @@
 #include "oad/native_oad/crs_oad_client.h"
 #endif
 #include "crs_cli.h"
-#include "application/crs/snapshots/crs_snapshot.h"
 #include "crs_nvs.h"
 #include "application/crs/crs_fpga_uart.h"
-#include "application/crs/snapshots/config_parsing.h"
 #include "application/crs/snapshots/crs_flat_parser_spi.h"
-#include "application/crs/snapshots/crs_snap_rf.h"
-#include "application/crs/snapshots/crs_script_rf.h"
-#include "application/crs/snapshots/crs_script_dig.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/crs_agc_management.h"
 #include "crs_cb_init_gain_states.h"
@@ -169,7 +164,6 @@
 #define CLI_CRS_FS_READLINE  "fs readline"
 #define CLI_CRS_FS_NATIVE "fs native"
 
-#define CLI_CRS_FS_UPLOAD "fs upload orig"
 #define CLI_CRS_FS_UPLOAD_RF "fs upload rf"
 #define CLI_CRS_FS_UPLOAD_DIG "fs upload dig"
 #define CLI_CRS_FS_UPLOAD_FPGA "fs upload fpga"
@@ -184,7 +178,7 @@
 #define CLI_AGC_CHANNEL "set channel"
 
 #define CLI_CRS_CONFIG_DIRECT "config direct"
-#define CLI_CRS_CONFIG_LINE "config line"
+//#define CLI_CRS_CONFIG_LINE "config line"
 #define CLI_CRS_CONFIG_FILE "config file"
 #define CLI_AGC_SET_GAP "agc set gap"
 #define CLI_AGC_GET_GAP "agc get gap"
@@ -221,7 +215,7 @@
 
 #define CLI_CRS_MODEM_TEST "modem test"
 
-#define CLI_CRS_DEBUG "fs debug"
+//#define CLI_CRS_DEBUG "fs debug"
 #define CLI_CRS_SPI_DEBUG   "fs debug spi" // todo
 
 #define CLI_CRS_TMP "tmp"
@@ -336,7 +330,6 @@ static CRS_retVal_t CLI_fsInsertParsing(char *line);
 static CRS_retVal_t CLI_fsLsParsing(char *line);
 static CRS_retVal_t CLI_fsReadLineParsing(char *line);
 static CRS_retVal_t CLI_fsDeleteParsing(char *line);
-static CRS_retVal_t CLI_fsUploadParsing(char *line);
 static CRS_retVal_t CLI_fsUploadRfParsing(char *line);
 static CRS_retVal_t CLI_fsUploadDigParsing(char *line);
 static CRS_retVal_t CLI_fsUploadFpgaParsing(char *line);
@@ -386,14 +379,14 @@ static CRS_retVal_t CLI_setTimeParsing(char *line);
 
 static CRS_retVal_t CLI_getGainParsing(char *line);
 
-static CRS_retVal_t CLI_config_direct(char *line);
 static CRS_retVal_t CLI_config_file(char *line);
-static CRS_retVal_t CLI_config_line(char *line);
+//static CRS_retVal_t CLI_config_direct(char *line);
+//static CRS_retVal_t CLI_config_line(char *line);
 
-static CRS_retVal_t CLI_config_direct_spi(char *line);
-static CRS_retVal_t CLI_config_file_spi(char *line);
-static CRS_retVal_t CLI_config_line_spi(char *line);
-
+//static CRS_retVal_t CLI_config_direct_spi(char *line);
+//static CRS_retVal_t CLI_config_file_spi(char *line);
+//static CRS_retVal_t CLI_config_line_spi(char *line);
+//
 
 
 
@@ -1599,13 +1592,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           inputBad = false;
       }
 
-      else if (memcmp(CLI_CRS_DEBUG, line, sizeof(CLI_CRS_DEBUG) - 1) == 0)
-      {
-          Config_runConfigFile("flat_no_init", fpgaMultiLineCallback);
-          inputBad = false;
-          is_async_command = true;
-
-      }
+//      else if (memcmp(CLI_CRS_DEBUG, line, sizeof(CLI_CRS_DEBUG) - 1) == 0)
+//      {
+//          Config_runConfigFile("flat_no_init", fpgaMultiLineCallback);
+//          inputBad = false;
+//          is_async_command = true;
+//
+//      }
       else if (memcmp(CLI_CRS_FS_UPLOAD_FPGA, line,
                        sizeof(CLI_CRS_FS_UPLOAD_FPGA) - 1) == 0)
        {
@@ -1636,15 +1629,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           inputBad = false;
 
       }
-      else if (memcmp(CLI_CRS_FS_UPLOAD, line, sizeof(CLI_CRS_FS_UPLOAD) - 1)
-              == 0)
-      {
 
-          CLI_fsUploadParsing(line);
-          is_async_command = true;
-
-          inputBad = false;
-      }
       else if (memcmp(CLI_AGC, line, sizeof(CLI_AGC) - 1) == 0){
           CLI_sensorsParsing(line);
           inputBad = false;
@@ -1700,14 +1685,14 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
           CLI_fsFormat(line);
           inputBad = false;
       }
-      //config direct [shortAddr] [CM | SC | SN] [funcName | scriptName | snapShotname] [param=value ...]
-      if (memcmp(CLI_CRS_CONFIG_DIRECT, line, sizeof(CLI_CRS_CONFIG_DIRECT) - 1) == 0)
-        {
-
-          CLI_config_direct(line);
-            inputBad = false;
-            CLI_startREAD();
-        }
+//      //config direct [shortAddr] [CM | SC | SN] [funcName | scriptName | snapShotname] [param=value ...]
+//      if (memcmp(CLI_CRS_CONFIG_DIRECT, line, sizeof(CLI_CRS_CONFIG_DIRECT) - 1) == 0)
+//        {
+//
+//          CLI_config_direct(line);
+//            inputBad = false;
+//            CLI_startREAD();
+//        }
 
 
 //      if (memcmp(CLI_CRS_CONFIG_DIRECT_SPI, line, sizeof(CLI_CRS_CONFIG_DIRECT_SPI) - 1) == 0)
@@ -1718,13 +1703,13 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 //            CLI_startREAD();
 //        }
 
-      if (memcmp(CLI_CRS_CONFIG_LINE, line, sizeof(CLI_CRS_CONFIG_LINE) - 1) == 0)
-        {
-
-          CLI_config_line(line);
-            inputBad = false;
-
-        }
+//      if (memcmp(CLI_CRS_CONFIG_LINE, line, sizeof(CLI_CRS_CONFIG_LINE) - 1) == 0)
+//        {
+//
+//          CLI_config_line(line);
+//            inputBad = false;
+//
+//        }
 
 //      if (memcmp(CLI_CRS_CONFIG_LINE_SPI, line, sizeof(CLI_CRS_CONFIG_LINE_SPI) - 1) == 0)
 //     {
@@ -4291,55 +4276,6 @@ static CRS_retVal_t CLI_sensorModeParsing(char *line)
 
 }
 
-static CRS_retVal_t CLI_fsUploadParsing(char *line)
-{
-    const char s[2] = " ";
-    char *token;
-    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-
-    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-    /* get the first token */
-    //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FS_UPLOAD)]), s);
-    uint32_t addrSize = strlen(token);
-
-    //token = strtok(NULL, s);
-
-    //shortAddr in decimal
-    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-#ifndef CLI_SENSOR
-
-    uint16_t addr = 0;
-    Cllc_getFfdShortAddr(&addr);
-    if (addr != shortAddr)
-    {
-        //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = shortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-        if (stat != Collector_status_success)
-               {
-                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                   CLI_startREAD();
-               }
-//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-
-        return CRS_SUCCESS;
-    }
-#endif
-    CRS_retVal_t retStatus = Snap_uploadSnapRaw(
-            (&(line[sizeof(CLI_CRS_FS_UPLOAD) + addrSize+1])),(CRS_chipMode_t)UNKNOWN,fpgaMultiLineCallback);
-    return retStatus;
-}
-
-//#define CLI_MODE_SLAVE "slave"
-//#define CLI_MODE_NATIVE "native"
-//
-//#define CLI_SNAP "snap"
-//#define CLI_SCRIPT "script"
-
 
 
 //fs upload dig [shortAddr] [filename] [mode (slave/native)] [chipNumber] [nameVals]
@@ -4440,13 +4376,13 @@ static CRS_retVal_t CLI_fsUploadDigParsing(char *line)
         }
 
 
-    CRS_retVal_t retStatus = DIG_uploadSnapDig(filename, chipMode,chipNum, nameVals,
-                                                fpgaMultiLineCallback);
+    CRS_retVal_t retStatus = DigSPI_uploadSnapDig(filename, chipMode,chipNum, nameVals);
     if (retStatus != CRS_SUCCESS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
     }
+    CLI_startREAD();
 
     return retStatus;
 }
@@ -4852,153 +4788,153 @@ static CRS_retVal_t CLI_fsUploadRfParsing(char *line)
 }
 
 
-//config direct [shortAddr] [CM | SC | SN] [funcName | scriptName | snapShotname] [param=value ...]
-static CRS_retVal_t CLI_config_direct(char *line)
-{
-    const char s[2] = " ";
-       char *token;
-       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-
-       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-       /* get the first token */
-       //0xaabb shortAddr
-       token = strtok(&(tmpBuff[sizeof(CLI_CRS_CONFIG_DIRECT)]), s);
-       //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_CRS_CONFIG_DIRECT);
-       uint32_t addrSize = strlen(token);
-       //shortAddr in decimal
-       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-
-   #ifndef CLI_SENSOR
-
-       uint16_t addr = 0;
-       Cllc_getFfdShortAddr(&addr);
-       if (addr != shortAddr)
-       {
-           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-           ApiMac_sAddr_t dstAddr;
-           dstAddr.addr.shortAddr = shortAddr;
-           dstAddr.addrMode = ApiMac_addrType_short;
-           Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-           if (stat != Collector_status_success)
-                  {
-                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                      CLI_startREAD();
-                  }
-//           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-
-           return CRS_SUCCESS;
-       }
-   #endif
-       //type
-       char type[4]={0};
-       token = strtok(NULL, s);
-       memcpy(type, token, strlen(token));
-       uint32_t typeSize = strlen(token);
-
-
-       //filename
-       char filename[CRS_NVS_LINE_BYTES] = { 0 };
-       token = strtok(NULL, s);
-       memcpy(filename, token, strlen(token));
-       uint32_t filenameSize = strlen(token);
-       //lineNumber
-//       char lineNumStr[10]={0};
-       token = strtok(NULL, s);
-       uint32_t lineNumSize = strlen(token);
-       uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
-       //fileInfo
-       char fileInfos[CUI_NUM_UART_CHARS] = {0};
-       memcpy(fileInfos, line + commSize+ addrSize+typeSize+filenameSize+lineNumSize+ 3, strlen(line + commSize+ addrSize+filenameSize+lineNumSize+ 3));
-
-       if(memcmp(type,"CM",2)==0){
-//           tdd_open();
-//         bool res=  setSCS(2); //scs
-//         res=setSyncMode(true); //detect- manual | auto
-//         res= setAllocationMode(0); //configaurtion
-//         res=  setFrameFormat(0); //frame
-//         res=  setCPType(0); //1  extended | 0 normal
-//           tdd_close();
-
-       }else if(memcmp(type,"SC",2)==0){
-//           DIG_uploadSnapFpga();
-       }else if(memcmp(type,"SN",2)==0){
-//           crs_package_t packageLineStruct;
-//           packageLineStruct.fileInfos[0].name=filename;
-//           packageLineStruct.fileInfos[0].type=SC;
-//           packageLineStruct.fileInfos[0].nameValues[0].name=filename;
-//           packageLineStruct.fileInfos[0].nameValues[0].value=0;
-//           MultiFiles_runMultiFiles(&packageLineStruct,
-//                                                       RF,
-//                                                       MODE_NATIVE,
-//                                                       uploadPackageSingleLineCb);
-       }
-
-//       Config_runConfigDirect(filename, lineNum, fileInfos, fpgaMultiLineCallback);
-       return CRS_SUCCESS;
-}
+////config direct [shortAddr] [CM | SC | SN] [funcName | scriptName | snapShotname] [param=value ...]
+//static CRS_retVal_t CLI_config_direct(char *line)
+//{
+//    const char s[2] = " ";
+//       char *token;
+//       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//       /* get the first token */
+//       //0xaabb shortAddr
+//       token = strtok(&(tmpBuff[sizeof(CLI_CRS_CONFIG_DIRECT)]), s);
+//       //token = strtok(NULL, s);
+//       uint32_t commSize = sizeof(CLI_CRS_CONFIG_DIRECT);
+//       uint32_t addrSize = strlen(token);
+//       //shortAddr in decimal
+//       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//   #ifndef CLI_SENSOR
+//
+//       uint16_t addr = 0;
+//       Cllc_getFfdShortAddr(&addr);
+//       if (addr != shortAddr)
+//       {
+//           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//           ApiMac_sAddr_t dstAddr;
+//           dstAddr.addr.shortAddr = shortAddr;
+//           dstAddr.addrMode = ApiMac_addrType_short;
+//           Collector_status_t stat;
+//           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+//           if (stat != Collector_status_success)
+//                  {
+//                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//                      CLI_startREAD();
+//                  }
+////           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//           return CRS_SUCCESS;
+//       }
+//   #endif
+//       //type
+//       char type[4]={0};
+//       token = strtok(NULL, s);
+//       memcpy(type, token, strlen(token));
+//       uint32_t typeSize = strlen(token);
+//
+//
+//       //filename
+//       char filename[CRS_NVS_LINE_BYTES] = { 0 };
+//       token = strtok(NULL, s);
+//       memcpy(filename, token, strlen(token));
+//       uint32_t filenameSize = strlen(token);
+//       //lineNumber
+////       char lineNumStr[10]={0};
+//       token = strtok(NULL, s);
+//       uint32_t lineNumSize = strlen(token);
+//       uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
+//       //fileInfo
+//       char fileInfos[CUI_NUM_UART_CHARS] = {0};
+//       memcpy(fileInfos, line + commSize+ addrSize+typeSize+filenameSize+lineNumSize+ 3, strlen(line + commSize+ addrSize+filenameSize+lineNumSize+ 3));
+//
+//       if(memcmp(type,"CM",2)==0){
+////           tdd_open();
+////         bool res=  setSCS(2); //scs
+////         res=setSyncMode(true); //detect- manual | auto
+////         res= setAllocationMode(0); //configaurtion
+////         res=  setFrameFormat(0); //frame
+////         res=  setCPType(0); //1  extended | 0 normal
+////           tdd_close();
+//
+//       }else if(memcmp(type,"SC",2)==0){
+////           DIG_uploadSnapFpga();
+//       }else if(memcmp(type,"SN",2)==0){
+////           crs_package_t packageLineStruct;
+////           packageLineStruct.fileInfos[0].name=filename;
+////           packageLineStruct.fileInfos[0].type=SC;
+////           packageLineStruct.fileInfos[0].nameValues[0].name=filename;
+////           packageLineStruct.fileInfos[0].nameValues[0].value=0;
+////           MultiFiles_runMultiFiles(&packageLineStruct,
+////                                                       RF,
+////                                                       MODE_NATIVE,
+////                                                       uploadPackageSingleLineCb);
+//       }
+//
+////       Config_runConfigDirect(filename, lineNum, fileInfos, fpgaMultiLineCallback);
+//       return CRS_SUCCESS;
+//}
 
 
 
 
 //config line [short addr] filename lineNumber scriptName:name=val scriptName:name=val
-static CRS_retVal_t CLI_config_line(char *line)
-{
-    const char s[2] = " ";
-       char *token;
-       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-
-       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-       /* get the first token */
-       //0xaabb shortAddr
-       token = strtok(&(tmpBuff[sizeof(CLI_CRS_CONFIG_LINE)]), s);
-       //token = strtok(NULL, s);
-       uint32_t commSize = sizeof(CLI_CRS_CONFIG_LINE);
-       uint32_t addrSize = strlen(token);
-       //shortAddr in decimal
-       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-
-   #ifndef CLI_SENSOR
-
-       uint16_t addr = 0;
-       Cllc_getFfdShortAddr(&addr);
-       if (addr != shortAddr)
-       {
-           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-           ApiMac_sAddr_t dstAddr;
-           dstAddr.addr.shortAddr = shortAddr;
-           dstAddr.addrMode = ApiMac_addrType_short;
-           Collector_status_t stat;
-           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-           if (stat != Collector_status_success)
-                  {
-                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-                      CLI_startREAD();
-                  }
-//           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-
-           return CRS_SUCCESS;
-       }
-   #endif
-       char filename[CRS_NVS_LINE_BYTES] = { 0 };
-
-       //filename
-       token = strtok(NULL, s);
-       memcpy(filename, token, strlen(token));
-       uint32_t filenameSize = strlen(token);
-       //lineNumber
-//       char lineNumStr[10]={0};
-       token = strtok(NULL, s);
-       uint32_t lineNumSize = strlen(token);
-       uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
-       //fileInfo
-       char fileInfos[CUI_NUM_UART_CHARS] = {0};
-       memcpy(fileInfos, line + commSize+ addrSize+filenameSize+lineNumSize+ 3, strlen(line + commSize+ addrSize+filenameSize+lineNumSize+ 3));
-
-       Config_runConfigFileLine(filename, lineNum, fileInfos, fpgaMultiLineCallback);
-       return CRS_SUCCESS;
-}
+//static CRS_retVal_t CLI_config_line(char *line)
+//{
+//    const char s[2] = " ";
+//       char *token;
+//       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//       /* get the first token */
+//       //0xaabb shortAddr
+//       token = strtok(&(tmpBuff[sizeof(CLI_CRS_CONFIG_LINE)]), s);
+//       //token = strtok(NULL, s);
+//       uint32_t commSize = sizeof(CLI_CRS_CONFIG_LINE);
+//       uint32_t addrSize = strlen(token);
+//       //shortAddr in decimal
+//       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//   #ifndef CLI_SENSOR
+//
+//       uint16_t addr = 0;
+//       Cllc_getFfdShortAddr(&addr);
+//       if (addr != shortAddr)
+//       {
+//           //               CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//           ApiMac_sAddr_t dstAddr;
+//           dstAddr.addr.shortAddr = shortAddr;
+//           dstAddr.addrMode = ApiMac_addrType_short;
+//           Collector_status_t stat;
+//           stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+//           if (stat != Collector_status_success)
+//                  {
+//                      CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//                      CLI_startREAD();
+//                  }
+////           CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//           return CRS_SUCCESS;
+//       }
+//   #endif
+//       char filename[CRS_NVS_LINE_BYTES] = { 0 };
+//
+//       //filename
+//       token = strtok(NULL, s);
+//       memcpy(filename, token, strlen(token));
+//       uint32_t filenameSize = strlen(token);
+//       //lineNumber
+////       char lineNumStr[10]={0};
+//       token = strtok(NULL, s);
+//       uint32_t lineNumSize = strlen(token);
+//       uint32_t lineNum=strtoul(&(token[2]), NULL, 16);
+//       //fileInfo
+//       char fileInfos[CUI_NUM_UART_CHARS] = {0};
+//       memcpy(fileInfos, line + commSize+ addrSize+filenameSize+lineNumSize+ 3, strlen(line + commSize+ addrSize+filenameSize+lineNumSize+ 3));
+//
+//       Config_runConfigFileLine(filename, lineNum, fileInfos, fpgaMultiLineCallback);
+//       return CRS_SUCCESS;
+//}
 
 
 
@@ -5048,7 +4984,7 @@ static CRS_retVal_t CLI_config_file(char *line)
        token = strtok(NULL, s);
        memcpy(filename, token, strlen(token));
        uint32_t filenameSize = strlen(token);
-       Config_runConfigFile(filename, fpgaMultiLineCallback);
+       SPI_Config_runConfigFile(filename);
        return CRS_SUCCESS;
 }
 

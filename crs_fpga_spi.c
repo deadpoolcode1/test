@@ -50,7 +50,7 @@ static CRS_retVal_t setWrInBuf(uint8_t *buf);
 static CRS_retVal_t setRdInBuf(uint8_t *buf);
 static CRS_retVal_t addAddrToBuf(uint8_t *buf, uint8_t addr);
 static CRS_retVal_t addValToBuf(uint8_t *buf, uint32_t val);
-static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
+//static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
 static CRS_retVal_t sendSpiBuf();
 
 /******************************************************************************

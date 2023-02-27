@@ -120,16 +120,6 @@ static void startUploadFile(snapRfParsingStruct_t *fileTraverser);
 /******************************************************************************
  Public Functions
  *****************************************************************************/
-CRS_retVal_t SPI_RF_init(void *sem)
-{
-    collectorSem = sem;
-
-    rfClkHandle = UtilTimer_construct(&rfClkStruct, processRfTimeoutCallback, 5,
-                                      0,
-                                      false,
-                                      0);
-return CRS_SUCCESS;
-}
 
 CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              uint32_t RfLineNum, CRS_chipMode_t chipMode,
@@ -207,128 +197,128 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
     return rspStatus;
 }
 
-void SPI_RF_process(void)
-{
-//    if (gRFEvents & READ_NEXT_REG_EV)
-//    {
-//
-//        //last lut only 28 bits
-//        if (gLutIdx == 3)
-//        {
-//            //finished reading
-//
-//            if (gRegIdx == 2)
-//            {
-//                Util_clearEvent(&gRFEvents, READ_NEXT_REG_EV);
-//                Util_setEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
-//                Semaphore_post(collectorSem);
-//                return;
-//            }
-//        }
-//
-//        if (gRegIdx == LUT_REG_NUM)
-//        {
-//            gRegIdx = 0;
-//            gLutIdx++;
-//            readLutReg();
-//
-//        }
-//        else
-//        {
-//            readLutReg();
-//
-//        }
-//
-//        Util_clearEvent(&gRFEvents, READ_NEXT_REG_EV);
-//    }
-//
-//    if (gRFEvents & CHANGE_ACTIVE_LINE_EV)
-//    {
-//        CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
-//        char line[100] = { 0 };
-//        sprintf(line, "wr 0xa 0x%x", gRFline);
-//        Fpga_UART_writeMultiLine(line, changedActiveLineCb);
-//        Util_clearEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
-//    }
-//
-//    if (gRFEvents & CHANGE_RF_CHIP_EV)
-//    {
-//        CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
-//        char line[100] = { 0 };
-//        sprintf(line, "wr 0xff 0x%x", gRfAddr);
-//        Fpga_UART_writeMultiLine(line, changedRfChipCb);
-//        Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
-//    }
-//
-//    if (gRFEvents & START_UPLOAD_FILE_EV)
-//    {
-////        sprintf("wr 0xa 0x%x", gRFline);
+//void SPI_RF_process(void)
+//{
+////    if (gRFEvents & READ_NEXT_REG_EV)
+////    {
+////
+////        //last lut only 28 bits
+////        if (gLutIdx == 3)
+////        {
+////            //finished reading
+////
+////            if (gRegIdx == 2)
+////            {
+////                Util_clearEvent(&gRFEvents, READ_NEXT_REG_EV);
+////                Util_setEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
+////                Semaphore_post(collectorSem);
+////                return;
+////            }
+////        }
+////
+////        if (gRegIdx == LUT_REG_NUM)
+////        {
+////            gRegIdx = 0;
+////            gLutIdx++;
+////            readLutReg();
+////
+////        }
+////        else
+////        {
+////            readLutReg();
+////
+////        }
+////
+////        Util_clearEvent(&gRFEvents, READ_NEXT_REG_EV);
+////    }
+////
+////    if (gRFEvents & CHANGE_ACTIVE_LINE_EV)
+////    {
+////        CRS_LOG(CRS_DEBUG, "in CHANGE_ACTIVE_LINE_EV runing");
+////        char line[100] = { 0 };
+////        sprintf(line, "wr 0xa 0x%x", gRFline);
 ////        Fpga_UART_writeMultiLine(line, changedActiveLineCb);
-//        Util_clearEvent(&gRFEvents, START_UPLOAD_FILE_EV);
-//        CRS_retVal_t rsp = runFile();
-//        if (rsp == CRS_SUCCESS)
-//        {
-//            gRegIdx = 0;
-//            gLutIdx = 0;
-//            gGlobalIdx = 0;
-//            writeLutToFpga(gLutIdx);
-//        }
+////        Util_clearEvent(&gRFEvents, CHANGE_ACTIVE_LINE_EV);
+////    }
+////
+////    if (gRFEvents & CHANGE_RF_CHIP_EV)
+////    {
+////        CRS_LOG(CRS_DEBUG, "in CHANGE_RF_CHIP_EV runing");
+////        char line[100] = { 0 };
+////        sprintf(line, "wr 0xff 0x%x", gRfAddr);
+////        Fpga_UART_writeMultiLine(line, changedRfChipCb);
+////        Util_clearEvent(&gRFEvents, CHANGE_RF_CHIP_EV);
+////    }
+////
+////    if (gRFEvents & START_UPLOAD_FILE_EV)
+////    {
+//////        sprintf("wr 0xa 0x%x", gRFline);
+//////        Fpga_UART_writeMultiLine(line, changedActiveLineCb);
+////        Util_clearEvent(&gRFEvents, START_UPLOAD_FILE_EV);
+////        CRS_retVal_t rsp = runFile();
+////        if (rsp == CRS_SUCCESS)
+////        {
+////            gRegIdx = 0;
+////            gLutIdx = 0;
+////            gGlobalIdx = 0;
+////            writeLutToFpga(gLutIdx);
+////        }
+////
+////    }
+////
+////    if (gRFEvents & READ_NEXT_GLOBAL_REG_EV)
+////    {
+////        if (gGlobalIdx == NUM_GLOBAL_REG)
+////        {
+////            Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
+////            printGlobalArrayAndLineMatrix();
+////            Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
+////            Semaphore_post(collectorSem);
+////            return;
+////        }
+////        else
+////        {
+////            readGlobalReg();
+////
+////        }
+////
+////        Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
+////    }
+////
+////    if (gRFEvents & WRITE_NEXT_LUT_EV)
+////    {
+////        if (gLutIdx < 4)
+////        {
+////            writeLutToFpga(gLutIdx);
+////        }
+////        else
+////        {
+////            writeGlobalsToFpga();
+////
+////        }
+////        Util_clearEvent(&gRFEvents, WRITE_NEXT_LUT_EV);
+////    }
+////    //WRITE_NEXT_LUT_EV
+//////    FINISHED_FILE_EV
+////    if (gRFEvents & FINISHED_FILE_EV)
+////    {
+////        if (gIsInTheMiddleOfTheFile == true)
+////        {
+////            gIsInTheMiddleOfTheFile = false;
+////            Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
+////            Semaphore_post(collectorSem);
+////        }
+////        else
+////        {
+////            CRS_free(gFileContentCache);
+////            const FPGA_cbArgs_t cbArgs={0};
+////            gCbFn(cbArgs);
+////        }
+////
+////        Util_clearEvent(&gRFEvents, FINISHED_FILE_EV);
+////    }
 //
-//    }
-//
-//    if (gRFEvents & READ_NEXT_GLOBAL_REG_EV)
-//    {
-//        if (gGlobalIdx == NUM_GLOBAL_REG)
-//        {
-//            Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
-//            printGlobalArrayAndLineMatrix();
-//            Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
-//            Semaphore_post(collectorSem);
-//            return;
-//        }
-//        else
-//        {
-//            readGlobalReg();
-//
-//        }
-//
-//        Util_clearEvent(&gRFEvents, READ_NEXT_GLOBAL_REG_EV);
-//    }
-//
-//    if (gRFEvents & WRITE_NEXT_LUT_EV)
-//    {
-//        if (gLutIdx < 4)
-//        {
-//            writeLutToFpga(gLutIdx);
-//        }
-//        else
-//        {
-//            writeGlobalsToFpga();
-//
-//        }
-//        Util_clearEvent(&gRFEvents, WRITE_NEXT_LUT_EV);
-//    }
-//    //WRITE_NEXT_LUT_EV
-////    FINISHED_FILE_EV
-//    if (gRFEvents & FINISHED_FILE_EV)
-//    {
-//        if (gIsInTheMiddleOfTheFile == true)
-//        {
-//            gIsInTheMiddleOfTheFile = false;
-//            Util_setEvent(&gRFEvents, START_UPLOAD_FILE_EV);
-//            Semaphore_post(collectorSem);
-//        }
-//        else
-//        {
-//            CRS_free(gFileContentCache);
-//            const FPGA_cbArgs_t cbArgs={0};
-//            gCbFn(cbArgs);
-//        }
-//
-//        Util_clearEvent(&gRFEvents, FINISHED_FILE_EV);
-//    }
-
-}
+//}
 
 /******************************************************************************
  Local Functions

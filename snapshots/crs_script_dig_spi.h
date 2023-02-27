@@ -29,11 +29,10 @@
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t DigSPI_init(void *sem);
 
 CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
                                 CRS_nameValue_t *nameVals);
 CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
                                uint32_t chipAddr, CRS_nameValue_t *nameVals);
-void DigSPI_process(void);
+//void DigSPI_process(void);
 #endif /* APPLICATION_CRS_SNAPSHOTS_CRS_SCRIPT_DIG_SPI_H_ */
