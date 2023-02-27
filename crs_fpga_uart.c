@@ -124,9 +124,9 @@ CRS_retVal_t Fpga_UART_initSem(void *sem)
 
 CRS_retVal_t Fpga_UART_init(FPGA_cbFn_t _cbFn)
 {
-#ifdef CRS_TMP_SPI
-    return CRS_FAILURE;
-#endif
+//#ifdef CRS_TMP_SPI
+//    return CRS_FAILURE;
+//#endif
 
     if (gUartHandle != NULL)
     {
