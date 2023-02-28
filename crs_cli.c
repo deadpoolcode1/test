@@ -61,9 +61,10 @@
 #include "application/crs/snapshots/crs_script_returnvalues.h"
 #include "logger/crs_logger.h"
 
-#ifdef CLI_CEU_CL
 #include "mac/mediator.h"
-#endif
+
+//#ifdef defined(CLI_CEU_CL) || defined(CLI_CEU_BP)
+//#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -259,7 +260,9 @@
 #define CLI_LOGGER_GET_TIME "logger get time"
 #define CLI_LOGGER_GET_LEVEL "logger get level"
 
-
+#ifdef CLI_CEU_BP
+#define CLI_CRS_UART_BP_COMM "uart bp"
+#endif
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -1442,6 +1445,23 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
                   }
 
 
+
+#ifdef CLI_CEU_BP
+         if (memcmp(CLI_CRS_UART_BP_COMM, line, sizeof(CLI_CRS_UART_BP_COMM) - 1) == 0)
+                      {
+             char tempLine[512]={0};
+             memcpy(tempLine,line+sizeof(CLI_CRS_UART_BP_COMM),strlen((line+sizeof(CLI_CRS_UART_BP_COMM))));
+             char *tmp=malloc(strlen(tempLine));
+             memset(tmp, 0, strlen(tempLine));
+             memcpy(tmp, tempLine, strlen(tempLine));
+             Mediator_msgObjSentToAppCli_t msg={0};
+             msg.p=tmp;
+             Mediator_sendMsgToUartComm(&msg);
+                     inputBad = false;
+                     CLI_startREAD();
+       //                  SysCtrlSystemReset();
+                      }
+#endif
 
       if (memcmp(CLI_CRS_RESET, line, sizeof(CLI_CRS_RESET) - 1) == 0)
                {
@@ -7777,6 +7797,7 @@ if (gIsUartCommCommand) {
     memcpy(tmp, printBuff, strlen(printBuff)+5);
     msg.p=tmp;
     Mediator_sendMsgToUartComm(&msg);
+    gIsUartCommCommand=false;
 }
 
     return CRS_SUCCESS;
