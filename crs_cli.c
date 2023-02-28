@@ -1450,10 +1450,22 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
          if (memcmp(CLI_CRS_UART_BP_COMM, line, sizeof(CLI_CRS_UART_BP_COMM) - 1) == 0)
                       {
              char tempLine[512]={0};
-             memcpy(tempLine,line+sizeof(CLI_CRS_UART_BP_COMM),strlen((line+sizeof(CLI_CRS_UART_BP_COMM))));
-             char *tmp=malloc(strlen(tempLine));
-             memset(tmp, 0, strlen(tempLine));
-             memcpy(tmp, tempLine, strlen(tempLine));
+             char *ptr=line+sizeof(CLI_CRS_UART_BP_COMM);
+             int i=0;
+             while(1){
+                 tempLine[i]=*ptr;
+                 if (*ptr==0) {
+                     break;
+                }
+                 ptr++;
+                 i++;
+             }
+             tempLine[i]='\r';
+             i++;
+             tempLine[i]=0;
+             char *tmp=malloc(i+5);
+             memset(tmp, 0, i+5);
+             memcpy(tmp, tempLine, i+5);
              Mediator_msgObjSentToAppCli_t msg={0};
              msg.p=tmp;
              Mediator_sendMsgToUartComm(&msg);
