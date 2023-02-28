@@ -535,7 +535,7 @@ static CRS_retVal_t sendSpiBuf()
 //    }
 
 
-    Task_sleep(100);
+//    Task_sleep(100);
 
     GPIO_write(CONFIG_FPGA_CS, 0);
 //    Task_sleep(10000);
@@ -544,7 +544,7 @@ static CRS_retVal_t sendSpiBuf()
 //    Task_sleep(100);
 
     GPIO_write(CONFIG_FPGA_CS, 1);
-    Task_sleep(100);
+//    Task_sleep(100);
 
     if (!transferOK)
     {
