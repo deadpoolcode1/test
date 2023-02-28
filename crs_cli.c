@@ -61,6 +61,9 @@
 #include "application/crs/snapshots/crs_script_returnvalues.h"
 #include "logger/crs_logger.h"
 
+#ifdef CLI_CEU_CL
+#include "mac/mediator.h"
+#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -502,6 +505,8 @@ static uint16_t gDstAddr;
 #endif
 
 static volatile bool gIsRemoteCommand = false;
+static volatile bool gIsUartCommCommand = false;
+
 static volatile bool gIsRemoteTransparentBridge = false;
 
 static volatile bool gIsTranRemoteCommandSent = false;
@@ -675,13 +680,16 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
         gUartTxBuffer[gUartTxBufferIdx - 1] = 0;
 
     }
-    else
+    else if(pDstAddr!=NULL)
     {
         gIsRemoteCommand = true;
 #ifdef CLI_SENSOR
         gDstAddr = pDstAddr;
 #endif
 
+    }else{//uartCommRcv
+
+        gIsUartCommCommand=true;
     }
 
     if (gIsTransparentBridge == true && line[0] != CONTROL_CH_STOP_TRANS)
@@ -7762,6 +7770,15 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
 }
+if (gIsUartCommCommand) {
+    Mediator_msgObjSentToAppCli_t msg={0};
+    uint8_t* tmp=malloc(strlen(printBuff)+5);
+    memset(tmp, 0, strlen(printBuff)+5);
+    memcpy(tmp, printBuff, strlen(printBuff)+5);
+    msg.p=tmp;
+    Mediator_sendMsgToUartComm(&msg);
+}
+
     return CRS_SUCCESS;
 }
 
