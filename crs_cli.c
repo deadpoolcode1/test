@@ -693,6 +693,9 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
     }else{//uartCommRcv
 
         gIsUartCommCommand=true;
+#ifdef CLI_CEU_BP
+        CLI_cliPrintf("%s",line);
+#endif
     }
 
     if (gIsTransparentBridge == true && line[0] != CONTROL_CH_STOP_TRANS)
@@ -7802,7 +7805,9 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
 }
+#ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
+
     Mediator_msgObjSentToAppCli_t msg={0};
     uint8_t* tmp=malloc(strlen(printBuff)+5);
     memset(tmp, 0, strlen(printBuff)+5);
@@ -7810,8 +7815,9 @@ if (gIsUartCommCommand) {
     msg.p=tmp;
     Mediator_sendMsgToUartComm(&msg);
     gIsUartCommCommand=false;
-}
 
+}
+#endif
     return CRS_SUCCESS;
 }
 
