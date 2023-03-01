@@ -732,6 +732,7 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 #ifdef CLI_CEU_BP
 if (gIsUartCommCommand==true) {
 //    inputBad=false;
+//    is_async_command = true;
 }
 #endif
 #ifndef CLI_SENSOR
@@ -1828,7 +1829,9 @@ if (gIsUartCommCommand==true) {
 
       if (inputBad && strlen(line) > 0)
       {
+          if (gIsTranRemoteCommandSent==false) {
           CLI_cliPrintf(badInputMsg);
+          }
           CLI_startREAD();
           return CRS_SUCCESS;
       }
@@ -7813,13 +7816,14 @@ if (gIsRemoteCommand == false) {
 #ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
 
+
     Mediator_msgObjSentToAppCli_t msg={0};
     uint32_t len=strlen(printBuff);
-    uint8_t* tmp=malloc(strlen(printBuff)+5);
-    memset(tmp, 0, strlen(printBuff)+5);
-    memcpy(tmp, printBuff, strlen(printBuff)+5);
+    uint8_t* tmp=malloc(strlen(printBuff));
+    memset(tmp, 0, strlen(printBuff));
+    memcpy(tmp, printBuff, strlen(printBuff));
     msg.p=tmp;
-    msg.len=strlen(printBuff)+5;
+    msg.len=strlen(printBuff);
     Mediator_sendMsgToUartComm(&msg);
 
 }
