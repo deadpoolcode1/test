@@ -7809,6 +7809,7 @@ if (gIsRemoteCommand == false) {
 if (gIsUartCommCommand) {
 
     Mediator_msgObjSentToAppCli_t msg={0};
+    uint32_t len=strlen(printBuff);
     uint8_t* tmp=malloc(strlen(printBuff)+5);
     memset(tmp, 0, strlen(printBuff)+5);
     memcpy(tmp, printBuff, strlen(printBuff)+5);
