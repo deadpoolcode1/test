@@ -368,7 +368,7 @@ static CRS_retVal_t openSpi()
     /* Open SPI as master (default) */
     SPI_Params_init(&spiParams);
     spiParams.frameFormat = SPI_POL0_PHA0;
-    spiParams.bitRate = 4000000;
+    spiParams.bitRate = 12000000;
     spiParams.dataSize = 8;
     gMasterSpiHandle = SPI_open(Board_SPI_0, &spiParams);
     if (gMasterSpiHandle == NULL)
