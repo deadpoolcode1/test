@@ -729,7 +729,11 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
     bool inputBad = true;
 
     bool is_async_command = false;
-
+#ifdef CLI_CEU_BP
+if (gIsUartCommCommand==true) {
+    inputBad=false;
+}
+#endif
 #ifndef CLI_SENSOR
     if (memcmp(CLI_FORM_NWK, line, sizeof(CLI_FORM_NWK)) == 0)
     {
