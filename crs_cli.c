@@ -1851,6 +1851,7 @@ if (gIsUartCommCommand==true) {
   //    //memset(gUartTxBuffer, gUartRxBuffer, 1);
   //
   //    UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+      gIsUartCommCommand=false;
       return CRS_SUCCESS;
 }
 
@@ -7818,8 +7819,8 @@ if (gIsUartCommCommand) {
     memset(tmp, 0, strlen(printBuff)+5);
     memcpy(tmp, printBuff, strlen(printBuff)+5);
     msg.p=tmp;
+    msg.len=strlen(printBuff)+5;
     Mediator_sendMsgToUartComm(&msg);
-    gIsUartCommCommand=false;
 
 }
 #endif
