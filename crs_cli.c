@@ -622,8 +622,15 @@ CRS_retVal_t CLI_init(bool restartMsg)
 
         gModuleInitialized = true;
 if(restartMsg){
+
+#ifdef CLI_CEU_BP
+    CLI_writeString("\r\n------Restart CEU_BP------", sizeof("\r\n------Restart CEU_BP------"));
+#endif
+#ifdef CLI_CEU_CL
+    CLI_writeString("\r\n------Restart CEU_CL------", sizeof("\r\n------Restart CEU_CL------"));
+#endif
 #ifndef CLI_SENSOR
-        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
+//        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
 #else
         CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
 #endif
