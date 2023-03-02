@@ -1477,7 +1477,7 @@ if (gIsUartCommCommand==true) {
              tempLine[i]='\r';
              i++;
              tempLine[i]=0;
-             char *tmp=malloc(i+5);
+             char *tmp=CRS_malloc(i+5);
              memset(tmp, 0, i+5);
              memcpy(tmp, tempLine, i+5);
              Mediator_msgObjSentToAppCli_t msg={0};
