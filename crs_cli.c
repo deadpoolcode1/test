@@ -502,6 +502,12 @@ static uint32_t gRspBuffIdx = 0;
 static volatile bool gIsAsyncCommand = false;
 
 
+#ifdef CLI_CEU_CL
+static uint8_t gRspBuffUartComm[RSP_BUFFER_SIZE] = { 0 };
+static uint32_t gRspIdxUartComm=0;
+#endif
+
+
 #ifdef CLI_SENSOR
 static uint8_t gRspBuff[RSP_BUFFER_SIZE] = { 0 };
 static uint16_t gDstAddr;
@@ -7683,8 +7689,24 @@ CRS_retVal_t CLI_startREAD()
 //        gRspBuffIdx = 0;
         return CRS_SUCCESS;
     }
-
 #endif
+
+#ifdef CLI_CEU_CL
+if (gIsUartCommCommand) {
+    gIsUartCommCommand=false;
+
+      Mediator_msgObjSentToAppCli_t msg={0};
+      uint8_t* tmp=CRS_malloc(gRspIdxUartComm);
+      memset(tmp, 0, gRspIdxUartComm);
+      memcpy(tmp, gRspBuffUartComm, gRspIdxUartComm);
+      memset(gRspBuffUartComm, 0, gRspIdxUartComm);
+      msg.p=tmp;
+      msg.len=gRspIdxUartComm;
+      gRspIdxUartComm=0;
+      Mediator_sendMsgToUartComm(&msg);
+}
+#endif
+
 //
     if (gIsTranRemoteCommandSent)
     {
@@ -7710,11 +7732,16 @@ CRS_retVal_t CLI_startREAD()
 //        UART_read(gUartHandle, gUartRxBuffer, 1);
 
     }
+
+
+
     AGCM_finishedTask();
 
     return CRS_SUCCESS;
 
 }
+
+
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
 {
     if (strlen(format) >= 512)
@@ -7813,23 +7840,18 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
 if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
 }
+
 #ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
+    memcpy((gRspBuffUartComm+gRspIdxUartComm), printBuff, strlen(printBuff));
+    gRspIdxUartComm+=strlen(printBuff);
 
-
-    Mediator_msgObjSentToAppCli_t msg={0};
-    uint32_t len=strlen(printBuff);
-    uint8_t* tmp=malloc(strlen(printBuff));
-    memset(tmp, 0, strlen(printBuff));
-    memcpy(tmp, printBuff, strlen(printBuff));
-    msg.p=tmp;
-    msg.len=strlen(printBuff);
-    Mediator_sendMsgToUartComm(&msg);
 
 }
 #endif
     return CRS_SUCCESS;
 }
+
 
 /*********************************************************************
  * Private Functions
