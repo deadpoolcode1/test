@@ -62,7 +62,9 @@
 #include "logger/crs_logger.h"
 
 #include "mac/mediator.h"
-
+#ifdef CLI_CEU_CL
+#include "application/crs_msgs.h"
+#endif
 //#ifdef defined(CLI_CEU_CL) || defined(CLI_CEU_BP)
 //#endif
 /******************************************************************************
@@ -501,11 +503,6 @@ static uint32_t gRspBuffIdx = 0;
 #endif
 static volatile bool gIsAsyncCommand = false;
 
-
-#ifdef CLI_CEU_CL
-static uint8_t gRspBuffUartComm[RSP_BUFFER_SIZE] = { 0 };
-static uint32_t gRspIdxUartComm=0;
-#endif
 
 
 #ifdef CLI_SENSOR
@@ -7694,16 +7691,16 @@ CRS_retVal_t CLI_startREAD()
 #ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
     gIsUartCommCommand=false;
-
-      Mediator_msgObjSentToAppCli_t msg={0};
-      uint8_t* tmp=CRS_malloc(gRspIdxUartComm);
-      memset(tmp, 0, gRspIdxUartComm);
-      memcpy(tmp, gRspBuffUartComm, gRspIdxUartComm);
-      memset(gRspBuffUartComm, 0, gRspIdxUartComm);
-      msg.p=tmp;
-      msg.len=gRspIdxUartComm;
-      gRspIdxUartComm=0;
-      Mediator_sendMsgToUartComm(&msg);
+    Msgs_sendMsgs();
+//      Mediator_msgObjSentToAppCli_t msg={0};
+//      uint8_t* tmp=CRS_malloc(gRspIdxUartComm);
+//      memset(tmp, 0, gRspIdxUartComm);
+//      memcpy(tmp, gRspBuffUartComm, gRspIdxUartComm);
+//      memset(gRspBuffUartComm, 0, gRspIdxUartComm);
+//      msg.p=tmp;
+//      msg.len=gRspIdxUartComm;
+//      gRspIdxUartComm=0;
+//      Mediator_sendMsgToUartComm(&msg);
 }
 #endif
 
@@ -7843,8 +7840,12 @@ if (gIsRemoteCommand == false) {
 
 #ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
-    memcpy((gRspBuffUartComm+gRspIdxUartComm), printBuff, strlen(printBuff));
-    gRspIdxUartComm+=strlen(printBuff);
+
+    Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
+
+
+//    memcpy((gRspBuffUartComm+gRspIdxUartComm), printBuff, strlen(printBuff));
+//    gRspIdxUartComm+=strlen(printBuff);
 
 
 }
