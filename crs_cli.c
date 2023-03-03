@@ -1486,10 +1486,12 @@ if (gIsUartCommCommand==true) {
              memcpy(tmp, tempLine, i+5);
              Mediator_msgObjSentToAppCli_t msg={0};
              msg.p=tmp;
+             msg.len=i;
              Mediator_sendMsgToUartComm(&msg);
                      inputBad = false;
+                     is_async_command=true;
+                     AGCM_finishedTask();
                      CLI_startREAD();
-       //                  SysCtrlSystemReset();
                       }
 #endif
 
