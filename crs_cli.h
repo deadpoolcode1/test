@@ -14,6 +14,8 @@
 //#include <time.h>
 #include "mac/api_mac.h"
 extern volatile bool gIsUartCommInParts;
+extern volatile bool gIsUartCommCommand;
+extern volatile bool gIsUartCommCommandRemoteCL;
 
 CRS_retVal_t CLI_init(bool restartMsg);
 CRS_retVal_t CLI_close();

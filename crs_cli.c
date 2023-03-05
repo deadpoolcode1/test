@@ -511,7 +511,8 @@ static uint16_t gDstAddr;
 #endif
 
 static volatile bool gIsRemoteCommand = false;
-static volatile bool gIsUartCommCommand = false;
+volatile bool gIsUartCommCommand = false;
+volatile bool gIsUartCommCommandRemoteCL = false;
 
 static volatile bool gIsRemoteTransparentBridge = false;
 
@@ -1867,7 +1868,9 @@ if (gIsUartCommCommand==true) {
   //    //memset(gUartTxBuffer, gUartRxBuffer, 1);
   //
   //    UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
-      gIsUartCommCommand=false;
+      if (gIsUartCommCommandRemoteCL==false) {
+          gIsUartCommCommand=false;
+    }
       return CRS_SUCCESS;
 }
 
@@ -7830,24 +7833,9 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
             || (gIsRemoteTransparentBridge == true
                     && strstr(printBuff, "AP>") != NULL))
     {
-//        if (gRspBuffIdx + strlen(printBuff) >= RSP_BUFFER_SIZE)
-//        {
-//            Msgs_addMsg(gRspBuff, gRspBuffIdx);
-//            memset(gRspBuff, 0, sizeof(gRspBuff));
-//            gRspBuffIdx = 0;
-////            return CRS_FAILURE;
-//        }
-//
-//        memcpy(&gRspBuff[gRspBuffIdx], printBuff, strlen(printBuff));
-//        gRspBuffIdx = gRspBuffIdx + strlen(printBuff);
-//        return CRS_SUCCESS;
-
         Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
     }
 #endif
-if (gIsRemoteCommand == false) {
-    CLI_writeString(printBuff, strlen(printBuff));
-}
 
 #ifdef CLI_CEU_CL
 if (gIsUartCommCommand) {
@@ -7861,6 +7849,12 @@ if (gIsUartCommCommand) {
 
 }
 #endif
+
+if (gIsRemoteCommand == false) {
+    CLI_writeString(printBuff, strlen(printBuff));
+}
+
+
     return CRS_SUCCESS;
 }
 
