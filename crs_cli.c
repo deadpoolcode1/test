@@ -517,6 +517,7 @@ static volatile bool gIsRemoteTransparentBridge = false;
 
 static volatile bool gIsTranRemoteCommandSent = false;
 
+volatile bool gIsUartCommInParts=false;
 static bool gReadNextCommand = false;
 
 //static int8_t gRssi = 0;
@@ -7722,7 +7723,7 @@ if (gIsUartCommCommand) {
         gIsTranRemoteCommandSent = false;
         return CRS_SUCCESS;
     }
-    if (gIsTransparentBridge == false)
+    if (gIsTransparentBridge == false && gIsUartCommInParts==false)
     {
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
     }
