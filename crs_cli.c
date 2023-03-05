@@ -7705,6 +7705,10 @@ CRS_retVal_t CLI_startREAD()
 if (gIsUartCommCommand) {
     gIsUartCommCommand=false;
     Msgs_sendMsgs();
+    if (gIsUartCommCommand) {
+                  gIsUartCommCommand=false;
+                  gIsUartCommCommandRemoteCL=false;
+              }
     return CRS_SUCCESS;
 //      Mediator_msgObjSentToAppCli_t msg={0};
 //      uint8_t* tmp=CRS_malloc(gRspIdxUartComm);
