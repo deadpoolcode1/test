@@ -517,7 +517,7 @@ volatile bool gIsUartCommCommandRemoteCL = false;
 static volatile bool gIsRemoteTransparentBridge = false;
 
 static volatile bool gIsTranRemoteCommandSent = false;
-
+static volatile bool gIsUartCommCliReq=false;
 volatile bool gIsUartCommInParts=false;
 static bool gReadNextCommand = false;
 
@@ -1496,8 +1496,9 @@ if (gIsUartCommCommand==true) {
              Mediator_sendMsgToUartComm(&msg);
                      inputBad = false;
                      is_async_command=true;
-                     AGCM_finishedTask();
+                     gIsUartCommCliReq=true;
                      CLI_startREAD();
+                     gIsUartCommCliReq=false;
                       }
 #endif
 
@@ -7741,7 +7742,7 @@ if (gIsUartCommCommand) {
         gIsTranRemoteCommandSent = false;
         return CRS_SUCCESS;
     }
-    if (gIsTransparentBridge == false && gIsUartCommInParts==false)
+    if (gIsTransparentBridge == false && gIsUartCommInParts==false && gIsUartCommCliReq==false)
     {
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
     }
