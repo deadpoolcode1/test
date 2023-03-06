@@ -2088,7 +2088,7 @@ static CRS_retVal_t CLI_unit(char *line)
     CLI_cliPrintf("\r\ncollector[CEU_BP]");
 #endif
 #ifdef CLI_CEU_CL
-            CLI_cliPrintf("\r\nncollector[CEU_CL]");
+            CLI_cliPrintf("\r\ncollector[CEU_CL]");
 #endif
 #ifdef CLI_CRU
             CLI_cliPrintf("\r\nsensor[CRU]");
