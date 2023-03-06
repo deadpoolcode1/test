@@ -106,6 +106,20 @@ CRS_retVal_t Env_init(void){
         nvsClose();
         if (status == CRS_SUCCESS)
         {
+
+#ifdef CLI_CEU_BP
+            Env_write("name=CEU_BP (collector)");
+#endif
+#ifdef CLI_CEU_CL
+            Env_write("name=CEU_CL (collector)");
+#endif
+#ifdef CLI_CRU
+            Env_write("name=CRU (sensor)");
+#endif
+#ifdef CLI_CIU
+            Env_write("name=CIU (sensor)");
+#endif
+
 //
 //        #ifndef CLI_SENSOR
 //                  Env_write("name=Cdu");

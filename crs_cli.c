@@ -631,11 +631,15 @@ if(restartMsg){
 #ifdef CLI_CEU_CL
     CLI_writeString("\r\n------Restart CEU_CL------", sizeof("\r\n------Restart CEU_CL------"));
 #endif
-#ifndef CLI_SENSOR
-//        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
-#else
-        CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
+
+#ifdef CLI_CRU
+    CLI_writeString("\r\n------Restart CRU------", sizeof("\r\n------Restart CRU------"));
 #endif
+#ifdef CLI_CIU
+    CLI_writeString("\r\n------Restart CIU------", sizeof("\r\n------Restart CIU------"));
+#endif
+
+
 #ifndef CRS_TMP_SPI
         CLI_writeString(" No SPI", sizeof(" No SPI"));
 
