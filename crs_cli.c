@@ -2085,16 +2085,16 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
 static CRS_retVal_t CLI_unit(char *line)
 {
 #ifdef CLI_CEU_BP
-    CLI_cliPrintf("\r\nCEU_BP");
+    CLI_cliPrintf("\r\ncollector[CEU_BP]");
 #endif
 #ifdef CLI_CEU_CL
-            CLI_cliPrintf("\r\nCEU_CL");
+            CLI_cliPrintf("\r\nncollector[CEU_CL]");
 #endif
 #ifdef CLI_CRU
-            CLI_cliPrintf("\r\nCRU");
+            CLI_cliPrintf("\r\nsensor[CRU]");
 #endif
 #ifdef CLI_CIU
-            CLI_cliPrintf("\r\nCIU");
+            CLI_cliPrintf("\r\nsensor[CIU]");
 #endif
 
         char envBuff[100] = {0};
