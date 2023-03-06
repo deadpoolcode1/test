@@ -61,6 +61,12 @@
 #include "application/crs/snapshots/crs_script_returnvalues.h"
 #include "logger/crs_logger.h"
 
+#include "mac/mediator.h"
+#ifdef CLI_CEU_CL
+#include "application/crs_msgs.h"
+#endif
+//#ifdef defined(CLI_CEU_CL) || defined(CLI_CEU_BP)
+//#endif
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -256,7 +262,9 @@
 #define CLI_LOGGER_GET_TIME "logger get time"
 #define CLI_LOGGER_GET_LEVEL "logger get level"
 
-
+#ifdef CLI_CEU_BP
+#define CLI_CRS_UART_BP_COMM "uart bp"
+#endif
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -496,16 +504,21 @@ static uint32_t gRspBuffIdx = 0;
 static volatile bool gIsAsyncCommand = false;
 
 
+
 #ifdef CLI_SENSOR
 static uint8_t gRspBuff[RSP_BUFFER_SIZE] = { 0 };
 static uint16_t gDstAddr;
 #endif
 
 static volatile bool gIsRemoteCommand = false;
+volatile bool gIsUartCommCommand = false;
+volatile bool gIsUartCommCommandRemoteCL = false;
+
 static volatile bool gIsRemoteTransparentBridge = false;
 
 static volatile bool gIsTranRemoteCommandSent = false;
 
+volatile bool gIsUartCommInParts=false;
 static bool gReadNextCommand = false;
 
 //static int8_t gRssi = 0;
@@ -611,8 +624,15 @@ CRS_retVal_t CLI_init(bool restartMsg)
 
         gModuleInitialized = true;
 if(restartMsg){
+
+#ifdef CLI_CEU_BP
+    CLI_writeString("\r\n------Restart CEU_BP------", sizeof("\r\n------Restart CEU_BP------"));
+#endif
+#ifdef CLI_CEU_CL
+    CLI_writeString("\r\n------Restart CEU_CL------", sizeof("\r\n------Restart CEU_CL------"));
+#endif
 #ifndef CLI_SENSOR
-        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
+//        CLI_writeString("\r\n------Restart Collector------", sizeof("\r\n------Restart Collector------"));
 #else
         CLI_writeString("\r\n------Restart Sensor------", sizeof("\r\n------Restart Sensor------"));
 #endif
@@ -675,13 +695,19 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
         gUartTxBuffer[gUartTxBufferIdx - 1] = 0;
 
     }
-    else
+    else if(pDstAddr!=NULL)
     {
         gIsRemoteCommand = true;
 #ifdef CLI_SENSOR
         gDstAddr = pDstAddr;
 #endif
 
+    }else{//uartCommRcv
+
+        gIsUartCommCommand=true;
+#ifdef CLI_CEU_BP
+        CLI_cliPrintf("%s",line);
+#endif
     }
 
     if (gIsTransparentBridge == true && line[0] != CONTROL_CH_STOP_TRANS)
@@ -715,7 +741,12 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
     bool inputBad = true;
 
     bool is_async_command = false;
-
+#ifdef CLI_CEU_BP
+if (gIsUartCommCommand==true) {
+//    inputBad=false;
+//    is_async_command = true;
+}
+#endif
 #ifndef CLI_SENSOR
     if (memcmp(CLI_FORM_NWK, line, sizeof(CLI_FORM_NWK)) == 0)
     {
@@ -1435,6 +1466,37 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
 
 
+#ifdef CLI_CEU_BP
+         if (memcmp(CLI_CRS_UART_BP_COMM, line, sizeof(CLI_CRS_UART_BP_COMM) - 1) == 0)
+                      {
+             char tempLine[512]={0};
+             char *ptr=line+sizeof(CLI_CRS_UART_BP_COMM);
+             int i=0;
+             while(1){
+                 tempLine[i]=*ptr;
+                 if (*ptr==0) {
+                     break;
+                }
+                 ptr++;
+                 i++;
+             }
+             tempLine[i]='\r';
+             i++;
+             tempLine[i]=0;
+             char *tmp=CRS_malloc(i+5);
+             memset(tmp, 0, i+5);
+             memcpy(tmp, tempLine, i+5);
+             Mediator_msgObjSentToAppCli_t msg={0};
+             msg.p=tmp;
+             msg.len=i;
+             Mediator_sendMsgToUartComm(&msg);
+                     inputBad = false;
+                     is_async_command=true;
+                     AGCM_finishedTask();
+                     CLI_startREAD();
+                      }
+#endif
+
       if (memcmp(CLI_CRS_RESET, line, sizeof(CLI_CRS_RESET) - 1) == 0)
                {
               CLI_OadResetParsing(line);
@@ -1781,7 +1843,9 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
 
       if (inputBad && strlen(line) > 0)
       {
+          if (gIsTranRemoteCommandSent==false) {
           CLI_cliPrintf(badInputMsg);
+          }
           CLI_startREAD();
           return CRS_SUCCESS;
       }
@@ -1804,6 +1868,9 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
   //    //memset(gUartTxBuffer, gUartRxBuffer, 1);
   //
   //    UART_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer));
+      if (gIsUartCommCommandRemoteCL==false) {
+          gIsUartCommCommand=false;
+    }
       return CRS_SUCCESS;
 }
 
@@ -7632,8 +7699,29 @@ CRS_retVal_t CLI_startREAD()
 //        gRspBuffIdx = 0;
         return CRS_SUCCESS;
     }
-
 #endif
+
+#ifdef CLI_CEU_CL
+if (gIsUartCommCommand) {
+    gIsUartCommCommand=false;
+    Msgs_sendMsgs();
+    if (gIsUartCommCommand) {
+                  gIsUartCommCommand=false;
+                  gIsUartCommCommandRemoteCL=false;
+              }
+    return CRS_SUCCESS;
+//      Mediator_msgObjSentToAppCli_t msg={0};
+//      uint8_t* tmp=CRS_malloc(gRspIdxUartComm);
+//      memset(tmp, 0, gRspIdxUartComm);
+//      memcpy(tmp, gRspBuffUartComm, gRspIdxUartComm);
+//      memset(gRspBuffUartComm, 0, gRspIdxUartComm);
+//      msg.p=tmp;
+//      msg.len=gRspIdxUartComm;
+//      gRspIdxUartComm=0;
+//      Mediator_sendMsgToUartComm(&msg);
+}
+#endif
+
 //
     if (gIsTranRemoteCommandSent)
     {
@@ -7642,7 +7730,7 @@ CRS_retVal_t CLI_startREAD()
         gIsTranRemoteCommandSent = false;
         return CRS_SUCCESS;
     }
-    if (gIsTransparentBridge == false)
+    if (gIsTransparentBridge == false && gIsUartCommInParts==false)
     {
         CLI_writeString(CLI_PROMPT, strlen(CLI_PROMPT));
     }
@@ -7659,11 +7747,16 @@ CRS_retVal_t CLI_startREAD()
 //        UART_read(gUartHandle, gUartRxBuffer, 1);
 
     }
+
+
+
     AGCM_finishedTask();
 
     return CRS_SUCCESS;
 
 }
+
+
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... )
 {
     if (strlen(format) >= 512)
@@ -7744,26 +7837,31 @@ CRS_retVal_t CLI_cliPrintf(const char *_format, ...)
             || (gIsRemoteTransparentBridge == true
                     && strstr(printBuff, "AP>") != NULL))
     {
-//        if (gRspBuffIdx + strlen(printBuff) >= RSP_BUFFER_SIZE)
-//        {
-//            Msgs_addMsg(gRspBuff, gRspBuffIdx);
-//            memset(gRspBuff, 0, sizeof(gRspBuff));
-//            gRspBuffIdx = 0;
-////            return CRS_FAILURE;
-//        }
-//
-//        memcpy(&gRspBuff[gRspBuffIdx], printBuff, strlen(printBuff));
-//        gRspBuffIdx = gRspBuffIdx + strlen(printBuff);
-//        return CRS_SUCCESS;
-
         Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
     }
 #endif
+
+#ifdef CLI_CEU_CL
+if (gIsUartCommCommand) {
+
+    Msgs_addMsg((uint8_t *)printBuff, strlen(printBuff));
+
+
+//    memcpy((gRspBuffUartComm+gRspIdxUartComm), printBuff, strlen(printBuff));
+//    gRspIdxUartComm+=strlen(printBuff);
+
+
+}
+#endif
+
 if (gIsRemoteCommand == false) {
     CLI_writeString(printBuff, strlen(printBuff));
 }
+
+
     return CRS_SUCCESS;
 }
+
 
 /*********************************************************************
  * Private Functions
