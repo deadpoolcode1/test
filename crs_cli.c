@@ -2084,12 +2084,19 @@ static CRS_retVal_t CLI_AlarmsSetParsing(char *line)
 
 static CRS_retVal_t CLI_unit(char *line)
 {
-#ifndef CLI_SENSOR
-//        CRS_LOG(CRS_DEBUG,"Collector");
-        CLI_cliPrintf("\r\ncollector");
-#else
-        CLI_cliPrintf("\r\nsensor");
+#ifdef CLI_CEU_BP
+    CLI_cliPrintf("\r\nCEU_BP");
 #endif
+#ifdef CLI_CEU_CL
+            CLI_cliPrintf("\r\nCEU_CL");
+#endif
+#ifdef CLI_CRU
+            CLI_cliPrintf("\r\nCRU");
+#endif
+#ifdef CLI_CIU
+            CLI_cliPrintf("\r\nCIU");
+#endif
+
         char envBuff[100] = {0};
 
 //        CRS_retVal_t rspStatus = Env_read("name ver config img", envFile);
