@@ -190,10 +190,6 @@ static Line_Handler_fnx gFunctionsTable[CmdType_NUM_OF_COMMAND_TYPES] =
  Public Functions
  *****************************************************************************/
 
-CRS_retVal_t scriptRf_init(void)
-{
-    return CRS_SUCCESS;
-}
 
 CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT_RF_NAME_VALUES_SZ],
                               uint32_t chipNumber, uint32_t lineNumber, bool isFromFlat)

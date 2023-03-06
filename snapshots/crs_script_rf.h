@@ -21,7 +21,6 @@
 /******************************************************************************
  Function Prototypes
  *****************************************************************************/
-CRS_retVal_t scriptRf_init(void);
 CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT_RF_NAME_VALUES_SZ],
                               uint32_t chipNumber, uint32_t lineNumber, bool isFromFlat);
 

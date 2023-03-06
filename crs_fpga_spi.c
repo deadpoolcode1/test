@@ -50,7 +50,7 @@ static CRS_retVal_t setWrInBuf(uint8_t *buf);
 static CRS_retVal_t setRdInBuf(uint8_t *buf);
 static CRS_retVal_t addAddrToBuf(uint8_t *buf, uint8_t addr);
 static CRS_retVal_t addValToBuf(uint8_t *buf, uint32_t val);
-static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
+//static CRS_retVal_t getValFromBuf(uint8_t *buf, uint32_t* val);
 static CRS_retVal_t sendSpiBuf();
 
 /******************************************************************************
@@ -368,7 +368,7 @@ static CRS_retVal_t openSpi()
     /* Open SPI as master (default) */
     SPI_Params_init(&spiParams);
     spiParams.frameFormat = SPI_POL0_PHA0;
-    spiParams.bitRate = 4000000;
+    spiParams.bitRate = 12000000;
     spiParams.dataSize = 8;
     gMasterSpiHandle = SPI_open(Board_SPI_0, &spiParams);
     if (gMasterSpiHandle == NULL)
@@ -535,7 +535,7 @@ static CRS_retVal_t sendSpiBuf()
 //    }
 
 
-    Task_sleep(100);
+//    Task_sleep(100);
 
     GPIO_write(CONFIG_FPGA_CS, 0);
 //    Task_sleep(10000);
@@ -544,7 +544,7 @@ static CRS_retVal_t sendSpiBuf()
 //    Task_sleep(100);
 
     GPIO_write(CONFIG_FPGA_CS, 1);
-    Task_sleep(100);
+//    Task_sleep(100);
 
     if (!transferOK)
     {
