@@ -8,7 +8,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
-#include "application/crs/crs_fpga_uart.h"
+//#include "application/crs/crs_fpga_uart.h"
 #include "crs_tdd.h"
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/sysbios/knl/Semaphore.h>
@@ -210,9 +210,9 @@ CRS_retVal_t Tdd_initSem(void *sem)
 CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
 {
 
-    if (gUartHandle != NULL || Fpga_UART_isOpen() == CRS_SUCCESS)
+    if (gUartHandle != NULL)
     {
-        CRS_LOG(CRS_INFO, "\r\nUART FPGA is open or tdd is already open!");
+        CRS_LOG(CRS_INFO, "\r\ntdd is already open!");
         return CRS_FAILURE;
     }
 

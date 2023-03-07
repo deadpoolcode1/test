@@ -10,7 +10,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
-#include "application/crs/crs_fpga_uart.h"
+//#include "application/crs/crs_fpga_uart.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
