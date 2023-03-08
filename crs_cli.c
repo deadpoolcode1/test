@@ -262,6 +262,10 @@
 #define CLI_LOGGER_GET_TIME "logger get time"
 #define CLI_LOGGER_GET_LEVEL "logger get level"
 
+#define CLI_SET_FREQUENCY "set freq"
+#define CLI_GET_FREQUENCY "get freq"
+
+
 #ifdef CLI_CEU_BP
 #define CLI_CRS_UART_BP_COMM "uart bp"
 #endif
@@ -435,6 +439,10 @@ static CRS_retVal_t CLI_ledModeParsing(char *line);
 static CRS_retVal_t CLI_ledOnParsing(char *line);
 static CRS_retVal_t CLI_ledOffParsing(char *line);
 static CRS_retVal_t CLI_evtCntrParsing(char *line);
+
+static CRS_retVal_t CLI_setFreqParsing(char *line);
+static CRS_retVal_t CLI_getFreqParsing(char *line);
+
 
 static void tddCallback(const TDD_cbArgs_t _cbArgs);
 static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
@@ -1573,6 +1581,21 @@ if (gIsUartCommCommand==true) {
                 }
 
 
+      if (memcmp(CLI_SET_FREQUENCY, line, sizeof(CLI_SET_FREQUENCY) - 1) == 0)
+                {
+          CLI_setFreqParsing(line);
+               inputBad = false;
+               CLI_startREAD();
+                }
+
+      if (memcmp(CLI_GET_FREQUENCY, line, sizeof(CLI_GET_FREQUENCY) - 1) == 0)
+                    {
+              CLI_getFreqParsing(line);
+                   inputBad = false;
+                   CLI_startREAD();
+                    }
+
+
 
       if (memcmp(CLI_CRS_OAD_FORMAT, line, sizeof(CLI_CRS_OAD_FORMAT) - 1) == 0)
                {
@@ -2438,6 +2461,85 @@ uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_MODE) + 2]), NULL,
   return retStatus;
 }
 
+
+//set freq [shortAddr] [0xFreqVal]
+static CRS_retVal_t CLI_setFreqParsing(char *line)
+{
+    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_SET_FREQUENCY) + 2]), NULL,
+                                 16);
+#ifndef CLI_SENSOR
+
+    uint16_t addr = 0;
+    Cllc_getFfdShortAddr(&addr);
+    if (addr != shortAddr)
+    {
+        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+        ApiMac_sAddr_t dstAddr;
+        dstAddr.addr.shortAddr = shortAddr;
+        dstAddr.addrMode = ApiMac_addrType_short;
+        Collector_status_t stat;
+        stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+        if (stat != Collector_status_success)
+        {
+            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+            CLI_startREAD();
+        }
+#endif
+
+    }
+    const char s[2] = " ";
+         char *token;
+         char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+         memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+         /* get the first token */
+         token = strtok(&(tmpBuff[sizeof(CLI_CRS_LED_MODE)]), s); //shortAddr
+         token = strtok(NULL, s);//[0xFreqVal]
+         uint32_t freqVal=0;
+         freqVal=strtoul(token+2,NULL,16);
+         EasyLink_Status stat=0;
+         while(1){
+             stat=EasyLink_setFrequency(freqVal);
+             if (stat==EasyLink_Status_Success) {
+                 break;
+            }
+         }
+
+    return CRS_SUCCESS;
+}
+
+
+//get freq [shortAddr]
+static CRS_retVal_t CLI_getFreqParsing(char *line)
+    {
+        uint32_t shortAddr = strtoul(&(line[sizeof(CLI_GET_FREQUENCY) + 2]), NULL,
+                                     16);
+    #ifndef CLI_SENSOR
+        uint16_t addr = 0;
+        Cllc_getFfdShortAddr(&addr);
+        if (addr != shortAddr)
+        {
+            //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+            ApiMac_sAddr_t dstAddr;
+            dstAddr.addr.shortAddr = shortAddr;
+            dstAddr.addrMode = ApiMac_addrType_short;
+            Collector_status_t stat;
+            stat = Collector_sendCrsMsg(&dstAddr, (uint8_t *)line);
+            if (stat != Collector_status_success)
+            {
+                CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                CLI_startREAD();
+            }
+#endif
+
+        }
+        uint32_t freqVal=0;
+        freqVal= EasyLink_getFrequency();
+        CLI_cliPrintf("\r\n0x%x",freqVal);
+   return CRS_SUCCESS;
+    }
+
+
+//19CF0E40
 
 
 //ledMode [shortAddr] [on/off: 0x1 | 0x0]
