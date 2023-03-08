@@ -2500,9 +2500,9 @@ static CRS_retVal_t CLI_setFreqParsing(char *line)
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             CLI_startREAD();
         }
+    }
 #endif
 
-    }
     const char s[2] = " ";
          char *token;
          char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
@@ -2545,9 +2545,9 @@ static CRS_retVal_t CLI_getFreqParsing(char *line)
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
                 CLI_startREAD();
             }
+        }
 #endif
 
-        }
         uint32_t freqVal=0;
         freqVal= EasyLink_getFrequency();
         CLI_cliPrintf("\r\n0x%x",freqVal);
