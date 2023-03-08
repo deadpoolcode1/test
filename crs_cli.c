@@ -252,15 +252,16 @@
 #define CLI_CRS_LED_OFF "led off"
 
 #define CLI_CRS_RESET "reset"
-#define CLI_LOGGER_GET  "logger get"
+
+#define CLI_LOGGER_PRINT  "logger print"
+#define CLI_LOGGER_GET_LEVEL "logger get level"
 #define CLI_LOGGER_SET_LEVEL "logger set level"
 #define CLI_LOGGER_START "logger start"
 #define CLI_LOGGER_STOP "logger stop"
-#define CLI_LOGGER_FLUSH    "logger flush"
 #define CLI_LOGGER_SET_BUFFER_TYPE "logger set buffer type"
 #define CLI_LOGGER_GET_BUFFER_TYPE "logger get buffer type"
 #define CLI_LOGGER_GET_TIME "logger get time"
-#define CLI_LOGGER_GET_LEVEL "logger get level"
+#define CLI_LOGGER_FLUSH    "logger flush"
 
 #define CLI_SET_FREQUENCY "set freq"
 #define CLI_GET_FREQUENCY "get freq"
@@ -419,7 +420,7 @@ static CRS_retVal_t CLI_OadSendImgParsing(char *line);
 static CRS_retVal_t CLI_OadGetImgParsing(char *line);
 #endif
 static CRS_retVal_t CLI_OadResetParsing(char *line);
-static CRS_retVal_t CLI_loggerGetParsing(char *line);
+static CRS_retVal_t CLI_loggerPrintParsing(char *line);
 static CRS_retVal_t CLI_loggerSetLevelParsing(char *line);
 static CRS_retVal_t CLI_loggerStartParsing(char *line);
 static CRS_retVal_t CLI_loggerStopParsing(char *line);
@@ -1517,14 +1518,19 @@ if (gIsUartCommCommand==true) {
               CLI_startREAD();
 //                  SysCtrlSystemReset();
                }
- if (memcmp(CLI_LOGGER_GET, line, sizeof(CLI_LOGGER_GET)-1) == 0)
+ if (memcmp(CLI_LOGGER_PRINT, line, sizeof(CLI_LOGGER_PRINT)-1) == 0)
      {
-         CLI_loggerGetParsing(line);
+         CLI_loggerPrintParsing(line);
          inputBad = false;
      }
     if (memcmp(CLI_LOGGER_SET_LEVEL, line, sizeof(CLI_LOGGER_SET_LEVEL)-1) == 0)
      {
          CLI_loggerSetLevelParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_LEVEL, line, sizeof(CLI_LOGGER_GET_LEVEL)-1) == 0)
+     {
+         CLI_loggerGetLevelParsing(line);
          inputBad = false;
      }
 
@@ -1548,6 +1554,16 @@ if (gIsUartCommCommand==true) {
     if (memcmp(CLI_LOGGER_SET_BUFFER_TYPE, line, sizeof(CLI_LOGGER_SET_BUFFER_TYPE)-1) == 0)
      {
         CLI_loggerSetBufferTypeParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_BUFFER_TYPE, line, sizeof(CLI_LOGGER_GET_BUFFER_TYPE)-1) == 0)
+     {
+        CLI_loggerGetBufferTypeParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_TIME, line, sizeof(CLI_LOGGER_GET_TIME)-1) == 0)
+     {
+        CLI_loggerGetTimeParsing(line);
          inputBad = false;
      }
       //ledMode [shortAddr] [on/off: 0x1 | 0x0]
@@ -7192,7 +7208,7 @@ static CRS_retVal_t CLI_OadResetParsing(char *line)
         return CRS_SUCCESS;
 }
 
-static CRS_retVal_t CLI_loggerGetParsing(char *line)
+static CRS_retVal_t CLI_loggerPrintParsing(char *line)
 {
     const char s[2] = " ";
     char *token;
@@ -7201,7 +7217,7 @@ static CRS_retVal_t CLI_loggerGetParsing(char *line)
     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
     /* get the first token */
     //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_LOGGER_GET)]), s);
+    token = strtok(&(tmpBuff[sizeof(CLI_LOGGER_PRINT)]), s);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
@@ -7331,10 +7347,20 @@ static CRS_retVal_t CLI_loggerStartParsing(char *line)
         }
     #endif
 
-    uint32_t lvl = 0;
+    logLevels_t lvl = logLevel_NUMOFLEVELS;
     token = strtok(NULL,s);
-    lvl = strtoul(&(token[2]),NULL,16);
-    if (lvl > logLevel_DEBUG)
+    char *options [] = {"NO_LOG","ERR","WRN","INF","DEB"};
+    uint8_t i = 0;
+    for (i = 0; i < logLevel_NUMOFLEVELS; i++)
+    {
+        if (memcmp(token, options[i],strlen(options[i])) == 0)
+        {
+            lvl = (logLevels_t) i;
+            break;
+        }
+    }
+
+    if (lvl == logLevel_NUMOFLEVELS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
@@ -7759,6 +7785,15 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_TDD_PATTERN2, strlen(CLI_CRS_TDD_PATTERN2), "[shortAddr] [value]");
     CLI_printCommInfo(CLI_CRS_TDD_PERIOD2, strlen(CLI_CRS_TDD_PERIOD2), "[shortAddr] [value]");
 
+    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_FLUSH, strlen(CLI_LOGGER_FLUSH), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_GET_LEVEL, strlen(CLI_LOGGER_GET_LEVEL), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_SET_LEVEL, strlen(CLI_LOGGER_SET_LEVEL), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");
+    CLI_printCommInfo(CLI_LOGGER_START, strlen(CLI_LOGGER_START), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");
+    CLI_printCommInfo(CLI_LOGGER_STOP, strlen(CLI_LOGGER_STOP), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_SET_BUFFER_TYPE, strlen(CLI_LOGGER_SET_BUFFER_TYPE), "[shortAddr] [type](circular|oneshot)");
+    CLI_printCommInfo(CLI_LOGGER_GET_BUFFER_TYPE, strlen(CLI_LOGGER_GET_BUFFER_TYPE), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_GET_TIME, strlen(CLI_LOGGER_GET_TIME), "[shortAddr]");
 
 
     CLI_cliPrintf("\r\n");
