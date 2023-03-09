@@ -1350,7 +1350,7 @@ if (gIsUartCommCommand==true) {
 
             CLI_OadSendImgParsing(line);
                      inputBad = false;
-                     //CLI_startREAD();
+                     CLI_startREAD();
                  }
 
       if (memcmp(CLI_CRS_OAD_GET_IMG_VER, line, sizeof(CLI_CRS_OAD_GET_IMG_VER) - 1) == 0)
