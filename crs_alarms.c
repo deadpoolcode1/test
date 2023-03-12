@@ -8,7 +8,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
-#include "application/crs/crs_fpga_uart.h"
+//#include "application/crs/crs_fpga_uart.h"
 #include "crs_alarms.h"
 #include "crs_nvs.h"
 #include "crs.h"
