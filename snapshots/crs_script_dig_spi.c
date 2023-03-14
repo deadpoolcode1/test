@@ -131,15 +131,15 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
                                uint32_t chipAddr, CRS_nameValue_t *nameVals)
 {
 
-    if (Fpga_UART_isOpen() == CRS_FAILURE)
-    {
-//        CLI_cliPrintf("\r\nOpen Fpga first");
-////        const FPGA_cbArgs_t cbArgs = { 0 };
-////        cbFunc(cbArgs);
-//        cbFunc();
-//        return CRS_FAILURE;
-
-    }
+//    if (Fpga_UART_isOpen() == CRS_FAILURE)
+//    {
+////        CLI_cliPrintf("\r\nOpen Fpga first");
+//////        const FPGA_cbArgs_t cbArgs = { 0 };
+//////        cbFunc(cbArgs);
+////        cbFunc();
+////        return CRS_FAILURE;
+//
+//    }
 
     scriptDigTraverser_t fileTraverser = {0};
     fileTraverser.digAddr = chipAddr;
@@ -201,15 +201,15 @@ CRS_retVal_t DigSPI_uploadSnapDig(char *filename, CRS_chipMode_t chipMode,
 CRS_retVal_t DigSPI_uploadSnapFpga(char *filename, CRS_chipMode_t chipMode,
                                 CRS_nameValue_t *nameVals)
 {
-    if (Fpga_UART_isOpen() == CRS_FAILURE)
-    {
-//        CLI_cliPrintf("\r\nOpen Fpga first");
-////        const FPGA_cbArgs_t cbArgs = { 0 };
-////        cbFunc(cbArgs);
-//        cbFunc();
-//        return CRS_SUCCESS;
-//
-    }
+//    if (Fpga_UART_isOpen() == CRS_FAILURE)
+//    {
+////        CLI_cliPrintf("\r\nOpen Fpga first");
+//////        const FPGA_cbArgs_t cbArgs = { 0 };
+//////        cbFunc(cbArgs);
+////        cbFunc();
+////        return CRS_SUCCESS;
+////
+//    }
 //    gCbFn = cbFunc;
     scriptDigTraverser_t fileTraverser = {0};
     fileTraverser.chipMode = chipMode;

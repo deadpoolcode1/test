@@ -101,27 +101,27 @@ logLevels_t gLogLevelThrsh = logLevel_INFO;
 
 static bool gIsCircular = true;
 
-//char *gLoggerMsgDesc[logMsg_NUMOFLOGMSGS] = {
-//      "EMPTY",
-//      "MALC_F",
-//      "MALC_S",
-//      "FLRD_E",
-//      "SCT_IVD",
-//      "SCT_VD",
-//      "CFG_S",
-//      "CFG_F",
-//      "FLT_FIN",
-//      "TST_MSG",
-//      "TDD_ULK",
-//      "TI_ULK",
-//      "BKN_SND",
-//      "BKN_RCV",
-//      "NEW_NOD",
-//      "DEL_NOD",
-//      "RQ_TO",
-//      "S_RQMSG"
-//      "R_RSPMS",
-//};
+char *gLoggerMsgDesc[logMsg_NUMOFLOGMSGS] = {
+      "EMPTY",
+      "MALC_F",
+      "MALC_S",
+      "FLRD_E",
+      "SCT_IVD",
+      "SCT_VD",
+      "CFG_S",
+      "CFG_F",
+      "FLT_FIN",
+      "TST_MSG",
+      "TDD_ULK",
+      "TI_ULK",
+      "BKN_SND",
+      "BKN_RCV",
+      "NEW_NOD",
+      "DEL_NOD",
+      "RQ_TO",
+      "S_RQMSG"
+      "R_RSPMS",
+};
 
 /******************************************************************************
  Public Functions
@@ -273,8 +273,8 @@ static void printLogEntry(loggerMessage_t *logPtr)
     Logger_printLogLevel(log.logLevel);
     CLI_cliPrintf(", ");
 //        CLI_cliPrintf("opCode: %x, ",log.opCode); // doesnt matter to the print as of now
-//        CLI_cliPrintf("%s, ", gLoggerMsgDesc[log.msg]);
-    CLI_cliPrintf("%x, ", log.msg);
+    CLI_cliPrintf("%s, ", gLoggerMsgDesc[log.msg]);
+//    CLI_cliPrintf("%x, ", log.msg);
     switch(log.opCode)
     {
             case 0:

@@ -38,7 +38,7 @@
 #endif
 #include "crs_cli.h"
 #include "crs_nvs.h"
-#include "application/crs/crs_fpga_uart.h"
+//#include "application/crs/crs_fpga_uart.h"
 #include "application/crs/snapshots/crs_flat_parser_spi.h"
 #include "application/crs/snapshots/crs_script_dig_spi.h"
 #include "application/crs/crs_agc_management.h"
@@ -252,15 +252,16 @@
 #define CLI_CRS_LED_OFF "led off"
 
 #define CLI_CRS_RESET "reset"
-#define CLI_LOGGER_GET  "logger get"
+
+#define CLI_LOGGER_PRINT  "logger print"
+#define CLI_LOGGER_GET_LEVEL "logger get level"
 #define CLI_LOGGER_SET_LEVEL "logger set level"
 #define CLI_LOGGER_START "logger start"
 #define CLI_LOGGER_STOP "logger stop"
-#define CLI_LOGGER_FLUSH    "logger flush"
 #define CLI_LOGGER_SET_BUFFER_TYPE "logger set buffer type"
 #define CLI_LOGGER_GET_BUFFER_TYPE "logger get buffer type"
 #define CLI_LOGGER_GET_TIME "logger get time"
-#define CLI_LOGGER_GET_LEVEL "logger get level"
+#define CLI_LOGGER_FLUSH    "logger flush"
 
 #define CLI_SET_FREQUENCY "set freq"
 #define CLI_GET_FREQUENCY "get freq"
@@ -304,13 +305,13 @@ static CRS_retVal_t CLI_AlarmsListParsing(char *line);
 static CRS_retVal_t CLI_AlarmsSetParsing(char *line);
 
 
-static CRS_retVal_t CLI_fpgaOpenParsing(char *line);
-static CRS_retVal_t CLI_fpgaCloseParsing(char *line);
+//static CRS_retVal_t CLI_fpgaOpenParsing(char *line);
+//static CRS_retVal_t CLI_fpgaCloseParsing(char *line);
 static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line);
 static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line);
 
-static CRS_retVal_t CLI_fpgaTransStartParsing(char *line);
-static CRS_retVal_t CLI_fpgaTransStopParsing(char *line);
+//static CRS_retVal_t CLI_fpgaTransStartParsing(char *line);
+//static CRS_retVal_t CLI_fpgaTransStopParsing(char *line);
 
 static CRS_retVal_t CLI_tddCloseParsing(char *line);
 static CRS_retVal_t CLI_tddOpenParsing(char *line);
@@ -419,7 +420,7 @@ static CRS_retVal_t CLI_OadSendImgParsing(char *line);
 static CRS_retVal_t CLI_OadGetImgParsing(char *line);
 #endif
 static CRS_retVal_t CLI_OadResetParsing(char *line);
-static CRS_retVal_t CLI_loggerGetParsing(char *line);
+static CRS_retVal_t CLI_loggerPrintParsing(char *line);
 static CRS_retVal_t CLI_loggerSetLevelParsing(char *line);
 static CRS_retVal_t CLI_loggerStartParsing(char *line);
 static CRS_retVal_t CLI_loggerStopParsing(char *line);
@@ -457,7 +458,7 @@ static void UartWriteCallback(UART_Handle _handle, void *_buf, size_t _size);
 static void UartReadCallback(UART_Handle _handle, void *_buf, size_t _size);
 static CRS_retVal_t CLI_writeString(void *_buffer, size_t _size);
 static int CLI_hex2int(char ch);
-static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs);
+//static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs);
 
 static void convertUintToDate(uint32_t date, char dateStr[DATE_STR_LEN]);
 
@@ -733,15 +734,15 @@ CRS_retVal_t CLI_processCliUpdate(char *line, uint16_t pDstAddr)
             line[strlen(line)] = '\r';
         }
 
-        if (memcmp(CLI_CRS_FPGA_TRANSPARENT_END, line,
-                   sizeof(CLI_CRS_FPGA_TRANSPARENT_END) - 1) == 0)
-        {
-            CLI_fpgaTransStopParsing(line);
-            return CRS_SUCCESS;
+//        if (memcmp(CLI_CRS_FPGA_TRANSPARENT_END, line,
+//                   sizeof(CLI_CRS_FPGA_TRANSPARENT_END) - 1) == 0)
+//        {
+//            CLI_fpgaTransStopParsing(line);
+//            return CRS_SUCCESS;
+//
+//        }
 
-        }
-
-        Fpga_UART_transparentWrite(line, strlen(line));
+//        Fpga_UART_transparentWrite(line, strlen(line));
 
         return CRS_SUCCESS;
 
@@ -1177,19 +1178,19 @@ if (gIsUartCommCommand==true) {
           }
 
 
-      if (memcmp(CLI_CRS_FPGA_OPEN, line, sizeof(CLI_CRS_FPGA_OPEN) - 1) == 0)
-      {
-          CRS_retVal_t retStatus = CLI_fpgaOpenParsing(line);
-          if (retStatus == CRS_SUCCESS)
-          {
-              is_async_command = true;
-          }
-          else
-          {
-              CLI_startREAD();
-          }
-          inputBad = false;
-      }
+//      if (memcmp(CLI_CRS_FPGA_OPEN, line, sizeof(CLI_CRS_FPGA_OPEN) - 1) == 0)
+//      {
+//          CRS_retVal_t retStatus = CLI_fpgaOpenParsing(line);
+//          if (retStatus == CRS_SUCCESS)
+//          {
+//              is_async_command = true;
+//          }
+//          else
+//          {
+//              CLI_startREAD();
+//          }
+//          inputBad = false;
+//      }
 
 
 
@@ -1221,27 +1222,27 @@ if (gIsUartCommCommand==true) {
              inputBad = false;
          }
 
-      if (memcmp(CLI_CRS_FPGA_CLOSE, line, sizeof(CLI_CRS_FPGA_CLOSE) - 1) == 0)
-      {
-          CLI_fpgaCloseParsing(line);
+//      if (memcmp(CLI_CRS_FPGA_CLOSE, line, sizeof(CLI_CRS_FPGA_CLOSE) - 1) == 0)
+//      {
+//          CLI_fpgaCloseParsing(line);
+//
+//          inputBad = false;
+//      }
+//      if (memcmp(CLI_CRS_FPGA_TRANSPARENT_START, line,
+//                 sizeof(CLI_CRS_FPGA_TRANSPARENT_START) - 1) == 0)
+//      {
+//          CLI_fpgaTransStartParsing(line);
+//
+//          inputBad = false;
+//      }
 
-          inputBad = false;
-      }
-      if (memcmp(CLI_CRS_FPGA_TRANSPARENT_START, line,
-                 sizeof(CLI_CRS_FPGA_TRANSPARENT_START) - 1) == 0)
-      {
-          CLI_fpgaTransStartParsing(line);
-
-          inputBad = false;
-      }
-
-      if (memcmp(CLI_CRS_FPGA_TRANSPARENT_END, line,
-                 sizeof(CLI_CRS_FPGA_TRANSPARENT_END) - 1) == 0)
-      {
-          CLI_fpgaTransStopParsing(line);
-          inputBad = false;
-
-      }
+//      if (memcmp(CLI_CRS_FPGA_TRANSPARENT_END, line,
+//                 sizeof(CLI_CRS_FPGA_TRANSPARENT_END) - 1) == 0)
+//      {
+//          CLI_fpgaTransStopParsing(line);
+//          inputBad = false;
+//
+//      }
 
 
       if (memcmp(CLI_LIST_ALARMS_LIST, line, sizeof(CLI_LIST_ALARMS_LIST) - 1) == 0)
@@ -1517,14 +1518,19 @@ if (gIsUartCommCommand==true) {
               CLI_startREAD();
 //                  SysCtrlSystemReset();
                }
- if (memcmp(CLI_LOGGER_GET, line, sizeof(CLI_LOGGER_GET)-1) == 0)
+ if (memcmp(CLI_LOGGER_PRINT, line, sizeof(CLI_LOGGER_PRINT)-1) == 0)
      {
-         CLI_loggerGetParsing(line);
+         CLI_loggerPrintParsing(line);
          inputBad = false;
      }
     if (memcmp(CLI_LOGGER_SET_LEVEL, line, sizeof(CLI_LOGGER_SET_LEVEL)-1) == 0)
      {
          CLI_loggerSetLevelParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_LEVEL, line, sizeof(CLI_LOGGER_GET_LEVEL)-1) == 0)
+     {
+         CLI_loggerGetLevelParsing(line);
          inputBad = false;
      }
 
@@ -1548,6 +1554,16 @@ if (gIsUartCommCommand==true) {
     if (memcmp(CLI_LOGGER_SET_BUFFER_TYPE, line, sizeof(CLI_LOGGER_SET_BUFFER_TYPE)-1) == 0)
      {
         CLI_loggerSetBufferTypeParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_BUFFER_TYPE, line, sizeof(CLI_LOGGER_GET_BUFFER_TYPE)-1) == 0)
+     {
+        CLI_loggerGetBufferTypeParsing(line);
+         inputBad = false;
+     }
+    if (memcmp(CLI_LOGGER_GET_TIME, line, sizeof(CLI_LOGGER_GET_TIME)-1) == 0)
+     {
+        CLI_loggerGetTimeParsing(line);
          inputBad = false;
      }
       //ledMode [shortAddr] [on/off: 0x1 | 0x0]
@@ -2484,9 +2500,9 @@ static CRS_retVal_t CLI_setFreqParsing(char *line)
             CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
             CLI_startREAD();
         }
+    }
 #endif
 
-    }
     const char s[2] = " ";
          char *token;
          char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
@@ -2529,9 +2545,9 @@ static CRS_retVal_t CLI_getFreqParsing(char *line)
                 CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
                 CLI_startREAD();
             }
+        }
 #endif
 
-        }
         uint32_t freqVal=0;
         freqVal= EasyLink_getFrequency();
         CLI_cliPrintf("\r\n0x%x",freqVal);
@@ -2652,67 +2668,67 @@ static CRS_retVal_t CLI_ledOffParsing(char *line)
 
 
 
-static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
-{
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_OPEN) + 2]), NULL,
-                                 16);
-#ifndef CLI_SENSOR
+//static CRS_retVal_t CLI_fpgaOpenParsing(char *line)
+//{
+//    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_OPEN) + 2]), NULL,
+//                                 16);
+//#ifndef CLI_SENSOR
+//
+//    uint16_t addr = 0;
+//    Cllc_getFfdShortAddr(&addr);
+//    if (addr != shortAddr)
+//    {
+//        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = shortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+//        if (stat != Collector_status_success)
+//        {
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//
+////        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//        return CRS_SUCCESS;
+//    }
+//#endif
+//    CRS_retVal_t retStatus = Fpga_UART_init(NULL);
+//    return retStatus;
+//}
 
-    uint16_t addr = 0;
-    Cllc_getFfdShortAddr(&addr);
-    if (addr != shortAddr)
-    {
-        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = shortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-        if (stat != Collector_status_success)
-        {
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-
-//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-        return CRS_SUCCESS;
-    }
-#endif
-    CRS_retVal_t retStatus = Fpga_UART_init(NULL);
-    return retStatus;
-}
-
-static CRS_retVal_t CLI_fpgaCloseParsing(char *line)
-{
-    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_CLOSE) + 2]), NULL,
-                                 16);
-#ifndef CLI_SENSOR
-
-    uint16_t addr = 0;
-    Cllc_getFfdShortAddr(&addr);
-    if (addr != shortAddr)
-    {
-        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = shortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
-        if (stat != Collector_status_success)
-        {
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-
-//        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-        return CRS_SUCCESS;
-    }
-#endif
-    CRS_retVal_t retStatus = Fpga_UART_close();
-    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
-    CLI_startREAD();
-    return CRS_SUCCESS;
-}
+//static CRS_retVal_t CLI_fpgaCloseParsing(char *line)
+//{
+//    uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_FPGA_CLOSE) + 2]), NULL,
+//                                 16);
+//#ifndef CLI_SENSOR
+//
+//    uint16_t addr = 0;
+//    Cllc_getFfdShortAddr(&addr);
+//    if (addr != shortAddr)
+//    {
+//        //        CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = shortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr,(uint8_t*) line);
+//        if (stat != Collector_status_success)
+//        {
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//
+////        CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//        return CRS_SUCCESS;
+//    }
+//#endif
+//    CRS_retVal_t retStatus = Fpga_UART_close();
+//    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
+//    CLI_startREAD();
+//    return CRS_SUCCESS;
+//}
 
 static CRS_retVal_t CLI_fpgaWriteLinesParsing(char *line)
 {
@@ -2878,117 +2894,117 @@ static CRS_retVal_t CLI_fpgaReadLinesParsing(char *line)
 }
 
 
-static CRS_retVal_t CLI_fpgaTransStartParsing(char *line)
-{
-    const char s[2] = " ";
-    char *token;
-    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//static CRS_retVal_t CLI_fpgaTransStartParsing(char *line)
+//{
+//    const char s[2] = " ";
+//    char *token;
+//    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//    /* get the first token */
+//    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FPGA_TRANSPARENT_START)]), s);
+//    //token = strtok(NULL, s);
+//
+//    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//
+//
+//
+//#ifndef CLI_SENSOR
+//    uint16_t addr = 0;
+//    gTransparentShortAddr = shortAddr;
+//    Cllc_getFfdShortAddr(&addr);
+//
+//    if (addr != shortAddr)
+//    {
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = gTransparentShortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr, gUartTxBuffer);
+//
+//        gIsTransparentBridge = true;
+//        if (stat != Collector_status_success)
+//        {
+//            gIsTransparentBridge = false;
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//        //CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+//
+//        return CRS_SUCCESS;
+//    }
+//#endif
+//
+//    Fpga_UART_transparentOpen();
+//    gIsTransparentBridge = true;
+//    if (gIsRemoteCommand == true)
+//    {
+//        gIsRemoteTransparentBridge = true;
+//    }
+//    CLI_startREAD();
+//return CRS_SUCCESS;
+//}
 
-    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-    /* get the first token */
-    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FPGA_TRANSPARENT_START)]), s);
-    //token = strtok(NULL, s);
-
-    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-
-
-
-
-#ifndef CLI_SENSOR
-    uint16_t addr = 0;
-    gTransparentShortAddr = shortAddr;
-    Cllc_getFfdShortAddr(&addr);
-
-    if (addr != shortAddr)
-    {
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = gTransparentShortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, gUartTxBuffer);
-
-        gIsTransparentBridge = true;
-        if (stat != Collector_status_success)
-        {
-            gIsTransparentBridge = false;
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-        //CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
-
-        return CRS_SUCCESS;
-    }
-#endif
-
-    Fpga_UART_transparentOpen();
-    gIsTransparentBridge = true;
-    if (gIsRemoteCommand == true)
-    {
-        gIsRemoteTransparentBridge = true;
-    }
-    CLI_startREAD();
-return CRS_SUCCESS;
-}
-
-static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
-{
-    const char s[2] = " ";
-    char *token;
-    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
-
-    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
-    /* get the first token */
-    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FPGA_TRANSPARENT_END)]), s);
-    //token = strtok(NULL, s);
-
-    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
-
-#ifdef CLI_SENSOR
-    Fpga_UART_transparentClose();
-    gIsTransparentBridge = false;
-    gIsTransparentBridgeSuspended = false;
-    gIsRemoteTransparentBridge = false;
-    memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
-    gUartTxBufferIdx = 0;
-    CLI_startREAD();
-    return CRS_SUCCESS;
-
-#else
-    uint16_t addr = 0;
-
-    Cllc_getFfdShortAddr(&addr);
-
-    if (addr == gTransparentShortAddr)
-    {
-        Fpga_UART_transparentClose();
-        gIsTransparentBridge = false;
-        gIsTransparentBridgeSuspended = false;
-        memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
-        gUartTxBufferIdx = 0;
-        CLI_startREAD();
-    }
-    else
-    {
-        ApiMac_sAddr_t dstAddr;
-        dstAddr.addr.shortAddr = gTransparentShortAddr;
-        dstAddr.addrMode = ApiMac_addrType_short;
-        Collector_status_t stat;
-        stat = Collector_sendCrsMsg(&dstAddr, gUartTxBuffer);
-        if (stat != Collector_status_success)
-        {
-            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-            CLI_startREAD();
-        }
-        gIsTransparentBridge = false;
-        gIsTransparentBridgeSuspended = false;
-        memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
-        gUartTxBufferIdx = 0;
-
-    }
-    return CRS_SUCCESS;
-#endif
-
-}
+//static CRS_retVal_t CLI_fpgaTransStopParsing(char *line)
+//{
+//    const char s[2] = " ";
+//    char *token;
+//    char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+//
+//    memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+//    /* get the first token */
+//    token = strtok(&(tmpBuff[sizeof(CLI_CRS_FPGA_TRANSPARENT_END)]), s);
+//    //token = strtok(NULL, s);
+//
+//    uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+//
+//#ifdef CLI_SENSOR
+//    Fpga_UART_transparentClose();
+//    gIsTransparentBridge = false;
+//    gIsTransparentBridgeSuspended = false;
+//    gIsRemoteTransparentBridge = false;
+//    memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
+//    gUartTxBufferIdx = 0;
+//    CLI_startREAD();
+//    return CRS_SUCCESS;
+//
+//#else
+//    uint16_t addr = 0;
+//
+//    Cllc_getFfdShortAddr(&addr);
+//
+//    if (addr == gTransparentShortAddr)
+//    {
+//        Fpga_UART_transparentClose();
+//        gIsTransparentBridge = false;
+//        gIsTransparentBridgeSuspended = false;
+//        memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
+//        gUartTxBufferIdx = 0;
+//        CLI_startREAD();
+//    }
+//    else
+//    {
+//        ApiMac_sAddr_t dstAddr;
+//        dstAddr.addr.shortAddr = gTransparentShortAddr;
+//        dstAddr.addrMode = ApiMac_addrType_short;
+//        Collector_status_t stat;
+//        stat = Collector_sendCrsMsg(&dstAddr, gUartTxBuffer);
+//        if (stat != Collector_status_success)
+//        {
+//            CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+//            CLI_startREAD();
+//        }
+//        gIsTransparentBridge = false;
+//        gIsTransparentBridgeSuspended = false;
+//        memset(gUartTxBuffer, '\0', CUI_NUM_UART_CHARS - 1);
+//        gUartTxBufferIdx = 0;
+//
+//    }
+//    return CRS_SUCCESS;
+//#endif
+//
+//}
 
 
 static CRS_retVal_t CLI_tddOpenParsing(char *line)
@@ -7192,7 +7208,7 @@ static CRS_retVal_t CLI_OadResetParsing(char *line)
         return CRS_SUCCESS;
 }
 
-static CRS_retVal_t CLI_loggerGetParsing(char *line)
+static CRS_retVal_t CLI_loggerPrintParsing(char *line)
 {
     const char s[2] = " ";
     char *token;
@@ -7201,7 +7217,7 @@ static CRS_retVal_t CLI_loggerGetParsing(char *line)
     memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
     /* get the first token */
     //0xaabb shortAddr
-    token = strtok(&(tmpBuff[sizeof(CLI_LOGGER_GET)]), s);
+    token = strtok(&(tmpBuff[sizeof(CLI_LOGGER_PRINT)]), s);
     //shortAddr in decimal
     uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
 
@@ -7331,10 +7347,20 @@ static CRS_retVal_t CLI_loggerStartParsing(char *line)
         }
     #endif
 
-    uint32_t lvl = 0;
+    logLevels_t lvl = logLevel_NUMOFLEVELS;
     token = strtok(NULL,s);
-    lvl = strtoul(&(token[2]),NULL,16);
-    if (lvl > logLevel_DEBUG)
+    char *options [] = {"NO_LOG","ERR","WRN","INF","DEB"};
+    uint8_t i = 0;
+    for (i = 0; i < logLevel_NUMOFLEVELS; i++)
+    {
+        if (memcmp(token, options[i],strlen(options[i])) == 0)
+        {
+            lvl = (logLevels_t) i;
+            break;
+        }
+    }
+
+    if (lvl == logLevel_NUMOFLEVELS)
     {
         CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
         CLI_startREAD();
@@ -7759,6 +7785,15 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_TDD_PATTERN2, strlen(CLI_CRS_TDD_PATTERN2), "[shortAddr] [value]");
     CLI_printCommInfo(CLI_CRS_TDD_PERIOD2, strlen(CLI_CRS_TDD_PERIOD2), "[shortAddr] [value]");
 
+    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_FLUSH, strlen(CLI_LOGGER_FLUSH), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_GET_LEVEL, strlen(CLI_LOGGER_GET_LEVEL), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_SET_LEVEL, strlen(CLI_LOGGER_SET_LEVEL), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");
+    CLI_printCommInfo(CLI_LOGGER_START, strlen(CLI_LOGGER_START), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");
+    CLI_printCommInfo(CLI_LOGGER_STOP, strlen(CLI_LOGGER_STOP), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_SET_BUFFER_TYPE, strlen(CLI_LOGGER_SET_BUFFER_TYPE), "[shortAddr] [type](circular|oneshot)");
+    CLI_printCommInfo(CLI_LOGGER_GET_BUFFER_TYPE, strlen(CLI_LOGGER_GET_BUFFER_TYPE), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_GET_TIME, strlen(CLI_LOGGER_GET_TIME), "[shortAddr]");
 
 
     CLI_cliPrintf("\r\n");
@@ -8372,10 +8407,10 @@ uint32_t CLI_convertStrUint(char *st)
     return result;
 }
 
-static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs)
-{
-    CLI_startREAD();
-}
+//static void fpgaMultiLineCallback(const FPGA_cbArgs_t _cbArgs)
+//{
+//    CLI_startREAD();
+//}
 
 static void tddCallback(const TDD_cbArgs_t _cbArgs)
 {

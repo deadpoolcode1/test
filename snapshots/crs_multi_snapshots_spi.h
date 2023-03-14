@@ -10,7 +10,7 @@
 /******************************************************************************
  Includes
  *****************************************************************************/
-#include "application/crs/crs_fpga_uart.h"
+//#include "application/crs/crs_fpga_uart.h"
 #include "application/crs/crs_fpga_spi.h"
 #include "application/crs/crs.h"
 #include "application/crs/snapshots/crs_flat_parser_spi.h"

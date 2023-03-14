@@ -126,13 +126,13 @@ CRS_retVal_t SPI_RF_uploadSnapRf(char *filename, uint32_t rfAddr,
                              CRS_nameValue_t *nameVals, bool isFromFlat)
 {
 
-    if (Fpga_UART_isOpen() == CRS_FAILURE)
-    {
-//        CLI_cliPrintf("\r\nOpen Fpga first");
-//        const FPGA_cbArgs_t cbArgs = { 0 };
-//        cbFunc(cbArgs);
-//        return CRS_FAILURE;
-    }
+//    if (Fpga_UART_isOpen() == CRS_FAILURE)
+//    {
+////        CLI_cliPrintf("\r\nOpen Fpga first");
+////        const FPGA_cbArgs_t cbArgs = { 0 };
+////        cbFunc(cbArgs);
+////        return CRS_FAILURE;
+//    }
 
     if (memcmp(filename, "DC_RF_HIGH_FREQ_HB_RX",
                sizeof("DC_RF_HIGH_FREQ_HB_RX")-1) == 0 && nameVals != NULL && nameVals[0].name[0] != 0)
