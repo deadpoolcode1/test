@@ -526,7 +526,7 @@ volatile bool gIsUartCommCommandRemoteCL = false;
 static volatile bool gIsRemoteTransparentBridge = false;
 
 static volatile bool gIsTranRemoteCommandSent = false;
-static volatile bool gIsUartCommCliReq=false;
+volatile bool gIsUartCommCliReq=false;
 volatile bool gIsUartCommInParts=false;
 static bool gReadNextCommand = false;
 
@@ -1507,7 +1507,7 @@ if (gIsUartCommCommand==true) {
                      is_async_command=true;
                      gIsUartCommCliReq=true;
                      CLI_startREAD();
-                     gIsUartCommCliReq=false;
+
                       }
 #endif
 
