@@ -53,7 +53,7 @@
 #ifdef CLI_SENSOR
 #include "application/crs_msgs.h"
 #endif
-
+#include "nano_pb/simple.h"
 #ifdef CRS_TMP_SPI
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
 #endif
@@ -265,6 +265,8 @@
 
 #define CLI_SET_FREQUENCY "set freq"
 #define CLI_GET_FREQUENCY "get freq"
+
+#define CLI_LOGGER_PB "logger pb"
 
 
 #ifdef CLI_CEU_BP
@@ -1607,6 +1609,15 @@ if (gIsUartCommCommand==true) {
       if (memcmp(CLI_GET_FREQUENCY, line, sizeof(CLI_GET_FREQUENCY) - 1) == 0)
                     {
               CLI_getFreqParsing(line);
+                   inputBad = false;
+                   CLI_startREAD();
+                    }
+      if (memcmp(CLI_LOGGER_PB, line, sizeof(CLI_LOGGER_PB) - 1) == 0)
+                    {
+
+          loggerPbPrint();
+
+
                    inputBad = false;
                    CLI_startREAD();
                     }
