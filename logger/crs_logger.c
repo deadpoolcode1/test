@@ -18,6 +18,9 @@
 #include "crs_logger.h"
 #include"application/crs/crs_cli.h"
 
+#include "nano_pb/pb_encode.h"
+#include "nano_pb/pb_decode.h"
+#include "nano_pb/loggerMessage.pb.h"
 /******************************************************************************
  Constants and definitions
  *****************************************************************************/
@@ -83,6 +86,7 @@ inline static timeStamp_t getTimeStamp(void);
 inline static bool isOverThrsh(logLevels_t level);
 
 static void printLogEntry(loggerMessage_t *logPtr);
+static CRS_retVal_t printLogEntryPb(loggerMessage_t *logPtr);
 /******************************************************************************
  Local variables
  *****************************************************************************/
@@ -135,7 +139,7 @@ CRS_retVal_t Logger_init(void)
 }
 
 
-void Logger_print(void)
+void Logger_print(bool isPb)
 {
     uint8_t count = 0;
     uint8_t pos = gLogger.circBuff.tail;
@@ -148,7 +152,14 @@ void Logger_print(void)
     for (count = 0; count < gLogger.circBuff.size; count++)
     {
         log = gLogger.circBuff.buffer[pos];
-        printLogEntry(&log);
+        if(isPb)
+        {
+            printLogEntryPb(&log);
+        }
+        else
+        {
+            printLogEntry(&log);
+        }
         if (pos + 1 == NUM_OF_LOGS)
         {
             pos = 0;
@@ -159,7 +170,6 @@ void Logger_print(void)
         }
     }
 }
-
 
 CRS_retVal_t Logger_flush(void)
 {
@@ -327,6 +337,103 @@ static void printLogEntry(loggerMessage_t *logPtr)
     }
     CLI_cliPrintf("\r\n");
 
+}
+
+static CRS_retVal_t printLogEntryPb(loggerMessage_t *logPtr)
+{
+    /* This is the buffer where we will store our message. */
+      uint8_t buffer[128];
+      size_t message_length;
+      bool status;
+
+      /* Encode our message */
+
+          /* Allocate space on the stack to store the message data.
+           *
+           * Nanopb generates simple struct definitions for all the messages.
+           * - check out the contents of simple.pb.h!
+           * It is a good idea to always initialize your structures
+           * so that you do not have garbage data from RAM in there.
+           */
+      loggerMessage log = loggerMessage_init_zero;
+      /* Create a stream that will write to our buffer. */
+      pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+      /* Fill in the params */
+
+
+//      char *p = "logMsg";
+//      uint8_t arr [] = {1,2,3,4,5,6,7,8};
+//
+//      message.timeStamp.mSec=0;
+//      message.timeStamp.sec=70;
+//      message.logLevel=logLevels_logLevel_INFO;
+//      message.msg=19;
+//      message.opCode=5;
+//      memcpy(message.params.uint8ArrStr.str,p,8);
+//      memcpy(message.params.uint8ArrStr.uintArr,arr,8);
+//
+//      message.which_params = loggerMessage_uint8ArrStr_tag;
+
+      log.timeStamp.sec = logPtr->timeStamp.sec;
+      log.timeStamp.mSec = logPtr->timeStamp.mSec;
+      log.logLevel = logPtr->logLevel;
+      log.msg = logPtr->msg;
+      log.opCode = logPtr->opCode;
+      switch(log.opCode)
+      {
+      case 0:
+          break;
+      case 1:
+          log.which_params = loggerMessage_oneStr_tag;
+          memcpy(log.params.oneStr,logPtr->params.oneStr, PARAM_BYTES);
+          break;
+      case 2:
+          log.which_params = loggerMessage_twoStrs_tag;
+          memcpy(log.params.twoStrs.twoStrs[0],logPtr->params.twoStrs[0], PARAM_BYTES/2);
+          memcpy(log.params.twoStrs.twoStrs[1],logPtr->params.twoStrs[1], PARAM_BYTES/2);
+          break;
+      case 3:
+          log.which_params = loggerMessage_splitInts_tag;
+          uint8_t i = 0;
+          for (i = 0; i < PARAM_BYTES/sizeof(uint8_t); i++)
+          {
+              log.params.splitInts.splitInts[i] = logPtr->params.splitInts[i];
+          }
+          break;
+      case 4:
+          log.which_params = loggerMessage_oneStrOneInt_tag;
+          log.params.oneStrOneInt.num = logPtr->params.oneStrOneInt.num;
+          memcpy(log.params.oneStrOneInt.str, logPtr->params.oneStrOneInt.str, PARAM_BYTES-(sizeof(uint32_t)));
+          break;
+
+      case 5:
+          log.which_params = loggerMessage_uint8ArrStr_tag;
+          memcpy(log.params.uint8ArrStr.str, logPtr->params.uint8ArrStr.str,PARAM_BYTES/2);
+          memcpy(log.params.uint8ArrStr.uintArr, logPtr->params.uint8ArrStr.uintArr,PARAM_BYTES/2);
+          break;
+      }
+
+
+      /* Now we are ready to encode the message! */
+      status = pb_encode(&stream, loggerMessage_fields, &log);
+
+      message_length = stream.bytes_written;
+      int i=0;
+
+      CLI_cliPrintf("\r\n");
+      for (i = 0; i <message_length; ++i) {
+          CLI_cliPrintf("%02x",buffer[i]);
+      }
+
+      /* Then just check for any errors.. */
+      if (!status)
+      {
+          return CRS_FAILURE;
+      }
+
+
+  return CRS_SUCCESS;
 }
 
 static void circBuff_clear(circularBuffer_t *circBuff)

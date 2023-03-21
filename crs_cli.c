@@ -53,7 +53,7 @@
 #ifdef CLI_SENSOR
 #include "application/crs_msgs.h"
 #endif
-#include "nano_pb/simple.h"
+//#include "nano_pb/simple.h"
 #ifdef CRS_TMP_SPI
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
 #endif
@@ -1615,7 +1615,7 @@ if (gIsUartCommCommand==true) {
       if (memcmp(CLI_LOGGER_PB, line, sizeof(CLI_LOGGER_PB) - 1) == 0)
                     {
 
-          loggerPbPrint();
+//          loggerPbPrint();
 
 
                    inputBad = false;
@@ -7255,7 +7255,16 @@ static CRS_retVal_t CLI_loggerPrintParsing(char *line)
         }
     #endif
 
-    Logger_print();
+    token = strtok(NULL,s);
+    if (token != NULL && memcmp(token, "pb", 2) == 0)
+    {
+        Logger_print(true);
+    }
+    else
+    {
+        Logger_print(false);
+    }
+
     CLI_startREAD();
 
     return CRS_SUCCESS;
