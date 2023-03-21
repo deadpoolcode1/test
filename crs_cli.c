@@ -266,7 +266,6 @@
 #define CLI_SET_FREQUENCY "set freq"
 #define CLI_GET_FREQUENCY "get freq"
 
-#define CLI_LOGGER_PB "logger pb"
 
 
 #ifdef CLI_CEU_BP
@@ -1609,15 +1608,6 @@ if (gIsUartCommCommand==true) {
       if (memcmp(CLI_GET_FREQUENCY, line, sizeof(CLI_GET_FREQUENCY) - 1) == 0)
                     {
               CLI_getFreqParsing(line);
-                   inputBad = false;
-                   CLI_startREAD();
-                    }
-      if (memcmp(CLI_LOGGER_PB, line, sizeof(CLI_LOGGER_PB) - 1) == 0)
-                    {
-
-//          loggerPbPrint();
-
-
                    inputBad = false;
                    CLI_startREAD();
                     }
@@ -7805,7 +7795,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_TDD_PATTERN2, strlen(CLI_CRS_TDD_PATTERN2), "[shortAddr] [value]");
     CLI_printCommInfo(CLI_CRS_TDD_PERIOD2, strlen(CLI_CRS_TDD_PERIOD2), "[shortAddr] [value]");
 
-    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr] [pb]");
     CLI_printCommInfo(CLI_LOGGER_FLUSH, strlen(CLI_LOGGER_FLUSH), "[shortAddr]");
     CLI_printCommInfo(CLI_LOGGER_GET_LEVEL, strlen(CLI_LOGGER_GET_LEVEL), "[shortAddr]");
     CLI_printCommInfo(CLI_LOGGER_SET_LEVEL, strlen(CLI_LOGGER_SET_LEVEL), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");
