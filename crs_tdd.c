@@ -217,7 +217,7 @@ CRS_retVal_t Tdd_init(TDD_cbFn_t _cbFn)
     }
 
 #ifdef CRS_CB
-    GPIO_setConfig(CONFIG_GPIO_TDD_SWITCH, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
+    GPIO_setConfig(CONFIG_UART1_SB0, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH);
 #endif
 
     {
