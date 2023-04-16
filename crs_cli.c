@@ -560,6 +560,12 @@ static Clock_Handle oadStatClkHandle;
 /******************************************************************************
  * Public CLI APIs
  *****************************************************************************/
+#ifdef CLI_CEU_BP
+CRS_retVal_t CLI_stopOadStatClk(){
+    UtilTimer_stop(&oadStatClkStruct);
+}
+#endif
+
 
 CRS_retVal_t CLI_close(){
     if (NULL == gUartHandle)

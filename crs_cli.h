@@ -17,7 +17,9 @@ extern volatile bool gIsUartCommInParts;
 extern volatile bool gIsUartCommCommand;
 extern volatile bool gIsUartCommCommandRemoteCL;
 extern volatile bool gIsUartCommCliReq;
-
+#ifdef CLI_CEU_BP
+CRS_retVal_t CLI_stopOadStatClk();
+#endif
 CRS_retVal_t CLI_init(bool restartMsg);
 CRS_retVal_t CLI_close();
 CRS_retVal_t CLI_processCliUpdate(char* line, uint16_t shortAddr );
