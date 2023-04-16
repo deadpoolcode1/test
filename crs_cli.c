@@ -1916,7 +1916,13 @@ if (gIsUartCommCommand==true) {
               CLI_help2Parsing(line);
               inputBad = false;
           }
-
+#ifdef CLI_CEU_CL
+      if (memcmp (CLI_OAD_STAT, line, sizeof(CLI_OAD_STAT) - 1) == 0)
+      {
+          CLI_oadStatParsing(line);
+          inputBad = false;
+      }
+#endif
       if (inputBad && strlen(line) > 0)
       {
           if (gIsTranRemoteCommandSent==false) {
@@ -7133,7 +7139,14 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
                return CRS_SUCCESS;
 }
 
-
+#ifdef CLI_CEU_CL
+static CRS_retVal_t CLI_oadStatParsing(char *line)
+{
+    printOADProgress();
+    CLI_startREAD();
+    return CRS_SUCCESS;
+}
+#endif
 
 
 
