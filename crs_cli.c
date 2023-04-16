@@ -413,7 +413,9 @@ static CRS_retVal_t CLI_discoverModules(char *line);
 
 
 static CRS_retVal_t CLI_discoverModules_spi(char *line);
-
+#ifdef CLI_CEU_CL
+static CRS_retVal_t CLI_oadStatParsing(char *line);
+#endif
 
 
 #ifndef CLI_SENSOR
@@ -1374,7 +1376,9 @@ if (gIsUartCommCommand==true) {
 
             CLI_OadSendImgParsing(line);
                      inputBad = false;
-//                     CLI_startREAD();
+#ifdef CLI_CEU_CL
+                 CLI_startREAD();
+#endif
                  }
 
       if (memcmp(CLI_CRS_OAD_GET_IMG_VER, line, sizeof(CLI_CRS_OAD_GET_IMG_VER) - 1) == 0)
@@ -1525,16 +1529,17 @@ if (gIsUartCommCommand==true) {
              Mediator_msgObjSentToAppCli_t msg={0};
              msg.p=tmp;
              msg.len=i;
-             Mediator_sendMsgToUartComm(&msg);
+             if (memcmp(tmp, CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG)) == 0)
+             {
+                 // start oad stat clock
+                 UtilTimer_start(&oadStatClkStruct);
+             }
+                     Mediator_sendMsgToUartComm(&msg);
                      inputBad = false;
                      is_async_command=true;
                      gIsUartCommCliReq=true;
                      CLI_startREAD();
-            if (memcmp(tmp, CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG)) == 0)
-            {
-                // start oad stat clock
-                UtilTimer_start(&oadStatClkStruct);
-            }
+
                       }
 #endif
 
@@ -7127,6 +7132,21 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
                CLI_startREAD();
                return CRS_SUCCESS;
 }
+
+
+
+
+
+
+#ifdef CLI_CEU_CL
+static CRS_retVal_t CLI_oadStatParsing(char *line)
+{
+printOADProgress();
+CLI_startREAD();
+return CRS_SUCCESS;
+}
+#endif
+
 #ifndef CLI_SENSOR
 
 //oad send img 0xshortAddr 0xisReset 0xisFactory
@@ -7680,7 +7700,7 @@ static void sendOadStatCmdToCL(UArg a0)
 {
     char tempLine[512]={0};
     uint8_t i = strlen(CLI_OAD_STAT);
-    memcpy(templine, CLI_OAD_STAT, i);
+    memcpy(tempLine, CLI_OAD_STAT, i);
     tempLine[i]='\r';
     i++;
     tempLine[i]=0;
