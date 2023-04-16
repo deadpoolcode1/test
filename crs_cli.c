@@ -266,6 +266,7 @@
 #define CLI_SET_FREQUENCY "set freq"
 #define CLI_GET_FREQUENCY "get freq"
 
+#define CLI_OAD_STAT    "oad stat"
 
 #ifdef CLI_CEU_BP
 #define CLI_CRS_UART_BP_COMM "uart bp"
@@ -464,6 +465,12 @@ static void convertUintToDate(uint32_t date, char dateStr[DATE_STR_LEN]);
 
 static CRS_retVal_t defaultTestLog( const log_level level, const char* file, const int line, const char* format, ... );
 CLI_log_handler_func_type*  glogHandler = &defaultTestLog;
+
+#ifdef CLI_CEU_BP
+static void sendOadStatCmdToCL(UArg a0);
+#define OAD_STAT_INTERVAL   (5 * 1000) //configurable interval time for getting oad progress of CL - in milliseconds
+#endif
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -539,6 +546,13 @@ static bool gReadNextCommand = false;
 static uint8_t gTmpUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
 #ifndef CLI_SENSOR
 static uint8_t gCopyUartTxBuffer[LAST_COMM_COMM_SIZE] = { 0 };
+#endif
+
+
+
+#ifdef CLI_CEU_BP
+static Clock_Struct oadStatClkStruct;
+static Clock_Handle oadStatClkHandle;
 #endif
 
 /******************************************************************************
@@ -627,6 +641,15 @@ CRS_retVal_t CLI_init(bool restartMsg)
                     UART_read(gUartHandle, gUartRxBuffer, 1);
 
                 }
+#ifdef CLI_CEU_BP
+                oadStatClkHandle = UtilTimer_construct(&oadStatClkStruct,
+                                                   sendOadStatCmdToCL,
+                                                    0,
+                                                    0,
+                                                    false,
+                                                    0);
+                UtilTimer_setTimeout(oadStatClkHandle, OAD_STAT_INTERVAL);
+#endif
             }
 
         }
@@ -1507,7 +1530,11 @@ if (gIsUartCommCommand==true) {
                      is_async_command=true;
                      gIsUartCommCliReq=true;
                      CLI_startREAD();
-
+            if (memcmp(tmp, CLI_CRS_OAD_SEND_IMG, strlen(CLI_CRS_OAD_SEND_IMG)) == 0)
+            {
+                // start oad stat clock
+                UtilTimer_start(&oadStatClkStruct);
+            }
                       }
 #endif
 
@@ -7648,6 +7675,25 @@ static CRS_retVal_t CLI_loggerGetLevelParsing(char *line)
            return CRS_SUCCESS;
 }
 
+#ifdef CLI_CEU_BP
+static void sendOadStatCmdToCL(UArg a0)
+{
+    char tempLine[512]={0};
+    uint8_t i = strlen(CLI_OAD_STAT);
+    memcpy(templine, CLI_OAD_STAT, i);
+    tempLine[i]='\r';
+    i++;
+    tempLine[i]=0;
+    char *tmp=CRS_malloc(i+5);
+    memset(tmp, 0, i+5);
+    memcpy(tmp, tempLine, i+5);
+    Mediator_msgObjSentToAppCli_t msg={0};
+    msg.p=tmp;
+    msg.len=i;
+    Mediator_sendMsgToUartComm(&msg);
+    UtilTimer_start(&oadStatClkStruct);
+}
+#endif
 
 static CRS_retVal_t CLI_helpParsing(char *line)
 {
