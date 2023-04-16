@@ -7142,18 +7142,6 @@ static CRS_retVal_t CLI_watchdogDisableParsing(char *line)
 #ifdef CLI_CEU_CL
 static CRS_retVal_t CLI_oadStatParsing(char *line)
 {
-    printOADProgress();
-    CLI_startREAD();
-    return CRS_SUCCESS;
-}
-#endif
-
-
-
-
-#ifdef CLI_CEU_CL
-static CRS_retVal_t CLI_oadStatParsing(char *line)
-{
 printOADProgress();
 CLI_startREAD();
 return CRS_SUCCESS;
