@@ -650,6 +650,8 @@ CRS_retVal_t CLI_init(bool restartMsg)
 
                 }
 #ifdef CLI_CEU_BP
+                if (restartMsg)
+                {
                 oadStatClkHandle = UtilTimer_construct(&oadStatClkStruct,
                                                    sendOadStatCmdToCL,
                                                     0,
@@ -657,6 +659,7 @@ CRS_retVal_t CLI_init(bool restartMsg)
                                                     false,
                                                     0);
                 UtilTimer_setTimeout(oadStatClkHandle, OAD_STAT_INTERVAL);
+                }
 #endif
             }
 
