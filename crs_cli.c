@@ -53,7 +53,7 @@
 #ifdef CLI_SENSOR
 #include "application/crs_msgs.h"
 #endif
-
+//#include "nano_pb/simple.h"
 #ifdef CRS_TMP_SPI
 #include "application/crs/snapshots/crs_snap_rf_spi.h"
 #endif
@@ -267,6 +267,7 @@
 #define CLI_GET_FREQUENCY "get freq"
 
 #define CLI_OAD_STAT    "oad stat"
+
 
 #ifdef CLI_CEU_BP
 #define CLI_CRS_UART_BP_COMM "uart bp"
@@ -7301,7 +7302,16 @@ static CRS_retVal_t CLI_loggerPrintParsing(char *line)
         }
     #endif
 
-    Logger_print();
+    token = strtok(NULL,s);
+    if (token != NULL && memcmp(token, "pb", 2) == 0)
+    {
+        Logger_print(true);
+    }
+    else
+    {
+        Logger_print(false);
+    }
+
     CLI_startREAD();
 
     return CRS_SUCCESS;
@@ -7861,7 +7871,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_CRS_TDD_PATTERN2, strlen(CLI_CRS_TDD_PATTERN2), "[shortAddr] [value]");
     CLI_printCommInfo(CLI_CRS_TDD_PERIOD2, strlen(CLI_CRS_TDD_PERIOD2), "[shortAddr] [value]");
 
-    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr]");
+    CLI_printCommInfo(CLI_LOGGER_PRINT, strlen(CLI_LOGGER_PRINT), "[shortAddr] [pb]");
     CLI_printCommInfo(CLI_LOGGER_FLUSH, strlen(CLI_LOGGER_FLUSH), "[shortAddr]");
     CLI_printCommInfo(CLI_LOGGER_GET_LEVEL, strlen(CLI_LOGGER_GET_LEVEL), "[shortAddr]");
     CLI_printCommInfo(CLI_LOGGER_SET_LEVEL, strlen(CLI_LOGGER_SET_LEVEL), "[shortAddr] [lvl](NO_LOG|ERR|WRN|INF|DEB)");

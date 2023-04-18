@@ -107,7 +107,7 @@ extern logFiveHandlerFunc_t *gLogFiveHandler;
  Function Prototypes
  *****************************************************************************/
 CRS_retVal_t Logger_init(void);
-void Logger_print(void);
+void Logger_print(bool isPb);
 CRS_retVal_t Logger_flush(void);
 CRS_retVal_t Logger_stop(void);
 CRS_retVal_t Logger_start(logLevels_t level);
