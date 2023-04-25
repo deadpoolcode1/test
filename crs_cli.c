@@ -269,6 +269,12 @@
 #define CLI_OAD_STAT    "oad stat"
 
 
+
+#define CLI_GPIO_WR "gpio wr"
+#define CLI_GPIO_RD "gpio rd"
+
+
+
 #ifdef CLI_CEU_BP
 #define CLI_CRS_UART_BP_COMM "uart bp"
 #endif
@@ -454,6 +460,17 @@ static void tddOpenCallback(const TDD_cbArgs_t _cbArgs);
 
 static CRS_retVal_t CLI_helpParsing(char *line);
 static CRS_retVal_t CLI_help2Parsing(char *line);
+
+
+
+static CRS_retVal_t CLI_gpioWriteParsing(char *line);
+static CRS_retVal_t CLI_gpioReadParsing(char *line);
+
+
+
+
+
+
 static uint32_t MakeULFromHex(char *hex_str);
 
 static CRS_retVal_t CLI_printCommInfo(char *command, uint32_t commSize, char* description);
@@ -984,6 +1001,17 @@ if (gIsUartCommCommand==true) {
                }
 
 
+          if (memcmp(CLI_GPIO_RD, line, sizeof(CLI_GPIO_RD) - 1) == 0)
+          {
+              CLI_gpioReadParsing(line);
+              inputBad = false;
+          }
+
+          if (memcmp(CLI_GPIO_WR, line, sizeof(CLI_GPIO_WR) - 1) == 0)
+          {
+              CLI_gpioWriteParsing(line);
+              inputBad = false;
+          }
 
 
 
@@ -7714,6 +7742,159 @@ static CRS_retVal_t CLI_loggerGetLevelParsing(char *line)
            CLI_startREAD();
            return CRS_SUCCESS;
 }
+
+
+// gpio wr 0xaabb 29/30 1/0
+static CRS_retVal_t CLI_gpioWriteParsing(char *line)
+{
+    const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_GPIO_WR)]), s);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+       #ifndef CLI_SENSOR
+
+           uint16_t addr = 0;
+           Cllc_getFfdShortAddr(&addr);
+           if (addr != shortAddr)
+           {
+               // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+               ApiMac_sAddr_t dstAddr;
+               dstAddr.addr.shortAddr = shortAddr;
+               dstAddr.addrMode = ApiMac_addrType_short;
+               Collector_status_t stat;
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+               if (stat != Collector_status_success)
+               {
+                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                   CLI_startREAD();
+               }
+               // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+               return CRS_SUCCESS;
+           }
+       #endif
+
+       token = strtok(NULL, s);
+       if (token == NULL)
+       {
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+
+       uint32_t gpio = strtoul(token, NULL, 10);
+       if (gpio == 30)
+       {
+           token = strtok(NULL, s);
+           if (token == NULL)
+           {
+               CLI_startREAD();
+               return CRS_FAILURE;
+           }
+           uint32_t num = strtoul(token, NULL, 10);
+           if (num == 0 || num == 1)
+           {
+               GPIO_init();
+               GPIO_write(CONFIG_GPIO_30, num);
+               CLI_startREAD();
+               return CRS_SUCCESS;
+           }
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+       else if (gpio == 29)
+       {
+           token = strtok(NULL, s);
+           if (token == NULL)
+           {
+               CLI_startREAD();
+               return CRS_FAILURE;
+           }
+           uint32_t num = strtoul(token, NULL, 10);
+           if (num == 0 || num == 1)
+           {
+               GPIO_init();
+               GPIO_write(CONFIG_GPIO_29, num);
+               CLI_startREAD();
+               return CRS_SUCCESS;
+           }
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+       CLI_startREAD();
+       return CRS_FAILURE;
+}
+
+// gpio rd 0xaabb 29/30
+static CRS_retVal_t CLI_gpioReadParsing(char *line)
+{
+    const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
+
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_GPIO_RD)]), s);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+       #ifndef CLI_SENSOR
+
+           uint16_t addr = 0;
+           Cllc_getFfdShortAddr(&addr);
+           if (addr != shortAddr)
+           {
+               // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+               ApiMac_sAddr_t dstAddr;
+               dstAddr.addr.shortAddr = shortAddr;
+               dstAddr.addrMode = ApiMac_addrType_short;
+               Collector_status_t stat;
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+               if (stat != Collector_status_success)
+               {
+                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                   CLI_startREAD();
+               }
+               // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+               return CRS_SUCCESS;
+           }
+       #endif
+
+           token = strtok(NULL, s);
+           if (token == NULL)
+           {
+               CLI_startREAD();
+               return CRS_FAILURE;
+           }
+
+           uint32_t gpio = strtoul(token, NULL, 10);
+           if (gpio == 30)
+           {
+               GPIO_init();
+               uint8_t val = GPIO_read(CONFIG_GPIO_30);
+               CLI_cliPrintf("\r\n%d", val);
+           }
+           else if (gpio == 29)
+           {
+               GPIO_init();
+
+               uint8_t val = GPIO_read(CONFIG_GPIO_29);
+               CLI_cliPrintf("\r\n%d", val);
+           }
+           CLI_startREAD();
+           return CRS_FAILURE;
+}
+
+
+
 
 #ifdef CLI_CEU_BP
 static void sendOadStatCmdToCL(UArg a0)
