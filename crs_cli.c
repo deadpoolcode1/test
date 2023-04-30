@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Seconds.h>
@@ -272,7 +273,7 @@
 
 #define CLI_GPIO_WR "gpio wr"
 #define CLI_GPIO_RD "gpio rd"
-
+#define CLI_POE_STATUS "poe status"
 
 
 #ifdef CLI_CEU_BP
@@ -465,7 +466,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line);
 
 static CRS_retVal_t CLI_gpioWriteParsing(char *line);
 static CRS_retVal_t CLI_gpioReadParsing(char *line);
-
+static CRS_retVal_t CLI_poeStatusParsing(char *line);
 
 
 
@@ -1013,8 +1014,11 @@ if (gIsUartCommCommand==true) {
               inputBad = false;
           }
 
-
-
+          if (memcmp(CLI_POE_STATUS, line, sizeof(CLI_POE_STATUS) - 1) == 0)
+          {
+              CLI_poeStatusParsing(line);
+              inputBad = false;
+          }
 
           if (memcmp(CLI_CRS_INIT_GAIN_UPDATE, line, sizeof(CLI_CRS_INIT_GAIN_UPDATE) - 1) == 0)
                  {
@@ -7893,7 +7897,111 @@ static CRS_retVal_t CLI_gpioReadParsing(char *line)
            return CRS_FAILURE;
 }
 
+// poe status 0xaabb [rj]
+static CRS_retVal_t CLI_poeStatusParsing(char *line)
+{
+    const char s[2] = " ";
+       char *token;
+       char tmpBuff[CUI_NUM_UART_CHARS] = { 0 };
 
+       memcpy(tmpBuff, line, CUI_NUM_UART_CHARS);
+       /* get the first token */
+       //0xaabb shortAddr
+       token = strtok(&(tmpBuff[sizeof(CLI_POE_STATUS)]), s);
+       //shortAddr in decimal
+       uint32_t shortAddr = strtoul(&(token[2]), NULL, 16);
+
+       #ifndef CLI_SENSOR
+
+           uint16_t addr = 0;
+           Cllc_getFfdShortAddr(&addr);
+           if (addr != shortAddr)
+           {
+               // CLI_cliPrintf("\r\nStatus: 0x%x", CRS_SHORT_ADDR_NOT_VALID);
+               ApiMac_sAddr_t dstAddr;
+               dstAddr.addr.shortAddr = shortAddr;
+               dstAddr.addrMode = ApiMac_addrType_short;
+               Collector_status_t stat;
+               stat = Collector_sendCrsMsg(&dstAddr, (uint8_t*)line);
+               if (stat != Collector_status_success)
+               {
+                   CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+                   CLI_startREAD();
+               }
+               // CLI_cliPrintf("\r\nSent req. stat: 0x%x", stat);
+
+               return CRS_SUCCESS;
+           }
+       #endif
+
+       token = strtok(NULL, s);
+       if (token == NULL)
+       {
+           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+
+       uint32_t rj = strtoul(token, NULL, 10); // 1-8 rjs
+       if (rj > 8 || rj < 1)
+       {
+           CLI_cliPrintf("\r\nInvalid RJ Status: 0x%x", CRS_FAILURE);
+           CLI_startREAD();
+           return CRS_FAILURE;
+       }
+
+       uint8_t shift = rj;
+       if (rj <= 4)
+       {
+           shift += 4;
+       }
+
+       uint8_t i = 0;
+       float sum = 0;
+
+
+
+       const float LOOP_NUM = 100.0;
+
+       // read register 0x46 LOOP_NUM times from fpga and do average
+       for (i = 0; i < LOOP_NUM; i++)
+       {
+           uint32_t rsp = 0;
+           if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine("rd 0x46", &rsp))
+           {
+               CLI_cliPrintf("\r\nFailed reading from FPGA Status: 0x%x", CRS_FAILURE);
+               CLI_startREAD();
+               return CRS_FAILURE;
+           }
+           uint8_t bit_value = ((rsp >>(shift - 1)) & 1);
+           sum += (bit_value * 3.3);
+           Task_sleep(500);
+       }
+
+
+       float avg = sum / LOOP_NUM;
+       CLI_cliPrintf("\r\navg is: %f", avg);
+       if (avg == 0)
+       {
+           // status is on
+           CLI_cliPrintf("\r\nOn");
+       }
+       else if (avg > 3.2)
+       {
+           // status is off
+           CLI_cliPrintf("\r\nOff");
+
+       }
+       else
+       {
+           // status is error
+           CLI_cliPrintf("\r\nErr");
+       }
+
+       CLI_startREAD();
+       return CRS_SUCCESS;
+
+}
 
 
 #ifdef CLI_CEU_BP
@@ -8061,6 +8169,11 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
     CLI_printCommInfo(CLI_LOGGER_SET_BUFFER_TYPE, strlen(CLI_LOGGER_SET_BUFFER_TYPE), "[shortAddr] [type](circular|oneshot)");
     CLI_printCommInfo(CLI_LOGGER_GET_BUFFER_TYPE, strlen(CLI_LOGGER_GET_BUFFER_TYPE), "[shortAddr]");
     CLI_printCommInfo(CLI_LOGGER_GET_TIME, strlen(CLI_LOGGER_GET_TIME), "[shortAddr]");
+
+    CLI_printCommInfo(CLI_GPIO_RD, strlen(CLI_GPIO_RD), "[shortAddr] [gpio]");
+    CLI_printCommInfo(CLI_GPIO_WR, strlen(CLI_GPIO_WR), "[shortAddr] [gpio] [val]");
+    CLI_printCommInfo(CLI_POE_STATUS, strlen(CLI_POE_STATUS), "[shortAddr] [rj]");
+
 
 
     CLI_cliPrintf("\r\n");
