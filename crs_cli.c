@@ -7897,7 +7897,7 @@ static CRS_retVal_t CLI_gpioReadParsing(char *line)
            return CRS_FAILURE;
 }
 
-// poe status 0xaabb [rj]
+// poe status 0xaabb
 static CRS_retVal_t CLI_poeStatusParsing(char *line)
 {
     const char s[2] = " ";
@@ -7934,34 +7934,14 @@ static CRS_retVal_t CLI_poeStatusParsing(char *line)
            }
        #endif
 
-       token = strtok(NULL, s);
-       if (token == NULL)
-       {
-           CLI_cliPrintf("\r\nStatus: 0x%x", CRS_FAILURE);
-           CLI_startREAD();
-           return CRS_FAILURE;
-       }
-
-       uint32_t rj = strtoul(token, NULL, 10); // 1-8 rjs
-       if (rj > 8 || rj < 1)
-       {
-           CLI_cliPrintf("\r\nInvalid RJ Status: 0x%x", CRS_FAILURE);
-           CLI_startREAD();
-           return CRS_FAILURE;
-       }
-
-       uint8_t shift = rj;
-       if (rj <= 4)
-       {
-           shift += 4;
-       }
 
        uint8_t i = 0;
-       float sum = 0;
+       uint8_t j = 0;
 
 
 
-       const float LOOP_NUM = 100.0;
+       const float LOOP_NUM = 250.0;
+       float sumArr[8]  = {0};
 
        // read register 0x46 LOOP_NUM times from fpga and do average
        for (i = 0; i < LOOP_NUM; i++)
@@ -7973,30 +7953,63 @@ static CRS_retVal_t CLI_poeStatusParsing(char *line)
                CLI_startREAD();
                return CRS_FAILURE;
            }
-           uint8_t bit_value = ((rsp >>(shift - 1)) & 1);
-           sum += (bit_value * 3.3);
-           Task_sleep(500);
+
+           // sum up all rj values into array
+           uint8_t shift = 1;
+           for (j = 0; j < 8; j++)
+           {
+               // read 8 bits one by one
+               uint8_t bit_value = ((rsp >>(shift - 1)) & 1);
+
+               // add result * 3.3 to give identical result as is shown in scope
+               sumArr[j] += (bit_value * 3.3);
+               shift++;
+           }
+           Task_sleep(138);
        }
 
+       // print average for each rj
+       uint8_t rj = 0;
+       for (j = 0; j < 8; j++)
+       {
+           // each cell in array represents rjs like so [5,6,7,8,1,2,3,4]
+           rj = j;
+           if (j >= 4)
+           {
+               rj -= 4;
+           }
+           else
+           {
+               rj += 4;
+           }
+           float avg = sumArr[rj] / LOOP_NUM;
+           CLI_cliPrintf("\r\navg of rj %d is: %f",(j+1), avg);
 
-       float avg = sum / LOOP_NUM;
-       CLI_cliPrintf("\r\navg is: %f", avg);
-       if (avg == 0)
-       {
-           // status is on
-           CLI_cliPrintf("\r\nOn");
-       }
-       else if (avg > 3.2)
-       {
-           // status is off
-           CLI_cliPrintf("\r\nOff");
+           // categorize the result based on the range of average
+           if (avg == 0)
+           {
+               // status is on
+               CLI_cliPrintf("\r\nOn");
+           }
+           else if (avg > 3.2)
+           {
+               // status is off
+               CLI_cliPrintf("\r\nOff");
+
+           }
+           else if (avg > 2.70 &&  avg < 3.03)
+           {
+               // status is short
+               CLI_cliPrintf("\r\nError");
+           }
+           else if (avg > 2.19 &&  avg < 2.28)
+           {
+               // status is search
+               CLI_cliPrintf("\r\nSearch");
+           }
 
        }
-       else
-       {
-           // status is error
-           CLI_cliPrintf("\r\nErr");
-       }
+
 
        CLI_startREAD();
        return CRS_SUCCESS;
@@ -8172,7 +8185,7 @@ static CRS_retVal_t CLI_help2Parsing(char *line)
 
     CLI_printCommInfo(CLI_GPIO_RD, strlen(CLI_GPIO_RD), "[shortAddr] [gpio]");
     CLI_printCommInfo(CLI_GPIO_WR, strlen(CLI_GPIO_WR), "[shortAddr] [gpio] [val]");
-    CLI_printCommInfo(CLI_POE_STATUS, strlen(CLI_POE_STATUS), "[shortAddr] [rj]");
+    CLI_printCommInfo(CLI_POE_STATUS, strlen(CLI_POE_STATUS), "[shortAddr]");
 
 
 
