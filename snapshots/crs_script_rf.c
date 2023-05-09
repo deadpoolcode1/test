@@ -826,14 +826,14 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
             CRS_nameValue_t gain = parsingContainer.parameters[idx];
             int32_t gainValue = gain.value;
 
-            if (gainValue > -16 && gainValue < 0)
-            {
-                filename = "DC_RF_HIGH_FREQ_HB_RX_low";
-            }
-            else
-            {
+//            if (gainValue > -16 && gainValue < 0)
+//            {
+//                filename = "DC_RF_HIGH_FREQ_HB_RX_low";
+//            }
+//            else
+//            {
                 filename = "DC_RF_HIGH_FREQ_HB_RX";
-            }
+//            }
         }
     }
 
