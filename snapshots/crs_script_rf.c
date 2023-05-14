@@ -157,7 +157,7 @@ static CRS_retVal_t printCommandHandler (ScriptRf_parsingContainer_t *parsingCon
 static CRS_retVal_t assignmentCommandHandler (ScriptRf_parsingContainer_t *parsingContainer, char *line);
 
 
-
+static CRS_retVal_t setActiveLine(uint32_t lineNumber);
 
 
 
@@ -778,18 +778,24 @@ CRS_retVal_t scriptRf_runFile(uint8_t *filename, CRS_nameValue_t nameVals[SCRIPT
     }
 
     // change active line
-    char lineNumStr[LINE_LENGTH] = {0};
+//    char lineNumStr[LINE_LENGTH] = {0};
+//
+//    sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
+//    uint32_t rsp = 0;
+//
+//    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lineNumStr,&rsp))
+//    {
+//       scriptRetValStatus = scriptRetVal_General_failure;
+//       ScriptRetVals_setStatus(scriptRetValStatus);
+//       return CRS_FAILURE;
+//    }
 
-    sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
-    uint32_t rsp = 0;
-
-    if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lineNumStr,&rsp))
+    if (CRS_FAILURE == setActiveLine(lineNumber))
     {
        scriptRetValStatus = scriptRetVal_General_failure;
        ScriptRetVals_setStatus(scriptRetValStatus);
        return CRS_FAILURE;
     }
-
 
 //    printGlobalArrayAndLineMatrix(&parsingContainer);
 
@@ -2579,4 +2585,24 @@ static CRS_retVal_t writeLineAndGlobalsToFpga(ScriptRf_parsingContainer_t* parsi
 
 
     return CRS_SUCCESS;
+}
+
+static CRS_retVal_t setActiveLine(uint32_t lineNumber)
+{
+    if (lineNumber == 0x1)
+    {
+        lineNumber = 0x101; // in order to support APOLLO CRU new FPGA
+    }
+    // change active line
+        char lineNumStr[LINE_LENGTH] = {0};
+
+        sprintf(lineNumStr, "wr 0xa 0x%x\r", lineNumber);
+        uint32_t rsp = 0;
+
+        if (CRS_SUCCESS != Fpga_SPI_WriteMultiLine(lineNumStr,&rsp))
+        {
+            return CRS_FAILURE;
+        }
+
+        return CRS_SUCCESS;
 }

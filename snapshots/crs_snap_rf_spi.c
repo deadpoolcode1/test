@@ -1457,7 +1457,12 @@ static void setRfClock(uint32_t time)
 static void changeActiveLine(snapRfParsingStruct_t *fileTraverser)
 {
     char line[100] = { 0 };
-    sprintf(line, "wr 0xa 0x%x",fileTraverser->rfLine);
+    uint32_t lineNumber = fileTraverser->rfLine;
+    if (lineNumber == 0x1)
+    {
+        lineNumber = 0x101; // in order to support APOLLO CRU new FPGA
+    }
+    sprintf(line, "wr 0xa 0x%x",lineNumber);
     uint32_t rsp = 0;
     Fpga_SPI_WriteMultiLine(line, &rsp);
 //    writeMultiLine(line, changedActiveLineCb);

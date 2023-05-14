@@ -1442,12 +1442,22 @@ static void readInit(uint32_t chipNumber, uint32_t lineNumber, uint32_t *ffVal, 
     char line[TEMP_SZ] = {0};
     memcpy(line, "rd 0xa", strlen("rd 0xa"));
     Fpga_SPI_WriteMultiLine(line, aVal);
+    if (*aVal == 0x101)
+    {
+        *aVal = 0x1; // in order to support APOLLO CRU new FPGA
+    }
 
     memset(line, 0, TEMP_SZ);
     memcpy(line, "rd 0xff", strlen("rd 0xff"));
     Fpga_SPI_WriteMultiLine(line, ffVal);
 
     memset(line, 0, TEMP_SZ);
+
+    if (lineNumber == 0x1)
+    {
+        lineNumber = 0x101; // in order to support APOLLO CRU new FPGA
+    }
+
     sprintf(line, "wr 0xa 0x%x", lineNumber);
     uint32_t rsp = 0;
     Fpga_SPI_WriteMultiLine(line, &rsp);
@@ -1534,6 +1544,10 @@ static void restoreOriginalRegisters(uint32_t ffVal, uint32_t aVal)
     char line[TEMP_SZ] = {0};
     uint32_t rsp = 0;
     memset(line, 0, TEMP_SZ);
+    if (aVal == 0x1)
+    {
+        aVal = 0x101; // in order to support APOLLO CRU new FPGA
+    }
     sprintf(line, "wr 0xa 0x%x", aVal);
     Fpga_SPI_WriteMultiLine(line, &rsp);
 
