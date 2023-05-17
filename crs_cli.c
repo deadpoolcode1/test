@@ -7986,27 +7986,28 @@ static CRS_retVal_t CLI_poeStatusParsing(char *line)
            CLI_cliPrintf("\r\navg of rj %d is: %f",(j+1), avg);
 
            // categorize the result based on the range of average
-           if (avg == 0)
-           {
-               // status is on
-               CLI_cliPrintf("\r\nOn");
-           }
-           else if (avg > 3.2)
-           {
-               // status is off
-               CLI_cliPrintf("\r\nOff");
-
-           }
-           else if (avg > 2.70 &&  avg < 3.03)
-           {
-               // status is short
-               CLI_cliPrintf("\r\nError");
-           }
-           else if (avg > 2.19 &&  avg < 2.28)
-           {
-               // status is search
-               CLI_cliPrintf("\r\nSearch");
-           }
+          if (avg == 0)
+          {
+          // status is off
+//               CLI_cliPrintf("\r\nOn");
+                          CLI_cliPrintf("\r\nOff");
+                      }
+                      else if (avg > 3.2)
+                      {
+                          // status is on
+           //               CLI_cliPrintf("\r\nOff");
+                         CLI_cliPrintf("\r\nOn");
+                      }
+                      else if (avg > 0.275 &&  avg < 0.583)
+                      {
+                          // status is Error
+                          CLI_cliPrintf("\r\nError");
+                      }
+                      else if (avg > 1.04 &&  avg < 1.08)
+                      {
+                          // status is search
+                          CLI_cliPrintf("\r\nSearch");
+                      }
 
        }
 
