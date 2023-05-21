@@ -582,6 +582,7 @@ static Clock_Handle oadStatClkHandle;
 #ifdef CLI_CEU_BP
 CRS_retVal_t CLI_stopOadStatClk(){
     UtilTimer_stop(&oadStatClkStruct);
+    return CRS_SUCCESS;
 }
 #endif
 
@@ -2551,7 +2552,6 @@ uint32_t shortAddr = strtoul(&(line[sizeof(CLI_CRS_LED_MODE) + 2]), NULL,
      uint32_t value =0;
     value=strtoul(token+2,NULL,16);
   CRS_retVal_t retStatus =Agc_setDio(dioIdxInt,value);
-  Agc_readDio(dioIdxInt);
   CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
   CLI_startREAD();
   return retStatus;
@@ -7065,7 +7065,7 @@ static CRS_retVal_t CLI_sensorChannelParsing(char *line)
         CLI_startREAD();
         return CRS_FAILURE;
     }
-    retStatus = Agc_setChannel((AGC_channels_t)channel);
+
 //    CLI_cliPrintf("\r\nStatus: 0x%x", retStatus);
 //    if(retStatus == CRS_SUCCESS){
 //        CLI_cliPrintf("\r\nSensorStatus=OK");
